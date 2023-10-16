@@ -6,9 +6,11 @@ package coap
 import (
 	"context"
 	"crypto/tls"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"time"
+	"os"
 
 	"github.com/absmach/magistrala/internal/server"
 	gocoap "github.com/plgd-dev/go-coap/v2"
@@ -24,7 +26,7 @@ type Server struct {
 	handler mux.HandlerFunc
 }
 
-var enableDTLS = true
+
 
 var _ server.Server = (*Server)(nil)
 
@@ -50,6 +52,39 @@ func (s *Server) Start() error {
 	case s.Config.CertFile != "" || s.Config.KeyFile != "":
 		s.Logger.Info(fmt.Sprintf("%s service %s server listening at %s with TLS cert %s and key %s", s.Name, s.Protocol, s.Address, s.Config.CertFile, s.Config.KeyFile))
 		certificate, err := tls.LoadX509KeyPair(s.Config.CertFile, s.Config.KeyFile)
+		dtlsConfig := &piondtls.Config{
+			Certificates:         []tls.Certificate{certificate},
+			ExtendedMasterSecret: piondtls.RequireExtendedMasterSecret,
+			ClientCAs:            tlsConfi,
+			ClientAuth:           piondtls.RequireAndVerifyClientCert,
+			ConnectContextMaker: func() (context.Context, func()) {
+				return context.WithTimeout(ctx, 30*time.Second)
+			},
+		}
+		if err != nil {
+			return fmt.Errorf("failed to load auth certificates: %w", err)
+		}
+		clientCA, err := loadCertFile(s.Config.ClientCAFile)
+		if err != nil {
+			return fmt.Errorf("failed to load client ca file: %w", err)
+		}
+
+		if len(clientCA) > 0 {
+			if dtlsConfig.ClientCAs == nil {
+				dtlsConfig.ClientCAs = x509.NewCertPool()
+			}
+			if !dtlsConfig.ClientCAs.AppendCertsFromPEM(clientCA) {
+				return fmt.Errorf("failed to append client ca to tls.Config")
+			}
+		}
+
+		go func() {
+			errCh <- gocoap.ListenAndServeDTLS("udp", s.Address, dtlsConfig, s.handler)
+		}()
+
+	case s.Config.CertFile != "" || s.Config.KeyFile != "":
+		s.Logger.Info(fmt.Sprintf("%s service %s server listening at %s with TLS cert %s and key %s", s.Name, s.Protocol, s.Address, s.Config.CertFile, s.Config.KeyFile))
+		certificate, err := tls.LoadX509KeyPair(s.Config.CertFile, s.Config.KeyFile)
 		if err != nil {
 			return fmt.Errorf("failed to load auth certificates: %w", err)
 		}
@@ -59,21 +94,6 @@ func (s *Server) Start() error {
 
 		go func() {
 			errCh <- gocoap.ListenAndServeTCPTLS("udp", s.Address, tlsConfig, s.handler)
-		}()
-
-	case enableDTLS:
-		s.Logger.Info(fmt.Sprintf("%s service %s server listening at %s with TLS cert %s and key %s", s.Name, s.Protocol, s.Address, s.Config.Certfile, s.config.KeyFile))
-
-		go func() {
-			errCh <- gocoap.ListenAndServeDTLS("udp", ":5688", &piondtls.Config{
-				PSK: func(hint []byte) ([]byte, error) {
-					fmt.Printf("Client's hint: %s \n", hint)
-					return []byte{0xAB, 0xC1, 0x23}, nil
-				},
-				PSKIdentityHint: []byte("Pion DTLS Client"),
-				CipherSuites:    []piondtls.CipherSuiteID{piondtls.TLS_PSK_WITH_AES_128_CCM_8},
-			}, s.handler)
-
 		}()
 
 	default:
@@ -102,3 +122,11 @@ func (s *Server) Stop() error {
 	s.Logger.Info(fmt.Sprintf("%s service shutdown of http at %s", s.Name, s.Address))
 	return nil
 }
+
+func loadCertFile(certFile string) ([]byte, error) {
+	if certFile != "" {
+		return os.ReadFile(certFile)
+	}
+	return []byte{}, nil
+}
+
