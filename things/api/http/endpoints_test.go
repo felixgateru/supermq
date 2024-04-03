@@ -2061,11 +2061,11 @@ func TestAssignUsers(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Assign", mock.Anything, tc.token, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Assign", mock.Anything, tc.token, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2190,11 +2190,11 @@ func TestUnassignUsers(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2300,11 +2300,11 @@ func TestAssignUserGroups(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Assign", mock.Anything, tc.token, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Assign", mock.Anything, tc.token, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2410,11 +2410,11 @@ func TestUnassignUserGroups(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2477,11 +2477,11 @@ func TestConnectChannelThing(t *testing.T) {
 			contentType: tc.contentType,
 		}
 
-		repoCall := gsvc.On("Assign", mock.Anything, tc.token, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
+		svcCall := gsvc.On("Assign", mock.Anything, tc.token, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2544,11 +2544,11 @@ func TestDisconnectChannelThing(t *testing.T) {
 			contentType: tc.contentType,
 		}
 
-		repoCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
+		svcCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2641,11 +2641,11 @@ func TestConnect(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Assign", mock.Anything, tc.token, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Assign", mock.Anything, tc.token, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
@@ -2738,11 +2738,11 @@ func TestDisconnect(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := gsvc.On("Unassign", mock.Anything, tc.token, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
+		svcCall := gsvc.On("Unassign", mock.Anything, tc.token, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		assert.Equal(t, tc.status, res.StatusCode)
-		repoCall.Unset()
+		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
+		svcCall.Unset()
 	}
 }
 
