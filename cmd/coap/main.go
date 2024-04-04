@@ -80,7 +80,11 @@ func main() {
 		return
 	}
 
-	coapServerConfig := server.Config{Port: defSvcCoAPPort}
+	coapServerConfig := server.Config{
+		Port:     defSvcCoAPPort,
+		CertFile: "./ssl/certs/magistrala-server.crt",
+		KeyFile:  "./ssl/certs/magistrala-server.key",
+	}
 	if err := env.ParseWithOptions(&coapServerConfig, env.Options{Prefix: envPrefix}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load %s CoAP server configuration : %s", svcName, err))
 		exitCode = 1
