@@ -2198,7 +2198,7 @@ func TestUnassignUsers(t *testing.T) {
 	}
 }
 
-func TestAssignUserGroups(t *testing.T) {
+func TestAssignGroupsToChannel(t *testing.T) {
 	ts, _, gsvc := newThingsServer()
 	defer ts.Close()
 
@@ -2308,7 +2308,7 @@ func TestAssignUserGroups(t *testing.T) {
 	}
 }
 
-func TestUnassignUserGroups(t *testing.T) {
+func TestUnassignGroupsFromChannel(t *testing.T) {
 	ts, _, gsvc := newThingsServer()
 	defer ts.Close()
 
@@ -2418,7 +2418,7 @@ func TestUnassignUserGroups(t *testing.T) {
 	}
 }
 
-func TestConnectChannelThing(t *testing.T) {
+func TestConnectThingToChannel(t *testing.T) {
 	ts, _, gsvc := newThingsServer()
 	defer ts.Close()
 
@@ -2455,7 +2455,7 @@ func TestConnectChannelThing(t *testing.T) {
 			channelID:   "",
 			thingID:     validID,
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -2464,7 +2464,7 @@ func TestConnectChannelThing(t *testing.T) {
 			channelID:   validID,
 			thingID:     "",
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -2485,7 +2485,7 @@ func TestConnectChannelThing(t *testing.T) {
 	}
 }
 
-func TestDisconnectChannelThing(t *testing.T) {
+func TestDisconnectThingFromChannel(t *testing.T) {
 	ts, _, gsvc := newThingsServer()
 	defer ts.Close()
 
@@ -2522,7 +2522,7 @@ func TestDisconnectChannelThing(t *testing.T) {
 			channelID:   "",
 			thingID:     validID,
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -2531,7 +2531,7 @@ func TestDisconnectChannelThing(t *testing.T) {
 			channelID:   validID,
 			thingID:     "",
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -2594,7 +2594,7 @@ func TestConnect(t *testing.T) {
 				ThingID:   validID,
 			},
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -2605,7 +2605,7 @@ func TestConnect(t *testing.T) {
 				ThingID:   "",
 			},
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -2691,7 +2691,7 @@ func TestDisconnect(t *testing.T) {
 				ThingID:   validID,
 			},
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -2702,7 +2702,7 @@ func TestDisconnect(t *testing.T) {
 				ThingID:   "",
 			},
 			contentType: contentType,
-			status:      http.StatusUnprocessableEntity,
+			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
 		{
