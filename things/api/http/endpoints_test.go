@@ -1954,7 +1954,7 @@ func TestAssignUsers(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:    "assign users to group successfully",
+			desc:    "assign users to a group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -1966,7 +1966,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "assign users to group with invalid token",
+			desc:    "assign users to a group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -1978,7 +1978,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "assign users to group with empty token",
+			desc:    "assign users to a group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -1990,7 +1990,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "assign users to group with empty group id",
+			desc:    "assign users to a group with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -2002,7 +2002,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with empty relation",
+			desc:    "assign users to a group with empty relation",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2014,7 +2014,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with empty user ids",
+			desc:    "assign users to a group with empty user ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2026,7 +2026,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with invalid request body",
+			desc:    "assign users to a group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -2037,7 +2037,7 @@ func TestAssignUsers(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "assign users to group with invalid content type",
+			desc:    "assign users to a group with invalid content type",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2083,7 +2083,7 @@ func TestUnassignUsers(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:    "unassign users to group successfully",
+			desc:    "unassign users from a group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2095,7 +2095,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "unassign users to group with invalid token",
+			desc:    "unassign users from a group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2107,7 +2107,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "unassign users to group with empty token",
+			desc:    "unassign users from a group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2119,7 +2119,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "unassign users to group with empty group id",
+			desc:    "unassign users from a group with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -2131,7 +2131,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users to group with empty relation",
+			desc:    "unassign users from a group with empty relation",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2143,7 +2143,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users to group with empty user ids",
+			desc:    "unassign users from a group with empty user ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2155,7 +2155,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users to group with invalid request body",
+			desc:    "unassign users from a group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -2166,7 +2166,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "unassign users to group with invalid content type",
+			desc:    "unassign users from a group with invalid content type",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2212,7 +2212,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:    "assign groups to channel successfully",
+			desc:    "assign groups to a channel successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2223,7 +2223,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "assign groups to channel with invalid token",
+			desc:    "assign groups to a channel with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2234,7 +2234,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "assign groups to channel with empty token",
+			desc:    "assign groups to a channel with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2245,7 +2245,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "assign groups to channel with empty group id",
+			desc:    "assign groups to a channel with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -2256,7 +2256,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign groups to channel with empty group ids",
+			desc:    "assign groups to a channel with empty group ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2267,7 +2267,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign groups to channel with invalid request body",
+			desc:    "assign groups to a channel with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -2278,7 +2278,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign groups to channel with invalid content type",
+			desc:    "assign groups to a channel with invalid content type",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2322,7 +2322,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:    "unassign groups from channel successfully",
+			desc:    "unassign groups from a channel successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2333,7 +2333,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:    "unassign groups from channel with invalid token",
+			desc:    "unassign groups from a channel with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2344,7 +2344,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "unassign groups from channel with empty token",
+			desc:    "unassign groups from a channel with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2355,7 +2355,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "unassign groups from channel with empty group id",
+			desc:    "unassign groups from a channel with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -2366,7 +2366,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign groups from channel with empty group ids",
+			desc:    "unassign groups from a channel with empty group ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2377,7 +2377,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign groups from channel with invalid request body",
+			desc:    "unassign groups from a channel with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -2388,7 +2388,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign groups from channel with invalid content type",
+			desc:    "unassign groups from a channel with invalid content type",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2432,7 +2432,7 @@ func TestConnectThingToChannel(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:        "connect thing to channel successfully",
+			desc:        "connect thing to a channel successfully",
 			token:       validToken,
 			channelID:   validID,
 			thingID:     validID,
@@ -2441,7 +2441,7 @@ func TestConnectThingToChannel(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:        "connect thing to channel with invalid token",
+			desc:        "connect thing to a channel with invalid token",
 			token:       inValidToken,
 			channelID:   validID,
 			thingID:     validID,
@@ -2450,7 +2450,7 @@ func TestConnectThingToChannel(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:        "connect thing to channel with empty channel id",
+			desc:        "connect thing to a channel with empty channel id",
 			token:       validToken,
 			channelID:   "",
 			thingID:     validID,
@@ -2459,7 +2459,7 @@ func TestConnectThingToChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:        "connect thing to channel with empty thing id",
+			desc:        "connect thing to a channel with empty thing id",
 			token:       validToken,
 			channelID:   validID,
 			thingID:     "",
@@ -2499,7 +2499,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:        "disconnect thing from channel successfully",
+			desc:        "disconnect thing from a channel successfully",
 			token:       validToken,
 			channelID:   validID,
 			thingID:     validID,
@@ -2508,7 +2508,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:        "disconnect thing from channel with invalid token",
+			desc:        "disconnect thing from a channel with invalid token",
 			token:       inValidToken,
 			channelID:   validID,
 			thingID:     validID,
@@ -2517,7 +2517,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:        "disconnect thing from channel with empty channel id",
+			desc:        "disconnect thing from a channel with empty channel id",
 			token:       validToken,
 			channelID:   "",
 			thingID:     validID,
@@ -2526,7 +2526,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:        "disconnect thing from channel with empty thing id",
+			desc:        "disconnect thing from a channel with empty thing id",
 			token:       validToken,
 			channelID:   validID,
 			thingID:     "",
@@ -2565,7 +2565,7 @@ func TestConnect(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:  "connect thing to channel successfully",
+			desc:  "connect thing to a channel successfully",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2576,7 +2576,7 @@ func TestConnect(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:  "connect thing to channel with invalid token",
+			desc:  "connect thing to a channel with invalid token",
 			token: inValidToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2587,7 +2587,7 @@ func TestConnect(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "connect thing to channel with empty channel id",
+			desc:  "connect thing to a channel with empty channel id",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: "",
@@ -2598,7 +2598,7 @@ func TestConnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "connect thing to channel with empty thing id",
+			desc:  "connect thing to a channel with empty thing id",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2609,7 +2609,7 @@ func TestConnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "connect thing to channel with invalid request body",
+			desc:  "connect thing to a channel with invalid request body",
 			token: validToken,
 			reqBody: map[string]interface{}{
 				"channel_id": make(chan int),
@@ -2619,7 +2619,7 @@ func TestConnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "connect thing to channel with invalid content type",
+			desc:  "connect thing to a channel with invalid content type",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2662,7 +2662,7 @@ func TestDisconnect(t *testing.T) {
 		err         error
 	}{
 		{
-			desc:  "Disconnect thing from channel successfully",
+			desc:  "Disconnect thing from a channel successfully",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2673,7 +2673,7 @@ func TestDisconnect(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:  "Disconnect thing from channel with invalid token",
+			desc:  "Disconnect thing from a channel with invalid token",
 			token: inValidToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2684,7 +2684,7 @@ func TestDisconnect(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "Disconnect thing from channel with empty channel id",
+			desc:  "Disconnect thing from a channel with empty channel id",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: "",
@@ -2695,7 +2695,7 @@ func TestDisconnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "Disconnect thing from channel with empty thing id",
+			desc:  "Disconnect thing from a channel with empty thing id",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,
@@ -2706,7 +2706,7 @@ func TestDisconnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "Disconnect thing from channel with invalid request body",
+			desc:  "Disconnect thing from a channel with invalid request body",
 			token: validToken,
 			reqBody: map[string]interface{}{
 				"channel_id": make(chan int),
@@ -2716,7 +2716,7 @@ func TestDisconnect(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:  "Disconnect thing from channel with invalid content type",
+			desc:  "Disconnect thing from a channel with invalid content type",
 			token: validToken,
 			reqBody: groupReqBody{
 				ChannelID: validID,

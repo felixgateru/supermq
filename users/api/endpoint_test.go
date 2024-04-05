@@ -2910,7 +2910,7 @@ func TestAssignUsers(t *testing.T) {
 		err     error
 	}{
 		{
-			desc:    "assign users to group successfully",
+			desc:    "assign users to a group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2921,7 +2921,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:    "assign users to group with invalid token",
+			desc:    "assign users to a group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2932,7 +2932,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "assign users to group with empty token",
+			desc:    "assign users to a group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2943,7 +2943,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "assign users to group with empty group id",
+			desc:    "assign users to a group with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -2954,7 +2954,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with empty relation",
+			desc:    "assign users to a group with empty relation",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2965,7 +2965,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with empty user ids",
+			desc:    "assign users to a group with empty user ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -2976,7 +2976,7 @@ func TestAssignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign users to group with invalid request body",
+			desc:    "assign users to a group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -3018,7 +3018,7 @@ func TestUnassignUsers(t *testing.T) {
 		err     error
 	}{
 		{
-			desc:    "unassign users from group successfully",
+			desc:    "unassign users from a group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3029,7 +3029,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:    "unassign users from group with invalid token",
+			desc:    "unassign users from a group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3040,7 +3040,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "unassign users from group with empty token",
+			desc:    "unassign users from a group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3051,7 +3051,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "unassign users from group with empty group id",
+			desc:    "unassign users from a group with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -3062,7 +3062,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users from group with empty relation",
+			desc:    "unassign users from a group with empty relation",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3073,7 +3073,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users from group with empty user ids",
+			desc:    "unassign users from a group with empty user ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3084,7 +3084,7 @@ func TestUnassignUsers(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign users from group with invalid request body",
+			desc:    "unassign users from a group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -3125,7 +3125,7 @@ func TestAssignGroups(t *testing.T) {
 		err     error
 	}{
 		{
-			desc:    "assign groups to group successfully",
+			desc:    "assign groups to a parent group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3135,7 +3135,7 @@ func TestAssignGroups(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:    "assign groups to group with invalid token",
+			desc:    "assign groups to a parent group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3145,7 +3145,7 @@ func TestAssignGroups(t *testing.T) {
 			err:    svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "assign groups to group with empty token",
+			desc:    "assign groups to a parent group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3155,7 +3155,7 @@ func TestAssignGroups(t *testing.T) {
 			err:    apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "assign groups to group with empty group id",
+			desc:    "assign groups to a parent group with empty parent group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -3165,7 +3165,7 @@ func TestAssignGroups(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign groups to group with empty group ids",
+			desc:    "assign groups to a parent group with empty group ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3175,7 +3175,7 @@ func TestAssignGroups(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "assign groups to group with invalid request body",
+			desc:    "assign groups to a parent group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
@@ -3216,7 +3216,7 @@ func TestUnassignGroups(t *testing.T) {
 		err     error
 	}{
 		{
-			desc:    "unassign groups from group successfully",
+			desc:    "unassign groups from a parent group successfully",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3226,7 +3226,7 @@ func TestUnassignGroups(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:    "unassign groups from group with invalid token",
+			desc:    "unassign groups from a parent group with invalid token",
 			token:   inValidToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3236,7 +3236,7 @@ func TestUnassignGroups(t *testing.T) {
 			err:    svcerr.ErrAuthentication,
 		},
 		{
-			desc:    "unassign groups from group with empty token",
+			desc:    "unassign groups from a parent group with empty token",
 			token:   "",
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3246,7 +3246,7 @@ func TestUnassignGroups(t *testing.T) {
 			err:    apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "unassign groups from group with empty group id",
+			desc:    "unassign groups from a parent group with empty group id",
 			token:   validToken,
 			groupID: "",
 			reqBody: groupReqBody{
@@ -3256,7 +3256,7 @@ func TestUnassignGroups(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign groups from group with empty group ids",
+			desc:    "unassign groups from a parent group with empty group ids",
 			token:   validToken,
 			groupID: validID,
 			reqBody: groupReqBody{
@@ -3266,7 +3266,7 @@ func TestUnassignGroups(t *testing.T) {
 			err:    apiutil.ErrValidation,
 		},
 		{
-			desc:    "unassign groups from group with invalid request body",
+			desc:    "unassign groups from a parent group with invalid request body",
 			token:   validToken,
 			groupID: validID,
 			reqBody: map[string]interface{}{
