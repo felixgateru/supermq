@@ -627,26 +627,6 @@ services:
         target: /things-grpc-server-ca${MG_THINGS_AUTH_GRPC_SERVER_CA_CERTS:+.crt}
         bind:
           create_host_path: true
-      - type: bind
-        source: ./ssl/certs/magistrala-server.crt
-        target: /ssl/certs/magistrala-server.crt
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ./ssl/certs/magistrala-server.key
-        target: /ssl/certs/magistrala-server.key
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ./ssl/certs/ca.crt
-        target: /ssl/certs/ca.crt
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ./ssl/certs/ca.key
-        target: /ssl/certs/ca.key
-        bind:
-          create_host_path: true
 
   ws-adapter:
     image: magistrala/ws:${MG_RELEASE_TAG}
