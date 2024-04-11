@@ -263,7 +263,7 @@ func toViewGroupRes(group groups.Group) viewGroupRes {
 	return view
 }
 
-func buildGroupsResponse(gp groups.Page, fbid bool) groupPageRes {
+func buildGroupsResponse(gp groups.Page, filterByID bool) groupPageRes {
 	res := groupPageRes{
 		pageRes: pageRes{
 			Total: gp.Total,
@@ -276,7 +276,7 @@ func buildGroupsResponse(gp groups.Page, fbid bool) groupPageRes {
 		view := viewGroupRes{
 			Group: group,
 		}
-		if fbid && group.Level == 0 {
+		if filterByID && group.Level == 0 {
 			continue
 		}
 		res.Groups = append(res.Groups, view)
