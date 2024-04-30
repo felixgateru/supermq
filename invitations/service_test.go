@@ -43,6 +43,7 @@ func TestSendInvitation(t *testing.T) {
 		err         error
 		authNErr    error
 		domainErr   error
+		domainErr1  error
 		adminErr    error
 		authorised  bool
 		issueErr    error
@@ -55,7 +56,22 @@ func TestSendInvitation(t *testing.T) {
 			req:         validInvitation,
 			err:         nil,
 			authNErr:    nil,
+			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  nil,
+			adminErr:    nil,
+			authorised:  true,
+			issueErr:    nil,
+			repoErr:     nil,
+		},
+		{
+			desc:        "existing domain member",
+			token:       validToken,
+			tokenUserID: testsutil.GenerateUUID(t),
+			req:         validInvitation,
+			err:         svcerr.ErrConflict,
+			authNErr:    nil,
 			domainErr:   nil,
+			domainErr1:  nil,
 			adminErr:    nil,
 			authorised:  true,
 			issueErr:    nil,
@@ -68,7 +84,8 @@ func TestSendInvitation(t *testing.T) {
 			req:         validInvitation,
 			err:         svcerr.ErrAuthentication,
 			authNErr:    svcerr.ErrAuthentication,
-			domainErr:   nil,
+			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  nil,
 			adminErr:    nil,
 			authorised:  false,
 			issueErr:    nil,
@@ -81,7 +98,8 @@ func TestSendInvitation(t *testing.T) {
 			req:         invitations.Invitation{Relation: "invalid"},
 			err:         apiutil.ErrInvalidRelation,
 			authNErr:    nil,
-			domainErr:   nil,
+			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  nil,
 			adminErr:    nil,
 			authorised:  false,
 			issueErr:    nil,
@@ -95,6 +113,7 @@ func TestSendInvitation(t *testing.T) {
 			err:         svcerr.ErrAuthorization,
 			authNErr:    nil,
 			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  svcerr.ErrAuthorization,
 			adminErr:    nil,
 			authorised:  false,
 			issueErr:    nil,
@@ -108,6 +127,7 @@ func TestSendInvitation(t *testing.T) {
 			err:         svcerr.ErrAuthorization,
 			authNErr:    nil,
 			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  svcerr.ErrAuthorization,
 			adminErr:    svcerr.ErrAuthorization,
 			authorised:  false,
 			issueErr:    nil,
@@ -120,7 +140,8 @@ func TestSendInvitation(t *testing.T) {
 			req:         validInvitation,
 			err:         svcerr.ErrAuthentication,
 			authNErr:    nil,
-			domainErr:   nil,
+			domainErr:   svcerr.ErrAuthorization,
+			domainErr1:  nil,
 			adminErr:    nil,
 			authorised:  true,
 			issueErr:    svcerr.ErrAuthentication,
@@ -138,7 +159,8 @@ func TestSendInvitation(t *testing.T) {
 			},
 			err:        nil,
 			authNErr:   nil,
-			domainErr:  nil,
+			domainErr:  svcerr.ErrAuthorization,
+			domainErr1: nil,
 			adminErr:   nil,
 			authorised: true,
 			issueErr:   nil,
@@ -151,8 +173,17 @@ func TestSendInvitation(t *testing.T) {
 			UserId: tc.tokenUserID,
 			Id:     testsutil.GenerateUUID(t) + "_" + tc.tokenUserID,
 		}
-		repocall := authsvc.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(idRes, tc.authNErr)
 		domainReq := magistrala.AuthorizeReq{
+			SubjectType: auth.UserType,
+			SubjectKind: auth.UsersKind,
+			Subject:     auth.EncodeDomainUserID(tc.req.DomainID, tc.req.UserID),
+			Permission:  auth.MembershipPermission,
+			ObjectType:  auth.DomainType,
+			Object:      tc.req.DomainID,
+		}
+		domaincall := authsvc.On("Authorize", context.Background(), &domainReq).Return(&magistrala.AuthorizeRes{Authorized: tc.authorised}, tc.domainErr)
+		repocall := authsvc.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(idRes, tc.authNErr)
+		domainReq1 := magistrala.AuthorizeReq{
 			SubjectType: auth.UserType,
 			SubjectKind: auth.UsersKind,
 			Subject:     idRes.GetId(),
@@ -160,7 +191,7 @@ func TestSendInvitation(t *testing.T) {
 			ObjectType:  auth.DomainType,
 			Object:      tc.req.DomainID,
 		}
-		domaincall := authsvc.On("Authorize", context.Background(), &domainReq).Return(&magistrala.AuthorizeRes{Authorized: tc.authorised}, tc.domainErr)
+		domaincall1 := authsvc.On("Authorize", context.Background(), &domainReq1).Return(&magistrala.AuthorizeRes{Authorized: tc.authorised}, tc.domainErr1)
 		platformReq := magistrala.AuthorizeReq{
 			SubjectType: auth.UserType,
 			SubjectKind: auth.UsersKind,
@@ -179,6 +210,7 @@ func TestSendInvitation(t *testing.T) {
 		assert.Equal(t, tc.err, err, tc.desc)
 		repocall.Unset()
 		domaincall.Unset()
+		domaincall1.Unset()
 		platformcall.Unset()
 		repocall1.Unset()
 		repocall2.Unset()

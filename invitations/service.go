@@ -29,6 +29,12 @@ func NewService(repo Repository, authClient magistrala.AuthServiceClient, sdk mg
 }
 
 func (svc *service) SendInvitation(ctx context.Context, token string, invitation Invitation) error {
+	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.UserID)
+	if err := svc.authorize(ctx, domainUserId, auth.MembershipPermission, auth.DomainType, invitation.DomainID); err == nil {
+		// return error if the user is already a member of the domain
+		return svcerr.ErrConflict
+	}
+
 	if err := CheckRelation(invitation.Relation); err != nil {
 		return err
 	}
