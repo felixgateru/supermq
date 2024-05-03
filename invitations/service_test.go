@@ -5,7 +5,6 @@ package invitations_test
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/invitations"
 	"github.com/absmach/magistrala/invitations/mocks"
+	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -69,7 +69,7 @@ func TestSendInvitation(t *testing.T) {
 			token:       validToken,
 			tokenUserID: testsutil.GenerateUUID(t),
 			req:         validInvitation,
-			err:         errors.Join(svcerr.ErrConflict, invitations.ErrMemberExist),
+			err:         errors.Wrap(svcerr.ErrConflict, invitations.ErrMemberExist),
 			authNErr:    nil,
 			domainErr:   nil,
 			domainErr1:  nil,

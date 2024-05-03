@@ -5,11 +5,11 @@ package invitations
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/auth"
+	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 )
@@ -45,7 +45,7 @@ func (svc *service) SendInvitation(ctx context.Context, token string, invitation
 	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.UserID)
 	if err := svc.authorize(ctx, domainUserId, auth.MembershipPermission, auth.DomainType, invitation.DomainID); err == nil {
 		// return error if the user is already a member of the domain
-		return errors.Join(svcerr.ErrConflict, ErrMemberExist)
+		return errors.Wrap(svcerr.ErrConflict, ErrMemberExist)
 	}
 
 	if err := svc.checkAdmin(ctx, user.GetId(), invitation.DomainID); err != nil {
@@ -193,11 +193,11 @@ func (svc *service) authorize(ctx context.Context, subj, perm, objType, obj stri
 	}
 	res, err := svc.auth.Authorize(ctx, req)
 	if err != nil {
-		return errors.Join(svcerr.ErrAuthorization, err)
+		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
 
 	if !res.GetAuthorized() {
-		return errors.Join(svcerr.ErrAuthorization, err)
+		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
 
 	return nil
