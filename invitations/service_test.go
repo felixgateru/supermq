@@ -5,6 +5,7 @@ package invitations_test
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"testing"
 	"time"
@@ -68,7 +69,7 @@ func TestSendInvitation(t *testing.T) {
 			token:       validToken,
 			tokenUserID: testsutil.GenerateUUID(t),
 			req:         validInvitation,
-			err:         svcerr.ErrConflict,
+			err:         errors.Join(svcerr.ErrConflict, invitations.ErrMemberExist),
 			authNErr:    nil,
 			domainErr:   nil,
 			domainErr1:  nil,
