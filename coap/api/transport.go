@@ -42,6 +42,7 @@ const (
 var (
 	errMalformedSubtopic = errors.New("malformed subtopic")
 	errBadOptions        = errors.New("bad options")
+	errMethodNotAllowed  = errors.New("method not allowed")
 )
 
 var (
@@ -95,23 +96,24 @@ func handler(w mux.ResponseWriter, m *mux.Message) {
 
 	switch m.Code() {
 	case codes.GET:
-		err = handleGet(m, w, msg, key)
 		resp.SetCode(codes.Content)
+		err = handleGet(m, w, msg, key)
 	case codes.POST:
 		resp.SetCode(codes.Created)
 		err = service.Publish(m.Context(), key, msg)
 	default:
-		err = svcerr.ErrNotFound
+		err = errMethodNotAllowed
 	}
 
 	if err != nil {
 		switch {
 		case err == errBadOptions:
 			resp.SetCode(codes.BadOption)
-		case err == svcerr.ErrNotFound:
-			resp.SetCode(codes.NotFound)
-		case errors.Contains(err, svcerr.ErrAuthorization),
-			errors.Contains(err, svcerr.ErrAuthentication):
+		case err == errMethodNotAllowed:
+			resp.SetCode(codes.MethodNotAllowed)
+		case errors.Contains(err, svcerr.ErrAuthorization):
+			resp.SetCode(codes.Forbidden)
+		case errors.Contains(err, svcerr.ErrAuthentication):
 			resp.SetCode(codes.Unauthorized)
 		default:
 			resp.SetCode(codes.InternalServerError)

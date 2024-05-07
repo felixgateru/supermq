@@ -42,9 +42,9 @@ type client struct {
 }
 
 // NewClient instantiates a new Observer.
-func NewClient(cc mux.Conn, tkn message.Token, l *slog.Logger) Client {
+func NewClient(conn mux.Conn, tkn message.Token, l *slog.Logger) Client {
 	return &client{
-		conn:    cc,
+		conn:    conn,
 		token:   tkn,
 		logger:  l,
 		observe: 0,
