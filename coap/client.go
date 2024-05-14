@@ -70,10 +70,6 @@ func (c *client) Token() string {
 }
 
 func (c *client) Handle(msg *messaging.Message) error {
-	if err := c.conn.Ping(c.conn.Context()); err != nil {
-		return nil
-	}
-
 	pm := c.conn.AcquireMessage(c.conn.Context())
 	defer c.conn.ReleaseMessage(pm)
 	pm.SetCode(codes.Content)
