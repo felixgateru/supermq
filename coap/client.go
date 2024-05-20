@@ -62,6 +62,7 @@ func (c *client) Cancel() error {
 	if err := c.conn.WriteMessage(pm); err != nil {
 		c.logger.Error(fmt.Sprintf("Error sending message: %s.", err))
 	}
+	c.conn.ReleaseMessage(pm)
 	return c.conn.Close()
 }
 
