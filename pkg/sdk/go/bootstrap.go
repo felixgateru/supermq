@@ -192,13 +192,16 @@ func (sdk mgSDK) UpdateBootstrapCerts(id, clientCert, clientKey, ca, token strin
 	}
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
+	if sdkerr != nil {
+		return BootstrapConfig{}, sdkerr
+	}
 
 	var bc BootstrapConfig
 	if err := json.Unmarshal(body, &bc); err != nil {
 		return BootstrapConfig{}, errors.NewSDKError(err)
 	}
 
-	return bc, sdkerr
+	return bc, nil
 }
 
 func (sdk mgSDK) UpdateBootstrapConnection(id string, channels []string, token string) errors.SDKError {
