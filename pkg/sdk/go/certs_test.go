@@ -143,7 +143,6 @@ func TestIssueCert(t *testing.T) {
 
 	for _, tc := range cases {
 		svcCall := svc.On("IssueCert", mock.Anything, tc.token, tc.thingID, tc.duration).Return(tc.cRes, tc.svcerr)
-
 		_, err := mgsdk.IssueCert(tc.thingID, tc.duration, tc.token)
 		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
 		svcCall.Unset()
