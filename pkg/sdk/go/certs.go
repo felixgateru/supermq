@@ -26,10 +26,10 @@ type Cert struct {
 	Expiration time.Time `json:"expiration,omitempty"`
 }
 
-func (sdk mgSDK) IssueCert(thingID, valid, token string) (Cert, errors.SDKError) {
+func (sdk mgSDK) IssueCert(thingID, validity, token string) (Cert, errors.SDKError) {
 	r := certReq{
-		ThingID: thingID,
-		Valid:   valid,
+		ThingID:  thingID,
+		Validity: validity,
 	}
 	d, err := json.Marshal(r)
 	if err != nil {
@@ -100,6 +100,6 @@ func (sdk mgSDK) RevokeCert(id, token string) (time.Time, errors.SDKError) {
 }
 
 type certReq struct {
-	ThingID string `json:"thing_id"`
-	Valid   string `json:"ttl"`
+	ThingID  string `json:"thing_id"`
+	Validity string `json:"ttl"`
 }
