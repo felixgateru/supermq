@@ -199,7 +199,7 @@ func TestIssueCert(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(tc.request),
 		}
-		svcCall := svc.On("IssueCert", mock.Anything, tc.token, tc.thingID, tc.ttl).Return(cert, tc.svcErr)
+		svcCall := svc.On("IssueCert", mock.Anything, tc.token, tc.thingID, tc.ttl).Return(tc.svcRes, tc.svcErr)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -255,7 +255,7 @@ func TestViewCert(t *testing.T) {
 			err:      apiutil.ErrBearerToken,
 		},
 		{
-			desc:     " view no existing cert",
+			desc:     "view non-existing cert",
 			token:    valid,
 			serialID: invalid,
 			status:   http.StatusNotFound,
@@ -466,7 +466,7 @@ func TestListSerials(t *testing.T) {
 			err:     apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "list with limit exceeding",
+			desc:    "list with limit exceeding max limit",
 			token:   valid,
 			thingID: thingID,
 			query:   "?limit=1000",
