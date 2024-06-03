@@ -943,7 +943,7 @@ type SDK interface {
 	// IssueCert issues a certificate for a thing required for mTLS.
 	//
 	// example:
-	//  cert, _ := sdk.IssueCert("thingID", "validity", "token")
+	//  cert, _ := sdk.IssueCert("thingID", "24h", "token")
 	//  fmt.Println(cert)
 	IssueCert(thingID, validity, token string) (Cert, errors.SDKError)
 
