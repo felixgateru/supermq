@@ -50,7 +50,6 @@ type testRequest struct {
 	method      string
 	url         string
 	contentType string
-	referer     string
 	token       string
 	body        io.Reader
 }
@@ -66,7 +65,6 @@ func (tr testRequest) make() (*http.Response, error) {
 	if tr.contentType != "" {
 		req.Header.Set("Content-Type", tr.contentType)
 	}
-	req.Header.Set("Referer", tr.referer)
 
 	return tr.client.Do(req)
 }
@@ -83,14 +81,8 @@ func TestIssueCert(t *testing.T) {
 	cs, svc := newCertServer()
 	defer cs.Close()
 
-	validReqString := `{
-		"thing_id": "%s",
-		"ttl": "%s"
-	  }`
-	invalidReqString := `{
-		"thing_id": "%s",
-		"ttl": %s
-	}`
+	validReqString := `{"thing_id": "%s","ttl": "%s"}`
+	invalidReqString := `{"thing_id": "%s","ttl": %s}`
 
 	cases := []struct {
 		desc        string
