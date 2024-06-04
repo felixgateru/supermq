@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,21 +23,37 @@ import (
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/groups"
 	gmocks "github.com/absmach/magistrala/pkg/groups/mocks"
+	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
-	api "github.com/absmach/magistrala/things/api/http"
+	thapi "github.com/absmach/magistrala/things/api/http"
 	thmocks "github.com/absmach/magistrala/things/mocks"
+	usapi "github.com/absmach/magistrala/users/api"
+	usmocks "github.com/absmach/magistrala/users/mocks"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	channelName    = "channelName"
+	newName        = "newName"
+	newDescription = "newDescription"
+	channel        = generateTestChannel(&testing.T{})
+	group          = convertChannel(channel)
+)
+
 func setupChannels() (*httptest.Server, *gmocks.Service) {
 	tsvc := new(thmocks.Service)
+	usvc := new(usmocks.Service)
 	gsvc := new(gmocks.Service)
 	logger := mglog.NewMock()
+	provider := new(oauth2mocks.Provider)
+	provider.On("Name").Return("test")
+
 	mux := chi.NewRouter()
 
-	api.MakeHandler(tsvc, gsvc, mux, logger, "")
+	thapi.MakeHandler(tsvc, gsvc, mux, logger, "")
+	usapi.MakeHandler(usvc, gsvc, mux, logger, "", passRegex, provider)
 	return httptest.NewServer(mux), gsvc
 }
 
@@ -44,37 +61,24 @@ func TestCreateChannel(t *testing.T) {
 	ts, gsvc := setupChannels()
 	defer ts.Close()
 
-	channel := sdk.Channel{
-		Name:     "channelName",
-		Metadata: validMetadata,
-		Status:   mgclients.EnabledStatus.String(),
-	}
-
-	groupMeta := groups.Group{
+	createGroupReq := groups.Group{
 		Name:     channel.Name,
 		Metadata: mgclients.Metadata{"role": "client"},
 		Status:   mgclients.EnabledStatus,
 	}
 
-	createdAt, err := time.Parse(time.RFC3339, "2023-03-03T00:00:00Z") // fix
-	assert.Nil(t, err, fmt.Sprintf("unexpected error %s", err))
-	updatedAt := createdAt
-	group := groups.Group{
-		ID:          testsutil.GenerateUUID(&testing.T{}),
-		Domain:      testsutil.GenerateUUID(&testing.T{}),
-		Name:        channel.Name,
-		Description: channel.Description,
-		Metadata:    mgclients.Metadata{"role": "client"},
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		UpdatedBy:   testsutil.GenerateUUID(&testing.T{}),
-		Status:      mgclients.EnabledStatus,
+	channelReq := sdk.Channel{
+		Name:     channel.Name,
+		Metadata: validMetadata,
+		Status:   mgclients.EnabledStatus.String(),
 	}
 
 	channelKind := "new_channel"
 	parentID := testsutil.GenerateUUID(&testing.T{})
 	pGroup := group
 	pGroup.Parent = parentID
+	pChannel := channel
+	pChannel.ParentID = parentID
 
 	iGroup := group
 	iGroup.Metadata = mgclients.Metadata{
@@ -86,126 +90,135 @@ func TestCreateChannel(t *testing.T) {
 	}
 	mgsdk := sdk.NewSDK(conf)
 	cases := []struct {
-		desc      string
-		channel   sdk.Channel
-		token     string
-		groupMeta groups.Group
-		svcRes    groups.Group
-		svcErr    error
-		err       errors.SDKError
+		desc           string
+		channelReq     sdk.Channel
+		token          string
+		createGroupReq groups.Group
+		svcRes         groups.Group
+		svcErr         error
+		response       sdk.Channel
+		err            errors.SDKError
 	}{
 		{
-			desc:      "create channel successfully",
-			channel:   channel,
-			token:     validToken,
-			groupMeta: groupMeta,
-			svcRes:    group,
-			svcErr:    nil,
-			err:       nil,
+			desc:           "create channel successfully",
+			channelReq:     channelReq,
+			token:          validToken,
+			createGroupReq: createGroupReq,
+			svcRes:         group,
+			svcErr:         nil,
+			response:       channel,
+			err:            nil,
 		},
 		{
-			desc:      "create channel with existing name",
-			channel:   channel,
-			token:     validToken,
-			groupMeta: groupMeta,
-			svcRes:    group,
-			svcErr:    nil,
-			err:       nil,
+			desc:           "create channel with existing name",
+			channelReq:     channelReq,
+			token:          validToken,
+			createGroupReq: createGroupReq,
+			svcRes:         groups.Group{},
+			svcErr:         svcerr.ErrCreateEntity,
+			response:       sdk.Channel{},
+			err:            errors.NewSDKErrorWithStatus(svcerr.ErrCreateEntity, http.StatusUnprocessableEntity),
 		},
 		{
-			desc: "update channel that can't be marshalled",
-			channel: sdk.Channel{
+			desc: "create channel that can't be marshalled",
+			channelReq: sdk.Channel{
 				Name: "test",
 				Metadata: map[string]interface{}{
 					"test": make(chan int),
 				},
 			},
-			token:     validToken,
-			groupMeta: groups.Group{},
-			svcRes:    groups.Group{},
-			svcErr:    nil,
-			err:       errors.NewSDKError(fmt.Errorf("json: unsupported type: chan int")),
+			token:          validToken,
+			createGroupReq: groups.Group{},
+			svcRes:         groups.Group{},
+			svcErr:         nil,
+			response:       sdk.Channel{},
+			err:            errors.NewSDKError(errors.New("json: unsupported type: chan int")),
 		},
 		{
 			desc: "create channel with parent",
-			channel: sdk.Channel{
+			channelReq: sdk.Channel{
 				Name:     channel.Name,
 				ParentID: parentID,
 				Status:   mgclients.EnabledStatus.String(),
 			},
 			token: validToken,
-			groupMeta: groups.Group{
+			createGroupReq: groups.Group{
 				Name:   channel.Name,
 				Parent: parentID,
 				Status: mgclients.EnabledStatus,
 			},
-			svcRes: pGroup,
-			svcErr: nil,
-			err:    nil,
+			svcRes:   pGroup,
+			svcErr:   nil,
+			response: pChannel,
+			err:      nil,
 		},
 		{
 			desc: "create channel with invalid parent",
-			channel: sdk.Channel{
+			channelReq: sdk.Channel{
 				Name:     channel.Name,
 				ParentID: wrongID,
 				Status:   mgclients.EnabledStatus.String(),
 			},
 			token: validToken,
-			groupMeta: groups.Group{
+			createGroupReq: groups.Group{
 				Name:   channel.Name,
 				Parent: wrongID,
 				Status: mgclients.EnabledStatus,
 			},
-			svcRes: groups.Group{},
-			svcErr: svcerr.ErrCreateEntity,
-			err:    errors.NewSDKErrorWithStatus(svcerr.ErrCreateEntity, http.StatusUnprocessableEntity),
+			svcRes:   groups.Group{},
+			svcErr:   svcerr.ErrCreateEntity,
+			response: sdk.Channel{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrCreateEntity, http.StatusUnprocessableEntity),
 		},
 		{
 			desc: "create channel with missing name",
-			channel: sdk.Channel{
+			channelReq: sdk.Channel{
 				Status: mgclients.EnabledStatus.String(),
 			},
-			token:     validToken,
-			groupMeta: groups.Group{},
-			svcRes:    groups.Group{},
-			svcErr:    nil,
-			err:       errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrNameSize), http.StatusBadRequest),
+			token:          validToken,
+			createGroupReq: groups.Group{},
+			svcRes:         groups.Group{},
+			svcErr:         nil,
+			response:       sdk.Channel{},
+			err:            errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrNameSize), http.StatusBadRequest),
 		},
 		{
 			desc: "create a channel with every field defined",
-			channel: sdk.Channel{
+			channelReq: sdk.Channel{
 				ID:          group.ID,
 				ParentID:    parentID,
 				Name:        channel.Name,
 				Description: description,
 				Metadata:    validMetadata,
-				CreatedAt:   createdAt,
-				UpdatedAt:   updatedAt,
+				CreatedAt:   group.CreatedAt,
+				UpdatedAt:   group.UpdatedAt,
 				Status:      mgclients.EnabledStatus.String(),
 			},
 			token: validToken,
-			groupMeta: groups.Group{
+			createGroupReq: groups.Group{
 				ID:          group.ID,
 				Parent:      parentID,
 				Name:        channel.Name,
 				Description: description,
 				Metadata:    mgclients.Metadata{"role": "client"},
-				CreatedAt:   createdAt,
-				UpdatedAt:   updatedAt,
+				CreatedAt:   group.CreatedAt,
+				UpdatedAt:   group.UpdatedAt,
 				Status:      mgclients.EnabledStatus,
 			},
-			svcRes: group,
-			svcErr: nil,
-			err:    nil,
+			svcRes:   pGroup,
+			svcErr:   nil,
+			response: pChannel,
+			err:      nil,
 		},
 		{
-			desc:      "create channel with response that can't be unmarshalled",
-			channel:   channel,
-			token:     validToken,
-			groupMeta: groupMeta,
-			svcRes:    iGroup,
-			svcErr:    nil,
-			err:       errors.NewSDKError(fmt.Errorf("unexpected end of JSON input")),
+			desc:           "create channel with response that can't be unmarshalled",
+			channelReq:     channelReq,
+			token:          validToken,
+			createGroupReq: createGroupReq,
+			svcRes:         iGroup,
+			svcErr:         nil,
+			response:       sdk.Channel{},
+			err:            errors.NewSDKError(errors.New("unexpected end of JSON input")),
 		},
 	}
 	for _, tc := range cases {
@@ -249,8 +262,6 @@ func TestListChannels(t *testing.T) {
 		chs = append(chs, gr)
 	}
 
-	memberKind := "users"
-
 	cases := []struct {
 		desc           string
 		token          string
@@ -264,11 +275,11 @@ func TestListChannels(t *testing.T) {
 		groupsPageMeta groups.Page
 		svcRes         groups.Page
 		svcErr         error
+		response       sdk.ChannelsPage
 		err            errors.SDKError
-		response       []sdk.Channel
 	}{
 		{
-			desc:   "get a list of channels",
+			desc:   "list channels successfully",
 			token:  validToken,
 			limit:  limit,
 			offset: offset,
@@ -281,12 +292,22 @@ func TestListChannels(t *testing.T) {
 				Permission: "view",
 				Direction:  -1,
 			},
-			svcRes:   groups.Page{Groups: convertChannels(chs[offset:limit])},
-			err:      nil,
-			response: chs[offset:limit],
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: uint64(len(chs[offset:limit])),
+				},
+				Groups: convertChannels(chs[offset:limit]),
+			},
+			response: sdk.ChannelsPage{
+				PageRes: sdk.PageRes{
+					Total: uint64(len(chs[offset:limit])),
+				},
+				Channels: chs[offset:limit],
+			},
+			err: nil,
 		},
 		{
-			desc:   "get a list of channels with invalid token",
+			desc:   "list channels with invalid token",
 			token:  invalidToken,
 			offset: offset,
 			limit:  limit,
@@ -300,22 +321,22 @@ func TestListChannels(t *testing.T) {
 			},
 			svcRes:   groups.Page{},
 			svcErr:   svcerr.ErrAuthentication,
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
-			response: nil,
 		},
 		{
-			desc:           "get a list of channels with empty token",
+			desc:           "list channels with empty token",
 			token:          "",
 			offset:         offset,
 			limit:          limit,
 			groupsPageMeta: groups.Page{},
 			svcRes:         groups.Page{},
 			svcErr:         nil,
+			response:       sdk.ChannelsPage{},
 			err:            errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
-			response:       nil,
 		},
 		{
-			desc:   "get a list of channels with zero limit",
+			desc:   "list channels with zero limit",
 			token:  token,
 			offset: offset,
 			limit:  0,
@@ -327,49 +348,134 @@ func TestListChannels(t *testing.T) {
 				Permission: "view",
 				Direction:  -1,
 			},
-			svcRes:   groups.Page{Groups: convertChannels(chs[offset:limit])},
-			svcErr:   nil,
-			err:      nil,
-			response: chs[offset:limit],
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: uint64(len(chs[offset:])),
+				},
+				Groups: convertChannels(chs[offset:limit]),
+			},
+			svcErr: nil,
+			response: sdk.ChannelsPage{
+				PageRes: sdk.PageRes{
+					Total: uint64(len(chs[offset:])),
+				},
+				Channels: chs[offset:limit],
+			},
+			err: nil,
 		},
 		{
-			desc:           "get a list of channels with limit greater than max",
+			desc:           "list channels with limit greater than max",
 			token:          token,
 			offset:         offset,
 			limit:          110,
 			groupsPageMeta: groups.Page{},
 			svcRes:         groups.Page{},
 			svcErr:         nil,
+			response:       sdk.ChannelsPage{},
 			err:            errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrLimitSize), http.StatusBadRequest),
-			response:       []sdk.Channel(nil),
 		},
-		// {
-		// 	desc:     "get a list of channels with given name",
-		// 	token:    token,
-		// 	offset:   0,
-		// 	limit:    1,
-		// 	err:      nil,
-		// 	metadata: sdk.Metadata{},
-		// 	response: []sdk.Channel{chs[89]},
-		// },
-		// {
-		// 	desc:     "get a list of channels with level",
-		// 	token:    token,
-		// 	offset:   0,
-		// 	limit:    1,
-		// 	level:    1,
-		// 	err:      nil,
-		// 	response: []sdk.Channel{chs[0]},
-		// },
-		// {
-		// 	desc:     "get a list of channels with metadata",
-		// 	token:    token,
-		// 	offset:   0,
-		// 	limit:    1,
-		// 	err:      nil,
-		// 	metadata: sdk.Metadata{},
-		// 	response: []sdk.Channel{chs[89]},
-		// },
+		{
+			desc:   "list channels with level",
+			token:  token,
+			offset: 0,
+			limit:  1,
+			level:  1,
+			groupsPageMeta: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: offset,
+					Limit:  1,
+				},
+				Level:      1,
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+				Groups: convertChannels(chs[0:1]),
+			},
+			svcErr: nil,
+			response: sdk.ChannelsPage{
+				PageRes: sdk.PageRes{
+					Total: 1,
+				},
+				Channels: chs[0:1],
+			},
+			err: nil,
+		},
+		{
+			desc:     "list channels with metadata",
+			token:    token,
+			offset:   0,
+			limit:    10,
+			metadata: sdk.Metadata{"name": "thing_89"},
+			groupsPageMeta: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset:   offset,
+					Limit:    10,
+					Metadata: mgclients.Metadata{"name": "thing_89"},
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+				Groups: convertChannels([]sdk.Channel{chs[89]}),
+			},
+			svcErr: nil,
+			response: sdk.ChannelsPage{
+				PageRes: sdk.PageRes{
+					Total: 1,
+				},
+				Channels: []sdk.Channel{chs[89]},
+			},
+			err: nil,
+		},
+		{
+			desc:   "list channels with invalid metadata",
+			token:  token,
+			offset: 0,
+			limit:  10,
+			metadata: sdk.Metadata{
+				"test": make(chan int),
+			},
+			groupsPageMeta: groups.Page{},
+			svcRes:         groups.Page{},
+			svcErr:         nil,
+			response:       sdk.ChannelsPage{},
+			err:            errors.NewSDKError(errors.New("json: unsupported type: chan int")),
+		},
+		{
+			desc:   "list channels with service response that can't be unmarshalled",
+			token:  token,
+			offset: 0,
+			limit:  10,
+			groupsPageMeta: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: 0,
+					Limit:  10,
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+				Groups: []groups.Group{{
+					ID: generateUUID(t),
+					Metadata: mgclients.Metadata{
+						"test": make(chan int),
+					},
+				}},
+			},
+			svcErr:   nil,
+			response: sdk.ChannelsPage{},
+			err:      errors.NewSDKError(errors.New("unexpected end of JSON input")),
+		},
 	}
 
 	for _, tc := range cases {
@@ -635,13 +741,13 @@ func TestListChannels(t *testing.T) {
 // 	auth.Test(t)
 // 	defer ts.Close()
 
-// 	conf := sdk.Config{
-// 		ThingsURL: ts.URL,
-// 	}
-// 	mgsdk := sdk.NewSDK(conf)
+	conf := sdk.Config{
+		ThingsURL: ts.URL,
+	}
+	mgsdk := sdk.NewSDK(conf)
 
-// 	nChannels := uint64(10)
-// 	aChannels := []sdk.Channel{}
+	nChannels := uint64(10)
+	aChannels := []sdk.Channel{}
 
 // 	for i := uint64(1); i < nChannels; i++ {
 // 		channel := sdk.Channel{
@@ -909,4 +1015,21 @@ func toIDs(objects interface{}) []string {
 	}
 
 	return ids
+}
+
+func generateTestChannel(t *testing.T) sdk.Channel {
+	createdAt, err := time.Parse(time.RFC3339, "2023-03-03T00:00:00Z")
+	assert.Nil(t, err, fmt.Sprintf("unexpected error %s", err))
+	updatedAt := createdAt
+	ch := sdk.Channel{
+		ID:          testsutil.GenerateUUID(&testing.T{}),
+		DomainID:    testsutil.GenerateUUID(&testing.T{}),
+		Name:        channelName,
+		Description: description,
+		Metadata:    sdk.Metadata{"role": "client"},
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+		Status:      mgclients.EnabledStatus.String(),
+	}
+	return ch
 }

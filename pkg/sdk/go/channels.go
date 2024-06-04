@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/absmach/magistrala/internal/apiutil"
 	"github.com/absmach/magistrala/pkg/errors"
 )
 
@@ -90,6 +91,9 @@ func (sdk mgSDK) ChannelsByThing(thingID string, pm PageMetadata, token string) 
 }
 
 func (sdk mgSDK) Channel(id, token string) (Channel, errors.SDKError) {
+	if id == "" {
+		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.thingsURL, channelsEndpoint, id)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
@@ -127,6 +131,9 @@ func (sdk mgSDK) UpdateChannel(c Channel, token string) (Channel, errors.SDKErro
 		return Channel{}, errors.NewSDKError(err)
 	}
 
+	if c.ID == "" {
+		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.thingsURL, channelsEndpoint, c.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusOK)
@@ -275,6 +282,9 @@ func (sdk mgSDK) DisableChannel(id, token string) (Channel, errors.SDKError) {
 }
 
 func (sdk mgSDK) DeleteChannel(id, token string) errors.SDKError {
+	if id == "" {
+		return errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.thingsURL, channelsEndpoint, id)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 	return sdkerr
