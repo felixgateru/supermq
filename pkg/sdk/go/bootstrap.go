@@ -132,17 +132,17 @@ func (sdk mgSDK) Bootstraps(pm PageMetadata, token string) (BootstrapPage, error
 	return bb, nil
 }
 
-func (sdk mgSDK) Whitelist(cfg BootstrapConfig, token string) errors.SDKError {
-	data, err := json.Marshal(BootstrapConfig{State: cfg.State})
+func (sdk mgSDK) Whitelist(thingID string, state int, token string) errors.SDKError {
+	data, err := json.Marshal(BootstrapConfig{State: state})
 	if err != nil {
 		return errors.NewSDKError(err)
 	}
 
-	if cfg.ThingID == "" {
+	if thingID == "" {
 		return errors.NewSDKError(apiutil.ErrNotFoundParam)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, whitelistEndpoint, cfg.ThingID)
+	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, whitelistEndpoint, thingID)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusCreated, http.StatusOK)
 

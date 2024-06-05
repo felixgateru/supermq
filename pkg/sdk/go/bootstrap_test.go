@@ -119,6 +119,12 @@ var (
 	errJsonEOF     = errors.New("unexpected end of JSON input")
 )
 
+type readerChannelRes struct {
+	ID       string      `json:"id"`
+	Name     string      `json:"name,omitempty"`
+	Metadata interface{} `json:"metadata,omitempty"`
+}
+
 func setupBootstrap() (*httptest.Server, *bmocks.Service, *bmocks.ConfigReader) {
 	bsvc := new(bmocks.Service)
 	reader := new(bmocks.ConfigReader)
@@ -144,13 +150,14 @@ func TestAddBootstrap(t *testing.T) {
 	neReqId.ThingID = "non-existent"
 
 	cases := []struct {
-		desc   string
-		token  string
-		cfg    sdk.BootstrapConfig
-		svcReq bootstrap.Config
-		svcRes bootstrap.Config
-		svcErr error
-		err    errors.SDKError
+		desc     string
+		token    string
+		cfg      sdk.BootstrapConfig
+		svcReq   bootstrap.Config
+		svcRes   bootstrap.Config
+		svcErr   error
+		response string
+		err      errors.SDKError
 	}{
 		{
 			desc:   "add successfully",
@@ -222,13 +229,17 @@ func TestAddBootstrap(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		svcCall := bsvc.On("Add", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
-		bsId, err := mgsdk.AddBootstrap(tc.cfg, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		if err == nil {
-			assert.Equal(t, bootstrapConfig.ThingID, bsId, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, bootstrapConfig.ThingID, bsId))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("Add", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
+			resp, err := mgsdk.AddBootstrap(tc.cfg, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if err == nil {
+				assert.Equal(t, bootstrapConfig.ThingID, resp, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, bootstrapConfig.ThingID, resp))
+				ok := svcCall.Parent.AssertCalled(t, "Add", mock.Anything, tc.token, tc.svcReq)
+				assert.True(t, ok, fmt.Sprintf("%s: expected Add to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -272,7 +283,7 @@ func TestListBootstraps(t *testing.T) {
 		pageMeta    sdk.PageMetadata
 		svcResponse bootstrap.ConfigsPage
 		svcErr      error
-		page        sdk.BootstrapPage
+		response    sdk.BootstrapPage
 		err         errors.SDKError
 	}{
 		{
@@ -287,7 +298,10 @@ func TestListBootstraps(t *testing.T) {
 				Offset:  0,
 				Configs: []bootstrap.Config{bootstrapConfig},
 			},
-			page: sdk.BootstrapPage{
+			response: sdk.BootstrapPage{
+				PageRes: sdk.PageRes{
+					Total: 1,
+				},
 				Configs: []sdk.BootstrapConfig{configRes},
 			},
 			err: nil,
@@ -300,8 +314,8 @@ func TestListBootstraps(t *testing.T) {
 				Limit:  10,
 			},
 			svcResponse: bootstrap.ConfigsPage{},
-			page:        sdk.BootstrapPage{},
 			svcErr:      svcerr.ErrAuthentication,
+			response:    sdk.BootstrapPage{},
 			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
@@ -312,8 +326,8 @@ func TestListBootstraps(t *testing.T) {
 				Limit:  10,
 			},
 			svcResponse: bootstrap.ConfigsPage{},
-			page:        sdk.BootstrapPage{},
 			svcErr:      nil,
+			response:    sdk.BootstrapPage{},
 			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
@@ -327,8 +341,8 @@ func TestListBootstraps(t *testing.T) {
 				},
 			},
 			svcResponse: bootstrap.ConfigsPage{},
-			page:        sdk.BootstrapPage{},
 			svcErr:      nil,
+			response:    sdk.BootstrapPage{},
 			err:         errors.NewSDKError(errMarshalChan),
 		},
 		{
@@ -343,19 +357,23 @@ func TestListBootstraps(t *testing.T) {
 				Offset:  0,
 				Configs: []bootstrap.Config{unmarshalableConfig},
 			},
-			svcErr: nil,
-			page:   sdk.BootstrapPage{},
-			err:    errors.NewSDKError(errJsonEOF),
+			svcErr:   nil,
+			response: sdk.BootstrapPage{},
+			err:      errors.NewSDKError(errJsonEOF),
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit).Return(tc.svcResponse, tc.svcErr)
-		res, err := mgsdk.Bootstraps(tc.pageMeta, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		if err == nil {
-			assert.Equal(t, tc.page.Configs, res.Configs, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.page, res))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit).Return(tc.svcResponse, tc.svcErr)
+			resp, err := mgsdk.Bootstraps(tc.pageMeta, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+			if err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit)
+				assert.True(t, ok, fmt.Sprintf("%s: expected List to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -368,66 +386,84 @@ func TestWhiteList(t *testing.T) {
 	}
 	mgsdk := sdk.NewSDK(conf)
 
+	active := 1
+	inactive := 0
+
 	cases := []struct {
-		desc       string
-		token      string
-		cfg        sdk.BootstrapConfig
-		svcRequest string
-		svcErr     error
-		err        errors.SDKError
+		desc    string
+		token   string
+		thingID string
+		state   int
+		svcReq  bootstrap.State
+		svcErr  error
+		err     errors.SDKError
 	}{
 		{
-			desc:       "whitelist successfully",
-			token:      validToken,
-			cfg:        sdkBootstrapConfig,
-			svcRequest: bootstrapConfig.ThingID,
-			svcErr:     nil,
-			err:        nil,
+			desc:    "whitelist to active state successfully",
+			token:   validToken,
+			thingID: thingId,
+			state:   active,
+			svcReq:  bootstrap.Active,
+			svcErr:  nil,
+			err:     nil,
 		},
 		{
-			desc:       "whitelist with invalid token",
-			token:      invalidToken,
-			cfg:        sdkBootstrapConfig,
-			svcRequest: bootstrapConfig.ThingID,
-			svcErr:     svcerr.ErrAuthentication,
-			err:        errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:    "whitelist to inactive state successfully",
+			token:   validToken,
+			thingID: thingId,
+			state:   inactive,
+			svcReq:  bootstrap.Inactive,
+			svcErr:  nil,
+			err:     nil,
 		},
 		{
-			desc:       "whitelist with empty token",
-			token:      "",
-			cfg:        sdkBootstrapConfig,
-			svcRequest: bootstrapConfig.ThingID,
-			svcErr:     nil,
-			err:        errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+			desc:    "whitelist with invalid token",
+			token:   invalidToken,
+			thingID: thingId,
+			state:   active,
+			svcReq:  bootstrap.Active,
+			svcErr:  svcerr.ErrAuthentication,
+			err:     errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:  "whitelist with invalid state",
-			token: validToken,
-			cfg: sdk.BootstrapConfig{
-				ThingID: thingId,
-				State:   -1,
-			},
-			svcRequest: bootstrapConfig.ThingID,
-			svcErr:     nil,
-			err:        errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBootstrapState), http.StatusBadRequest),
+			desc:    "whitelist with empty token",
+			token:   "",
+			thingID: thingId,
+			state:   active,
+			svcReq:  bootstrap.Active,
+			svcErr:  nil,
+			err:     errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
-			desc:  "whitelist with empty thing Id",
-			token: validToken,
-			cfg: sdk.BootstrapConfig{
-				ThingID: "",
-				State:   0,
-			},
-			svcRequest: "",
-			svcErr:     nil,
-			err:        errors.NewSDKError(apiutil.ErrNotFoundParam),
+			desc:    "whitelist with invalid state",
+			token:   validToken,
+			thingID: thingId,
+			state:   -1,
+			svcReq:  bootstrap.Active,
+			svcErr:  nil,
+			err:     errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBootstrapState), http.StatusBadRequest),
+		},
+		{
+			desc:    "whitelist with empty thing Id",
+			token:   validToken,
+			thingID: "",
+			state:   1,
+			svcReq:  bootstrap.Active,
+			svcErr:  nil,
+			err:     errors.NewSDKError(apiutil.ErrNotFoundParam),
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("ChangeState", mock.Anything, tc.token, tc.svcRequest, bootstrap.Active).Return(tc.svcErr)
-		err := mgsdk.Whitelist(tc.cfg, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("ChangeState", mock.Anything, tc.token, tc.thingID, tc.svcReq).Return(tc.svcErr)
+			err := mgsdk.Whitelist(tc.thingID, tc.state, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "ChangeState", mock.Anything, tc.token, tc.thingID, tc.svcReq)
+				assert.True(t, ok, fmt.Sprintf("%s: expected ChangeState to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -451,52 +487,55 @@ func TestViewBootstrap(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc        string
-		token       string
-		id          string
-		svcResponse bootstrap.Config
-		svcErr      error
-		cfgResponse sdk.BootstrapConfig
-		err         errors.SDKError
+		desc     string
+		token    string
+		id       string
+		svcResp  bootstrap.Config
+		svcErr   error
+		response sdk.BootstrapConfig
+		err      errors.SDKError
 	}{
 		{
-			desc:        "view successfully",
-			token:       validToken,
-			id:          thingId,
-			svcResponse: bootstrapConfig,
-			svcErr:      nil,
-			cfgResponse: viewBoostrapRes,
-			err:         nil,
+			desc:     "view successfully",
+			token:    validToken,
+			id:       thingId,
+			svcResp:  bootstrapConfig,
+			svcErr:   nil,
+			response: viewBoostrapRes,
+			err:      nil,
 		},
 		{
-			desc:        "view with invalid token",
-			token:       invalidToken,
-			id:          thingId,
-			svcResponse: bootstrap.Config{},
-			svcErr:      svcerr.ErrAuthentication,
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:     "view with invalid token",
+			token:    invalidToken,
+			id:       thingId,
+			svcResp:  bootstrap.Config{},
+			svcErr:   svcerr.ErrAuthentication,
+			response: sdk.BootstrapConfig{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:        "view with empty token",
-			token:       "",
-			id:          thingId,
-			svcResponse: bootstrap.Config{},
-			svcErr:      nil,
-			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+			desc:     "view with empty token",
+			token:    "",
+			id:       thingId,
+			svcResp:  bootstrap.Config{},
+			svcErr:   nil,
+			response: sdk.BootstrapConfig{},
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
-			desc:        "view with non-existent thing Id",
-			token:       validToken,
-			id:          invalid,
-			svcResponse: bootstrap.Config{},
-			svcErr:      svcerr.ErrNotFound,
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrNotFound, http.StatusNotFound),
+			desc:     "view with non-existent thing Id",
+			token:    validToken,
+			id:       invalid,
+			svcResp:  bootstrap.Config{},
+			svcErr:   svcerr.ErrViewEntity,
+			response: sdk.BootstrapConfig{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrViewEntity, http.StatusBadRequest),
 		},
 		{
 			desc:  "view with response that cannot be unmarshalled",
 			token: validToken,
 			id:    thingId,
-			svcResponse: bootstrap.Config{
+			svcResp: bootstrap.Config{
 				ThingID: thingId,
 				Channels: []bootstrap.Channel{
 					{
@@ -507,18 +546,23 @@ func TestViewBootstrap(t *testing.T) {
 					},
 				},
 			},
-			svcErr: nil,
-			err:    errors.NewSDKError(errJsonEOF),
+			svcErr:   nil,
+			response: sdk.BootstrapConfig{},
+			err:      errors.NewSDKError(errJsonEOF),
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("View", mock.Anything, tc.token, tc.id).Return(tc.svcResponse, tc.svcErr)
-		res, err := mgsdk.ViewBootstrap(tc.id, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		if err == nil {
-			assert.Equal(t, tc.cfgResponse, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.cfgResponse, res))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("View", mock.Anything, tc.token, tc.id).Return(tc.svcResp, tc.svcErr)
+			resp, err := mgsdk.ViewBootstrap(tc.id, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+			if err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "View", mock.Anything, tc.token, tc.id)
+				assert.True(t, ok, fmt.Sprintf("%s: expected View to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -532,18 +576,18 @@ func TestUpdateBootstrap(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc       string
-		token      string
-		cfg        sdk.BootstrapConfig
-		svcRequest bootstrap.Config
-		svcErr     error
-		err        errors.SDKError
+		desc   string
+		token  string
+		cfg    sdk.BootstrapConfig
+		svcReq bootstrap.Config
+		svcErr error
+		err    errors.SDKError
 	}{
 		{
 			desc:  "update successfully",
 			token: validToken,
 			cfg:   sdkBootstrapConfig,
-			svcRequest: bootstrap.Config{
+			svcReq: bootstrap.Config{
 				ThingID: thingId,
 				Name:    bsName,
 				Content: content,
@@ -555,7 +599,7 @@ func TestUpdateBootstrap(t *testing.T) {
 			desc:  "update with invalid token",
 			token: invalidToken,
 			cfg:   sdkBootstrapConfig,
-			svcRequest: bootstrap.Config{
+			svcReq: bootstrap.Config{
 				ThingID: thingId,
 				Name:    bsName,
 				Content: content,
@@ -564,12 +608,12 @@ func TestUpdateBootstrap(t *testing.T) {
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:       "update with empty token",
-			token:      "",
-			cfg:        sdkBootstrapConfig,
-			svcRequest: bootstrap.Config{},
-			svcErr:     nil,
-			err:        errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+			desc:   "update with empty token",
+			token:  "",
+			cfg:    sdkBootstrapConfig,
+			svcReq: bootstrap.Config{},
+			svcErr: nil,
+			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
 			desc:  "update with config that cannot be marshalled",
@@ -588,7 +632,7 @@ func TestUpdateBootstrap(t *testing.T) {
 				CACert:      caCert,
 				Content:     content,
 			},
-			svcRequest: bootstrap.Config{
+			svcReq: bootstrap.Config{
 				ThingID: thingId,
 				Name:    bsName,
 				Content: content,
@@ -611,7 +655,7 @@ func TestUpdateBootstrap(t *testing.T) {
 				Content:     content,
 				Name:        bsName,
 			},
-			svcRequest: bootstrap.Config{
+			svcReq: bootstrap.Config{
 				ThingID: invalid,
 				Name:    bsName,
 				Content: content,
@@ -634,7 +678,7 @@ func TestUpdateBootstrap(t *testing.T) {
 				Content:     content,
 				Name:        bsName,
 			},
-			svcRequest: bootstrap.Config{
+			svcReq: bootstrap.Config{
 				ThingID: "",
 				Name:    bsName,
 				Content: content,
@@ -642,13 +686,30 @@ func TestUpdateBootstrap(t *testing.T) {
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(errors.New("unexpected end of JSON input"), http.StatusMethodNotAllowed),
 		},
+		{
+			desc:  "update with config with only thing Id",
+			token: validToken,
+			cfg: sdk.BootstrapConfig{
+				ThingID: thingId,
+			},
+			svcReq: bootstrap.Config{
+				ThingID: thingId,
+			},
+			svcErr: nil,
+			err:    nil,
+		},
 	}
-
 	for _, tc := range cases {
-		svcCall := bsvc.On("Update", mock.Anything, tc.token, tc.svcRequest).Return(tc.svcErr)
-		err := mgsdk.UpdateBootstrap(tc.cfg, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("Update", mock.Anything, tc.token, tc.svcReq).Return(tc.svcErr)
+			err := mgsdk.UpdateBootstrap(tc.cfg, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "Update", mock.Anything, tc.token, tc.svcReq)
+				assert.True(t, ok, fmt.Sprintf("%s: expected Update to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -669,69 +730,80 @@ func TestUpdateBootstrapCerts(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc        string
-		token       string
-		id          string
-		clientCert  string
-		clientKey   string
-		caCert      string
-		svcResponse bootstrap.Config
-		svcErr      error
-		response    sdk.BootstrapConfig
-		err         errors.SDKError
+		desc       string
+		token      string
+		id         string
+		clientCert string
+		clientKey  string
+		caCert     string
+		svcResp    bootstrap.Config
+		svcErr     error
+		response   sdk.BootstrapConfig
+		err        errors.SDKError
 	}{
 		{
-			desc:        "update certs successfully",
-			token:       validToken,
-			id:          thingId,
-			clientCert:  clientCert,
-			clientKey:   clientKey,
-			caCert:      caCert,
-			svcResponse: bootstrapConfig,
-			svcErr:      nil,
-			response:    updateconfigRes,
-			err:         nil,
+			desc:       "update certs successfully",
+			token:      validToken,
+			id:         thingId,
+			clientCert: clientCert,
+			clientKey:  clientKey,
+			caCert:     caCert,
+			svcResp:    bootstrapConfig,
+			svcErr:     nil,
+			response:   updateconfigRes,
+			err:        nil,
 		},
 		{
-			desc:        "update certs with invalid token",
-			token:       validToken,
-			id:          thingId,
-			clientCert:  clientCert,
-			clientKey:   clientKey,
-			caCert:      caCert,
-			svcResponse: bootstrap.Config{},
-			svcErr:      svcerr.ErrAuthentication,
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:       "update certs with invalid token",
+			token:      validToken,
+			id:         thingId,
+			clientCert: clientCert,
+			clientKey:  clientKey,
+			caCert:     caCert,
+			svcResp:    bootstrap.Config{},
+			svcErr:     svcerr.ErrAuthentication,
+			err:        errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:        "update certs with empty token",
-			token:       "",
-			id:          thingId,
-			clientCert:  clientCert,
-			clientKey:   clientKey,
-			caCert:      caCert,
-			svcResponse: bootstrap.Config{},
-			svcErr:      nil,
-			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+			desc:       "update certs with empty token",
+			token:      "",
+			id:         thingId,
+			clientCert: clientCert,
+			clientKey:  clientKey,
+			caCert:     caCert,
+			svcResp:    bootstrap.Config{},
+			svcErr:     nil,
+			err:        errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
-			desc:        "update certs with non-existent thing Id",
-			token:       validToken,
-			id:          invalid,
-			clientCert:  clientCert,
-			clientKey:   clientKey,
-			caCert:      caCert,
-			svcResponse: bootstrap.Config{},
-			svcErr:      svcerr.ErrNotFound,
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrNotFound, http.StatusNotFound),
+			desc:       "update certs with non-existent thing Id",
+			token:      validToken,
+			id:         invalid,
+			clientCert: clientCert,
+			clientKey:  clientKey,
+			caCert:     caCert,
+			svcResp:    bootstrap.Config{},
+			svcErr:     svcerr.ErrNotFound,
+			err:        errors.NewSDKErrorWithStatus(svcerr.ErrNotFound, http.StatusNotFound),
+		},
+		{
+			desc:       "update certs with empty certs",
+			token:      validToken,
+			id:         thingId,
+			clientCert: "",
+			clientKey:  "",
+			caCert:     "",
+			svcResp:    bootstrap.Config{},
+			svcErr:     nil,
+			err:        nil,
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("UpdateCert", mock.Anything, tc.token, tc.id, tc.clientCert, tc.clientKey, tc.caCert).Return(tc.svcResponse, tc.svcErr)
-		res, err := mgsdk.UpdateBootstrapCerts(tc.id, tc.clientCert, tc.clientKey, tc.caCert, tc.token)
+		svcCall := bsvc.On("UpdateCert", mock.Anything, tc.token, tc.id, tc.clientCert, tc.clientKey, tc.caCert).Return(tc.svcResp, tc.svcErr)
+		resp, err := mgsdk.UpdateBootstrapCerts(tc.id, tc.clientCert, tc.clientKey, tc.caCert, tc.token)
 		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
-			assert.Equal(t, tc.response, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, res))
+			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
 		}
 		svcCall.Unset()
 	}
@@ -795,12 +867,26 @@ func TestUpdateBootstrapConnection(t *testing.T) {
 			svcErr:   svcerr.ErrNotFound,
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrNotFound, http.StatusNotFound),
 		},
+		{
+			desc:     "update connection with empty channels",
+			token:    validToken,
+			id:       thingId,
+			channels: []string{},
+			svcErr:   svcerr.ErrUpdateEntity,
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrUpdateEntity, http.StatusUnprocessableEntity),
+		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("UpdateConnections", mock.Anything, tc.token, tc.id, tc.channels).Return(tc.svcErr)
-		err := mgsdk.UpdateBootstrapConnection(tc.id, tc.channels, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("UpdateConnections", mock.Anything, tc.token, tc.id, tc.channels).Return(tc.svcErr)
+			err := mgsdk.UpdateBootstrapConnection(tc.id, tc.channels, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "UpdateConnections", mock.Anything, tc.token, tc.id, tc.channels)
+				assert.True(t, ok, fmt.Sprintf("%s: expected UpdateConnections to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -857,10 +943,16 @@ func TestRemoveBootstrap(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("Remove", mock.Anything, tc.token, tc.id).Return(tc.svcErr)
-		err := mgsdk.RemoveBootstrap(tc.id, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("Remove", mock.Anything, tc.token, tc.id).Return(tc.svcErr)
+			err := mgsdk.RemoveBootstrap(tc.id, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "Remove", mock.Anything, tc.token, tc.id)
+				assert.True(t, ok, fmt.Sprintf("%s: expected Remove to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -874,95 +966,99 @@ func TestBoostrap(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc           string
-		token          string
-		externalID     string
-		externalKey    string
-		svcResponse    bootstrap.Config
-		svcErr         error
-		readerResponse interface{}
-		readerErr      error
-		response       sdk.BootstrapConfig
-		err            errors.SDKError
+		desc        string
+		token       string
+		externalID  string
+		externalKey string
+		svcResp     bootstrap.Config
+		svcErr      error
+		readerResp  interface{}
+		readerErr   error
+		response    sdk.BootstrapConfig
+		err         errors.SDKError
 	}{
 		{
-			desc:           "bootstrap successfully",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: readConfigResponse,
-			readerErr:      nil,
-			response:       sdkBootsrapConfigRes,
-			err:            nil,
+			desc:        "bootstrap successfully",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  readConfigResponse,
+			readerErr:   nil,
+			response:    sdkBootsrapConfigRes,
+			err:         nil,
 		},
 		{
-			desc:           "bootstrap with invalid token",
-			token:          invalidToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			svcResponse:    bootstrap.Config{},
-			svcErr:         svcerr.ErrAuthentication,
-			readerResponse: bootstrap.Config{},
-			readerErr:      nil,
-			err:            errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:        "bootstrap with invalid token",
+			token:       invalidToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			svcResp:     bootstrap.Config{},
+			svcErr:      svcerr.ErrAuthentication,
+			readerResp:  bootstrap.Config{},
+			readerErr:   nil,
+			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:           "bootstrap with error in reader",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: []byte{0},
-			readerErr:      errJsonEOF,
-			err:            errors.NewSDKErrorWithStatus(errJsonEOF, http.StatusInternalServerError),
+			desc:        "bootstrap with error in reader",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   errJsonEOF,
+			err:         errors.NewSDKErrorWithStatus(errJsonEOF, http.StatusInternalServerError),
 		},
 		{
-			desc:           "boostrap with response that cannot be unmarshalled",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: []byte{0},
-			readerErr:      nil,
-			err:            errors.NewSDKError(errors.New("json: cannot unmarshal string into Go value of type map[string]json.RawMessage")),
+			desc:        "boostrap with response that cannot be unmarshalled",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   nil,
+			err:         errors.NewSDKError(errors.New("json: cannot unmarshal string into Go value of type map[string]json.RawMessage")),
 		},
 		{
-			desc:           "bootstrap with empty id",
-			token:          validToken,
-			externalID:     "",
-			externalKey:    externalKey,
-			svcResponse:    bootstrap.Config{},
-			svcErr:         nil,
-			readerResponse: bootstrap.Config{},
-			readerErr:      nil,
-			err:            errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+			desc:        "bootstrap with empty id",
+			token:       validToken,
+			externalID:  "",
+			externalKey: externalKey,
+			svcResp:     bootstrap.Config{},
+			svcErr:      nil,
+			readerResp:  bootstrap.Config{},
+			readerErr:   nil,
+			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
 		},
 		{
-			desc:           "boostrap with empty key",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    "",
-			svcResponse:    bootstrap.Config{},
-			svcErr:         nil,
-			readerResponse: bootstrap.Config{},
-			readerErr:      nil,
-			err:            errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerKey), http.StatusBadRequest),
+			desc:        "boostrap with empty key",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: "",
+			svcResp:     bootstrap.Config{},
+			svcErr:      nil,
+			readerResp:  bootstrap.Config{},
+			readerErr:   nil,
+			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerKey), http.StatusBadRequest),
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("Bootstrap", mock.Anything, tc.externalKey, tc.externalID, mock.Anything).Return(tc.svcResponse, tc.svcErr)
-		readerCall := reader.On("ReadConfig", mock.Anything, mock.Anything).Return(tc.readerResponse, tc.readerErr)
-		res, err := mgsdk.Bootstrap(tc.externalID, tc.externalKey)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		if err == nil {
-			assert.Equal(t, tc.response, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, res))
-		}
-		svcCall.Unset()
-		readerCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("Bootstrap", mock.Anything, tc.externalKey, tc.externalID, false).Return(tc.svcResp, tc.svcErr)
+			readerCall := reader.On("ReadConfig", tc.svcResp, false).Return(tc.readerResp, tc.readerErr)
+			resp, err := mgsdk.Bootstrap(tc.externalID, tc.externalKey)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if err == nil {
+				assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+				ok := svcCall.Parent.AssertCalled(t, "Bootstrap", mock.Anything, tc.externalKey, tc.externalID, false)
+				assert.True(t, ok, fmt.Sprintf("%s: expected Bootstrap to be called", tc.desc))
+			}
+			svcCall.Unset()
+			readerCall.Unset()
+		})
 	}
 }
 
@@ -981,97 +1077,95 @@ func TestBootstrapSecure(t *testing.T) {
 	assert.Nil(t, err, fmt.Sprintf("Encrypting bootstrap response expected to succeed: %s.\n", err))
 
 	cases := []struct {
-		desc           string
-		token          string
-		externalID     string
-		externalKey    string
-		cryptoKey      string
-		svcResponse    bootstrap.Config
-		svcErr         error
-		readerResponse []byte
-		readerErr      error
-		response       sdk.BootstrapConfig
-		err            errors.SDKError
+		desc        string
+		token       string
+		externalID  string
+		externalKey string
+		cryptoKey   string
+		svcResp     bootstrap.Config
+		svcErr      error
+		readerResp  []byte
+		readerErr   error
+		response    sdk.BootstrapConfig
+		err         errors.SDKError
 	}{
 		{
-			desc:           "bootstrap successfully",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			cryptoKey:      string(encKey),
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: encResponse,
-			readerErr:      nil,
-			response:       sdkBootsrapConfigRes,
-			err:            nil,
+			desc:        "bootstrap successfully",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			cryptoKey:   string(encKey),
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  encResponse,
+			readerErr:   nil,
+			response:    sdkBootsrapConfigRes,
+			err:         nil,
 		},
 		{
-			desc:           "bootstrap with invalid token",
-			token:          invalidToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			cryptoKey:      string(encKey),
-			svcResponse:    bootstrap.Config{},
-			svcErr:         svcerr.ErrAuthentication,
-			readerResponse: []byte{0},
-			readerErr:      nil,
-			err:            errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:        "bootstrap with invalid token",
+			token:       invalidToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			cryptoKey:   string(encKey),
+			svcResp:     bootstrap.Config{},
+			svcErr:      svcerr.ErrAuthentication,
+			readerResp:  []byte{0},
+			readerErr:   nil,
+			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
-			desc:           "booostrap with invalid crypto key",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			cryptoKey:      invalid,
-			svcResponse:    bootstrap.Config{},
-			svcErr:         nil,
-			readerResponse: []byte{0},
-			readerErr:      nil,
-			err:            errors.NewSDKError(errors.New("crypto/aes: invalid key size 7")),
+			desc:        "booostrap with invalid crypto key",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			cryptoKey:   invalid,
+			svcResp:     bootstrap.Config{},
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   nil,
+			err:         errors.NewSDKError(errors.New("crypto/aes: invalid key size 7")),
 		},
 		{
-			desc:           "bootstrap with error in reader",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			cryptoKey:      string(encKey),
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: []byte{0},
-			readerErr:      errJsonEOF,
-			err:            errors.NewSDKErrorWithStatus(errJsonEOF, http.StatusInternalServerError),
+			desc:        "bootstrap with error in reader",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			cryptoKey:   string(encKey),
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   errJsonEOF,
+			err:         errors.NewSDKErrorWithStatus(errJsonEOF, http.StatusInternalServerError),
 		},
 		{
-			desc:           "bootstrap with response that cannot be unmarshalled",
-			token:          validToken,
-			externalID:     externalId,
-			externalKey:    externalKey,
-			cryptoKey:      string(encKey),
-			svcResponse:    bootstrapConfig,
-			svcErr:         nil,
-			readerResponse: []byte{0},
-			readerErr:      nil,
-			err:            errors.NewSDKError(errJsonEOF),
+			desc:        "bootstrap with response that cannot be unmarshalled",
+			token:       validToken,
+			externalID:  externalId,
+			externalKey: externalKey,
+			cryptoKey:   string(encKey),
+			svcResp:     bootstrapConfig,
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   nil,
+			err:         errors.NewSDKError(errJsonEOF),
 		},
 	}
 	for _, tc := range cases {
-		svcCall := bsvc.On("Bootstrap", mock.Anything, mock.Anything, tc.externalID, mock.Anything).Return(tc.svcResponse, tc.svcErr)
-		readerCall := reader.On("ReadConfig", mock.Anything, mock.Anything).Return(tc.readerResponse, tc.readerErr)
-		res, err := mgsdk.BootstrapSecure(tc.externalID, tc.externalKey, tc.cryptoKey)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		if err == nil {
-			assert.Equal(t, sdkBootsrapConfigRes, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, sdkBootsrapConfigRes, res))
-		}
-		svcCall.Unset()
-		readerCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := bsvc.On("Bootstrap", mock.Anything, mock.Anything, tc.externalID, true).Return(tc.svcResp, tc.svcErr)
+			readerCall := reader.On("ReadConfig", tc.svcResp, true).Return(tc.readerResp, tc.readerErr)
+			resp, err := mgsdk.BootstrapSecure(tc.externalID, tc.externalKey, tc.cryptoKey)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if err == nil {
+				assert.Equal(t, sdkBootsrapConfigRes, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, sdkBootsrapConfigRes, resp))
+				ok := svcCall.Parent.AssertCalled(t, "Bootstrap", mock.Anything, mock.Anything, tc.externalID, true)
+				assert.True(t, ok, fmt.Sprintf("%s: expected Bootstrap to be called", tc.desc))
+			}
+			svcCall.Unset()
+			readerCall.Unset()
+		})
 	}
-}
-
-type readerChannelRes struct {
-	ID       string      `json:"id"`
-	Name     string      `json:"name,omitempty"`
-	Metadata interface{} `json:"metadata,omitempty"`
 }
 
 func encrypt(in, encKey []byte) ([]byte, error) {
