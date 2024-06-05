@@ -138,15 +138,17 @@ func TestCreateSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		svcCall := nsvc.On("CreateSubscription", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
-		loc, err := mgsdk.CreateSubscription(tc.subscription.Topic, tc.subscription.Contact, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
-		assert.Equal(t, tc.empty, loc == "", fmt.Sprintf("%s: expected empty result location, got: %s", tc.desc, loc))
-		if tc.err == nil {
-			ok := svcCall.Parent.AssertCalled(t, "CreateSubscription", mock.Anything, tc.token, tc.svcReq)
-			assert.True(t, ok, fmt.Sprintf("%s: expected CreateSubscription to be called", tc.desc))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := nsvc.On("CreateSubscription", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
+			loc, err := mgsdk.CreateSubscription(tc.subscription.Topic, tc.subscription.Contact, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.empty, loc == "", fmt.Sprintf("%s: expected empty result location, got: %s", tc.desc, loc))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "CreateSubscription", mock.Anything, tc.token, tc.svcReq)
+				assert.True(t, ok, fmt.Sprintf("%s: expected CreateSubscription to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -209,15 +211,17 @@ func TestViewSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		svcCall := nsvc.On("ViewSubscription", mock.Anything, tc.token, tc.subID).Return(tc.svcRes, tc.svcErr)
-		resp, err := mgsdk.ViewSubscription(tc.subID, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
-		assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected response %s, got %s", tc.desc, tc.response, resp))
-		if tc.err == nil {
-			ok := svcCall.Parent.AssertCalled(t, "ViewSubscription", mock.Anything, tc.token, tc.subID)
-			assert.True(t, ok, fmt.Sprintf("%s: expected ViewSubscription to be called", tc.desc))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := nsvc.On("ViewSubscription", mock.Anything, tc.token, tc.subID).Return(tc.svcRes, tc.svcErr)
+			resp, err := mgsdk.ViewSubscription(tc.subID, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected response %s, got %s", tc.desc, tc.response, resp))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "ViewSubscription", mock.Anything, tc.token, tc.subID)
+				assert.True(t, ok, fmt.Sprintf("%s: expected ViewSubscription to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -366,18 +370,36 @@ func TestListSubscription(t *testing.T) {
 			response: sdk.SubscriptionPage{},
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
+		{
+			desc:  "list subscription with invalid page metadata",
+			token: validToken,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+				Metadata: sdk.Metadata{
+					"key": make(chan int),
+				},
+			},
+			svcReq:   notifiers.PageMetadata{},
+			svcRes:   notifiers.Page{},
+			svcErr:   nil,
+			response: sdk.SubscriptionPage{},
+			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
+		},
 	}
 
 	for _, tc := range cases {
-		svcCall := nsvc.On("ListSubscriptions", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
-		resp, err := mgsdk.ListSubscriptions(tc.pageMeta, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
-		assert.Equal(t, tc.response.Subscriptions, resp.Subscriptions, fmt.Sprintf("%s: expected response %v, got %v", tc.desc, tc.response, resp.Subscriptions))
-		if tc.err == nil {
-			ok := svcCall.Parent.AssertCalled(t, "ListSubscriptions", mock.Anything, tc.token, tc.svcReq)
-			assert.True(t, ok, fmt.Sprintf("%s: expected ListSubscriptions to be called", tc.desc))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := nsvc.On("ListSubscriptions", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
+			resp, err := mgsdk.ListSubscriptions(tc.pageMeta, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.response.Subscriptions, resp.Subscriptions, fmt.Sprintf("%s: expected response %v, got %v", tc.desc, tc.response, resp.Subscriptions))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "ListSubscriptions", mock.Anything, tc.token, tc.svcReq)
+				assert.True(t, ok, fmt.Sprintf("%s: expected ListSubscriptions to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -437,13 +459,15 @@ func TestDeleteSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		svcCall := nsvc.On("RemoveSubscription", mock.Anything, tc.token, tc.subID).Return(tc.svcErr)
-		err := mgsdk.DeleteSubscription(tc.subID, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
-		if tc.err == nil {
-			ok := svcCall.Parent.AssertCalled(t, "RemoveSubscription", mock.Anything, tc.token, tc.subID)
-			assert.True(t, ok, fmt.Sprintf("%s: expected RemoveSubscription to be called", tc.desc))
-		}
-		svcCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := nsvc.On("RemoveSubscription", mock.Anything, tc.token, tc.subID).Return(tc.svcErr)
+			err := mgsdk.DeleteSubscription(tc.subID, tc.token)
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "RemoveSubscription", mock.Anything, tc.token, tc.subID)
+				assert.True(t, ok, fmt.Sprintf("%s: expected RemoveSubscription to be called", tc.desc))
+			}
+			svcCall.Unset()
+		})
 	}
 }
