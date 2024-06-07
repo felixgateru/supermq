@@ -150,6 +150,9 @@ func (sdk mgSDK) Whitelist(thingID string, state int, token string) errors.SDKEr
 }
 
 func (sdk mgSDK) ViewBootstrap(id, token string) (BootstrapConfig, errors.SDKError) {
+	if id == "" {
+		return BootstrapConfig{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, configsEndpoint, id)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
@@ -171,6 +174,9 @@ func (sdk mgSDK) UpdateBootstrap(cfg BootstrapConfig, token string) errors.SDKEr
 		return errors.NewSDKError(err)
 	}
 
+	if cfg.ThingID == "" {
+		return errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, configsEndpoint, cfg.ThingID)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusOK)
@@ -179,6 +185,9 @@ func (sdk mgSDK) UpdateBootstrap(cfg BootstrapConfig, token string) errors.SDKEr
 }
 
 func (sdk mgSDK) UpdateBootstrapCerts(id, clientCert, clientKey, ca, token string) (BootstrapConfig, errors.SDKError) {
+	if id == "" {
+		return BootstrapConfig{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, bootstrapCertsEndpoint, id)
 	request := BootstrapConfig{
 		ClientCert: clientCert,
@@ -205,6 +214,9 @@ func (sdk mgSDK) UpdateBootstrapCerts(id, clientCert, clientKey, ca, token strin
 }
 
 func (sdk mgSDK) UpdateBootstrapConnection(id string, channels []string, token string) errors.SDKError {
+	if id == "" {
+		return errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, bootstrapConnEndpoint, id)
 	request := map[string][]string{
 		"channels": channels,
@@ -219,6 +231,9 @@ func (sdk mgSDK) UpdateBootstrapConnection(id string, channels []string, token s
 }
 
 func (sdk mgSDK) RemoveBootstrap(id, token string) errors.SDKError {
+	if id == "" {
+		return errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, configsEndpoint, id)
 
 	_, _, err := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)

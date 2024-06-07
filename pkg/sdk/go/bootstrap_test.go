@@ -232,11 +232,11 @@ func TestAddBootstrap(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("Add", mock.Anything, tc.token, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.AddBootstrap(tc.cfg, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if err == nil {
-				assert.Equal(t, bootstrapConfig.ThingID, resp, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, bootstrapConfig.ThingID, resp))
+				assert.Equal(t, bootstrapConfig.ThingID, resp)
 				ok := svcCall.Parent.AssertCalled(t, "Add", mock.Anything, tc.token, tc.svcReq)
-				assert.True(t, ok, fmt.Sprintf("%s: expected Add to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -278,13 +278,13 @@ func TestListBootstraps(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc        string
-		token       string
-		pageMeta    sdk.PageMetadata
-		svcResponse bootstrap.ConfigsPage
-		svcErr      error
-		response    sdk.BootstrapPage
-		err         errors.SDKError
+		desc     string
+		token    string
+		pageMeta sdk.PageMetadata
+		svcResp  bootstrap.ConfigsPage
+		svcErr   error
+		response sdk.BootstrapPage
+		err      errors.SDKError
 	}{
 		{
 			desc:  "list successfully",
@@ -293,7 +293,7 @@ func TestListBootstraps(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcResponse: bootstrap.ConfigsPage{
+			svcResp: bootstrap.ConfigsPage{
 				Total:   1,
 				Offset:  0,
 				Configs: []bootstrap.Config{bootstrapConfig},
@@ -313,10 +313,10 @@ func TestListBootstraps(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcResponse: bootstrap.ConfigsPage{},
-			svcErr:      svcerr.ErrAuthentication,
-			response:    sdk.BootstrapPage{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcResp:  bootstrap.ConfigsPage{},
+			svcErr:   svcerr.ErrAuthentication,
+			response: sdk.BootstrapPage{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "list with empty token",
@@ -325,10 +325,10 @@ func TestListBootstraps(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcResponse: bootstrap.ConfigsPage{},
-			svcErr:      nil,
-			response:    sdk.BootstrapPage{},
-			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+			svcResp:  bootstrap.ConfigsPage{},
+			svcErr:   nil,
+			response: sdk.BootstrapPage{},
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
 			desc:  "list with invalid query params",
@@ -340,10 +340,10 @@ func TestListBootstraps(t *testing.T) {
 					"test": make(chan int),
 				},
 			},
-			svcResponse: bootstrap.ConfigsPage{},
-			svcErr:      nil,
-			response:    sdk.BootstrapPage{},
-			err:         errors.NewSDKError(errMarshalChan),
+			svcResp:  bootstrap.ConfigsPage{},
+			svcErr:   nil,
+			response: sdk.BootstrapPage{},
+			err:      errors.NewSDKError(errMarshalChan),
 		},
 		{
 			desc:  "list with response that cannot be unmarshalled",
@@ -352,7 +352,7 @@ func TestListBootstraps(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcResponse: bootstrap.ConfigsPage{
+			svcResp: bootstrap.ConfigsPage{
 				Total:   1,
 				Offset:  0,
 				Configs: []bootstrap.Config{unmarshalableConfig},
@@ -364,13 +364,13 @@ func TestListBootstraps(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := bsvc.On("List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit).Return(tc.svcResponse, tc.svcErr)
+			svcCall := bsvc.On("List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit).Return(tc.svcResp, tc.svcErr)
 			resp, err := mgsdk.Bootstraps(tc.pageMeta, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+			assert.Equal(t, tc.err, err)
+			assert.Equal(t, tc.response, resp)
 			if err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "List", mock.Anything, tc.token, mock.Anything, tc.pageMeta.Offset, tc.pageMeta.Limit)
-				assert.True(t, ok, fmt.Sprintf("%s: expected List to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -457,10 +457,10 @@ func TestWhiteList(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("ChangeState", mock.Anything, tc.token, tc.thingID, tc.svcReq).Return(tc.svcErr)
 			err := mgsdk.Whitelist(tc.thingID, tc.state, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "ChangeState", mock.Anything, tc.token, tc.thingID, tc.svcReq)
-				assert.True(t, ok, fmt.Sprintf("%s: expected ChangeState to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -550,16 +550,25 @@ func TestViewBootstrap(t *testing.T) {
 			response: sdk.BootstrapConfig{},
 			err:      errors.NewSDKError(errJsonEOF),
 		},
+		{
+			desc:     "view with empty thing Id",
+			token:    validToken,
+			id:       "",
+			svcResp:  bootstrap.Config{},
+			svcErr:   nil,
+			response: sdk.BootstrapConfig{},
+			err:      errors.NewSDKError(apiutil.ErrMissingID),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("View", mock.Anything, tc.token, tc.id).Return(tc.svcResp, tc.svcErr)
 			resp, err := mgsdk.ViewBootstrap(tc.id, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+			assert.Equal(t, tc.err, err)
+			assert.Equal(t, tc.response, resp)
 			if err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "View", mock.Anything, tc.token, tc.id)
-				assert.True(t, ok, fmt.Sprintf("%s: expected View to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -684,7 +693,7 @@ func TestUpdateBootstrap(t *testing.T) {
 				Content: content,
 			},
 			svcErr: nil,
-			err:    errors.NewSDKErrorWithStatus(errors.New("unexpected end of JSON input"), http.StatusMethodNotAllowed),
+			err:    errors.NewSDKError(apiutil.ErrMissingID),
 		},
 		{
 			desc:  "update with config with only thing Id",
@@ -703,10 +712,10 @@ func TestUpdateBootstrap(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("Update", mock.Anything, tc.token, tc.svcReq).Return(tc.svcErr)
 			err := mgsdk.UpdateBootstrap(tc.cfg, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Update", mock.Anything, tc.token, tc.svcReq)
-				assert.True(t, ok, fmt.Sprintf("%s: expected Update to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -797,13 +806,24 @@ func TestUpdateBootstrapCerts(t *testing.T) {
 			svcErr:     nil,
 			err:        nil,
 		},
+		{
+			desc:       "update certs with empty id",
+			token:      validToken,
+			id:         "",
+			clientCert: clientCert,
+			clientKey:  clientKey,
+			caCert:     caCert,
+			svcResp:    bootstrap.Config{},
+			svcErr:     nil,
+			err:        errors.NewSDKError(apiutil.ErrMissingID),
+		},
 	}
 	for _, tc := range cases {
 		svcCall := bsvc.On("UpdateCert", mock.Anything, tc.token, tc.id, tc.clientCert, tc.clientKey, tc.caCert).Return(tc.svcResp, tc.svcErr)
 		resp, err := mgsdk.UpdateBootstrapCerts(tc.id, tc.clientCert, tc.clientKey, tc.caCert, tc.token)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		assert.Equal(t, tc.err, err)
 		if err == nil {
-			assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+			assert.Equal(t, tc.response, resp)
 		}
 		svcCall.Unset()
 	}
@@ -875,15 +895,23 @@ func TestUpdateBootstrapConnection(t *testing.T) {
 			svcErr:   svcerr.ErrUpdateEntity,
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrUpdateEntity, http.StatusUnprocessableEntity),
 		},
+		{
+			desc:     "update connection with empty id",
+			token:    validToken,
+			id:       "",
+			channels: []string{channel1Id, channel2Id},
+			svcErr:   nil,
+			err:      errors.NewSDKError(apiutil.ErrMissingID),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("UpdateConnections", mock.Anything, tc.token, tc.id, tc.channels).Return(tc.svcErr)
 			err := mgsdk.UpdateBootstrapConnection(tc.id, tc.channels, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "UpdateConnections", mock.Anything, tc.token, tc.id, tc.channels)
-				assert.True(t, ok, fmt.Sprintf("%s: expected UpdateConnections to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -941,15 +969,22 @@ func TestRemoveBootstrap(t *testing.T) {
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
+		{
+			desc:   "remove with empty id",
+			token:  validToken,
+			id:     "",
+			svcErr: nil,
+			err:    errors.NewSDKError(apiutil.ErrMissingID),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := bsvc.On("Remove", mock.Anything, tc.token, tc.id).Return(tc.svcErr)
 			err := mgsdk.RemoveBootstrap(tc.id, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Remove", mock.Anything, tc.token, tc.id)
-				assert.True(t, ok, fmt.Sprintf("%s: expected Remove to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -1050,11 +1085,11 @@ func TestBoostrap(t *testing.T) {
 			svcCall := bsvc.On("Bootstrap", mock.Anything, tc.externalKey, tc.externalID, false).Return(tc.svcResp, tc.svcErr)
 			readerCall := reader.On("ReadConfig", tc.svcResp, false).Return(tc.readerResp, tc.readerErr)
 			resp, err := mgsdk.Bootstrap(tc.externalID, tc.externalKey)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if err == nil {
-				assert.Equal(t, tc.response, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, resp))
+				assert.Equal(t, tc.response, resp)
 				ok := svcCall.Parent.AssertCalled(t, "Bootstrap", mock.Anything, tc.externalKey, tc.externalID, false)
-				assert.True(t, ok, fmt.Sprintf("%s: expected Bootstrap to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 			readerCall.Unset()
@@ -1156,11 +1191,11 @@ func TestBootstrapSecure(t *testing.T) {
 			svcCall := bsvc.On("Bootstrap", mock.Anything, mock.Anything, tc.externalID, true).Return(tc.svcResp, tc.svcErr)
 			readerCall := reader.On("ReadConfig", tc.svcResp, true).Return(tc.readerResp, tc.readerErr)
 			resp, err := mgsdk.BootstrapSecure(tc.externalID, tc.externalKey, tc.cryptoKey)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if err == nil {
-				assert.Equal(t, sdkBootsrapConfigRes, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, sdkBootsrapConfigRes, resp))
+				assert.Equal(t, sdkBootsrapConfigRes, resp)
 				ok := svcCall.Parent.AssertCalled(t, "Bootstrap", mock.Anything, mock.Anything, tc.externalID, true)
-				assert.True(t, ok, fmt.Sprintf("%s: expected Bootstrap to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 			readerCall.Unset()
