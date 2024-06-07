@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/absmach/magistrala/internal/apiutil"
 	"github.com/absmach/magistrala/pkg/errors"
 )
 
@@ -68,6 +69,9 @@ func (sdk mgSDK) ViewCert(id, token string) (Cert, errors.SDKError) {
 }
 
 func (sdk mgSDK) ViewCertByThing(thingID, token string) (CertSerials, errors.SDKError) {
+	if thingID == "" {
+		return CertSerials{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.certsURL, serialsEndpoint, thingID)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)

@@ -170,11 +170,11 @@ func TestIssueCert(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := svc.On("IssueCert", mock.Anything, tc.token, tc.thingID, tc.duration).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.IssueCert(tc.thingID, tc.duration, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
-				assert.Equal(t, sdkCert, resp, fmt.Sprintf("%s: expected cert %v, got %v", tc.desc, cert, resp))
+				assert.Equal(t, sdkCert, resp)
 				ok := svcCall.Parent.AssertCalled(t, "IssueCert", mock.Anything, tc.token, tc.thingID, tc.duration)
-				assert.True(t, ok, fmt.Sprintf("%s: expected IssueCert to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -242,11 +242,11 @@ func TestViewCert(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := svc.On("ViewCert", mock.Anything, tc.token, tc.certID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.ViewCert(tc.certID, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if err == nil {
-				assert.Equal(t, viewCertRes, resp, fmt.Sprintf("%s: expected cert %v, got %v", tc.desc, cert, resp))
+				assert.Equal(t, viewCertRes, resp)
 				ok := svcCall.Parent.AssertCalled(t, "ViewCert", mock.Anything, tc.token, tc.certID)
-				assert.True(t, ok, fmt.Sprintf("%s: expected ViewCert to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -316,18 +316,18 @@ func TestViewCertByThing(t *testing.T) {
 			token:   validToken,
 			svcRes:  certs.Page{Certs: []certs.Cert{}},
 			svcErr:  nil,
-			err:     errors.NewSDKErrorWithStatus(errors.New("invalid character 'p' after top-level value"), http.StatusNotFound),
+			err:     errors.NewSDKError(apiutil.ErrMissingID),
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := svc.On("ListSerials", mock.Anything, tc.token, tc.thingID, defOffset, defLimit).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.ViewCertByThing(tc.thingID, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
-				assert.Equal(t, viewCertThingRes, resp, fmt.Sprintf("%s: expected cert %v, got %v", tc.desc, cert, resp))
+				assert.Equal(t, viewCertThingRes, resp)
 				ok := svcCall.Parent.AssertCalled(t, "ListSerials", mock.Anything, tc.token, tc.thingID, defOffset, defLimit)
-				assert.True(t, ok, fmt.Sprintf("%s: expected ListSerials to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
@@ -399,11 +399,11 @@ func TestRevokeCert(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			svcCall := svc.On("RevokeCert", mock.Anything, tc.token, tc.thingID).Return(tc.svcResp, tc.svcErr)
 			resp, err := mgsdk.RevokeCert(tc.thingID, tc.token)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.err, err)
 			if err == nil {
-				assert.NotEmpty(t, resp, fmt.Sprintf("%s: got empty revocation time", tc.desc))
+				assert.NotEmpty(t, resp)
 				ok := svcCall.Parent.AssertCalled(t, "RevokeCert", mock.Anything, tc.token, tc.thingID)
-				assert.True(t, ok, fmt.Sprintf("%s: expected RevokeCert to be called", tc.desc))
+				assert.True(t, ok)
 			}
 			svcCall.Unset()
 		})
