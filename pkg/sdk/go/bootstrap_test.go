@@ -450,7 +450,7 @@ func TestWhiteList(t *testing.T) {
 			state:   1,
 			svcReq:  bootstrap.Active,
 			svcErr:  nil,
-			err:     errors.NewSDKError(apiutil.ErrNotFoundParam),
+			err:     errors.NewSDKError(apiutil.ErrMissingID),
 		},
 	}
 	for _, tc := range cases {
@@ -1066,7 +1066,7 @@ func TestBoostrap(t *testing.T) {
 			svcErr:      nil,
 			readerResp:  bootstrap.Config{},
 			readerErr:   nil,
-			err:         errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+			err:         errors.NewSDKError(apiutil.ErrMissingID),
 		},
 		{
 			desc:        "boostrap with empty key",
@@ -1184,6 +1184,17 @@ func TestBootstrapSecure(t *testing.T) {
 			readerResp:  []byte{0},
 			readerErr:   nil,
 			err:         errors.NewSDKError(errJsonEOF),
+		},
+		{
+			desc:        "bootstrap with empty id",
+			token:       validToken,
+			externalID:  "",
+			externalKey: externalKey,
+			svcResp:     bootstrap.Config{},
+			svcErr:      nil,
+			readerResp:  []byte{0},
+			readerErr:   nil,
+			err:         errors.NewSDKError(apiutil.ErrMissingID),
 		},
 	}
 	for _, tc := range cases {

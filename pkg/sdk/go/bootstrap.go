@@ -133,13 +133,13 @@ func (sdk mgSDK) Bootstraps(pm PageMetadata, token string) (BootstrapPage, error
 }
 
 func (sdk mgSDK) Whitelist(thingID string, state int, token string) errors.SDKError {
+	if thingID == "" {
+		return errors.NewSDKError(apiutil.ErrMissingID)
+	}
+
 	data, err := json.Marshal(BootstrapConfig{State: state})
 	if err != nil {
 		return errors.NewSDKError(err)
-	}
-
-	if thingID == "" {
-		return errors.NewSDKError(apiutil.ErrNotFoundParam)
 	}
 
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, whitelistEndpoint, thingID)
@@ -169,15 +169,15 @@ func (sdk mgSDK) ViewBootstrap(id, token string) (BootstrapConfig, errors.SDKErr
 }
 
 func (sdk mgSDK) UpdateBootstrap(cfg BootstrapConfig, token string) errors.SDKError {
-	data, err := json.Marshal(cfg)
-	if err != nil {
-		return errors.NewSDKError(err)
-	}
-
 	if cfg.ThingID == "" {
 		return errors.NewSDKError(apiutil.ErrMissingID)
 	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, configsEndpoint, cfg.ThingID)
+
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return errors.NewSDKError(err)
+	}
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusOK)
 
@@ -241,6 +241,9 @@ func (sdk mgSDK) RemoveBootstrap(id, token string) errors.SDKError {
 }
 
 func (sdk mgSDK) Bootstrap(externalID, externalKey string) (BootstrapConfig, errors.SDKError) {
+	if externalID == "" {
+		return BootstrapConfig{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.bootstrapURL, bootstrapEndpoint, externalID)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, ThingPrefix+externalKey, nil, nil, http.StatusOK)
@@ -257,6 +260,9 @@ func (sdk mgSDK) Bootstrap(externalID, externalKey string) (BootstrapConfig, err
 }
 
 func (sdk mgSDK) BootstrapSecure(externalID, externalKey, cryptoKey string) (BootstrapConfig, errors.SDKError) {
+	if externalID == "" {
+		return BootstrapConfig{}, errors.NewSDKError(apiutil.ErrMissingID)
+	}
 	url := fmt.Sprintf("%s/%s/%s/%s", sdk.bootstrapURL, bootstrapEndpoint, secureEndpoint, externalID)
 
 	encExtKey, err := bootstrapEncrypt([]byte(externalKey), cryptoKey)
