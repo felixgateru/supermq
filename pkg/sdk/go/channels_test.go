@@ -1003,6 +1003,184 @@ func TestListChannels(t *testing.T) {
 	repoCall.Unset()
 }
 
+func TestListGroupChannels(t *testing.T) {
+	ts, gsvc := setupChannels()
+	defer ts.Close()
+
+	conf := sdk.Config{
+		ThingsURL: ts.URL,
+	}
+	mgsdk := sdk.NewSDK(conf)
+
+	groupChannel := sdk.Group{
+		ID:       testsutil.GenerateUUID(t),
+		Name:     "group_channel",
+		Metadata: sdk.Metadata{"role": "group"},
+		Status:   mgclients.EnabledStatus.String(),
+	}
+
+	cases := []struct {
+		desc     string
+		token    string
+		groupID  string
+		pageMeta sdk.PageMetadata
+		svcReq   groups.Page
+		svcRes   groups.Page
+		svcErr   error
+		response sdk.GroupsPage
+		err      errors.SDKError
+	}{
+		{
+			desc:    "list group channels successfully",
+			token:   validToken,
+			groupID: group.ID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+			},
+			svcReq: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: 0,
+					Limit:  10,
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+				Groups: []groups.Group{convertGroup(groupChannel)},
+			},
+			svcErr: nil,
+			response: sdk.GroupsPage{
+				PageRes: sdk.PageRes{
+					Total: 1,
+				},
+				Groups: []sdk.Group{groupChannel},
+			},
+			err: nil,
+		},
+		{
+			desc:    "list group channels with invalid token",
+			token:   invalidToken,
+			groupID: group.ID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+			},
+			svcReq: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: 0,
+					Limit:  10,
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes:   groups.Page{},
+			svcErr:   svcerr.ErrAuthentication,
+			response: sdk.GroupsPage{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:    "list group channels with empty token",
+			token:   "",
+			groupID: group.ID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+			},
+			svcReq:   groups.Page{},
+			svcRes:   groups.Page{},
+			svcErr:   nil,
+			response: sdk.GroupsPage{},
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
+		},
+		{
+			desc:    "list group channels with invalid group id",
+			token:   validToken,
+			groupID: wrongID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+			},
+			svcReq: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: 0,
+					Limit:  10,
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes:   groups.Page{},
+			svcErr:   svcerr.ErrAuthorization,
+			response: sdk.GroupsPage{},
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
+		},
+		{
+			desc:    "list group channels with invalid page metadata",
+			token:   validToken,
+			groupID: group.ID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+				Metadata: sdk.Metadata{
+					"test": make(chan int),
+				},
+			},
+			svcReq:   groups.Page{},
+			svcRes:   groups.Page{},
+			svcErr:   nil,
+			response: sdk.GroupsPage{},
+			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
+		},
+		{
+			desc:    "list group channels with service response that can't be unmarshalled",
+			token:   validToken,
+			groupID: group.ID,
+			pageMeta: sdk.PageMetadata{
+				Offset: 0,
+				Limit:  10,
+			},
+			svcReq: groups.Page{
+				PageMeta: groups.PageMeta{
+					Offset: 0,
+					Limit:  10,
+				},
+				Permission: "view",
+				Direction:  -1,
+			},
+			svcRes: groups.Page{
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+				Groups: []groups.Group{
+					{
+						ID:       generateUUID(t),
+						Metadata: mgclients.Metadata{"test": make(chan int)},
+					},
+				},
+			},
+			svcErr:   nil,
+			response: sdk.GroupsPage{},
+			err:      errors.NewSDKError(errors.New("unexpected end of JSON input")),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := gsvc.On("ListGroups", mock.Anything, tc.token, auth.GroupsKind, tc.groupID, tc.svcReq).Return(tc.svcRes, tc.svcErr)
+			resp, err := mgsdk.ListGroupChannels(tc.groupID, tc.pageMeta, tc.token)
+			assert.Equal(t, tc.err, err)
+			assert.Equal(t, tc.response, resp)
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "ListGroups", mock.Anything, tc.token, auth.GroupsKind, tc.groupID, tc.svcReq)
+				assert.True(t, ok)
+			}
+			svcCall.Unset()
+		})
+	}
+}
+
 func toIDs(objects interface{}) []string {
 	v := reflect.ValueOf(objects)
 	if v.Kind() != reflect.Slice {

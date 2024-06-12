@@ -126,15 +126,15 @@ func (sdk mgSDK) ChannelPermissions(id, token string) (Channel, errors.SDKError)
 }
 
 func (sdk mgSDK) UpdateChannel(c Channel, token string) (Channel, errors.SDKError) {
-	data, err := json.Marshal(c)
-	if err != nil {
-		return Channel{}, errors.NewSDKError(err)
-	}
-
 	if c.ID == "" {
 		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.thingsURL, channelsEndpoint, c.ID)
+
+	data, err := json.Marshal(c)
+	if err != nil {
+		return Channel{}, errors.NewSDKError(err)
+	}
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
