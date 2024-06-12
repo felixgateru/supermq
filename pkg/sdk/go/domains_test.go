@@ -40,7 +40,7 @@ var (
 		Tags:     sdkDomain.Tags,
 		Alias:    sdkDomain.Alias,
 	}
-	updatedName = "updated-domain"
+	updatedDomianName = "updated-domain"
 )
 
 func setupDomains() (*httptest.Server, *authmocks.Service) {
@@ -177,9 +177,9 @@ func TestUpdateDomain(t *testing.T) {
 	mgsdk := sdk.NewSDK(sdkConf)
 
 	upDomainSDK := sdkDomain
-	upDomainSDK.Name = updatedName
+	upDomainSDK.Name = updatedDomianName
 	upDomainAuth := authDomain
-	upDomainAuth.Name = updatedName
+	upDomainAuth.Name = updatedDomianName
 
 	cases := []struct {
 		desc     string
@@ -197,7 +197,7 @@ func TestUpdateDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			domain: sdk.Domain{
 				ID:   sdkDomain.ID,
-				Name: updatedName,
+				Name: updatedDomianName,
 			},
 			svcRes:   upDomainAuth,
 			svcErr:   nil,
@@ -210,7 +210,7 @@ func TestUpdateDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			domain: sdk.Domain{
 				ID:   sdkDomain.ID,
-				Name: updatedName,
+				Name: updatedDomianName,
 			},
 			svcRes:   auth.Domain{},
 			svcErr:   svcerr.ErrAuthentication,
@@ -223,7 +223,7 @@ func TestUpdateDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			domain: sdk.Domain{
 				ID:   sdkDomain.ID,
-				Name: updatedName,
+				Name: updatedDomianName,
 			},
 			svcRes:   auth.Domain{},
 			svcErr:   nil,
@@ -236,7 +236,7 @@ func TestUpdateDomain(t *testing.T) {
 			domainID: wrongID,
 			domain: sdk.Domain{
 				ID:   wrongID,
-				Name: updatedName,
+				Name: updatedDomianName,
 			},
 			svcRes:   auth.Domain{},
 			svcErr:   svcerr.ErrAuthorization,

@@ -52,15 +52,15 @@ func (sdk mgSDK) CreateDomain(domain Domain, token string) (Domain, errors.SDKEr
 }
 
 func (sdk mgSDK) UpdateDomain(domain Domain, token string) (Domain, errors.SDKError) {
-	data, err := json.Marshal(domain)
-	if err != nil {
-		return Domain{}, errors.NewSDKError(err)
-	}
-
 	if domain.ID == "" {
 		return Domain{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
 	url := fmt.Sprintf("%s/%s/%s", sdk.domainsURL, domainsEndpoint, domain.ID)
+
+	data, err := json.Marshal(domain)
+	if err != nil {
+		return Domain{}, errors.NewSDKError(err)
+	}
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
