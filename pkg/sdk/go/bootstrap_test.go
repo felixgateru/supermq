@@ -41,7 +41,6 @@ var (
 	state           = 1
 	bsName          = "test"
 	encKey          = []byte("1234567891011121")
-	invalid         = "invalid"
 	bootstrapConfig = bootstrap.Config{
 		ThingID:    thingId,
 		Name:       "test",
