@@ -1053,8 +1053,7 @@ func TestRemoveUserFromDomain(t *testing.T) {
 			token:    validToken,
 			domainID: sdkDomain.ID,
 			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs:  []string{removeUser},
-				Relation: auth.MemberRelation,
+				UserIDs: []string{removeUser},
 			},
 			svcErr: nil,
 			err:    nil,
@@ -1064,8 +1063,7 @@ func TestRemoveUserFromDomain(t *testing.T) {
 			token:    invalidToken,
 			domainID: sdkDomain.ID,
 			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs:  []string{removeUser},
-				Relation: auth.MemberRelation,
+				UserIDs: []string{removeUser},
 			},
 			svcErr: svcerr.ErrAuthentication,
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -1075,8 +1073,7 @@ func TestRemoveUserFromDomain(t *testing.T) {
 			token:    "",
 			domainID: sdkDomain.ID,
 			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs:  []string{removeUser},
-				Relation: auth.MemberRelation,
+				UserIDs: []string{removeUser},
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -1086,8 +1083,7 @@ func TestRemoveUserFromDomain(t *testing.T) {
 			token:    validToken,
 			domainID: "",
 			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs:  []string{removeUser},
-				Relation: auth.MemberRelation,
+				UserIDs: []string{removeUser},
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
@@ -1097,8 +1093,7 @@ func TestRemoveUserFromDomain(t *testing.T) {
 			token:    validToken,
 			domainID: sdkDomain.ID,
 			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs:  []string{},
-				Relation: auth.MemberRelation,
+				UserIDs: []string{},
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
@@ -1106,11 +1101,11 @@ func TestRemoveUserFromDomain(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs, tc.removeUserDomain.Relation).Return(tc.svcErr)
+			svcCall := svc.On("UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs).Return(tc.svcErr)
 			err := mgsdk.RemoveUserFromDomain(tc.domainID, tc.removeUserDomain, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs, tc.removeUserDomain.Relation)
+				ok := svcCall.Parent.AssertCalled(t, "UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
