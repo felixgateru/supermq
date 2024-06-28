@@ -12,9 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/absmach/magistrala"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
-	"github.com/absmach/magistrala/internal/groups"
+	"github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
@@ -222,23 +220,17 @@ func TestCreateChannel(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
-		authCall1 := auth.On("AddPolicies", mock.Anything, mock.Anything).Return(&magistrala.AddPoliciesRes{Added: true}, nil)
-		authCall2 := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
-		authCall3 := auth.On("DeletePolicies", mock.Anything, mock.Anything).Return(&magistrala.DeletePolicyRes{Deleted: false}, nil)
-		repoCall := grepo.On("Save", mock.Anything, mock.Anything).Return(convertChannel(sdk.Channel{}), tc.err)
-		rChannel, err := mgsdk.CreateChannel(tc.channel, validToken)
-		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
-		if err == nil {
-			assert.NotEmpty(t, rChannel, fmt.Sprintf("%s: expected not nil on client ID", tc.desc))
-			ok := repoCall.Parent.AssertCalled(t, "Save", mock.Anything, mock.Anything)
-			assert.True(t, ok, fmt.Sprintf("Save was not called on %s", tc.desc))
-		}
-		authCall.Unset()
-		authCall1.Unset()
-		authCall2.Unset()
-		authCall3.Unset()
-		repoCall.Unset()
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := gsvc.On("CreateGroup", mock.Anything, tc.token, channelKind, tc.createGroupReq).Return(tc.svcRes, tc.svcErr)
+			resp, err := mgsdk.CreateChannel(tc.channelReq, validToken)
+			assert.Equal(t, tc.err, err)
+			assert.Equal(t, tc.response, resp)
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "CreateGroup", mock.Anything, tc.token, channelKind, tc.createGroupReq)
+				assert.True(t, ok)
+			}
+			svcCall.Unset()
+		})
 	}
 }
 
@@ -2011,7 +2003,7 @@ func TestListChannelUserGroups(t *testing.T) {
 			svcRes:        groups.Page{},
 			svcErr:        nil,
 			response:      sdk.GroupsPage{},
-			err:           errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrInvalidLevel), http.StatusInternalServerError),
+			err:           errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrInvalidLevel), http.StatusBadRequest),
 		},
 		{
 			desc:      "list users with invalid page metadata",
@@ -2176,36 +2168,252 @@ func TestDisconnect(t *testing.T) {
 	}
 	mgsdk := sdk.NewSDK(conf)
 
-// 	creationTime := time.Now().UTC()
-// 	channel := sdk.Channel{
-// 		ID:        generateUUID(t),
-// 		Name:      gName,
-// 		CreatedAt: creationTime,
-// 		UpdatedAt: creationTime,
-// 		Status:    mgclients.Enabled,
-// 	}
+	thingID := generateUUID(t)
 
-	authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
-	authCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: false}, nil)
-	repoCall := grepo.On("Delete", mock.Anything, mock.Anything).Return(nil)
-	err := mgsdk.DeleteChannel("wrongID", validToken)
-	assert.Equal(t, err, errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden), fmt.Sprintf("Delete channel with wrong id: expected %v got %v", svcerr.ErrNotFound, err))
-	authCall.Unset()
-	authCall1.Unset()
-	repoCall.Unset()
+	cases := []struct {
+		desc       string
+		token      string
+		disconnect sdk.Connection
+		svcErr     error
+		err        errors.SDKError
+	}{
+		{
+			desc:  "disconnect successfully",
+			token: validToken,
+			disconnect: sdk.Connection{
+				ChannelID: channel.ID,
+				ThingID:   thingID,
+			},
+			svcErr: nil,
+			err:    nil,
+		},
+		{
+			desc:  "disconnect with invalid token",
+			token: invalidToken,
+			disconnect: sdk.Connection{
+				ChannelID: channel.ID,
+				ThingID:   thingID,
+			},
+			svcErr: svcerr.ErrAuthentication,
+			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:  "disconnect with empty token",
+			token: "",
+			disconnect: sdk.Connection{
+				ChannelID: channel.ID,
+				ThingID:   thingID,
+			},
+			svcErr: svcerr.ErrAuthentication,
+			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:  "disconnect with invalid channel id",
+			token: validToken,
+			disconnect: sdk.Connection{
+				ChannelID: wrongID,
+				ThingID:   thingID,
+			},
+			svcErr: svcerr.ErrAuthorization,
+			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
+		},
+		{
+			desc:  "disconnect with empty channel id",
+			token: validToken,
+			disconnect: sdk.Connection{
+				ChannelID: "",
+				ThingID:   thingID,
+			},
+			svcErr: nil,
+			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+		{
+			desc:  "disconnect with empty thing id",
+			token: validToken,
+			disconnect: sdk.Connection{
+				ChannelID: channel.ID,
+				ThingID:   "",
+			},
+			svcErr: nil,
+			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.disconnect.ChannelID, auth.GroupRelation, auth.ThingsKind, []string{tc.disconnect.ThingID}).Return(tc.svcErr)
+			err := mgsdk.Disconnect(tc.disconnect, tc.token)
+			assert.Equal(t, tc.err, err)
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "Unassign", mock.Anything, tc.token, tc.disconnect.ChannelID, auth.GroupRelation, auth.ThingsKind, []string{tc.disconnect.ThingID})
+				assert.True(t, ok)
+			}
+			svcCall.Unset()
+		})
+	}
+}
 
-	authCall = auth.On("DeleteEntityPolicies", mock.Anything, mock.Anything, mock.Anything).Return(&magistrala.DeletePolicyRes{Deleted: true}, nil)
-	authCall1 = auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
-	authCall2 := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
-	repoCall = grepo.On("Delete", mock.Anything, mock.Anything).Return(nil)
-	err = mgsdk.DeleteChannel(channel.ID, validToken)
-	assert.Nil(t, err, fmt.Sprintf("Delete channel with correct id: expected %v got %v", nil, err))
-	ok := repoCall.Parent.AssertCalled(t, "Delete", mock.Anything, channel.ID)
-	assert.True(t, ok, "Delete was not called on deleting channel with correct id")
-	authCall.Unset()
-	authCall1.Unset()
-	authCall2.Unset()
-	repoCall.Unset()
+func TestConnectThing(t *testing.T) {
+	ts, gsvc := setupChannels()
+	defer ts.Close()
+
+	conf := sdk.Config{
+		ThingsURL: ts.URL,
+	}
+	mgsdk := sdk.NewSDK(conf)
+
+	thingID := generateUUID(t)
+
+	cases := []struct {
+		desc      string
+		token     string
+		channelID string
+		thingID   string
+		svcErr    error
+		err       errors.SDKError
+	}{
+		{
+			desc:      "connect successfully",
+			token:     validToken,
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    nil,
+			err:       nil,
+		},
+		{
+			desc:      "connect with invalid token",
+			token:     invalidToken,
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthentication,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:      "connect with empty token",
+			token:     "",
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthentication,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:      "connect with invalid channel id",
+			token:     validToken,
+			channelID: wrongID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthorization,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
+		},
+		{
+			desc:      "connect with empty channel id",
+			token:     validToken,
+			channelID: "",
+			thingID:   thingID,
+			svcErr:    nil,
+			err:       errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+		{
+			desc:      "connect with empty thing id",
+			token:     validToken,
+			channelID: channel.ID,
+			thingID:   "",
+			svcErr:    nil,
+			err:       errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := gsvc.On("Assign", mock.Anything, tc.token, tc.channelID, auth.GroupRelation, auth.ThingsKind, []string{tc.thingID}).Return(tc.svcErr)
+			err := mgsdk.ConnectThing(tc.thingID, tc.channelID, tc.token)
+			assert.Equal(t, tc.err, err)
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "Assign", mock.Anything, tc.token, tc.channelID, auth.GroupRelation, auth.ThingsKind, []string{tc.thingID})
+				assert.True(t, ok)
+			}
+			svcCall.Unset()
+		})
+	}
+}
+
+func TestDisconnectThing(t *testing.T) {
+	ts, gsvc := setupChannels()
+	defer ts.Close()
+
+	conf := sdk.Config{
+		ThingsURL: ts.URL,
+	}
+	mgsdk := sdk.NewSDK(conf)
+
+	thingID := generateUUID(t)
+
+	cases := []struct {
+		desc      string
+		token     string
+		channelID string
+		thingID   string
+		svcErr    error
+		err       errors.SDKError
+	}{
+		{
+			desc:      "disconnect successfully",
+			token:     validToken,
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    nil,
+			err:       nil,
+		},
+		{
+			desc:      "disconnect with invalid token",
+			token:     invalidToken,
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthentication,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:      "disconnect with empty token",
+			token:     "",
+			channelID: channel.ID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthentication,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
+		{
+			desc:      "disconnect with invalid channel id",
+			token:     validToken,
+			channelID: wrongID,
+			thingID:   thingID,
+			svcErr:    svcerr.ErrAuthorization,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
+		},
+		{
+			desc:      "disconnect with empty channel id",
+			token:     validToken,
+			channelID: "",
+			thingID:   thingID,
+			svcErr:    nil,
+			err:       errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+		{
+			desc:      "disconnect with empty thing id",
+			token:     validToken,
+			channelID: channel.ID,
+			thingID:   "",
+			svcErr:    nil,
+			err:       errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := gsvc.On("Unassign", mock.Anything, tc.token, tc.channelID, auth.GroupRelation, auth.ThingsKind, []string{tc.thingID}).Return(tc.svcErr)
+			err := mgsdk.DisconnectThing(tc.thingID, tc.channelID, tc.token)
+			assert.Equal(t, tc.err, err)
+			if tc.err == nil {
+				ok := svcCall.Parent.AssertCalled(t, "Unassign", mock.Anything, tc.token, tc.channelID, auth.GroupRelation, auth.ThingsKind, []string{tc.thingID})
+				assert.True(t, ok)
+			}
+			svcCall.Unset()
+		})
+	}
 }
 
 func TestListGroupChannels(t *testing.T) {
@@ -2217,7 +2425,7 @@ func TestListGroupChannels(t *testing.T) {
 	}
 	mgsdk := sdk.NewSDK(conf)
 
-	groupChannel := sdk.Group{
+	groupChannel := sdk.Channel{
 		ID:       testsutil.GenerateUUID(t),
 		Name:     "group_channel",
 		Metadata: sdk.Metadata{"role": "group"},
@@ -2232,7 +2440,7 @@ func TestListGroupChannels(t *testing.T) {
 		svcReq   groups.Page
 		svcRes   groups.Page
 		svcErr   error
-		response sdk.GroupsPage
+		response sdk.ChannelsPage
 		err      errors.SDKError
 	}{
 		{
@@ -2255,14 +2463,14 @@ func TestListGroupChannels(t *testing.T) {
 				PageMeta: groups.PageMeta{
 					Total: 1,
 				},
-				Groups: []groups.Group{convertGroup(groupChannel)},
+				Groups: []groups.Group{convertChannel(groupChannel)},
 			},
 			svcErr: nil,
-			response: sdk.GroupsPage{
+			response: sdk.ChannelsPage{
 				PageRes: sdk.PageRes{
 					Total: 1,
 				},
-				Groups: []sdk.Group{groupChannel},
+				Channels: []sdk.Channel{groupChannel},
 			},
 			err: nil,
 		},
@@ -2284,7 +2492,7 @@ func TestListGroupChannels(t *testing.T) {
 			},
 			svcRes:   groups.Page{},
 			svcErr:   svcerr.ErrAuthentication,
-			response: sdk.GroupsPage{},
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
@@ -2298,7 +2506,7 @@ func TestListGroupChannels(t *testing.T) {
 			svcReq:   groups.Page{},
 			svcRes:   groups.Page{},
 			svcErr:   nil,
-			response: sdk.GroupsPage{},
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
 		},
 		{
@@ -2319,7 +2527,7 @@ func TestListGroupChannels(t *testing.T) {
 			},
 			svcRes:   groups.Page{},
 			svcErr:   svcerr.ErrAuthorization,
-			response: sdk.GroupsPage{},
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
 		},
 		{
@@ -2336,7 +2544,7 @@ func TestListGroupChannels(t *testing.T) {
 			svcReq:   groups.Page{},
 			svcRes:   groups.Page{},
 			svcErr:   nil,
-			response: sdk.GroupsPage{},
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
 		},
 		{
@@ -2367,7 +2575,7 @@ func TestListGroupChannels(t *testing.T) {
 				},
 			},
 			svcErr:   nil,
-			response: sdk.GroupsPage{},
+			response: sdk.ChannelsPage{},
 			err:      errors.NewSDKError(errors.New("unexpected end of JSON input")),
 		},
 	}
