@@ -59,12 +59,6 @@ func generateUUID(t *testing.T) string {
 	return ulid
 }
 
-func convertThingsPage(cp sdk.ThingsPage) mgclients.ClientsPage {
-	return mgclients.ClientsPage{
-		Clients: convertThings(cp.Things...),
-	}
-}
-
 func convertClients(cs []sdk.User) []mgclients.Client {
 	ccs := []mgclients.Client{}
 
