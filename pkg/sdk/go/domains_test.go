@@ -1038,74 +1038,64 @@ func TestRemoveUserFromDomain(t *testing.T) {
 	}
 
 	mgsdk := sdk.NewSDK(sdkConf)
-	removeUser := testsutil.GenerateUUID(t)
+	removeUserID := testsutil.GenerateUUID(t)
 
 	cases := []struct {
-		desc             string
-		token            string
-		domainID         string
-		removeUserDomain sdk.UsersRelationRequest
-		svcErr           error
-		err              error
+		desc     string
+		token    string
+		domainID string
+		userID   string
+		svcErr   error
+		err      error
 	}{
 		{
 			desc:     "remove user from domain successfully",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs: []string{removeUser},
-			},
-			svcErr: nil,
-			err:    nil,
+			userID:   removeUserID,
+			svcErr:   nil,
+			err:      nil,
 		},
 		{
 			desc:     "remove user from domain with invalid token",
 			token:    invalidToken,
 			domainID: sdkDomain.ID,
-			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs: []string{removeUser},
-			},
-			svcErr: svcerr.ErrAuthentication,
-			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			userID:   removeUserID,
+			svcErr:   svcerr.ErrAuthentication,
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "remove user from domain with empty token",
 			token:    "",
 			domainID: sdkDomain.ID,
-			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs: []string{removeUser},
-			},
-			svcErr: nil,
-			err:    errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
+			userID:   removeUserID,
+			svcErr:   nil,
+			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
 		{
 			desc:     "remove user from domain with empty domain id",
 			token:    validToken,
 			domainID: "",
-			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs: []string{removeUser},
-			},
-			svcErr: nil,
-			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
+			userID:   removeUserID,
+			svcErr:   nil,
+			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
 		},
 		{
 			desc:     "remove user from domain with empty user id",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			removeUserDomain: sdk.UsersRelationRequest{
-				UserIDs: []string{},
-			},
-			svcErr: nil,
-			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
+			userID:   "",
+			svcErr:   nil,
+			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMalformedPolicy, http.StatusBadRequest),
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs).Return(tc.svcErr)
-			err := mgsdk.RemoveUserFromDomain(tc.domainID, tc.removeUserDomain, tc.token)
+			svcCall := svc.On("UnassignUser", mock.Anything, tc.token, tc.domainID, tc.userID).Return(tc.svcErr)
+			err := mgsdk.RemoveUserFromDomain(tc.domainID, tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "UnassignUsers", mock.Anything, tc.token, tc.domainID, tc.removeUserDomain.UserIDs)
+				ok := svcCall.Parent.AssertCalled(t, "UnassignUser", mock.Anything, tc.token, tc.domainID, tc.userID)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
