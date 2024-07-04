@@ -249,6 +249,24 @@ func convertInvitation(i sdk.Invitation) invitations.Invitation {
 	}
 }
 
+func generateTestUser(t *testing.T) sdk.User {
+	createdAt, err := time.Parse(time.RFC3339, "2024-01-01T00:00:00Z")
+	assert.Nil(t, err, fmt.Sprintf("Unexpected error parsing time: %v", err))
+	return sdk.User{
+		ID:   generateUUID(t),
+		Name: "clientname",
+		Credentials: sdk.Credentials{
+			Identity: "clientidentity@email.com",
+			Secret:   secret,
+		},
+		Tags:      []string{"tag1", "tag2"},
+		Metadata:  validMetadata,
+		CreatedAt: createdAt,
+		UpdatedAt: createdAt,
+		Status:    mgclients.EnabledStatus.String(),
+	}
+}
+
 func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	os.Exit(exitCode)
