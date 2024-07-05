@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -2592,20 +2591,6 @@ func TestListGroupChannels(t *testing.T) {
 			svcCall.Unset()
 		})
 	}
-}
-
-func toIDs(objects interface{}) []string {
-	v := reflect.ValueOf(objects)
-	if v.Kind() != reflect.Slice {
-		panic("objects argument must be a slice")
-	}
-	ids := make([]string, v.Len())
-	for i := 0; i < v.Len(); i++ {
-		id := v.Index(i).FieldByName("ID").String()
-		ids[i] = id
-	}
-
-	return ids
 }
 
 func generateTestChannel(t *testing.T) sdk.Channel {
