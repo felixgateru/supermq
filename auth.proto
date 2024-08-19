@@ -14,13 +14,18 @@ service AuthzService {
   rpc Authorize(AuthorizeReq) returns (AuthorizeRes) {}
 }
 
-// AuthService is a service that provides authentication and authorization
-// functionalities for the users service.
-service AuthService {
+// AuthnzService is a service that provides authentication and authorization
+// functionalities for magistrala services.
+service AuthnzService {
   rpc Issue(IssueReq) returns (Token) {}
   rpc Refresh(RefreshReq) returns (Token) {}
   rpc Identify(IdentityReq) returns (IdentityRes) {}
   rpc Authorize(AuthorizeReq) returns (AuthorizeRes) {}
+}
+
+// PolicyService is a service that provides policy CRUD
+// functionalities for magistrala services.
+service PolicyService {
   rpc AddPolicy(AddPolicyReq) returns (AddPolicyRes) {}
   rpc AddPolicies(AddPoliciesReq) returns (AddPoliciesRes) {}
   rpc DeletePolicyFilter(DeletePolicyFilterReq) returns (DeletePolicyRes) {}

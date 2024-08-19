@@ -8,8 +8,8 @@ boilerplate-file: "./tools/config/boilerplate.txt"
 packages:
   github.com/absmach/magistrala:
     interfaces:
-      AuthServiceClient:
+      AuthnzServiceClient:
         config:
           dir: "./auth/mocks"
-          mockname: "AuthClient"
+          mockname: "AuthnzClient"
           filename: "auth_client.go"

@@ -19,15 +19,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const svcName = "magistrala.AuthService"
+const (
+	authnzSvcName = "magistrala.AuthnzService"
+	policySvcName = "magistrala.PolicyService"
+)
 
-var _ magistrala.AuthServiceClient = (*grpcClient)(nil)
+var _ magistrala.AuthnzServiceClient = (*authnzGrpcClient)(nil)
+var _ magistrala.PolicyServiceClient = (*policyGrpcClient)(nil)
 
-type grpcClient struct {
-	issue                endpoint.Endpoint
-	refresh              endpoint.Endpoint
-	identify             endpoint.Endpoint
-	authorize            endpoint.Endpoint
+type authnzGrpcClient struct {
+	issue     endpoint.Endpoint
+	refresh   endpoint.Endpoint
+	identify  endpoint.Endpoint
+	authorize endpoint.Endpoint
+	timeout   time.Duration
+}
+
+type policyGrpcClient struct {
 	addPolicy            endpoint.Endpoint
 	addPolicies          endpoint.Endpoint
 	deletePolicyFilter   endpoint.Endpoint
@@ -43,12 +51,12 @@ type grpcClient struct {
 	timeout              time.Duration
 }
 
-// NewClient returns new gRPC client instance.
-func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServiceClient {
-	return &grpcClient{
+// NewAuthnzClient returns new authnz gRPC client instance.
+func NewAuthnzClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthnzServiceClient {
+	return &authnzGrpcClient{
 		issue: kitgrpc.NewClient(
 			conn,
-			svcName,
+			authnzSvcName,
 			"Issue",
 			encodeIssueRequest,
 			decodeIssueResponse,
@@ -56,7 +64,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		refresh: kitgrpc.NewClient(
 			conn,
-			svcName,
+			authnzSvcName,
 			"Refresh",
 			encodeRefreshRequest,
 			decodeRefreshResponse,
@@ -64,7 +72,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		identify: kitgrpc.NewClient(
 			conn,
-			svcName,
+			authnzSvcName,
 			"Identify",
 			encodeIdentifyRequest,
 			decodeIdentifyResponse,
@@ -72,15 +80,22 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		authorize: kitgrpc.NewClient(
 			conn,
-			svcName,
+			authnzSvcName,
 			"Authorize",
 			encodeAuthorizeRequest,
 			decodeAuthorizeResponse,
 			magistrala.AuthorizeRes{},
 		).Endpoint(),
+		timeout: timeout,
+	}
+}
+
+// NewPolicyClient returns new policy gRPC client instance.
+func NewPolicyClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.PolicyServiceClient {
+	return &policyGrpcClient{
 		addPolicy: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"AddPolicy",
 			encodeAddPolicyRequest,
 			decodeAddPolicyResponse,
@@ -88,7 +103,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		addPolicies: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"AddPolicies",
 			encodeAddPoliciesRequest,
 			decodeAddPoliciesResponse,
@@ -96,7 +111,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		deletePolicyFilter: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"DeletePolicyFilter",
 			encodeDeletePolicyFilterRequest,
 			decodeDeletePolicyFilterResponse,
@@ -104,7 +119,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		deletePolicies: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"DeletePolicies",
 			encodeDeletePoliciesRequest,
 			decodeDeletePoliciesResponse,
@@ -112,7 +127,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		listObjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"ListObjects",
 			encodeListObjectsRequest,
 			decodeListObjectsResponse,
@@ -120,7 +135,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		listAllObjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"ListAllObjects",
 			encodeListObjectsRequest,
 			decodeListObjectsResponse,
@@ -128,7 +143,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		countObjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"CountObjects",
 			encodeCountObjectsRequest,
 			decodeCountObjectsResponse,
@@ -136,7 +151,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		listSubjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"ListSubjects",
 			encodeListSubjectsRequest,
 			decodeListSubjectsResponse,
@@ -144,7 +159,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		listAllSubjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"ListAllSubjects",
 			encodeListSubjectsRequest,
 			decodeListSubjectsResponse,
@@ -152,7 +167,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		countSubjects: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"CountSubjects",
 			encodeCountSubjectsRequest,
 			decodeCountSubjectsResponse,
@@ -160,7 +175,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		listPermissions: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"ListPermissions",
 			encodeListPermissionsRequest,
 			decodeListPermissionsResponse,
@@ -168,7 +183,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 		).Endpoint(),
 		deleteEntityPolicies: kitgrpc.NewClient(
 			conn,
-			svcName,
+			policySvcName,
 			"DeleteEntityPolicies",
 			encodeDeleteEntityPoliciesRequest,
 			decodeDeleteEntityPoliciesResponse,
@@ -179,7 +194,7 @@ func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServ
 	}
 }
 
-func (client grpcClient) Issue(ctx context.Context, req *magistrala.IssueReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
+func (client authnzGrpcClient) Issue(ctx context.Context, req *magistrala.IssueReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -207,7 +222,7 @@ func decodeIssueResponse(_ context.Context, grpcRes interface{}) (interface{}, e
 	return grpcRes, nil
 }
 
-func (client grpcClient) Refresh(ctx context.Context, req *magistrala.RefreshReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
+func (client authnzGrpcClient) Refresh(ctx context.Context, req *magistrala.RefreshReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -227,7 +242,7 @@ func decodeRefreshResponse(_ context.Context, grpcRes interface{}) (interface{},
 	return grpcRes, nil
 }
 
-func (client grpcClient) Identify(ctx context.Context, token *magistrala.IdentityReq, _ ...grpc.CallOption) (*magistrala.IdentityRes, error) {
+func (client authnzGrpcClient) Identify(ctx context.Context, token *magistrala.IdentityReq, _ ...grpc.CallOption) (*magistrala.IdentityRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -249,7 +264,7 @@ func decodeIdentifyResponse(_ context.Context, grpcRes interface{}) (interface{}
 	return identityRes{id: res.GetId(), userID: res.GetUserId(), domainID: res.GetDomainId()}, nil
 }
 
-func (client grpcClient) Authorize(ctx context.Context, req *magistrala.AuthorizeReq, _ ...grpc.CallOption) (r *magistrala.AuthorizeRes, err error) {
+func (client authnzGrpcClient) Authorize(ctx context.Context, req *magistrala.AuthorizeReq, _ ...grpc.CallOption) (r *magistrala.AuthorizeRes, err error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -290,7 +305,7 @@ func encodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}
 	}, nil
 }
 
-func (client grpcClient) AddPolicy(ctx context.Context, in *magistrala.AddPolicyReq, opts ...grpc.CallOption) (*magistrala.AddPolicyRes, error) {
+func (client policyGrpcClient) AddPolicy(ctx context.Context, in *magistrala.AddPolicyReq, opts ...grpc.CallOption) (*magistrala.AddPolicyRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -333,7 +348,7 @@ func encodeAddPolicyRequest(_ context.Context, grpcReq interface{}) (interface{}
 	}, nil
 }
 
-func (client grpcClient) AddPolicies(ctx context.Context, in *magistrala.AddPoliciesReq, opts ...grpc.CallOption) (*magistrala.AddPoliciesRes, error) {
+func (client policyGrpcClient) AddPolicies(ctx context.Context, in *magistrala.AddPoliciesReq, opts ...grpc.CallOption) (*magistrala.AddPoliciesRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 	r := policiesReq{}
@@ -388,7 +403,7 @@ func encodeAddPoliciesRequest(_ context.Context, grpcReq interface{}) (interface
 	return &magistrala.AddPoliciesReq{AddPoliciesReq: addPolicies}, nil
 }
 
-func (client grpcClient) DeletePolicyFilter(ctx context.Context, in *magistrala.DeletePolicyFilterReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
+func (client policyGrpcClient) DeletePolicyFilter(ctx context.Context, in *magistrala.DeletePolicyFilterReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -431,7 +446,7 @@ func encodeDeletePolicyFilterRequest(_ context.Context, grpcReq interface{}) (in
 	}, nil
 }
 
-func (client grpcClient) DeletePolicies(ctx context.Context, in *magistrala.DeletePoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
+func (client policyGrpcClient) DeletePolicies(ctx context.Context, in *magistrala.DeletePoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 	r := policiesReq{}
@@ -486,7 +501,7 @@ func encodeDeletePoliciesRequest(_ context.Context, grpcReq interface{}) (interf
 	return &magistrala.DeletePoliciesReq{DeletePoliciesReq: deletePolicies}, nil
 }
 
-func (client grpcClient) ListObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
+func (client policyGrpcClient) ListObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -525,7 +540,7 @@ func encodeListObjectsRequest(_ context.Context, grpcReq interface{}) (interface
 	}, nil
 }
 
-func (client grpcClient) ListAllObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
+func (client policyGrpcClient) ListAllObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -546,7 +561,7 @@ func (client grpcClient) ListAllObjects(ctx context.Context, in *magistrala.List
 	return &magistrala.ListObjectsRes{Policies: lpr.policies}, nil
 }
 
-func (client grpcClient) CountObjects(ctx context.Context, in *magistrala.CountObjectsReq, opts ...grpc.CallOption) (*magistrala.CountObjectsRes, error) {
+func (client policyGrpcClient) CountObjects(ctx context.Context, in *magistrala.CountObjectsReq, opts ...grpc.CallOption) (*magistrala.CountObjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -585,7 +600,7 @@ func encodeCountObjectsRequest(_ context.Context, grpcReq interface{}) (interfac
 	}, nil
 }
 
-func (client grpcClient) ListSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
+func (client policyGrpcClient) ListSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -625,7 +640,7 @@ func encodeListSubjectsRequest(_ context.Context, grpcReq interface{}) (interfac
 	}, nil
 }
 
-func (client grpcClient) ListAllSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
+func (client policyGrpcClient) ListAllSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -646,7 +661,7 @@ func (client grpcClient) ListAllSubjects(ctx context.Context, in *magistrala.Lis
 	return &magistrala.ListSubjectsRes{Policies: lpr.policies}, nil
 }
 
-func (client grpcClient) CountSubjects(ctx context.Context, in *magistrala.CountSubjectsReq, opts ...grpc.CallOption) (*magistrala.CountSubjectsRes, error) {
+func (client policyGrpcClient) CountSubjects(ctx context.Context, in *magistrala.CountSubjectsReq, opts ...grpc.CallOption) (*magistrala.CountSubjectsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -685,7 +700,7 @@ func encodeCountSubjectsRequest(_ context.Context, grpcReq interface{}) (interfa
 	}, nil
 }
 
-func (client grpcClient) ListPermissions(ctx context.Context, in *magistrala.ListPermissionsReq, opts ...grpc.CallOption) (*magistrala.ListPermissionsRes, error) {
+func (client policyGrpcClient) ListPermissions(ctx context.Context, in *magistrala.ListPermissionsReq, opts ...grpc.CallOption) (*magistrala.ListPermissionsRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -739,7 +754,7 @@ func encodeListPermissionsRequest(_ context.Context, grpcReq interface{}) (inter
 	}, nil
 }
 
-func (client grpcClient) DeleteEntityPolicies(ctx context.Context, in *magistrala.DeleteEntityPoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
+func (client policyGrpcClient) DeleteEntityPolicies(ctx context.Context, in *magistrala.DeleteEntityPoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 

@@ -16,10 +16,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var _ magistrala.AuthServiceServer = (*grpcServer)(nil)
+var _ AuthServiceServer = (*grpcServer)(nil)
+
+type AuthServiceServer interface {
+	magistrala.AuthnzServiceServer
+	magistrala.PolicyServiceServer
+}
 
 type grpcServer struct {
-	magistrala.UnimplementedAuthServiceServer
+	magistrala.UnimplementedAuthnzServiceServer
+	magistrala.UnimplementedPolicyServiceServer
 	issue                kitgrpc.Handler
 	refresh              kitgrpc.Handler
 	identify             kitgrpc.Handler
@@ -39,7 +45,7 @@ type grpcServer struct {
 }
 
 // NewServer returns new AuthServiceServer instance.
-func NewServer(svc auth.Service) magistrala.AuthServiceServer {
+func NewServer(svc auth.Service) AuthServiceServer {
 	return &grpcServer{
 		issue: kitgrpc.NewServer(
 			(issueEndpoint(svc)),

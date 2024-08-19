@@ -119,7 +119,8 @@ type ConfigReader interface {
 }
 
 type bootstrapService struct {
-	auth       magistrala.AuthServiceClient
+	authnz     magistrala.AuthnzServiceClient
+	policy     magistrala.PolicyServiceClient
 	configs    ConfigRepository
 	sdk        mgsdk.SDK
 	encKey     []byte
@@ -127,11 +128,12 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(uauth magistrala.AuthServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(authnz magistrala.AuthnzServiceClient, policy magistrala.PolicyServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,
-		auth:       uauth,
+		authnz:     authnz,
+		policy:     policy,
 		encKey:     encKey,
 		idProvider: idp,
 	}
@@ -302,7 +304,7 @@ func (bs bootstrapService) UpdateConnections(ctx context.Context, token, id stri
 }
 
 func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]string, error) {
-	tids, err := bs.auth.ListAllObjects(ctx, &magistrala.ListObjectsReq{
+	tids, err := bs.policy.ListAllObjects(ctx, &magistrala.ListObjectsReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.ViewPermission,
@@ -315,7 +317,7 @@ func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]
 }
 
 func (bs bootstrapService) checkSuperAdmin(ctx context.Context, userID string) error {
-	res, err := bs.auth.Authorize(ctx, &magistrala.AuthorizeReq{
+	res, err := bs.authnz.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.AdminPermission,
@@ -481,7 +483,7 @@ func (bs bootstrapService) identify(ctx context.Context, token string) (*magistr
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
-	res, err := bs.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := bs.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -501,7 +503,7 @@ func (bs bootstrapService) authorize(ctx context.Context, domainID, subjKind, su
 		ObjectType:  objType,
 		Object:      obj,
 	}
-	res, err := bs.auth.Authorize(ctx, req)
+	res, err := bs.authnz.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
