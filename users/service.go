@@ -113,7 +113,7 @@ func (svc service) IssueToken(ctx context.Context, identity, secret, domainID st
 		d = domainID
 	}
 
-	token, err := svc.auth.Issue(ctx, &magistrala.IssueReq{UserId: dbUser.ID, DomainId: &d, Type: uint32(auth.AccessKey)})
+	token, err := svc.authnz.Issue(ctx, &magistrala.IssueReq{UserId: dbUser.ID, DomainId: &d, Type: uint32(auth.AccessKey)})
 	if err != nil {
 		return &magistrala.Token{}, errors.Wrap(errIssueToken, err)
 	}
@@ -140,7 +140,7 @@ func (svc service) RefreshToken(ctx context.Context, refreshToken, domainID stri
 		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
 	}
 
-	return svc.auth.Refresh(ctx, &magistrala.RefreshReq{RefreshToken: refreshToken, DomainId: &d})
+	return svc.authnz.Refresh(ctx, &magistrala.RefreshReq{RefreshToken: refreshToken, DomainId: &d})
 }
 
 func (svc service) ViewClient(ctx context.Context, token, id string) (mgclients.Client, error) {
@@ -307,7 +307,7 @@ func (svc service) GenerateResetToken(ctx context.Context, email, host string) e
 		UserId: client.ID,
 		Type:   uint32(auth.RecoveryKey),
 	}
-	token, err := svc.auth.Issue(ctx, issueReq)
+	token, err := svc.authnz.Issue(ctx, issueReq)
 	if err != nil {
 		return errors.Wrap(errRecoveryToken, err)
 	}
@@ -599,7 +599,7 @@ func (svc *service) checkSuperAdmin(ctx context.Context, adminID string) error {
 }
 
 func (svc service) identify(ctx context.Context, token string) (*magistrala.IdentityRes, error) {
-	res, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return &magistrala.IdentityRes{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -615,7 +615,7 @@ func (svc *service) authorize(ctx context.Context, subjType, subjKind, subj, per
 		ObjectType:  objType,
 		Object:      obj,
 	}
-	res, err := svc.auth.Authorize(ctx, req)
+	res, err := svc.authnz.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -651,11 +651,11 @@ func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (
 		Type:   uint32(auth.AccessKey),
 	}
 
-	return svc.auth.Issue(ctx, claims)
+	return svc.authnz.Issue(ctx, claims)
 }
 
 func (svc service) Identify(ctx context.Context, token string) (string, error) {
-	user, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	user, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
