@@ -99,7 +99,7 @@ func main() {
 		return
 	}
 
-	ac, acHandler, err := auth.Setup(ctx, authConfig)
+	ac, acHandler, err := auth.SetupAuthnz(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -166,7 +166,7 @@ func main() {
 	}
 }
 
-func newService(db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthServiceClient, logger *slog.Logger, tracer trace.Tracer) journal.Service {
+func newService(db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthnzServiceClient, logger *slog.Logger, tracer trace.Tracer) journal.Service {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	repo := journalpg.NewRepository(database)
 	idp := uuid.New()

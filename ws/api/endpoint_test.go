@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/messaging/mocks"
+	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/magistrala/ws"
 	"github.com/absmach/magistrala/ws/api"
 	"github.com/absmach/mproxy/pkg/session"
@@ -90,7 +90,7 @@ func handshake(tsURL, chanID, subtopic, thingKey string, addHeader bool) (*webso
 }
 
 func TestHandshake(t *testing.T) {
-	auth := new(authmocks.AuthClient)
+	auth := new(thmocks.AuthzClient)
 	svc, pubsub := newService(auth)
 	target := newHTTPServer(svc)
 	defer target.Close()

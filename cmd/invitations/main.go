@@ -98,7 +98,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	authClient, authHandler, err := auth.Setup(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuthnz(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -154,7 +154,7 @@ func main() {
 	}
 }
 
-func newService(db *sqlx.DB, dbConfig clientspg.Config, authClient magistrala.AuthServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
+func newService(db *sqlx.DB, dbConfig clientspg.Config, authClient magistrala.AuthnzServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	repo := invitationspg.NewRepository(database)
 

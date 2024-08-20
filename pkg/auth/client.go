@@ -15,12 +15,12 @@ import (
 
 var errSvcNotServing = errors.New("service is not serving")
 
-// Setup loads Auth gRPC configuration and creates new Auth gRPC client.
+// SetupAuthnz loads Authnz gRPC configuration and creates new Authnz gRPC client.
 //
 // For example:
 //
-//	authClient, authHandler, err := auth.Setup(ctx, auth.Config{})
-func Setup(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handler, error) {
+//	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, auth.Config{}).
+func SetupAuthnz(ctx context.Context, cfg Config) (magistrala.AuthnzServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
 		return nil, nil, err
@@ -34,14 +34,36 @@ func Setup(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handl
 		return nil, nil, errSvcNotServing
 	}
 
-	return authgrpc.NewClient(client.Connection(), cfg.Timeout), client, nil
+	return authgrpc.NewAuthnzClient(client.Connection(), cfg.Timeout), client, nil
 }
 
-// Setup loads Authz gRPC configuration and creates new Authz gRPC client.
+// SetupPolicyClient loads Policy gRPC configuration and creates a new Policy gRPC client.
 //
 // For example:
 //
-//	authzClient, authzHandler, err := auth.Setup(ctx, auth.Config{})
+// policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, auth.Config{}).
+func SetupPolicyClient(ctx context.Context, cfg Config) (magistrala.PolicyServiceClient, Handler, error) {
+	client, err := newHandler(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	health := grpchealth.NewHealthClient(client.Connection())
+	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
+		Service: "auth",
+	})
+	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
+		return nil, nil, errSvcNotServing
+	}
+
+	return authgrpc.NewPolicyClient(client.Connection(), cfg.Timeout), client, nil
+}
+
+// SetupAuthz loads Authz gRPC configuration and creates new Authz gRPC client.
+//
+// For example:
+//
+//	authzClient, authzHandler, err := auth.Setup(ctx, auth.Config{}).
 func SetupAuthz(ctx context.Context, cfg Config) (magistrala.AuthzServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {

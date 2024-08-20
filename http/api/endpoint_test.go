@@ -12,12 +12,12 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	server "github.com/absmach/magistrala/http"
 	"github.com/absmach/magistrala/http/api"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	pubsub "github.com/absmach/magistrala/pkg/messaging/mocks"
+	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/mproxy"
 	mproxyhttp "github.com/absmach/mproxy/pkg/http"
 	"github.com/absmach/mproxy/pkg/session"
@@ -81,7 +81,7 @@ func (tr testRequest) make() (*http.Response, error) {
 }
 
 func TestPublish(t *testing.T) {
-	auth := new(authmocks.AuthClient)
+	auth := new(thmocks.AuthzClient)
 	chanID := "1"
 	ctSenmlJSON := "application/senml+json"
 	ctSenmlCBOR := "application/senml+cbor"

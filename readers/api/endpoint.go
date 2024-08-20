@@ -14,7 +14,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-func listMessagesEndpoint(svc readers.MessageRepository, uauth magistrala.AuthServiceClient, taauth magistrala.AuthzServiceClient) endpoint.Endpoint {
+func listMessagesEndpoint(svc readers.MessageRepository, uauth magistrala.AuthnzServiceClient, taauth magistrala.AuthzServiceClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMessagesReq)
 		if err := req.validate(); err != nil {

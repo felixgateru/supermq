@@ -24,8 +24,10 @@ const (
 	policySvcName = "magistrala.PolicyService"
 )
 
-var _ magistrala.AuthnzServiceClient = (*authnzGrpcClient)(nil)
-var _ magistrala.PolicyServiceClient = (*policyGrpcClient)(nil)
+var (
+	_ magistrala.AuthnzServiceClient = (*authnzGrpcClient)(nil)
+	_ magistrala.PolicyServiceClient = (*policyGrpcClient)(nil)
+)
 
 type authnzGrpcClient struct {
 	issue     endpoint.Endpoint

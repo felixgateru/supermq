@@ -29,17 +29,17 @@ const (
 	validID      = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
 )
 
-func newService() (notifiers.Service, *authmocks.AuthClient, *mocks.SubscriptionsRepository) {
+func newService() (notifiers.Service, *authmocks.AuthnzClient, *mocks.SubscriptionsRepository) {
 	repo := new(mocks.SubscriptionsRepository)
-	auth := new(authmocks.AuthClient)
+	authnz := new(authmocks.AuthnzClient)
 	notifier := new(mocks.Notifier)
 	idp := uuid.NewMock()
 	from := "exampleFrom"
-	return notifiers.New(auth, repo, idp, notifier, from), auth, repo
+	return notifiers.New(authnz, repo, idp, notifier, from), authnz, repo
 }
 
 func TestCreateSubscription(t *testing.T) {
-	svc, auth, repo := newService()
+	svc, authnz, repo := newService()
 
 	cases := []struct {
 		desc        string
@@ -79,7 +79,7 @@ func TestCreateSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Save", context.Background(), mock.Anything).Return(tc.id, tc.err)
 		id, err := svc.CreateSubscription(context.Background(), tc.token, tc.sub)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -90,7 +90,7 @@ func TestCreateSubscription(t *testing.T) {
 }
 
 func TestViewSubscription(t *testing.T) {
-	svc, auth, repo := newService()
+	svc, authnz, repo := newService()
 	sub := notifiers.Subscription{
 		Contact: exampleUser1,
 		Topic:   "valid.topic",
@@ -136,7 +136,7 @@ func TestViewSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Retrieve", context.Background(), tc.id).Return(tc.sub, tc.err)
 		sub, err := svc.ViewSubscription(context.Background(), tc.token, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -147,7 +147,7 @@ func TestViewSubscription(t *testing.T) {
 }
 
 func TestListSubscriptions(t *testing.T) {
-	svc, auth, repo := newService()
+	svc, authnz, repo := newService()
 	sub := notifiers.Subscription{Contact: exampleUser1, OwnerID: exampleUser1}
 	topic := "topic.subtopic"
 	var subs []notifiers.Subscription
@@ -263,7 +263,7 @@ func TestListSubscriptions(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("RetrieveAll", context.Background(), tc.pageMeta).Return(tc.page, tc.err)
 		page, err := svc.ListSubscriptions(context.Background(), tc.token, tc.pageMeta)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -274,12 +274,9 @@ func TestListSubscriptions(t *testing.T) {
 }
 
 func TestRemoveSubscription(t *testing.T) {
-	svc, auth, repo := newService()
+	svc, authnz, repo := newService()
 	sub := notifiers.Subscription{
-		Contact: exampleUser1,
-		Topic:   "valid.topic",
-		ID:      testsutil.GenerateUUID(t),
-		OwnerID: validID,
+		ID: testsutil.GenerateUUID(t),
 	}
 
 	cases := []struct {
@@ -316,7 +313,7 @@ func TestRemoveSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Remove", context.Background(), tc.id).Return(tc.err)
 		err := svc.RemoveSubscription(context.Background(), tc.token, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -327,21 +324,6 @@ func TestRemoveSubscription(t *testing.T) {
 
 func TestConsume(t *testing.T) {
 	svc, _, repo := newService()
-	sub := notifiers.Subscription{
-		Contact: exampleUser1,
-		OwnerID: validID,
-		Topic:   "topic.subtopic",
-	}
-	for i := 0; i < total; i++ {
-		tmp := sub
-		tmp.Contact = fmt.Sprintf("contact%d@example.com", i)
-		if i%2 == 0 {
-			tmp.Topic = fmt.Sprintf("%s-2", sub.Topic)
-		}
-	}
-	sub.Contact = "invalid@example.com"
-	sub.Topic = fmt.Sprintf("%s-2", sub.Topic)
-
 	msg := messaging.Message{
 		Channel:  "topic",
 		Subtopic: "subtopic",

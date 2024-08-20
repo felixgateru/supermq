@@ -27,17 +27,19 @@ var (
 type service struct {
 	clients      postgres.Repository
 	idProvider   magistrala.IDProvider
-	auth         magistrala.AuthServiceClient
+	authnz       magistrala.AuthnzServiceClient
+	policy       magistrala.PolicyServiceClient
 	hasher       Hasher
 	email        Emailer
 	selfRegister bool
 }
 
 // NewService returns a new Users service implementation.
-func NewService(crepo postgres.Repository, authClient magistrala.AuthServiceClient, emailer Emailer, hasher Hasher, idp magistrala.IDProvider, selfRegister bool) Service {
+func NewService(crepo postgres.Repository, authClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, emailer Emailer, hasher Hasher, idp magistrala.IDProvider, selfRegister bool) Service {
 	return service{
 		clients:      crepo,
-		auth:         authClient,
+		authnz:       authClient,
+		policy:       policyClient,
 		hasher:       hasher,
 		email:        emailer,
 		idProvider:   idp,
@@ -109,7 +111,7 @@ func (svc service) IssueToken(ctx context.Context, identity, secret, domainID st
 		d = domainID
 	}
 
-	token, err := svc.auth.Issue(ctx, &magistrala.IssueReq{UserId: dbUser.ID, DomainId: &d, Type: uint32(auth.AccessKey)})
+	token, err := svc.authnz.Issue(ctx, &magistrala.IssueReq{UserId: dbUser.ID, DomainId: &d, Type: uint32(auth.AccessKey)})
 	if err != nil {
 		return &magistrala.Token{}, errors.Wrap(errIssueToken, err)
 	}
@@ -136,7 +138,7 @@ func (svc service) RefreshToken(ctx context.Context, refreshToken, domainID stri
 		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
 	}
 
-	return svc.auth.Refresh(ctx, &magistrala.RefreshReq{RefreshToken: refreshToken, DomainId: &d})
+	return svc.authnz.Refresh(ctx, &magistrala.RefreshReq{RefreshToken: refreshToken, DomainId: &d})
 }
 
 func (svc service) ViewClient(ctx context.Context, token, id string) (mgclients.Client, error) {
@@ -303,7 +305,7 @@ func (svc service) GenerateResetToken(ctx context.Context, email, host string) e
 		UserId: client.ID,
 		Type:   uint32(auth.RecoveryKey),
 	}
-	token, err := svc.auth.Issue(ctx, issueReq)
+	token, err := svc.authnz.Issue(ctx, issueReq)
 	if err != nil {
 		return errors.Wrap(errRecoveryToken, err)
 	}
@@ -500,7 +502,7 @@ func (svc service) ListMembers(ctx context.Context, token, objectKind, objectID 
 	if _, err := svc.authorize(ctx, auth.UserType, auth.TokenKind, token, authzPerm, objectType, objectID); err != nil {
 		return mgclients.MembersPage{}, errors.Wrap(svcerr.ErrAuthorization, err)
 	}
-	duids, err := svc.auth.ListAllSubjects(ctx, &magistrala.ListSubjectsReq{
+	duids, err := svc.policy.ListAllSubjects(ctx, &magistrala.ListSubjectsReq{
 		SubjectType: auth.UserType,
 		Permission:  pm.Permission,
 		Object:      objectID,
@@ -571,7 +573,7 @@ func (svc service) retrieveObjectUsersPermissions(ctx context.Context, domainID,
 }
 
 func (svc service) listObjectUserPermission(ctx context.Context, userID, objectType, objectID string) ([]string, error) {
-	lp, err := svc.auth.ListPermissions(ctx, &magistrala.ListPermissionsReq{
+	lp, err := svc.policy.ListPermissions(ctx, &magistrala.ListPermissionsReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Object:      objectID,
@@ -595,7 +597,7 @@ func (svc *service) checkSuperAdmin(ctx context.Context, adminID string) error {
 }
 
 func (svc service) identify(ctx context.Context, token string) (*magistrala.IdentityRes, error) {
-	res, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return &magistrala.IdentityRes{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -611,7 +613,7 @@ func (svc *service) authorize(ctx context.Context, subjType, subjKind, subj, per
 		ObjectType:  objType,
 		Object:      obj,
 	}
-	res, err := svc.auth.Authorize(ctx, req)
+	res, err := svc.authnz.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -647,11 +649,11 @@ func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (
 		Type:   uint32(auth.AccessKey),
 	}
 
-	return svc.auth.Issue(ctx, claims)
+	return svc.authnz.Issue(ctx, claims)
 }
 
 func (svc service) Identify(ctx context.Context, token string) (string, error) {
-	user, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	user, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -678,7 +680,7 @@ func (svc service) addClientPolicy(ctx context.Context, userID string, role mgcl
 			Object:      auth.MagistralaObject,
 		})
 	}
-	resp, err := svc.auth.AddPolicies(ctx, &policies)
+	resp, err := svc.policy.AddPolicies(ctx, &policies)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAddPolicies, err)
 	}
@@ -708,7 +710,7 @@ func (svc service) addClientPolicyRollback(ctx context.Context, userID string, r
 			Object:      auth.MagistralaObject,
 		})
 	}
-	resp, err := svc.auth.DeletePolicies(ctx, &policies)
+	resp, err := svc.policy.DeletePolicies(ctx, &policies)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrDeletePolicies, err)
 	}
@@ -721,7 +723,7 @@ func (svc service) addClientPolicyRollback(ctx context.Context, userID string, r
 func (svc service) updateClientPolicy(ctx context.Context, userID string, role mgclients.Role) error {
 	switch role {
 	case mgclients.AdminRole:
-		resp, err := svc.auth.AddPolicy(ctx, &magistrala.AddPolicyReq{
+		resp, err := svc.policy.AddPolicy(ctx, &magistrala.AddPolicyReq{
 			SubjectType: auth.UserType,
 			Subject:     userID,
 			Relation:    auth.AdministratorRelation,
@@ -738,7 +740,7 @@ func (svc service) updateClientPolicy(ctx context.Context, userID string, role m
 	case mgclients.UserRole:
 		fallthrough
 	default:
-		resp, err := svc.auth.DeletePolicyFilter(ctx, &magistrala.DeletePolicyFilterReq{
+		resp, err := svc.policy.DeletePolicyFilter(ctx, &magistrala.DeletePolicyFilterReq{
 			SubjectType: auth.UserType,
 			Subject:     userID,
 			Relation:    auth.AdministratorRelation,

@@ -23,11 +23,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestSetupAuth(t *testing.T) {
+func TestSetupAuthnz(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterAuthServiceServer(srv, authgrpcapi.NewServer(new(mocks.Service)))
+		magistrala.RegisterAuthnzServiceServer(srv, authgrpcapi.NewServer(new(mocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthServiceServer, mglog.NewMock())
 	go func() {
@@ -64,7 +64,7 @@ func TestSetupAuth(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.Setup(context.Background(), c.config)
+			client, handler, err := auth.SetupAuthnz(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)

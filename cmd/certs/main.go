@@ -126,15 +126,15 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.Setup(ctx, authConfig)
+	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
+	defer authnzHandler.Close()
 
-	logger.Info("Successfully connected to auth grpc server " + authHandler.Secure())
+	logger.Info("Successfully connected to auth grpc server " + authnzHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -149,7 +149,7 @@ func main() {
 	}()
 	tracer := tp.Tracer(svcName)
 
-	svc := newService(authClient, db, tracer, logger, cfg, dbConfig, pkiclient)
+	svc := newService(authnzClient, db, tracer, logger, cfg, dbConfig, pkiclient)
 
 	httpServerConfig := server.Config{Port: defSvcHTTPPort}
 	if err := env.ParseWithOptions(&httpServerConfig, env.Options{Prefix: envPrefixHTTP}); err != nil {
@@ -177,14 +177,14 @@ func main() {
 	}
 }
 
-func newService(authClient magistrala.AuthServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config, pkiAgent vault.Agent) certs.Service {
+func newService(authnzClient magistrala.AuthnzServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config, pkiAgent vault.Agent) certs.Service {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	certsRepo := certspg.NewRepository(database, logger)
 	config := mgsdk.Config{
 		ThingsURL: cfg.ThingsURL,
 	}
 	sdk := mgsdk.NewSDK(config)
-	svc := certs.New(authClient, certsRepo, sdk, pkiAgent)
+	svc := certs.New(authnzClient, certsRepo, sdk, pkiAgent)
 	svc = api.LoggingMiddleware(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	svc = api.MetricsMiddleware(svc, counter, latency)

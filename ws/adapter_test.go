@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/messaging"
 	"github.com/absmach/magistrala/pkg/messaging/mocks"
+	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/magistrala/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,9 +37,9 @@ var msg = messaging.Message{
 	Payload:   []byte(`[{"n":"current","t":-5,"v":1.2}]`),
 }
 
-func newService() (ws.Service, *mocks.PubSub, *authmocks.AuthClient) {
+func newService() (ws.Service, *mocks.PubSub, *thmocks.AuthzClient) {
 	pubsub := new(mocks.PubSub)
-	auth := new(authmocks.AuthClient)
+	auth := new(thmocks.AuthzClient)
 
 	return ws.New(auth, pubsub), pubsub, auth
 }

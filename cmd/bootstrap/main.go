@@ -107,14 +107,23 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.Setup(ctx, authConfig)
+	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
-	logger.Info("Successfully connected to auth grpc server " + authHandler.Secure())
+	defer authnzHandler.Close()
+	logger.Info("Authnz client successfully connected to auth grpc server" + authnzHandler.Secure())
+
+	policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
+	if err != nil {
+		logger.Error(err.Error())
+		exitCode = 1
+		return
+	}
+	defer policyHandler.Close()
+	logger.Info("Policy client successfully connected to auth grpc server" + policyHandler.Secure())
 
 	tp, err := jaeger.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -130,7 +139,7 @@ func main() {
 	tracer := tp.Tracer(svcName)
 
 	// Create new service
-	svc, err := newService(ctx, authClient, db, tracer, logger, cfg, dbConfig)
+	svc, err := newService(ctx, authnzClient, policyClient, db, tracer, logger, cfg, dbConfig)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
@@ -171,7 +180,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient magistrala.AuthServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)
@@ -183,7 +192,7 @@ func newService(ctx context.Context, authClient magistrala.AuthServiceClient, db
 	sdk := mgsdk.NewSDK(config)
 	idp := uuid.New()
 
-	svc := bootstrap.New(authClient, repoConfig, sdk, []byte(cfg.EncKey), idp)
+	svc := bootstrap.New(authClient, policyClient, repoConfig, sdk, []byte(cfg.EncKey), idp)
 
 	publisher, err := store.NewPublisher(ctx, cfg.ESURL, streamID)
 	if err != nil {

@@ -59,15 +59,6 @@ var (
 	}
 )
 
-func newService() (bootstrap.Service, *mocks.ConfigRepository, *authmocks.AuthClient, *sdkmocks.SDK) {
-	boot := new(mocks.ConfigRepository)
-	auth := new(authmocks.AuthClient)
-	sdk := new(sdkmocks.SDK)
-	idp := uuid.NewMock()
-
-	return bootstrap.New(auth, boot, sdk, encKey, idp), boot, auth, sdk
-}
-
 func enc(in []byte) ([]byte, error) {
 	block, err := aes.NewCipher(encKey)
 	if err != nil {
@@ -84,7 +75,13 @@ func enc(in []byte) ([]byte, error) {
 }
 
 func TestAdd(t *testing.T) {
-	c, boot, auth, sdk := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	neID := config
 	neID.ThingID = "non-existent"
 
@@ -192,15 +189,15 @@ func TestAdd(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall := sdk.On("Thing", tc.config.ThingID, tc.token).Return(mgsdk.Thing{ID: tc.config.ThingID, Credentials: mgsdk.Credentials{Secret: tc.config.ThingKey}}, tc.thingErr)
 		repoCall1 := sdk.On("CreateThing", mock.Anything, tc.token).Return(mgsdk.Thing{}, tc.createThingErr)
 		repoCall2 := sdk.On("DeleteThing", tc.config.ThingID, tc.token).Return(tc.deleteThingErr)
 		repoCall3 := boot.On("ListExisting", context.Background(), tc.domainID, mock.Anything).Return(tc.config.Channels, tc.listExistingErr)
 		repoCall4 := boot.On("Save", context.Background(), mock.Anything, mock.Anything).Return(mock.Anything, tc.saveErr)
 
-		_, err := c.Add(context.Background(), tc.token, tc.config)
+		_, err := svc.Add(context.Background(), tc.token, tc.config)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		authCall.Unset()
@@ -214,7 +211,12 @@ func TestAdd(t *testing.T) {
 }
 
 func TestView(t *testing.T) {
-	svc, boot, auth, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
 	cases := []struct {
 		desc         string
@@ -295,8 +297,8 @@ func TestView(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domain}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domain}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
 		repoCall := boot.On("RetrieveByID", context.Background(), tc.thingDomain, tc.configID).Return(config, tc.retrieveErr)
 
 		_, err := svc.View(context.Background(), tc.token, tc.configID)
@@ -308,9 +310,14 @@ func TestView(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	svc, boot, auth, _ := newService()
-	c := config
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
+	c := config
 	ch := channel
 	ch.ID = "2"
 	c.Channels = append(c.Channels, ch)
@@ -383,8 +390,8 @@ func TestUpdate(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
 		repoCall := boot.On("Update", context.Background(), mock.Anything).Return(tc.updateErr)
 		err := svc.Update(context.Background(), tc.token, tc.config)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -395,9 +402,14 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateCert(t *testing.T) {
-	svc, boot, auth, _ := newService()
-	c := config
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
+	c := config
 	ch := channel
 	ch.ID = "2"
 	c.Channels = append(c.Channels, ch)
@@ -486,8 +498,8 @@ func TestUpdateCert(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
 		repoCall := boot.On("UpdateCert", context.Background(), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.expectedConfig, tc.updateErr)
 
 		cfg, err := svc.UpdateCert(context.Background(), tc.token, tc.thingID, tc.clientCert, tc.clientKey, tc.caCert)
@@ -506,7 +518,13 @@ func TestUpdateCert(t *testing.T) {
 }
 
 func TestUpdateConnections(t *testing.T) {
-	svc, boot, auth, sdk := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	c := config
 	c.State = bootstrap.Inactive
 
@@ -602,8 +620,8 @@ func TestUpdateConnections(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
 		sdkCall := sdk.On("Channel", mock.Anything, tc.token).Return(mgsdk.Channel{}, tc.channelErr)
 		repoCall := boot.On("RetrieveByID", context.Background(), tc.domainID, tc.id).Return(c, tc.retrieveErr)
 		repoCall1 := boot.On("ListExisting", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(c.Channels, tc.listErr)
@@ -620,7 +638,13 @@ func TestUpdateConnections(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	svc, boot, auth, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	numThings := 101
 	var saved []bootstrap.Config
 	for i := 0; i < numThings; i++ {
@@ -944,15 +968,15 @@ func TestList(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			SubjectType: authsvc.UserType,
 			Subject:     tc.userID,
 			Permission:  authsvc.AdminPermission,
 			ObjectType:  authsvc.PlatformType,
 			Object:      authsvc.MagistralaObject,
 		}).Return(tc.superAdminAuthRes, tc.superAdmiAuthErr)
-		authCall2 := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall2 := authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			SubjectType: authsvc.UserType,
 			SubjectKind: authsvc.UsersKind,
 			Subject:     tc.userID,
@@ -960,7 +984,7 @@ func TestList(t *testing.T) {
 			ObjectType:  authsvc.DomainType,
 			Object:      tc.domainID,
 		}).Return(tc.domainAdminAuthRes, tc.domainAdmiAuthErr)
-		authCall3 := auth.On("ListAllObjects", mock.Anything, &magistrala.ListObjectsReq{
+		authCall3 := policy.On("ListAllObjects", mock.Anything, &magistrala.ListObjectsReq{
 			SubjectType: authsvc.UserType,
 			Subject:     tc.userID,
 			Permission:  authsvc.ViewPermission,
@@ -981,7 +1005,13 @@ func TestList(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	svc, boot, auth, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	c := config
 	cases := []struct {
 		desc         string
@@ -1052,8 +1082,8 @@ func TestRemove(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authorizeErr)
 		repoCall := boot.On("Remove", context.Background(), mock.Anything, mock.Anything).Return(tc.removeErr)
 		err := svc.Remove(context.Background(), tc.token, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1064,7 +1094,13 @@ func TestRemove(t *testing.T) {
 }
 
 func TestBootstrap(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	c := config
 	e, err := enc([]byte(c.ExternalKey))
 	assert.Nil(t, err, fmt.Sprintf("Encrypting external key expected to succeed: %s.\n", err))
@@ -1131,7 +1167,12 @@ func TestBootstrap(t *testing.T) {
 }
 
 func TestChangeState(t *testing.T) {
-	svc, boot, auth, sdk := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
 	c := config
 	cases := []struct {
@@ -1217,7 +1258,7 @@ func TestChangeState(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
 		repoCall := boot.On("RetrieveByID", context.Background(), tc.domainID, tc.id).Return(c, tc.retrieveErr)
 		sdkCall := sdk.On("Connect", mock.Anything, mock.Anything).Return(tc.connectErr)
 		repoCall1 := boot.On("ChangeState", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(tc.stateErr)
@@ -1232,7 +1273,13 @@ func TestChangeState(t *testing.T) {
 }
 
 func TestUpdateChannelHandler(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	ch := bootstrap.Channel{
 		ID:       channel.ID,
 		Name:     "new name",
@@ -1265,7 +1312,12 @@ func TestUpdateChannelHandler(t *testing.T) {
 }
 
 func TestRemoveChannelHandler(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
 	cases := []struct {
 		desc string
@@ -1293,7 +1345,12 @@ func TestRemoveChannelHandler(t *testing.T) {
 }
 
 func TestRemoveConfigHandler(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
 
 	cases := []struct {
 		desc string
@@ -1321,7 +1378,13 @@ func TestRemoveConfigHandler(t *testing.T) {
 }
 
 func TestConnectThingsHandler(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	cases := []struct {
 		desc      string
 		thingID   string
@@ -1351,7 +1414,13 @@ func TestConnectThingsHandler(t *testing.T) {
 }
 
 func TestDisconnectThingsHandler(t *testing.T) {
-	svc, boot, _, _ := newService()
+	boot := new(mocks.ConfigRepository)
+	authnz := new(authmocks.AuthnzClient)
+	policy := new(authmocks.PolicyServiceClient)
+	sdk := new(sdkmocks.SDK)
+	idp := uuid.NewMock()
+	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+
 	cases := []struct {
 		desc      string
 		thingID   string

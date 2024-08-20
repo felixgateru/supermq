@@ -156,16 +156,25 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.Setup(ctx, authConfig)
+	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
-	logger.Info("Successfully connected to auth grpc server " + authHandler.Secure())
+	defer authnzHandler.Close()
+	logger.Info("AuthN/Z client successfully connected to auth grpc server" + authnzHandler.Secure())
 
-	csvc, gsvc, err := newService(ctx, authClient, db, dbConfig, tracer, cfg, ec, logger)
+	policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
+	if err != nil {
+		logger.Error(err.Error())
+		exitCode = 1
+		return
+	}
+	defer policyHandler.Close()
+	logger.Info("Policy client successfully connected to auth grpc server" + policyHandler.Secure())
+
+	csvc, gsvc, err := newService(ctx, authnzClient, policyClient, db, dbConfig, tracer, cfg, ec, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to setup service: %s", err))
 		exitCode = 1
@@ -208,7 +217,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient magistrala.AuthServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
+func newService(ctx context.Context, authnzClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -221,8 +230,8 @@ func newService(ctx context.Context, authClient magistrala.AuthServiceClient, db
 		logger.Error(fmt.Sprintf("failed to configure e-mailing util: %s", err.Error()))
 	}
 
-	csvc := users.NewService(cRepo, authClient, emailerClient, hsr, idp, c.SelfRegister)
-	gsvc := mggroups.NewService(gRepo, idp, authClient)
+	csvc := users.NewService(cRepo, authnzClient, policyClient, emailerClient, hsr, idp, c.SelfRegister)
+	gsvc := mggroups.NewService(gRepo, idp, authnzClient, policyClient)
 
 	csvc, err = uevents.NewEventStoreMiddleware(ctx, csvc, c.ESURL)
 	if err != nil {
@@ -247,11 +256,11 @@ func newService(ctx context.Context, authClient magistrala.AuthServiceClient, db
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create admin client: %s", err))
 	}
-	if err := createAdminPolicy(ctx, clientID, authClient); err != nil {
+	if err := createAdminPolicy(ctx, clientID, authnzClient, policyClient); err != nil {
 		return nil, nil, err
 	}
 
-	users.NewDeleteHandler(ctx, cRepo, authClient, c.DeleteInterval, c.DeleteAfter, logger)
+	users.NewDeleteHandler(ctx, cRepo, policyClient, c.DeleteInterval, c.DeleteAfter, logger)
 
 	return csvc, gsvc, err
 }
@@ -296,8 +305,8 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 	return client.ID, nil
 }
 
-func createAdminPolicy(ctx context.Context, clientID string, authClient magistrala.AuthServiceClient) error {
-	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+func createAdminPolicy(ctx context.Context, clientID string, authnzClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient) error {
+	res, err := authnzClient.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: authSvc.UserType,
 		Subject:     clientID,
 		Permission:  authSvc.AdministratorRelation,
@@ -305,7 +314,7 @@ func createAdminPolicy(ctx context.Context, clientID string, authClient magistra
 		ObjectType:  authSvc.PlatformType,
 	})
 	if err != nil || !res.Authorized {
-		addPolicyRes, err := authClient.AddPolicy(ctx, &magistrala.AddPolicyReq{
+		addPolicyRes, err := policyClient.AddPolicy(ctx, &magistrala.AddPolicyReq{
 			SubjectType: authSvc.UserType,
 			Subject:     clientID,
 			Relation:    authSvc.AdministratorRelation,
