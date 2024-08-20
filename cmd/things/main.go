@@ -72,6 +72,11 @@ const (
 	streamID = "magistrala.things"
 )
 
+var (
+	authnzClient magistrala.AuthnzServiceClient
+	policyClient magistrala.PolicyServiceClient
+)
+
 type config struct {
 	LogLevel            string        `env:"MG_THINGS_LOG_LEVEL"           envDefault:"info"`
 	StandaloneID        string        `env:"MG_THINGS_STANDALONE_ID"       envDefault:""`
