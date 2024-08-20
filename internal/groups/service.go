@@ -259,7 +259,7 @@ func (svc service) listUserGroupPermission(ctx context.Context, userID, groupID 
 }
 
 func (svc service) checkSuperAdmin(ctx context.Context, userID string) error {
-	res, err := svc.auth.Authorize(ctx, &magistrala.AuthorizeReq{
+	res, err := svc.authnz.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.AdminPermission,
@@ -659,7 +659,7 @@ func (svc service) changeGroupStatus(ctx context.Context, token string, group gr
 }
 
 func (svc service) identify(ctx context.Context, token string) (*magistrala.IdentityRes, error) {
-	res, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -678,7 +678,7 @@ func (svc service) authorizeToken(ctx context.Context, subjectType, subject, per
 		Object:      object,
 		ObjectType:  objectType,
 	}
-	res, err := svc.auth.Authorize(ctx, req)
+	res, err := svc.authnz.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -698,7 +698,7 @@ func (svc service) authorizeKind(ctx context.Context, domainID, subjectType, sub
 		Object:      object,
 		ObjectType:  objectType,
 	}
-	res, err := svc.auth.Authorize(ctx, req)
+	res, err := svc.authnz.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
