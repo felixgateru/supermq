@@ -30,7 +30,7 @@ func TestSetupAuthnz(t *testing.T) {
 		magistrala.RegisterAuthzServiceServer(srv, authgrpcapi.NewAuthzServer(new(mocks.Service)))
 		magistrala.RegisterAuthnServiceServer(srv, authgrpcapi.NewAuthnServer(new(mocks.Service)))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthServiceServer, mglog.NewMock())
+	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthnzServiceServer, mglog.NewMock())
 	go func() {
 		err := gs.Start()
 		assert.Nil(t, err, fmt.Sprintf(`"Unexpected error creating server %s"`, err))
