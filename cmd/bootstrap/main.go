@@ -114,7 +114,7 @@ func main() {
 		return
 	}
 	defer authnzHandler.Close()
-	logger.Info("Authnz client successfully connected to auth grpc server" + authnzHandler.Secure())
+	logger.Info("AuthN/Z client successfully connected to auth grpc server " + authnzHandler.Secure())
 
 	policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
 	if err != nil {

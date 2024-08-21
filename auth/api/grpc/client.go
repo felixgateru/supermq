@@ -37,22 +37,6 @@ type authnzGrpcClient struct {
 	timeout   time.Duration
 }
 
-type policyGrpcClient struct {
-	addPolicy            endpoint.Endpoint
-	addPolicies          endpoint.Endpoint
-	deletePolicyFilter   endpoint.Endpoint
-	deletePolicies       endpoint.Endpoint
-	listObjects          endpoint.Endpoint
-	listAllObjects       endpoint.Endpoint
-	countObjects         endpoint.Endpoint
-	listSubjects         endpoint.Endpoint
-	listAllSubjects      endpoint.Endpoint
-	countSubjects        endpoint.Endpoint
-	listPermissions      endpoint.Endpoint
-	deleteEntityPolicies endpoint.Endpoint
-	timeout              time.Duration
-}
-
 // NewAuthnzClient returns new authnz gRPC client instance.
 func NewAuthnzClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthnzServiceClient {
 	return &authnzGrpcClient{
@@ -88,110 +72,6 @@ func NewAuthnzClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Au
 			decodeAuthorizeResponse,
 			magistrala.AuthorizeRes{},
 		).Endpoint(),
-		timeout: timeout,
-	}
-}
-
-// NewPolicyClient returns new policy gRPC client instance.
-func NewPolicyClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.PolicyServiceClient {
-	return &policyGrpcClient{
-		addPolicy: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"AddPolicy",
-			encodeAddPolicyRequest,
-			decodeAddPolicyResponse,
-			magistrala.AddPolicyRes{},
-		).Endpoint(),
-		addPolicies: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"AddPolicies",
-			encodeAddPoliciesRequest,
-			decodeAddPoliciesResponse,
-			magistrala.AddPoliciesRes{},
-		).Endpoint(),
-		deletePolicyFilter: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"DeletePolicyFilter",
-			encodeDeletePolicyFilterRequest,
-			decodeDeletePolicyFilterResponse,
-			magistrala.DeletePolicyRes{},
-		).Endpoint(),
-		deletePolicies: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"DeletePolicies",
-			encodeDeletePoliciesRequest,
-			decodeDeletePoliciesResponse,
-			magistrala.DeletePolicyRes{},
-		).Endpoint(),
-		listObjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"ListObjects",
-			encodeListObjectsRequest,
-			decodeListObjectsResponse,
-			magistrala.ListObjectsRes{},
-		).Endpoint(),
-		listAllObjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"ListAllObjects",
-			encodeListObjectsRequest,
-			decodeListObjectsResponse,
-			magistrala.ListObjectsRes{},
-		).Endpoint(),
-		countObjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"CountObjects",
-			encodeCountObjectsRequest,
-			decodeCountObjectsResponse,
-			magistrala.CountObjectsRes{},
-		).Endpoint(),
-		listSubjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"ListSubjects",
-			encodeListSubjectsRequest,
-			decodeListSubjectsResponse,
-			magistrala.ListSubjectsRes{},
-		).Endpoint(),
-		listAllSubjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"ListAllSubjects",
-			encodeListSubjectsRequest,
-			decodeListSubjectsResponse,
-			magistrala.ListSubjectsRes{},
-		).Endpoint(),
-		countSubjects: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"CountSubjects",
-			encodeCountSubjectsRequest,
-			decodeCountSubjectsResponse,
-			magistrala.CountSubjectsRes{},
-		).Endpoint(),
-		listPermissions: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"ListPermissions",
-			encodeListPermissionsRequest,
-			decodeListPermissionsResponse,
-			magistrala.ListPermissionsRes{},
-		).Endpoint(),
-		deleteEntityPolicies: kitgrpc.NewClient(
-			conn,
-			policySvcName,
-			"DeleteEntityPolicies",
-			encodeDeleteEntityPoliciesRequest,
-			decodeDeleteEntityPoliciesResponse,
-			magistrala.DeletePolicyRes{},
-		).Endpoint(),
-
 		timeout: timeout,
 	}
 }
@@ -305,6 +185,126 @@ func encodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}
 		ObjectType:  req.ObjectType,
 		Object:      req.Object,
 	}, nil
+}
+
+type policyGrpcClient struct {
+	addPolicy            endpoint.Endpoint
+	addPolicies          endpoint.Endpoint
+	deletePolicyFilter   endpoint.Endpoint
+	deletePolicies       endpoint.Endpoint
+	listObjects          endpoint.Endpoint
+	listAllObjects       endpoint.Endpoint
+	countObjects         endpoint.Endpoint
+	listSubjects         endpoint.Endpoint
+	listAllSubjects      endpoint.Endpoint
+	countSubjects        endpoint.Endpoint
+	listPermissions      endpoint.Endpoint
+	deleteEntityPolicies endpoint.Endpoint
+	timeout              time.Duration
+}
+
+// NewPolicyClient returns new policy gRPC client instance.
+func NewPolicyClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.PolicyServiceClient {
+	return &policyGrpcClient{
+		addPolicy: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"AddPolicy",
+			encodeAddPolicyRequest,
+			decodeAddPolicyResponse,
+			magistrala.AddPolicyRes{},
+		).Endpoint(),
+		addPolicies: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"AddPolicies",
+			encodeAddPoliciesRequest,
+			decodeAddPoliciesResponse,
+			magistrala.AddPoliciesRes{},
+		).Endpoint(),
+		deletePolicyFilter: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"DeletePolicyFilter",
+			encodeDeletePolicyFilterRequest,
+			decodeDeletePolicyFilterResponse,
+			magistrala.DeletePolicyRes{},
+		).Endpoint(),
+		deletePolicies: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"DeletePolicies",
+			encodeDeletePoliciesRequest,
+			decodeDeletePoliciesResponse,
+			magistrala.DeletePolicyRes{},
+		).Endpoint(),
+		listObjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"ListObjects",
+			encodeListObjectsRequest,
+			decodeListObjectsResponse,
+			magistrala.ListObjectsRes{},
+		).Endpoint(),
+		listAllObjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"ListAllObjects",
+			encodeListObjectsRequest,
+			decodeListObjectsResponse,
+			magistrala.ListObjectsRes{},
+		).Endpoint(),
+		countObjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"CountObjects",
+			encodeCountObjectsRequest,
+			decodeCountObjectsResponse,
+			magistrala.CountObjectsRes{},
+		).Endpoint(),
+		listSubjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"ListSubjects",
+			encodeListSubjectsRequest,
+			decodeListSubjectsResponse,
+			magistrala.ListSubjectsRes{},
+		).Endpoint(),
+		listAllSubjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"ListAllSubjects",
+			encodeListSubjectsRequest,
+			decodeListSubjectsResponse,
+			magistrala.ListSubjectsRes{},
+		).Endpoint(),
+		countSubjects: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"CountSubjects",
+			encodeCountSubjectsRequest,
+			decodeCountSubjectsResponse,
+			magistrala.CountSubjectsRes{},
+		).Endpoint(),
+		listPermissions: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"ListPermissions",
+			encodeListPermissionsRequest,
+			decodeListPermissionsResponse,
+			magistrala.ListPermissionsRes{},
+		).Endpoint(),
+		deleteEntityPolicies: kitgrpc.NewClient(
+			conn,
+			policySvcName,
+			"DeleteEntityPolicies",
+			encodeDeleteEntityPoliciesRequest,
+			decodeDeleteEntityPoliciesResponse,
+			magistrala.DeletePolicyRes{},
+		).Endpoint(),
+
+		timeout: timeout,
+	}
 }
 
 func (client policyGrpcClient) AddPolicy(ctx context.Context, in *magistrala.AddPolicyReq, opts ...grpc.CallOption) (*magistrala.AddPolicyRes, error) {

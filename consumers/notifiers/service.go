@@ -42,7 +42,7 @@ type Service interface {
 var _ Service = (*notifierService)(nil)
 
 type notifierService struct {
-	authnz   magistrala.AuthnzServiceClient
+	auth     magistrala.AuthnzServiceClient
 	subs     SubscriptionsRepository
 	idp      magistrala.IDProvider
 	notifier Notifier
@@ -51,9 +51,9 @@ type notifierService struct {
 }
 
 // New instantiates the subscriptions service implementation.
-func New(authnz magistrala.AuthnzServiceClient, subs SubscriptionsRepository, idp magistrala.IDProvider, notifier Notifier, from string) Service {
+func New(auth magistrala.AuthnzServiceClient, subs SubscriptionsRepository, idp magistrala.IDProvider, notifier Notifier, from string) Service {
 	return &notifierService{
-		authnz:   authnz,
+		auth:     auth,
 		subs:     subs,
 		idp:      idp,
 		notifier: notifier,
@@ -63,7 +63,7 @@ func New(authnz magistrala.AuthnzServiceClient, subs SubscriptionsRepository, id
 }
 
 func (ns *notifierService) CreateSubscription(ctx context.Context, token string, sub Subscription) (string, error) {
-	res, err := ns.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := ns.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +81,7 @@ func (ns *notifierService) CreateSubscription(ctx context.Context, token string,
 }
 
 func (ns *notifierService) ViewSubscription(ctx context.Context, token, id string) (Subscription, error) {
-	if _, err := ns.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
+	if _, err := ns.auth.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
 		return Subscription{}, err
 	}
 
@@ -89,7 +89,7 @@ func (ns *notifierService) ViewSubscription(ctx context.Context, token, id strin
 }
 
 func (ns *notifierService) ListSubscriptions(ctx context.Context, token string, pm PageMetadata) (Page, error) {
-	if _, err := ns.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
+	if _, err := ns.auth.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
 		return Page{}, err
 	}
 
@@ -97,7 +97,7 @@ func (ns *notifierService) ListSubscriptions(ctx context.Context, token string, 
 }
 
 func (ns *notifierService) RemoveSubscription(ctx context.Context, token, id string) error {
-	if _, err := ns.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
+	if _, err := ns.auth.Identify(ctx, &magistrala.IdentityReq{Token: token}); err != nil {
 		return err
 	}
 
