@@ -35,11 +35,11 @@ func newService() (notifiers.Service, *authmocks.AuthServiceClient, *mocks.Subsc
 	notifier := new(mocks.Notifier)
 	idp := uuid.NewMock()
 	from := "exampleFrom"
-	return notifiers.New(authnz, repo, idp, notifier, from), authnz, repo
+	return notifiers.New(auth, repo, idp, notifier, from), auth, repo
 }
 
 func TestCreateSubscription(t *testing.T) {
-	svc, authnz, repo := newService()
+	svc, auth, repo := newService()
 
 	cases := []struct {
 		desc        string
@@ -79,7 +79,7 @@ func TestCreateSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Save", context.Background(), mock.Anything).Return(tc.id, tc.err)
 		id, err := svc.CreateSubscription(context.Background(), tc.token, tc.sub)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -90,7 +90,7 @@ func TestCreateSubscription(t *testing.T) {
 }
 
 func TestViewSubscription(t *testing.T) {
-	svc, authnz, repo := newService()
+	svc, auth, repo := newService()
 	sub := notifiers.Subscription{
 		Contact: exampleUser1,
 		Topic:   "valid.topic",
@@ -136,7 +136,7 @@ func TestViewSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Retrieve", context.Background(), tc.id).Return(tc.sub, tc.err)
 		sub, err := svc.ViewSubscription(context.Background(), tc.token, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -147,7 +147,7 @@ func TestViewSubscription(t *testing.T) {
 }
 
 func TestListSubscriptions(t *testing.T) {
-	svc, authnz, repo := newService()
+	svc, auth, repo := newService()
 	sub := notifiers.Subscription{Contact: exampleUser1, OwnerID: exampleUser1}
 	topic := "topic.subtopic"
 	var subs []notifiers.Subscription
@@ -263,7 +263,7 @@ func TestListSubscriptions(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("RetrieveAll", context.Background(), tc.pageMeta).Return(tc.page, tc.err)
 		page, err := svc.ListSubscriptions(context.Background(), tc.token, tc.pageMeta)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -274,7 +274,7 @@ func TestListSubscriptions(t *testing.T) {
 }
 
 func TestRemoveSubscription(t *testing.T) {
-	svc, authnz, repo := newService()
+	svc, auth, repo := newService()
 	sub := notifiers.Subscription{
 		ID: testsutil.GenerateUUID(t),
 	}
@@ -313,7 +313,7 @@ func TestRemoveSubscription(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
+		repoCall := auth.On("Identify", context.Background(), &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID}, tc.identifyErr)
 		repoCall1 := repo.On("Remove", context.Background(), tc.id).Return(tc.err)
 		err := svc.RemoveSubscription(context.Background(), tc.token, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
