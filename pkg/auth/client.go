@@ -63,7 +63,7 @@ func SetupPolicyClient(ctx context.Context, cfg Config) (magistrala.PolicyServic
 //
 // For example:
 //
-//	thingClient, thingHandler, err := auth.SetupThings(ctx, auth.Config{}).
+// thingClient, thingHandler, err := auth.SetupThings(ctx, auth.Config{}).
 func SetupThings(ctx context.Context, cfg Config) (magistrala.ThingsServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
