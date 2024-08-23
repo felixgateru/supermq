@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	authnzSvcName = "magistrala.AuthService"
+	authSvcName   = "magistrala.AuthService"
 	policySvcName = "magistrala.PolicyService"
 )
 
@@ -42,7 +42,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 	return &authGrpcClient{
 		issue: kitgrpc.NewClient(
 			conn,
-			authnzSvcName,
+			authSvcName,
 			"Issue",
 			encodeIssueRequest,
 			decodeIssueResponse,
@@ -50,7 +50,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		refresh: kitgrpc.NewClient(
 			conn,
-			authnzSvcName,
+			authSvcName,
 			"Refresh",
 			encodeRefreshRequest,
 			decodeRefreshResponse,
@@ -58,7 +58,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		identify: kitgrpc.NewClient(
 			conn,
-			authnzSvcName,
+			authSvcName,
 			"Identify",
 			encodeIdentifyRequest,
 			decodeIdentifyResponse,
@@ -66,7 +66,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		authorize: kitgrpc.NewClient(
 			conn,
-			authnzSvcName,
+			authSvcName,
 			"Authorize",
 			encodeAuthorizeRequest,
 			decodeAuthorizeResponse,

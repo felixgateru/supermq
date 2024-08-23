@@ -50,8 +50,8 @@ var (
 	sum float64 = 42
 )
 
-func newServer(repo *mocks.MessageRepository, ac *authmocks.AuthServiceClient, tc *thmocks.ThingsServiceClient) *httptest.Server {
-	mux := api.MakeHandler(repo, ac, tc, svcName, instanceID)
+func newServer(repo *mocks.MessageRepository, authClient *authmocks.AuthServiceClient, thingsClient *thmocks.ThingsServiceClient) *httptest.Server {
+	mux := api.MakeHandler(repo, authClient, thingsClient, svcName, instanceID)
 	return httptest.NewServer(mux)
 }
 

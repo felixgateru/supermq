@@ -96,15 +96,15 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.SetupThings(ctx, authConfig)
+	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
+	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + authHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -128,7 +128,7 @@ func main() {
 	defer nps.Close()
 	nps = brokerstracing.NewPubSub(targetServerConfig, tracer, nps)
 
-	svc := newService(authClient, nps, logger, tracer)
+	svc := newService(thingsClient, nps, logger, tracer)
 
 	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerConfig, api.MakeHandler(ctx, svc, logger, cfg.InstanceID), logger)
 
@@ -141,7 +141,7 @@ func main() {
 		g.Go(func() error {
 			return hs.Start()
 		})
-		handler := ws.NewHandler(nps, logger, authClient)
+		handler := ws.NewHandler(nps, logger, thingsClient)
 		return proxyWS(ctx, httpServerConfig, targetServerConfig, logger, handler)
 	})
 

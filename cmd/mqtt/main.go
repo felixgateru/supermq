@@ -172,17 +172,17 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.SetupThings(ctx, authConfig)
+	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
+	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + authHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
 
-	h := mqtt.NewHandler(np, es, logger, authClient)
+	h := mqtt.NewHandler(np, es, logger, thingsClient)
 	h = handler.NewTracing(tracer, h)
 
 	if cfg.SendTelemetry {

@@ -90,15 +90,15 @@ func main() {
 		return
 	}
 
-	ac, acHandler, err := auth.SetupAuth(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuthClient(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer acHandler.Close()
+	defer authHandler.Close()
 
-	logger.Info("Successfully connected to auth grpc server " + acHandler.Secure())
+	logger.Info("Successfully connected to auth grpc server " + authHandler.Secure())
 
 	authConfig = auth.Config{}
 	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
@@ -107,15 +107,15 @@ func main() {
 		return
 	}
 
-	tc, tcHandler, err := auth.SetupThings(ctx, authConfig)
+	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer tcHandler.Close()
+	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + tcHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	httpServerConfig := server.Config{Port: defSvcHTTPPort}
 	if err := env.ParseWithOptions(&httpServerConfig, env.Options{Prefix: envPrefixHTTP}); err != nil {
@@ -123,7 +123,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, api.MakeHandler(repo, ac, tc, svcName, cfg.InstanceID), logger)
+	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, api.MakeHandler(repo, authClient, thingsClient, svcName, cfg.InstanceID), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, magistrala.Version, logger, cancel)

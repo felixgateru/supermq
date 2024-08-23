@@ -36,9 +36,9 @@ const (
 
 var msg = []byte(`[{"n":"current","t":-1,"v":1.6}]`)
 
-func newService(auth magistrala.ThingsServiceClient) (ws.Service, *mocks.PubSub) {
+func newService(things magistrala.ThingsServiceClient) (ws.Service, *mocks.PubSub) {
 	pubsub := new(mocks.PubSub)
-	return ws.New(auth, pubsub), pubsub
+	return ws.New(things, pubsub), pubsub
 }
 
 func newHTTPServer(svc ws.Service) *httptest.Server {
@@ -90,17 +90,17 @@ func handshake(tsURL, chanID, subtopic, thingKey string, addHeader bool) (*webso
 }
 
 func TestHandshake(t *testing.T) {
-	auth := new(thmocks.ThingsServiceClient)
-	svc, pubsub := newService(auth)
+	things := new(thmocks.ThingsServiceClient)
+	svc, pubsub := newService(things)
 	target := newHTTPServer(svc)
 	defer target.Close()
-	handler := ws.NewHandler(pubsub, mglog.NewMock(), auth)
+	handler := ws.NewHandler(pubsub, mglog.NewMock(), things)
 	ts, err := newProxyHTPPServer(handler, target)
 	require.Nil(t, err)
 	defer ts.Close()
-	auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{Subject: thingKey, Object: id, Domain: "", SubjectType: "thing", Permission: "publish", ObjectType: "group"}).Return(&magistrala.AuthorizeRes{Authorized: true, Id: "1"}, nil)
-	auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{Subject: thingKey, Object: id, Domain: "", SubjectType: "thing", Permission: "subscribe", ObjectType: "group"}).Return(&magistrala.AuthorizeRes{Authorized: true, Id: "2"}, nil)
-	auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: false, Id: "3"}, nil)
+	things.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{Subject: thingKey, Object: id, Domain: "", SubjectType: "thing", Permission: "publish", ObjectType: "group"}).Return(&magistrala.AuthorizeRes{Authorized: true, Id: "1"}, nil)
+	things.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{Subject: thingKey, Object: id, Domain: "", SubjectType: "thing", Permission: "subscribe", ObjectType: "group"}).Return(&magistrala.AuthorizeRes{Authorized: true, Id: "2"}, nil)
+	things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: false, Id: "3"}, nil)
 	pubsub.On("Subscribe", mock.Anything, mock.Anything).Return(nil)
 	pubsub.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

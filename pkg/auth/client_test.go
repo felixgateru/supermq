@@ -64,7 +64,7 @@ func TestSetupAuth(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupAuth(context.Background(), c.config)
+			client, handler, err := auth.SetupAuthClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
@@ -74,7 +74,7 @@ func TestSetupAuth(t *testing.T) {
 	}
 }
 
-func TestSetupThings(t *testing.T) {
+func TestSetupThingsClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthzServiceServer := func(srv *grpc.Server) {
@@ -115,7 +115,7 @@ func TestSetupThings(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupThings(context.Background(), c.config)
+			client, handler, err := auth.SetupThingsClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
