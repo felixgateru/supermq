@@ -15,12 +15,12 @@ import (
 
 var errSvcNotServing = errors.New("service is not serving")
 
-// SetupAuthnz loads Authnz gRPC configuration and creates new Authnz gRPC client.
+// SetupAuth loads Auth gRPC configuration and creates new Auth gRPC client.
 //
 // For example:
 //
-//	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, auth.Config{}).
-func SetupAuthnz(ctx context.Context, cfg Config) (magistrala.AuthnzServiceClient, Handler, error) {
+//	authClient, authHandler, err := auth.SetupAuth(ctx, auth.Config{}).
+func SetupAuth(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
 		return nil, nil, err
@@ -34,7 +34,7 @@ func SetupAuthnz(ctx context.Context, cfg Config) (magistrala.AuthnzServiceClien
 		return nil, nil, errSvcNotServing
 	}
 
-	return authgrpc.NewAuthnzClient(client.Connection(), cfg.Timeout), client, nil
+	return authgrpc.NewAuthClient(client.Connection(), cfg.Timeout), client, nil
 }
 
 // SetupPolicyClient loads Policy gRPC configuration and creates a new Policy gRPC client.
@@ -59,12 +59,12 @@ func SetupPolicyClient(ctx context.Context, cfg Config) (magistrala.PolicyServic
 	return authgrpc.NewPolicyClient(client.Connection(), cfg.Timeout), client, nil
 }
 
-// SetupAuthz loads Authz gRPC configuration and creates new Authz gRPC client.
+// SetupThings loads things gRPC configuration and creates new things gRPC client.
 //
 // For example:
 //
-//	authzClient, authzHandler, err := auth.Setup(ctx, auth.Config{}).
-func SetupAuthz(ctx context.Context, cfg Config) (magistrala.AuthzServiceClient, Handler, error) {
+//	thingClient, thingHandler, err := auth.SetupThings(ctx, auth.Config{}).
+func SetupThings(ctx context.Context, cfg Config) (magistrala.ThingsServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
 		return nil, nil, err

@@ -132,7 +132,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	defer authnzHandler.Close()
+	defer authHandler.Close()
 
 	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
@@ -149,7 +149,7 @@ func main() {
 	}()
 	tracer := tp.Tracer(svcName)
 
-	svc := newService(authnzClient, db, tracer, logger, cfg, dbConfig, pkiclient)
+	svc := newService(authClient, db, tracer, logger, cfg, dbConfig, pkiclient)
 
 	httpServerConfig := server.Config{Port: defSvcHTTPPort}
 	if err := env.ParseWithOptions(&httpServerConfig, env.Options{Prefix: envPrefixHTTP}); err != nil {
@@ -184,7 +184,7 @@ func newService(authClient magistrala.AuthnServiceClient, db *sqlx.DB, tracer tr
 		ThingsURL: cfg.ThingsURL,
 	}
 	sdk := mgsdk.NewSDK(config)
-	svc := certs.New(authnzClient, certsRepo, sdk, pkiAgent)
+	svc := certs.New(authClient, certsRepo, sdk, pkiAgent)
 	svc = api.LoggingMiddleware(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	svc = api.MetricsMiddleware(svc, counter, latency)
