@@ -71,7 +71,7 @@ const (
 )
 
 var (
-	authnzClient magistrala.AuthnzServiceClient
+	authClient   magistrala.AuthServiceClient
 	policyClient magistrala.PolicyServiceClient
 )
 
@@ -219,7 +219,7 @@ func main() {
 	}
 	registerThingsServer := func(srv *grpc.Server) {
 		reflection.Register(srv)
-		magistrala.RegisterAuthzServiceServer(srv, grpcapi.NewServer(csvc))
+		magistrala.RegisterThingsServiceServer(srv, grpcapi.NewServer(csvc))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerThingsServer, logger)
 

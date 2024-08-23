@@ -1534,7 +1534,7 @@ func TestListGroups(t *testing.T) {
 					Object:      policysvc.MagistralaObject,
 					ObjectType:  policysvc.PlatformType,
 				}
-				adminCheck = authnz.On("Authorize", context.Background(), adminCheckReq).Return(tc.authzResp, tc.authzErr)
+				adminCheck = authsvc.On("Authorize", context.Background(), adminCheckReq).Return(tc.authzResp, tc.authzErr)
 				authReq := &magistrala.AuthorizeReq{
 					Domain:      tc.idResp.GetDomainId(),
 					SubjectType: policysvc.UserType,
