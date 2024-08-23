@@ -156,14 +156,14 @@ func main() {
 		return
 	}
 
-	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authnzHandler.Close()
-	logger.Info("AuthN/Z client successfully connected to auth grpc server" + authnzHandler.Secure())
+	defer authHandler.Close()
+	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 	policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
 	if err != nil {
@@ -172,9 +172,9 @@ func main() {
 		return
 	}
 	defer policyHandler.Close()
-	logger.Info("Policy client successfully connected to auth grpc server" + policyHandler.Secure())
+	logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + policyHandler.Secure())
 
-	csvc, gsvc, err := newService(ctx, authnzClient, policyClient, db, dbConfig, tracer, cfg, ec, logger)
+	csvc, gsvc, err := newService(ctx, authClient, policyClient, db, dbConfig, tracer, cfg, ec, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to setup service: %s", err))
 		exitCode = 1
@@ -217,7 +217,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authnzClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
+func newService(ctx context.Context, authnzClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -305,7 +305,7 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 	return client.ID, nil
 }
 
-func createAdminPolicy(ctx context.Context, clientID string, authnzClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient) error {
+func createAdminPolicy(ctx context.Context, clientID string, authnzClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient) error {
 	res, err := authnzClient.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: authSvc.UserType,
 		Subject:     clientID,

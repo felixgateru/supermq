@@ -16,14 +16,14 @@ import (
 
 type service struct {
 	repo Repository
-	auth magistrala.AuthnzServiceClient
+	auth magistrala.AuthServiceClient
 	sdk  mgsdk.SDK
 }
 
 // ErrMemberExist indicates that the user is already a member of the domain.
 var ErrMemberExist = errors.New("user is already a member of the domain")
 
-func NewService(repo Repository, authnzClient magistrala.AuthnzServiceClient, sdk mgsdk.SDK) Service {
+func NewService(repo Repository, authnzClient magistrala.AuthServiceClient, sdk mgsdk.SDK) Service {
 	return &service{
 		repo: repo,
 		auth: authnzClient,

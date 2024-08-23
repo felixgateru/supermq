@@ -14,11 +14,11 @@ import (
 
 type service struct {
 	idProvider magistrala.IDProvider
-	auth       magistrala.AuthnzServiceClient
+	auth       magistrala.AuthServiceClient
 	repository Repository
 }
 
-func NewService(idp magistrala.IDProvider, repository Repository, authClient magistrala.AuthnzServiceClient) Service {
+func NewService(idp magistrala.IDProvider, repository Repository, authClient magistrala.AuthServiceClient) Service {
 	return &service{
 		idProvider: idp,
 		auth:       authClient,

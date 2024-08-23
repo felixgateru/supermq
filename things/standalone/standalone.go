@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	_ magistrala.AuthnzServiceClient = (*singleUserAuthnz)(nil)
+	_ magistrala.AuthServiceClient   = (*singleUserAuthnz)(nil)
 	_ magistrala.PolicyServiceClient = (*singleUserPolicyClient)(nil)
 )
 
@@ -22,7 +22,7 @@ type singleUserAuthnz struct {
 }
 
 // NewAuthService creates single user repository for constrained environments.
-func NewAuthnzService(id, token string) magistrala.AuthnzServiceClient {
+func NewAuthService(id, token string) magistrala.AuthServiceClient {
 	return singleUserAuthnz{
 		id:    id,
 		token: token,

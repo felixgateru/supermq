@@ -119,7 +119,7 @@ type ConfigReader interface {
 }
 
 type bootstrapService struct {
-	authnz     magistrala.AuthnzServiceClient
+	auth       magistrala.AuthServiceClient
 	policy     magistrala.PolicyServiceClient
 	configs    ConfigRepository
 	sdk        mgsdk.SDK
@@ -128,11 +128,11 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(authnz magistrala.AuthnzServiceClient, policy magistrala.PolicyServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(auth magistrala.AuthServiceClient, policy magistrala.PolicyServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,
-		authnz:     authnz,
+		auth:       auth,
 		policy:     policy,
 		encKey:     encKey,
 		idProvider: idp,
@@ -317,7 +317,7 @@ func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]
 }
 
 func (bs bootstrapService) checkSuperAdmin(ctx context.Context, userID string) error {
-	res, err := bs.authnz.Authorize(ctx, &magistrala.AuthorizeReq{
+	res, err := bs.auth.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.AdminPermission,
@@ -483,7 +483,7 @@ func (bs bootstrapService) identify(ctx context.Context, token string) (*magistr
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
-	res, err := bs.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := bs.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -503,7 +503,7 @@ func (bs bootstrapService) authorize(ctx context.Context, domainID, subjKind, su
 		ObjectType:  objType,
 		Object:      obj,
 	}
-	res, err := bs.authnz.Authorize(ctx, req)
+	res, err := bs.auth.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}

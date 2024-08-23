@@ -147,8 +147,8 @@ func main() {
 	}
 	registerAuthServiceServer := func(srv *grpc.Server) {
 		reflection.Register(srv)
-		magistrala.RegisterAuthnzServiceServer(srv, grpcapi.NewServer(svc))
-		magistrala.RegisterPolicyServiceServer(srv, grpcapi.NewServer(svc))
+		magistrala.RegisterAuthServiceServer(srv, grpcapi.NewAuthServer(svc))
+		magistrala.RegisterPolicyServiceServer(srv, grpcapi.NewPolicyServer(svc))
 	}
 
 	gs := grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerAuthServiceServer, logger)

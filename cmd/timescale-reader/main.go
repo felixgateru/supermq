@@ -90,7 +90,7 @@ func main() {
 		return
 	}
 
-	ac, acHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	ac, acHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -107,7 +107,7 @@ func main() {
 		return
 	}
 
-	tc, tcHandler, err := auth.SetupAuthz(ctx, authConfig)
+	tc, tcHandler, err := auth.SetupThings(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -115,7 +115,7 @@ func main() {
 	}
 	defer tcHandler.Close()
 
-	logger.Info("Successfully connected to things grpc server " + tcHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + tcHandler.Secure())
 
 	httpServerConfig := server.Config{Port: defSvcHTTPPort}
 	if err := env.ParseWithOptions(&httpServerConfig, env.Options{Prefix: envPrefixHTTP}); err != nil {

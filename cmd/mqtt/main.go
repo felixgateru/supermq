@@ -172,7 +172,7 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.SetupAuthz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupThings(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -180,7 +180,7 @@ func main() {
 	}
 	defer authHandler.Close()
 
-	logger.Info("Successfully connected to things grpc server " + authHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + authHandler.Secure())
 
 	h := mqtt.NewHandler(np, es, logger, authClient)
 	h = handler.NewTracing(tracer, h)

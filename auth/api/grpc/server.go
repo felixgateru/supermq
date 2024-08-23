@@ -16,37 +16,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var _ AuthServiceServer = (*grpcServer)(nil)
+var (
+	_ magistrala.AuthServiceServer   = (*authGrpcServer)(nil)
+	_ magistrala.PolicyServiceServer = (*policyGrpcServer)(nil)
+)
 
-type AuthServiceServer interface {
-	magistrala.AuthnzServiceServer
-	magistrala.PolicyServiceServer
+type authGrpcServer struct {
+	magistrala.UnimplementedAuthServiceServer
+	issue     kitgrpc.Handler
+	refresh   kitgrpc.Handler
+	identify  kitgrpc.Handler
+	authorize kitgrpc.Handler
 }
 
-type grpcServer struct {
-	magistrala.UnimplementedAuthnzServiceServer
-	magistrala.UnimplementedPolicyServiceServer
-	issue                kitgrpc.Handler
-	refresh              kitgrpc.Handler
-	identify             kitgrpc.Handler
-	authorize            kitgrpc.Handler
-	addPolicy            kitgrpc.Handler
-	addPolicies          kitgrpc.Handler
-	deletePolicyFilter   kitgrpc.Handler
-	deletePolicies       kitgrpc.Handler
-	listObjects          kitgrpc.Handler
-	listAllObjects       kitgrpc.Handler
-	countObjects         kitgrpc.Handler
-	listSubjects         kitgrpc.Handler
-	listAllSubjects      kitgrpc.Handler
-	countSubjects        kitgrpc.Handler
-	listPermissions      kitgrpc.Handler
-	deleteEntityPolicies kitgrpc.Handler
-}
-
-// NewServer returns new AuthServiceServer instance.
-func NewServer(svc auth.Service) AuthServiceServer {
-	return &grpcServer{
+// NewAuthServer returns new AuthServiceServer instance.
+func NewAuthServer(svc auth.Service) magistrala.AuthServiceServer {
+	return &authGrpcServer{
 		issue: kitgrpc.NewServer(
 			(issueEndpoint(svc)),
 			decodeIssueRequest,
@@ -67,6 +52,59 @@ func NewServer(svc auth.Service) AuthServiceServer {
 			decodeAuthorizeRequest,
 			encodeAuthorizeResponse,
 		),
+	}
+}
+
+func (s *authGrpcServer) Issue(ctx context.Context, req *magistrala.IssueReq) (*magistrala.Token, error) {
+	_, res, err := s.issue.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, encodeError(err)
+	}
+	return res.(*magistrala.Token), nil
+}
+
+func (s *authGrpcServer) Refresh(ctx context.Context, req *magistrala.RefreshReq) (*magistrala.Token, error) {
+	_, res, err := s.refresh.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, encodeError(err)
+	}
+	return res.(*magistrala.Token), nil
+}
+
+func (s *authGrpcServer) Identify(ctx context.Context, token *magistrala.IdentityReq) (*magistrala.IdentityRes, error) {
+	_, res, err := s.identify.ServeGRPC(ctx, token)
+	if err != nil {
+		return nil, encodeError(err)
+	}
+	return res.(*magistrala.IdentityRes), nil
+}
+
+func (s *authGrpcServer) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) (*magistrala.AuthorizeRes, error) {
+	_, res, err := s.authorize.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, encodeError(err)
+	}
+	return res.(*magistrala.AuthorizeRes), nil
+}
+
+type policyGrpcServer struct {
+	magistrala.UnimplementedPolicyServiceServer
+	addPolicy            kitgrpc.Handler
+	addPolicies          kitgrpc.Handler
+	deletePolicyFilter   kitgrpc.Handler
+	deletePolicies       kitgrpc.Handler
+	listObjects          kitgrpc.Handler
+	listAllObjects       kitgrpc.Handler
+	countObjects         kitgrpc.Handler
+	listSubjects         kitgrpc.Handler
+	listAllSubjects      kitgrpc.Handler
+	countSubjects        kitgrpc.Handler
+	listPermissions      kitgrpc.Handler
+	deleteEntityPolicies kitgrpc.Handler
+}
+
+func NewPolicyServer(svc auth.Service) magistrala.PolicyServiceServer {
+	return &policyGrpcServer{
 		addPolicy: kitgrpc.NewServer(
 			(addPolicyEndpoint(svc)),
 			decodeAddPolicyRequest,
@@ -130,39 +168,7 @@ func NewServer(svc auth.Service) AuthServiceServer {
 	}
 }
 
-func (s *grpcServer) Issue(ctx context.Context, req *magistrala.IssueReq) (*magistrala.Token, error) {
-	_, res, err := s.issue.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, encodeError(err)
-	}
-	return res.(*magistrala.Token), nil
-}
-
-func (s *grpcServer) Refresh(ctx context.Context, req *magistrala.RefreshReq) (*magistrala.Token, error) {
-	_, res, err := s.refresh.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, encodeError(err)
-	}
-	return res.(*magistrala.Token), nil
-}
-
-func (s *grpcServer) Identify(ctx context.Context, token *magistrala.IdentityReq) (*magistrala.IdentityRes, error) {
-	_, res, err := s.identify.ServeGRPC(ctx, token)
-	if err != nil {
-		return nil, encodeError(err)
-	}
-	return res.(*magistrala.IdentityRes), nil
-}
-
-func (s *grpcServer) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) (*magistrala.AuthorizeRes, error) {
-	_, res, err := s.authorize.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, encodeError(err)
-	}
-	return res.(*magistrala.AuthorizeRes), nil
-}
-
-func (s *grpcServer) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (*magistrala.AddPolicyRes, error) {
+func (s *policyGrpcServer) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (*magistrala.AddPolicyRes, error) {
 	_, res, err := s.addPolicy.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -170,7 +176,7 @@ func (s *grpcServer) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq
 	return res.(*magistrala.AddPolicyRes), nil
 }
 
-func (s *grpcServer) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (*magistrala.AddPoliciesRes, error) {
+func (s *policyGrpcServer) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (*magistrala.AddPoliciesRes, error) {
 	_, res, err := s.addPolicies.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -178,7 +184,7 @@ func (s *grpcServer) AddPolicies(ctx context.Context, req *magistrala.AddPolicie
 	return res.(*magistrala.AddPoliciesRes), nil
 }
 
-func (s *grpcServer) DeletePolicyFilter(ctx context.Context, req *magistrala.DeletePolicyFilterReq) (*magistrala.DeletePolicyRes, error) {
+func (s *policyGrpcServer) DeletePolicyFilter(ctx context.Context, req *magistrala.DeletePolicyFilterReq) (*magistrala.DeletePolicyRes, error) {
 	_, res, err := s.deletePolicyFilter.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -186,7 +192,7 @@ func (s *grpcServer) DeletePolicyFilter(ctx context.Context, req *magistrala.Del
 	return res.(*magistrala.DeletePolicyRes), nil
 }
 
-func (s *grpcServer) DeletePolicies(ctx context.Context, req *magistrala.DeletePoliciesReq) (*magistrala.DeletePolicyRes, error) {
+func (s *policyGrpcServer) DeletePolicies(ctx context.Context, req *magistrala.DeletePoliciesReq) (*magistrala.DeletePolicyRes, error) {
 	_, res, err := s.deletePolicies.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -194,7 +200,7 @@ func (s *grpcServer) DeletePolicies(ctx context.Context, req *magistrala.DeleteP
 	return res.(*magistrala.DeletePolicyRes), nil
 }
 
-func (s *grpcServer) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) (*magistrala.ListObjectsRes, error) {
+func (s *policyGrpcServer) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) (*magistrala.ListObjectsRes, error) {
 	_, res, err := s.listObjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -202,7 +208,7 @@ func (s *grpcServer) ListObjects(ctx context.Context, req *magistrala.ListObject
 	return res.(*magistrala.ListObjectsRes), nil
 }
 
-func (s *grpcServer) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) (*magistrala.ListObjectsRes, error) {
+func (s *policyGrpcServer) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) (*magistrala.ListObjectsRes, error) {
 	_, res, err := s.listAllObjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -210,7 +216,7 @@ func (s *grpcServer) ListAllObjects(ctx context.Context, req *magistrala.ListObj
 	return res.(*magistrala.ListObjectsRes), nil
 }
 
-func (s *grpcServer) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (*magistrala.CountObjectsRes, error) {
+func (s *policyGrpcServer) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (*magistrala.CountObjectsRes, error) {
 	_, res, err := s.countObjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -218,7 +224,7 @@ func (s *grpcServer) CountObjects(ctx context.Context, req *magistrala.CountObje
 	return res.(*magistrala.CountObjectsRes), nil
 }
 
-func (s *grpcServer) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) (*magistrala.ListSubjectsRes, error) {
+func (s *policyGrpcServer) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) (*magistrala.ListSubjectsRes, error) {
 	_, res, err := s.listSubjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -226,7 +232,7 @@ func (s *grpcServer) ListSubjects(ctx context.Context, req *magistrala.ListSubje
 	return res.(*magistrala.ListSubjectsRes), nil
 }
 
-func (s *grpcServer) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) (*magistrala.ListSubjectsRes, error) {
+func (s *policyGrpcServer) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) (*magistrala.ListSubjectsRes, error) {
 	_, res, err := s.listAllSubjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -234,7 +240,7 @@ func (s *grpcServer) ListAllSubjects(ctx context.Context, req *magistrala.ListSu
 	return res.(*magistrala.ListSubjectsRes), nil
 }
 
-func (s *grpcServer) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (*magistrala.CountSubjectsRes, error) {
+func (s *policyGrpcServer) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (*magistrala.CountSubjectsRes, error) {
 	_, res, err := s.countSubjects.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -242,7 +248,7 @@ func (s *grpcServer) CountSubjects(ctx context.Context, req *magistrala.CountSub
 	return res.(*magistrala.CountSubjectsRes), nil
 }
 
-func (s *grpcServer) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) (*magistrala.ListPermissionsRes, error) {
+func (s *policyGrpcServer) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) (*magistrala.ListPermissionsRes, error) {
 	_, res, err := s.listPermissions.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -250,7 +256,7 @@ func (s *grpcServer) ListPermissions(ctx context.Context, req *magistrala.ListPe
 	return res.(*magistrala.ListPermissionsRes), nil
 }
 
-func (s *grpcServer) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (*magistrala.DeletePolicyRes, error) {
+func (s *policyGrpcServer) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (*magistrala.DeletePolicyRes, error) {
 	_, res, err := s.deleteEntityPolicies.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)

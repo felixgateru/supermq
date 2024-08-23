@@ -98,14 +98,14 @@ func main() {
 		exitCode = 1
 		return
 	}
-	authClient, authHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
 	defer authHandler.Close()
-	logger.Info("Successfully connected to auth grpc server " + authHandler.Secure())
+	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 	tp, err := jaeger.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -154,7 +154,7 @@ func main() {
 	}
 }
 
-func newService(db *sqlx.DB, dbConfig clientspg.Config, authClient magistrala.AuthnzServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
+func newService(db *sqlx.DB, dbConfig clientspg.Config, authClient magistrala.AuthServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	repo := invitationspg.NewRepository(database)
 

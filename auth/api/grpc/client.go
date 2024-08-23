@@ -20,16 +20,16 @@ import (
 )
 
 const (
-	authnzSvcName = "magistrala.AuthnzService"
+	authnzSvcName = "magistrala.AuthService"
 	policySvcName = "magistrala.PolicyService"
 )
 
 var (
-	_ magistrala.AuthnzServiceClient = (*authnzGrpcClient)(nil)
+	_ magistrala.AuthServiceClient   = (*authGrpcClient)(nil)
 	_ magistrala.PolicyServiceClient = (*policyGrpcClient)(nil)
 )
 
-type authnzGrpcClient struct {
+type authGrpcClient struct {
 	issue     endpoint.Endpoint
 	refresh   endpoint.Endpoint
 	identify  endpoint.Endpoint
@@ -37,9 +37,9 @@ type authnzGrpcClient struct {
 	timeout   time.Duration
 }
 
-// NewAuthnzClient returns new authnz gRPC client instance.
-func NewAuthnzClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthnzServiceClient {
-	return &authnzGrpcClient{
+// NewAuthClient returns new auth gRPC client instance.
+func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServiceClient {
+	return &authGrpcClient{
 		issue: kitgrpc.NewClient(
 			conn,
 			authnzSvcName,
@@ -76,7 +76,7 @@ func NewAuthnzClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Au
 	}
 }
 
-func (client authnzGrpcClient) Issue(ctx context.Context, req *magistrala.IssueReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
+func (client authGrpcClient) Issue(ctx context.Context, req *magistrala.IssueReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -104,7 +104,7 @@ func decodeIssueResponse(_ context.Context, grpcRes interface{}) (interface{}, e
 	return grpcRes, nil
 }
 
-func (client authnzGrpcClient) Refresh(ctx context.Context, req *magistrala.RefreshReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
+func (client authGrpcClient) Refresh(ctx context.Context, req *magistrala.RefreshReq, _ ...grpc.CallOption) (*magistrala.Token, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -124,7 +124,7 @@ func decodeRefreshResponse(_ context.Context, grpcRes interface{}) (interface{},
 	return grpcRes, nil
 }
 
-func (client authnzGrpcClient) Identify(ctx context.Context, token *magistrala.IdentityReq, _ ...grpc.CallOption) (*magistrala.IdentityRes, error) {
+func (client authGrpcClient) Identify(ctx context.Context, token *magistrala.IdentityReq, _ ...grpc.CallOption) (*magistrala.IdentityRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -146,7 +146,7 @@ func decodeIdentifyResponse(_ context.Context, grpcRes interface{}) (interface{}
 	return identityRes{id: res.GetId(), userID: res.GetUserId(), domainID: res.GetDomainId()}, nil
 }
 
-func (client authnzGrpcClient) Authorize(ctx context.Context, req *magistrala.AuthorizeReq, _ ...grpc.CallOption) (r *magistrala.AuthorizeRes, err error) {
+func (client authGrpcClient) Authorize(ctx context.Context, req *magistrala.AuthorizeReq, _ ...grpc.CallOption) (r *magistrala.AuthorizeRes, err error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 

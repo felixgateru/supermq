@@ -94,7 +94,7 @@ func main() {
 		return
 	}
 
-	authClient, authHandler, err := auth.SetupAuthz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupThings(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -102,7 +102,7 @@ func main() {
 	}
 	defer authHandler.Close()
 
-	logger.Info("Successfully connected to things grpc server " + authHandler.Secure())
+	logger.Info("Successfully connected to things gRPC server " + authHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -153,7 +153,7 @@ func main() {
 	}
 }
 
-func newService(pub messaging.Publisher, tc magistrala.AuthzServiceClient, logger *slog.Logger, tracer trace.Tracer) session.Handler {
+func newService(pub messaging.Publisher, tc magistrala.ThingsServiceClient, logger *slog.Logger, tracer trace.Tracer) session.Handler {
 	svc := adapter.NewHandler(pub, logger, tc)
 	svc = handler.NewTracing(tracer, svc)
 	svc = handler.LoggingMiddleware(svc, logger)

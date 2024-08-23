@@ -46,19 +46,19 @@ var (
 	errRemovePolicies = errors.New("failed to delete policies")
 )
 
-func newService() (things.Service, *mocks.Repository, *authmocks.AuthnzClient, *authmocks.PolicyServiceClient, *mocks.Cache) {
-	authnz := new(authmocks.AuthnzClient)
+func newService() (things.Service, *mocks.Repository, *authmocks.AuthServiceClient, *authmocks.PolicyServiceClient, *mocks.Cache) {
+	auth := new(authmocks.AuthServiceClient)
 	policyClient := new(authmocks.PolicyServiceClient)
 	thingCache := new(mocks.Cache)
 	idProvider := uuid.NewMock()
 	cRepo := new(mocks.Repository)
 	gRepo := new(gmocks.Repository)
 
-	return things.NewService(authnz, policyClient, cRepo, gRepo, thingCache, idProvider), cRepo, authnz, policyClient, thingCache
+	return things.NewService(auth, policyClient, cRepo, gRepo, thingCache, idProvider), cRepo, auth, policyClient, thingCache
 }
 
 func TestCreateThings(t *testing.T) {
-	svc, cRepo, authnz, policy, _ := newService()
+	svc, cRepo, auth, policy, _ := newService()
 
 	cases := []struct {
 		desc              string
@@ -328,8 +328,8 @@ func TestCreateThings(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, tc.identifyErr)
-		authcall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, tc.identifyErr)
+		authcall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("Save", context.Background(), mock.Anything).Return([]mgclients.Client{tc.thing}, tc.saveErr)
 		authCall1 := policy.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPolicyResponse, tc.addPolicyErr)
 		authCall2 := policy.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePolicyRes, tc.deletePolicyErr)
@@ -353,7 +353,7 @@ func TestCreateThings(t *testing.T) {
 }
 
 func TestViewClient(t *testing.T) {
-	svc, cRepo, authnz, _, _ := newService()
+	svc, cRepo, auth, _, _ := newService()
 
 	cases := []struct {
 		desc              string
@@ -403,7 +403,7 @@ func TestViewClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.response, tc.err)
 		rClient, err := svc.ViewClient(context.Background(), tc.token, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -414,7 +414,7 @@ func TestViewClient(t *testing.T) {
 }
 
 func TestListClients(t *testing.T) {
-	svc, cRepo, authnz, policy, _ := newService()
+	svc, cRepo, auth, policy, _ := newService()
 
 	adminID := testsutil.GenerateUUID(t)
 	domainID := testsutil.GenerateUUID(t)
@@ -606,15 +606,15 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		authorizeCall := authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		authorizeCall := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			SubjectType: authsvc.UserType,
 			Subject:     tc.identifyResponse.UserId,
 			Permission:  authsvc.AdminPermission,
 			ObjectType:  authsvc.PlatformType,
 			Object:      authsvc.MagistralaObject,
 		}).Return(tc.authorizeResponse, tc.authorizeErr)
-		authorizeCall2 := authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authorizeCall2 := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			Domain:      "",
 			SubjectType: authsvc.UserType,
 			SubjectKind: authsvc.UsersKind,
@@ -796,8 +796,8 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases2 {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		authorizeCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		authorizeCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		listAllObjectsCall := policy.On("ListAllObjects", context.Background(), &magistrala.ListObjectsReq{
 			SubjectType: authsvc.UserType,
 			Subject:     tc.identifyResponse.DomainId + "_" + adminID,
@@ -826,7 +826,7 @@ func TestListClients(t *testing.T) {
 }
 
 func TestUpdateClient(t *testing.T) {
-	svc, cRepo, authnz, _, _ := newService()
+	svc, cRepo, auth, _, _ := newService()
 
 	client1 := client
 	client2 := client
@@ -910,7 +910,7 @@ func TestUpdateClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("Update", context.Background(), mock.Anything).Return(tc.updateResponse, tc.updateErr)
 		updatedClient, err := svc.UpdateClient(context.Background(), tc.token, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -921,7 +921,7 @@ func TestUpdateClient(t *testing.T) {
 }
 
 func TestUpdateClientTags(t *testing.T) {
-	svc, cRepo, authnz, _, _ := newService()
+	svc, cRepo, auth, _, _ := newService()
 
 	client.Tags = []string{"updated"}
 
@@ -976,7 +976,7 @@ func TestUpdateClientTags(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("UpdateTags", context.Background(), mock.Anything).Return(tc.updateResponse, tc.updateErr)
 		updatedClient, err := svc.UpdateClientTags(context.Background(), tc.token, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -987,7 +987,7 @@ func TestUpdateClientTags(t *testing.T) {
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	svc, cRepo, authnz, _, _ := newService()
+	svc, cRepo, auth, _, _ := newService()
 
 	cases := []struct {
 		desc                 string
@@ -1050,7 +1050,7 @@ func TestUpdateClientSecret(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("UpdateSecret", context.Background(), mock.Anything).Return(tc.updateSecretResponse, tc.updateErr)
 		updatedClient, err := svc.UpdateClientSecret(context.Background(), tc.token, tc.client.ID, tc.newSecret)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1061,7 +1061,7 @@ func TestUpdateClientSecret(t *testing.T) {
 }
 
 func TestEnableClient(t *testing.T) {
-	svc, cRepo, authnz, policy, _ := newService()
+	svc, cRepo, auth, policy, _ := newService()
 
 	enabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
 	disabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
@@ -1138,7 +1138,7 @@ func TestEnableClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.retrieveByIDResponse, tc.retrieveIDErr)
 		repoCall2 := cRepo.On("ChangeStatus", context.Background(), mock.Anything).Return(tc.changeStatusResponse, tc.changeStatusErr)
 		_, err := svc.EnableClient(context.Background(), tc.token, tc.id)
@@ -1201,8 +1201,8 @@ func TestEnableClient(t *testing.T) {
 			Limit:  100,
 			Status: tc.status,
 		}
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
 		repoCall2 := policy.On("ListAllObjects", mock.Anything, mock.Anything).Return(&magistrala.ListObjectsRes{Policies: getIDs(tc.response.Clients)}, nil)
 		repoCall3 := cRepo.On("SearchClients", context.Background(), mock.Anything).Return(tc.response, nil)
 		page, err := svc.ListClients(context.Background(), validToken, "", pm)
@@ -1217,7 +1217,7 @@ func TestEnableClient(t *testing.T) {
 }
 
 func TestDisableClient(t *testing.T) {
-	svc, cRepo, authnz, policy, cache := newService()
+	svc, cRepo, auth, policy, cache := newService()
 
 	enabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
 	disabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
@@ -1306,7 +1306,7 @@ func TestDisableClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.retrieveByIDResponse, tc.retrieveIDErr)
 		repoCall2 := cRepo.On("ChangeStatus", context.Background(), mock.Anything).Return(tc.changeStatusResponse, tc.changeStatusErr)
 		repoCall3 := cache.On("Remove", mock.Anything, mock.Anything).Return(tc.removeErr)
@@ -1371,8 +1371,8 @@ func TestDisableClient(t *testing.T) {
 			Limit:  100,
 			Status: tc.status,
 		}
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: validToken}).Return(&magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)}, nil)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, nil)
 		repoCall2 := policy.On("ListAllObjects", mock.Anything, mock.Anything).Return(&magistrala.ListObjectsRes{Policies: getIDs(tc.response.Clients)}, nil)
 		repoCall3 := cRepo.On("SearchClients", context.Background(), mock.Anything).Return(tc.response, nil)
 		page, err := svc.ListClients(context.Background(), validToken, "", pm)
@@ -1387,7 +1387,7 @@ func TestDisableClient(t *testing.T) {
 }
 
 func TestListMembers(t *testing.T) {
-	svc, cRepo, authnz, policy, _ := newService()
+	svc, cRepo, auth, policy, _ := newService()
 
 	nClients := uint64(10)
 	aClients := []mgclients.Client{}
@@ -1588,8 +1588,8 @@ func TestListMembers(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall2 := policy.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		repoCall3 := cRepo.On("RetrieveAllByIDs", context.Background(), tc.page).Return(tc.retreiveAllByIDsResponse, tc.retreiveAllByIDsErr)
 		repoCall4 := policy.On("ListPermissions", mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
@@ -1605,7 +1605,7 @@ func TestListMembers(t *testing.T) {
 }
 
 func TestDeleteClient(t *testing.T) {
-	svc, cRepo, authnz, policy, cache := newService()
+	svc, cRepo, auth, policy, cache := newService()
 
 	client := mgclients.Client{
 		ID: testsutil.GenerateUUID(t),
@@ -1683,8 +1683,8 @@ func TestDeleteClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall2 := cache.On("Remove", mock.Anything, tc.clientID).Return(tc.removeErr)
 		repoCall3 := policy.On("DeleteEntityPolicies", context.Background(), &magistrala.DeleteEntityPoliciesReq{
 			EntityType: authsvc.ThingType,
@@ -1702,7 +1702,7 @@ func TestDeleteClient(t *testing.T) {
 }
 
 func TestShare(t *testing.T) {
-	svc, _, authnz, policy, _ := newService()
+	svc, _, auth, policy, _ := newService()
 
 	clientID := "clientID"
 
@@ -1768,8 +1768,8 @@ func TestShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall2 := policy.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesResponse, tc.addPoliciesErr)
 		err := svc.Share(context.Background(), tc.token, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1780,7 +1780,7 @@ func TestShare(t *testing.T) {
 }
 
 func TestUnShare(t *testing.T) {
-	svc, _, authnz, policy, _ := newService()
+	svc, _, auth, policy, _ := newService()
 
 	clientID := "clientID"
 
@@ -1846,8 +1846,8 @@ func TestUnShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall2 := policy.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesResponse, tc.deletePoliciesErr)
 		err := svc.Unshare(context.Background(), tc.token, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1858,7 +1858,7 @@ func TestUnShare(t *testing.T) {
 }
 
 func TestViewClientPerms(t *testing.T) {
-	svc, _, authnz, policy, _ := newService()
+	svc, _, auth, policy, _ := newService()
 
 	validID := valid
 
@@ -1918,8 +1918,8 @@ func TestViewClientPerms(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-		repoCall1 := authnz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
+		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
+		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
 		repoCall2 := policy.On("ListPermissions", mock.Anything, mock.Anything).Return(tc.listPermResponse, tc.listPermErr)
 		_, err := svc.ViewClientPerms(context.Background(), tc.token, tc.thingID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1991,7 +1991,7 @@ func TestIdentify(t *testing.T) {
 }
 
 func TestAuthorize(t *testing.T) {
-	svc, cRepo, authnz, _, cache := newService()
+	svc, cRepo, auth, _, cache := newService()
 
 	cases := []struct {
 		desc                string
@@ -2074,7 +2074,7 @@ func TestAuthorize(t *testing.T) {
 		cacheCall := cache.On("ID", context.Background(), tc.request.GetSubject()).Return(tc.cacheIDRes, tc.cacheIDErr)
 		repoCall := cRepo.On("RetrieveBySecret", context.Background(), tc.request.GetSubject()).Return(tc.retrieveBySecretRes, tc.retrieveBySecretErr)
 		cacheCall1 := cache.On("Save", context.Background(), tc.request.GetSubject(), tc.retrieveBySecretRes.ID).Return(tc.cacheSaveErr)
-		authCall := authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authErr)
+		authCall := auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeRes, tc.authErr)
 		id, err := svc.Authorize(context.Background(), tc.request)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {

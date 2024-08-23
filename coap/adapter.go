@@ -37,12 +37,12 @@ var _ Service = (*adapterService)(nil)
 
 // Observers is a map of maps,.
 type adapterService struct {
-	auth   magistrala.AuthzServiceClient
+	auth   magistrala.ThingsServiceClient
 	pubsub messaging.PubSub
 }
 
 // New instantiates the CoAP adapter implementation.
-func New(authClient magistrala.AuthzServiceClient, pubsub messaging.PubSub) Service {
+func New(authClient magistrala.ThingsServiceClient, pubsub messaging.PubSub) Service {
 	as := &adapterService{
 		auth:   authClient,
 		pubsub: pubsub,

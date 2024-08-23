@@ -6,17 +6,17 @@ syntax = "proto3";
 package magistrala;
 option go_package = "./magistrala";
 
-// AuthzService is a service that provides authentication and authorization
+// ThingsService is a service that provides authentication and authorization
 // functionalities for the things service.
-service AuthzService {
+service ThingsService {
   // Authorize checks if the subject is authorized to perform
   // the action on the object.
   rpc Authorize(AuthorizeReq) returns (AuthorizeRes) {}
 }
 
-// AuthnzService is a service that provides authentication and authorization
+// AuthService is a service that provides authentication and authorization
 // functionalities for magistrala services.
-service AuthnzService {
+service AuthService {
   rpc Issue(IssueReq) returns (Token) {}
   rpc Refresh(RefreshReq) returns (Token) {}
   rpc Identify(IdentityReq) returns (IdentityRes) {}

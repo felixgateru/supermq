@@ -23,11 +23,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestSetupAuthnz(t *testing.T) {
+func TestSetupAuth(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthnzServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterAuthnzServiceServer(srv, authgrpcapi.NewServer(new(mocks.Service)))
+		magistrala.RegisterAuthServiceServer(srv, authgrpcapi.NewAuthServer(new(mocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthnzServiceServer, mglog.NewMock())
 	go func() {
@@ -64,7 +64,7 @@ func TestSetupAuthnz(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupAuthnz(context.Background(), c.config)
+			client, handler, err := auth.SetupAuth(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
@@ -74,11 +74,11 @@ func TestSetupAuthnz(t *testing.T) {
 	}
 }
 
-func TestSetupAuthz(t *testing.T) {
+func TestSetupThings(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthzServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterAuthzServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
+		magistrala.RegisterThingsServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "things", server.Config{Port: "12345"}, registerAuthzServiceServer, mglog.NewMock())
 	go func() {
@@ -115,7 +115,7 @@ func TestSetupAuthz(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupAuthz(context.Background(), c.config)
+			client, handler, err := auth.SetupThings(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
@@ -129,7 +129,7 @@ func TestSetupPolicyClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerPolicyServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterPolicyServiceServer(srv, authgrpcapi.NewServer(new(mocks.Service)))
+		magistrala.RegisterPolicyServiceServer(srv, authgrpcapi.NewPolicyServer(new(mocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerPolicyServiceServer, mglog.NewMock())
 	go func() {

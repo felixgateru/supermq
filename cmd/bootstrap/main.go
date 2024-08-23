@@ -107,14 +107,14 @@ func main() {
 		return
 	}
 
-	authnzClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer authnzHandler.Close()
-	logger.Info("AuthN/Z client successfully connected to auth grpc server " + authnzHandler.Secure())
+	defer authHandler.Close()
+	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 	policyClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
 	if err != nil {
@@ -123,7 +123,7 @@ func main() {
 		return
 	}
 	defer policyHandler.Close()
-	logger.Info("Policy client successfully connected to auth grpc server" + policyHandler.Secure())
+	logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + policyHandler.Secure())
 
 	tp, err := jaeger.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -139,7 +139,7 @@ func main() {
 	tracer := tp.Tracer(svcName)
 
 	// Create new service
-	svc, err := newService(ctx, authnzClient, policyClient, db, tracer, logger, cfg, dbConfig)
+	svc, err := newService(ctx, authClient, policyClient, db, tracer, logger, cfg, dbConfig)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
@@ -180,7 +180,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)

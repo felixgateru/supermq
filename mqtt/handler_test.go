@@ -450,12 +450,12 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
-func newHandler() (session.Handler, *thmocks.AuthzClient, *mocks.EventStore) {
+func newHandler() (session.Handler, *thmocks.ThingsServiceClient, *mocks.EventStore) {
 	logger, err := mglog.New(&logBuffer, "debug")
 	if err != nil {
 		log.Fatalf("failed to create logger: %s", err)
 	}
-	auth := new(thmocks.AuthzClient)
+	auth := new(thmocks.ThingsServiceClient)
 	eventStore := new(mocks.EventStore)
 	return mqtt.NewHandler(mocks.NewPublisher(), eventStore, logger, auth), auth, eventStore
 }

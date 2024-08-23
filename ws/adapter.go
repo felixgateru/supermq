@@ -41,12 +41,12 @@ type Service interface {
 var _ Service = (*adapterService)(nil)
 
 type adapterService struct {
-	auth   magistrala.AuthzServiceClient
+	auth   magistrala.ThingsServiceClient
 	pubsub messaging.PubSub
 }
 
 // New instantiates the WS adapter implementation.
-func New(authClient magistrala.AuthzServiceClient, pubsub messaging.PubSub) Service {
+func New(authClient magistrala.ThingsServiceClient, pubsub messaging.PubSub) Service {
 	return &adapterService{
 		auth:   authClient,
 		pubsub: pubsub,

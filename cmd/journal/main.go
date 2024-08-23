@@ -99,15 +99,15 @@ func main() {
 		return
 	}
 
-	ac, acHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	authClient, authHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer acHandler.Close()
+	defer authHandler.Close()
 
-	logger.Info("Successfully connected to auth grpc server " + acHandler.Secure())
+	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -122,7 +122,7 @@ func main() {
 	}()
 	tracer := tp.Tracer(svcName)
 
-	svc := newService(db, dbConfig, ac, logger, tracer)
+	svc := newService(db, dbConfig, authClient, logger, tracer)
 
 	subscriber, err := store.NewSubscriber(ctx, cfg.ESURL, logger)
 	if err != nil {
@@ -166,7 +166,7 @@ func main() {
 	}
 }
 
-func newService(db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthnzServiceClient, logger *slog.Logger, tracer trace.Tracer) journal.Service {
+func newService(db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthServiceClient, logger *slog.Logger, tracer trace.Tracer) journal.Service {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	repo := journalpg.NewRepository(database)
 	idp := uuid.New()

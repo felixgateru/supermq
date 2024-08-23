@@ -37,9 +37,9 @@ var msg = messaging.Message{
 	Payload:   []byte(`[{"n":"current","t":-5,"v":1.2}]`),
 }
 
-func newService() (ws.Service, *mocks.PubSub, *thmocks.AuthzClient) {
+func newService() (ws.Service, *mocks.PubSub, *thmocks.ThingsServiceClient) {
 	pubsub := new(mocks.PubSub)
-	auth := new(thmocks.AuthzClient)
+	auth := new(thmocks.ThingsServiceClient)
 
 	return ws.New(auth, pubsub), pubsub, auth
 }

@@ -30,8 +30,8 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func setupMessages() (*httptest.Server, *authmocks.AuthnzClient, *pubsub.PubSub) {
-	auth := new(authmocks.AuthnzClient)
+func setupMessages() (*httptest.Server, *authmocks.AuthServiceClient, *pubsub.PubSub) {
+	auth := new(authmocks.AuthServiceClient)
 	pub := new(pubsub.PubSub)
 	handler := adapter.NewHandler(pub, mglog.NewMock(), auth)
 
@@ -50,10 +50,10 @@ func setupMessages() (*httptest.Server, *authmocks.AuthnzClient, *pubsub.PubSub)
 	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), auth, pub
 }
 
-func setupReader() (*httptest.Server, *authmocks.AuthnzClient, *readersmocks.MessageRepository) {
+func setupReader() (*httptest.Server, *authmocks.AuthServiceClient, *readersmocks.MessageRepository) {
 	repo := new(readersmocks.MessageRepository)
-	auth := new(authmocks.AuthnzClient)
-	tauth := new(thmocks.AuthzClient)
+	auth := new(authmocks.AuthServiceClient)
+	tauth := new(thmocks.ThingsServiceClient)
 
 	mux := readersapi.MakeHandler(repo, auth, tauth, "test", "")
 	return httptest.NewServer(mux), auth, repo

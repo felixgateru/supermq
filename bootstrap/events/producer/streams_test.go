@@ -87,25 +87,25 @@ var (
 type testVariable struct {
 	svc    bootstrap.Service
 	boot   *mocks.ConfigRepository
-	authnz *authmocks.AuthnzClient
+	auth   *authmocks.AuthServiceClient
 	policy *authmocks.PolicyServiceClient
 	sdk    *sdkmocks.SDK
 }
 
 func newTestVariable(t *testing.T, redisURL string) testVariable {
 	boot := new(mocks.ConfigRepository)
-	authnz := new(authmocks.AuthnzClient)
+	auth := new(authmocks.AuthServiceClient)
 	policy := new(authmocks.PolicyServiceClient)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
-	svc := bootstrap.New(authnz, policy, boot, sdk, encKey, idp)
+	svc := bootstrap.New(auth, policy, boot, sdk, encKey, idp)
 	publisher, err := store.NewPublisher(context.Background(), redisURL, streamID)
 	require.Nil(t, err, fmt.Sprintf("got unexpected error: %s", err))
 	svc = producer.NewEventStoreMiddleware(svc, publisher)
 	return testVariable{
 		svc:    svc,
 		boot:   boot,
-		authnz: authnz,
+		auth:   auth,
 		policy: policy,
 		sdk:    sdk,
 	}
@@ -218,8 +218,8 @@ func TestAdd(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		sdkCall := tv.sdk.On("Thing", tc.config.ThingID, tc.token).Return(mgsdk.Thing{ID: tc.config.ThingID, Credentials: mgsdk.Credentials{Secret: tc.config.ThingKey}}, errors.NewSDKError(tc.thingErr))
 		repoCall := tv.boot.On("ListExisting", context.Background(), domainID, mock.Anything).Return(tc.config.Channels, tc.listErr)
 		repoCall1 := tv.boot.On("Save", context.Background(), mock.Anything, mock.Anything).Return(mock.Anything, tc.saveErr)
@@ -324,8 +324,8 @@ func TestView(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.config.ThingID).Return(config, tc.retrieveErr)
 
 		_, err := tv.svc.View(context.Background(), tc.token, tc.config.ThingID)
@@ -445,8 +445,8 @@ func TestUpdate(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall := tv.boot.On("Update", context.Background(), mock.Anything).Return(tc.updateErr)
 		err := tv.svc.Update(context.Background(), tc.token, tc.config)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -584,8 +584,8 @@ func TestUpdateConnections(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.id, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		sdkCall := tv.sdk.On("Channel", mock.Anything, tc.token).Return(mgsdk.Channel{}, tc.channelErr)
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.configID).Return(config, tc.retrieveErr)
 		repoCall1 := tv.boot.On("ListExisting", context.Background(), domainID, mock.Anything, mock.Anything).Return(config.Channels, tc.listErr)
@@ -758,8 +758,8 @@ func TestUpdateCert(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall := tv.boot.On("UpdateCert", context.Background(), tc.domainID, tc.configID, tc.clientCert, tc.clientKey, tc.caCert).Return(config, tc.updateErr)
 		_, err := tv.svc.UpdateCert(context.Background(), tc.token, tc.configID, tc.clientCert, tc.clientKey, tc.caCert)
 
@@ -1012,15 +1012,15 @@ func TestList(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			SubjectType: authsvc.UserType,
 			Subject:     tc.userID,
 			Permission:  authsvc.AdminPermission,
 			ObjectType:  authsvc.PlatformType,
 			Object:      authsvc.MagistralaObject,
 		}).Return(tc.superAdminAuthRes, tc.superAdmiAuthErr)
-		authCall2 := tv.authnz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall2 := tv.auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
 			SubjectType: authsvc.UserType,
 			SubjectKind: authsvc.UsersKind,
 			Subject:     tc.userID,
@@ -1131,8 +1131,8 @@ func TestRemove(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
-		authCall1 := tv.authnz.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall1 := tv.auth.On("Authorize", context.Background(), mock.Anything).Return(tc.authResponse, tc.authorizeErr)
 		repoCall := tv.boot.On("Remove", context.Background(), mock.Anything, mock.Anything).Return(tc.removeErr)
 		err := tv.svc.Remove(context.Background(), tc.token, tc.configID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1303,7 +1303,7 @@ func TestChangeState(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authnz.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
+		authCall := tv.auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.id).Return(config, tc.retrieveErr)
 		sdkCall1 := tv.sdk.On("Connect", mock.Anything, mock.Anything).Return(errors.NewSDKError(tc.connectErr))
 		repoCall1 := tv.boot.On("ChangeState", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(tc.stateErr)

@@ -65,7 +65,7 @@ const (
 )
 
 var (
-	authnzClient magistrala.AuthnzServiceClient
+	authClient   magistrala.AuthServiceClient
 	policyClient magistrala.PolicyServiceClient
 )
 
@@ -151,7 +151,7 @@ func main() {
 
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
 	case true:
-		authnzClient = localusers.NewAuthnzService(cfg.StandaloneID, cfg.StandaloneToken)
+		authClient = localusers.NewAuthService(cfg.StandaloneID, cfg.StandaloneToken)
 		policyClient = localusers.NewPolicyService(cfg.StandaloneID, cfg.StandaloneToken)
 		logger.Info("Using standalone auth service")
 	default:
@@ -162,15 +162,15 @@ func main() {
 			return
 		}
 
-		authnzServiceClient, authnzHandler, err := auth.SetupAuthnz(ctx, authConfig)
+		authServiceClient, authHandler, err := auth.SetupAuth(ctx, authConfig)
 		if err != nil {
 			logger.Error(err.Error())
 			exitCode = 1
 			return
 		}
-		defer authnzHandler.Close()
-		authnzClient = authnzServiceClient
-		logger.Info("AuthN/Z client successfully connected to auth grpc server " + authnzHandler.Secure())
+		defer authHandler.Close()
+		authClient = authServiceClient
+		logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 		policyServiceClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
 		if err != nil {
@@ -180,10 +180,10 @@ func main() {
 		}
 		defer policyHandler.Close()
 		policyClient = policyServiceClient
-		logger.Info("Policy client successfully connected to auth grpc server " + policyHandler.Secure())
+		logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + policyHandler.Secure())
 	}
 
-	csvc, gsvc, err := newService(ctx, db, dbConfig, authnzClient, policyClient, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
+	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyClient, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create services: %s", err))
 		exitCode = 1
@@ -205,11 +205,11 @@ func main() {
 		exitCode = 1
 		return
 	}
-	regiterAuthzServer := func(srv *grpc.Server) {
+	registerThingsServer := func(srv *grpc.Server) {
 		reflection.Register(srv)
-		magistrala.RegisterAuthzServiceServer(srv, grpcapi.NewServer(csvc))
+		magistrala.RegisterThingsServiceServer(srv, grpcapi.NewServer(csvc))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, regiterAuthzServer, logger)
+	gs := grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerThingsServer, logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, magistrala.Version, logger, cancel)
@@ -234,7 +234,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthnzServiceClient, policyClient magistrala.PolicyServiceClient, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
+func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := thingspg.NewRepository(database)
 	gRepo := gpostgres.New(database)

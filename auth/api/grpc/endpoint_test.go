@@ -55,18 +55,18 @@ var (
 func startGRPCServer(svc auth.Service, port int) {
 	listener, _ := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	server := grpc.NewServer()
-	magistrala.RegisterAuthnzServiceServer(server, grpcapi.NewServer(svc))
-	magistrala.RegisterPolicyServiceServer(server, grpcapi.NewServer(svc))
+	magistrala.RegisterAuthServiceServer(server, grpcapi.NewAuthServer(svc))
+	magistrala.RegisterPolicyServiceServer(server, grpcapi.NewPolicyServer(svc))
 	go func() {
 		err := server.Serve(listener)
-		assert.Nil(&testing.T{}, err, fmt.Sprintf(`"Unexpected error creating server %s"`, err))
+		assert.Nil(&testing.T{}, err, fmt.Sprintf(`"Unexpected error creating auth server %s"`, err))
 	}()
 }
 
 func TestIssue(t *testing.T) {
 	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error creating client connection %s", err))
-	client := grpcapi.NewAuthnzClient(conn, time.Second)
+	client := grpcapi.NewAuthClient(conn, time.Second)
 
 	cases := []struct {
 		desc          string
@@ -135,7 +135,7 @@ func TestIssue(t *testing.T) {
 func TestRefresh(t *testing.T) {
 	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error creating client connection %s", err))
-	client := grpcapi.NewAuthnzClient(conn, time.Second)
+	client := grpcapi.NewAuthClient(conn, time.Second)
 
 	cases := []struct {
 		desc          string
@@ -181,7 +181,7 @@ func TestRefresh(t *testing.T) {
 func TestIdentify(t *testing.T) {
 	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error creating client connection %s", err))
-	client := grpcapi.NewAuthnzClient(conn, time.Second)
+	client := grpcapi.NewAuthClient(conn, time.Second)
 
 	cases := []struct {
 		desc   string
@@ -225,7 +225,7 @@ func TestIdentify(t *testing.T) {
 func TestAuthorize(t *testing.T) {
 	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error creating client connection %s", err))
-	client := grpcapi.NewAuthnzClient(conn, time.Second)
+	client := grpcapi.NewAuthClient(conn, time.Second)
 
 	cases := []struct {
 		desc         string

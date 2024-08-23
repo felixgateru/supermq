@@ -90,7 +90,7 @@ func main() {
 		return
 	}
 
-	ac, acHandler, err := auth.SetupAuthnz(ctx, authConfig)
+	ac, acHandler, err := auth.SetupAuth(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -98,7 +98,7 @@ func main() {
 	}
 	defer acHandler.Close()
 
-	logger.Info("Successfully connected to auth grpc server " + acHandler.Secure())
+	logger.Info("Successfully connected to auth gRPC server " + acHandler.Secure())
 
 	authConfig = auth.Config{}
 	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
@@ -107,7 +107,7 @@ func main() {
 		return
 	}
 
-	tc, tcHandler, err := auth.SetupAuthz(ctx, authConfig)
+	tc, tcHandler, err := auth.SetupThings(ctx, authConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
