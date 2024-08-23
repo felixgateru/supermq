@@ -1537,7 +1537,7 @@ func TestListGroups(t *testing.T) {
 					Object:      auth.MagistralaObject,
 					ObjectType:  auth.PlatformType,
 				}
-				adminCheck = authnz.On("Authorize", context.Background(), adminCheckReq).Return(tc.authzResp, tc.authzErr)
+				adminCheck = authsvc.On("Authorize", context.Background(), adminCheckReq).Return(tc.authzResp, tc.authzErr)
 				authReq := &magistrala.AuthorizeReq{
 					Domain:      tc.idResp.GetDomainId(),
 					SubjectType: auth.UserType,

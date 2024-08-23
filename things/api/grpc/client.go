@@ -20,7 +20,7 @@ import (
 
 const svcName = "magistrala.AuthzService"
 
-var _ magistrala.AuthzServiceClient = (*grpcClient)(nil)
+var _ magistrala.ThingsServiceClient = (*grpcClient)(nil)
 
 type grpcClient struct {
 	timeout   time.Duration
@@ -28,7 +28,7 @@ type grpcClient struct {
 }
 
 // NewClient returns new gRPC client instance.
-func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthzServiceClient {
+func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.ThingsServiceClient {
 	return &grpcClient{
 		authorize: kitgrpc.NewClient(
 			conn,
