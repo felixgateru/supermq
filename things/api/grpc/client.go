@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const svcName = "magistrala.AuthzService"
+const svcName = "magistrala.ThingsService"
 
 var _ magistrala.ThingsServiceClient = (*grpcClient)(nil)
 
