@@ -15,12 +15,12 @@ import (
 
 var errSvcNotServing = errors.New("service is not serving")
 
-// SetupAuth loads Auth gRPC configuration and creates new Auth gRPC client.
+// SetupAuthClient loads Auth gRPC configuration and creates new Auth gRPC client.
 //
 // For example:
 //
 //	authClient, authHandler, err := auth.SetupAuth(ctx, auth.Config{}).
-func SetupAuth(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handler, error) {
+func SetupAuthClient(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
 		return nil, nil, err
@@ -59,12 +59,12 @@ func SetupPolicyClient(ctx context.Context, cfg Config) (magistrala.PolicyServic
 	return authgrpc.NewPolicyClient(client.Connection(), cfg.Timeout), client, nil
 }
 
-// SetupThings loads things gRPC configuration and creates new things gRPC client.
+// SetupThingsClient loads things gRPC configuration and creates new things gRPC client.
 //
 // For example:
 //
 // thingClient, thingHandler, err := auth.SetupThings(ctx, auth.Config{}).
-func SetupThings(ctx context.Context, cfg Config) (magistrala.ThingsServiceClient, Handler, error) {
+func SetupThingsClient(ctx context.Context, cfg Config) (magistrala.ThingsServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
 		return nil, nil, err
