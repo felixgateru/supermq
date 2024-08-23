@@ -204,6 +204,6 @@ jobs:
           check_mock_changes ./certs/mocks/service.go "Certs Service ./certs/mocks/service.go"
           check_mock_changes ./journal/mocks/repository.go "Journal Repository ./journal/mocks/repository.go"
           check_mock_changes ./journal/mocks/service.go "Journal Service ./journal/mocks/service.go"
-          check_mock_changes ./auth/mocks/auth_client.go "Authnz Service Client ./auth/mocks/auth_client.go"
+          check_mock_changes ./auth/mocks/auth_client.go "Auth Service Client ./auth/mocks/auth_client.go"
           check_mock_changes ./auth/mocks/policy_client.go "Policy Service Client ./auth/mocks/policy_client.go"
           check_mock_changes ./things/mocks/things_client.go "Things Service Client things/mocks/things_client.go"

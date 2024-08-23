@@ -12,36 +12,36 @@ import (
 )
 
 var (
-	_ magistrala.AuthServiceClient   = (*singleUserAuthnz)(nil)
+	_ magistrala.AuthServiceClient   = (*singleUserAuth)(nil)
 	_ magistrala.PolicyServiceClient = (*singleUserPolicyClient)(nil)
 )
 
-type singleUserAuthnz struct {
+type singleUserAuth struct {
 	id    string
 	token string
 }
 
 // NewAuthService creates single user repository for constrained environments.
 func NewAuthService(id, token string) magistrala.AuthServiceClient {
-	return singleUserAuthnz{
+	return singleUserAuth{
 		id:    id,
 		token: token,
 	}
 }
 
-func (repo singleUserAuthnz) Login(ctx context.Context, in *magistrala.IssueReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
+func (repo singleUserAuth) Login(ctx context.Context, in *magistrala.IssueReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
 	return nil, nil
 }
 
-func (repo singleUserAuthnz) Refresh(ctx context.Context, in *magistrala.RefreshReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
+func (repo singleUserAuth) Refresh(ctx context.Context, in *magistrala.RefreshReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
 	return nil, nil
 }
 
-func (repo singleUserAuthnz) Issue(ctx context.Context, in *magistrala.IssueReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
+func (repo singleUserAuth) Issue(ctx context.Context, in *magistrala.IssueReq, opts ...grpc.CallOption) (*magistrala.Token, error) {
 	return nil, nil
 }
 
-func (repo singleUserAuthnz) Identify(ctx context.Context, in *magistrala.IdentityReq, opts ...grpc.CallOption) (*magistrala.IdentityRes, error) {
+func (repo singleUserAuth) Identify(ctx context.Context, in *magistrala.IdentityReq, opts ...grpc.CallOption) (*magistrala.IdentityRes, error) {
 	if repo.token != in.GetToken() {
 		return nil, svcerr.ErrAuthentication
 	}
@@ -49,7 +49,7 @@ func (repo singleUserAuthnz) Identify(ctx context.Context, in *magistrala.Identi
 	return &magistrala.IdentityRes{Id: repo.id}, nil
 }
 
-func (repo singleUserAuthnz) Authorize(ctx context.Context, in *magistrala.AuthorizeReq, opts ...grpc.CallOption) (*magistrala.AuthorizeRes, error) {
+func (repo singleUserAuth) Authorize(ctx context.Context, in *magistrala.AuthorizeReq, opts ...grpc.CallOption) (*magistrala.AuthorizeRes, error) {
 	if repo.id != in.Subject {
 		return &magistrala.AuthorizeRes{Authorized: false}, svcerr.ErrAuthorization
 	}
@@ -62,6 +62,7 @@ type singleUserPolicyClient struct {
 	token string
 }
 
+// NewPolicyService creates single user policy service for constrained environments.
 func NewPolicyService(id, token string) magistrala.PolicyServiceClient {
 	return singleUserPolicyClient{
 		id:    id,
