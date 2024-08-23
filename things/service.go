@@ -51,7 +51,7 @@ func (svc service) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) 
 		Object:      thingID,
 		Permission:  req.GetPermission(),
 	}
-	resp, err := svc.authnz.Authorize(ctx, r)
+	resp, err := svc.auth.Authorize(ctx, r)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -267,7 +267,7 @@ func (svc service) filterAllowedThingIDs(ctx context.Context, userID, permission
 }
 
 func (svc service) checkSuperAdmin(ctx context.Context, userID string) error {
-	res, err := svc.authnz.Authorize(ctx, &magistrala.AuthorizeReq{
+	res, err := svc.auth.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.AdminPermission,
@@ -553,7 +553,7 @@ func (svc service) Identify(ctx context.Context, key string) (string, error) {
 }
 
 func (svc service) identify(ctx context.Context, token string) (*magistrala.IdentityRes, error) {
-	res, err := svc.authnz.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	res, err := svc.auth.Identify(ctx, &magistrala.IdentityReq{Token: token})
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -573,7 +573,7 @@ func (svc *service) authorize(ctx context.Context, domainID, subjType, subjKind,
 		ObjectType:  objType,
 		Object:      obj,
 	}
-	res, err := svc.authnz.Authorize(ctx, req)
+	res, err := svc.auth.Authorize(ctx, req)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
