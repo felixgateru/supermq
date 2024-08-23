@@ -27,7 +27,7 @@ var ErrMemberExist = errors.New("user is already a member of the domain")
 func NewService(repo Repository, authClient grpcclient.AuthServiceClient, sdk mgsdk.SDK) Service {
 	return &service{
 		repo: repo,
-		auth: authnzClient,
+		auth: authClient,
 		sdk:  sdk,
 	}
 }
