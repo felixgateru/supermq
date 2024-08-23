@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestSetupAuthnz(t *testing.T) {
+func TestSetupAuth(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthServiceServer := func(srv *grpc.Server) {
