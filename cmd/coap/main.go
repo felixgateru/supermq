@@ -102,7 +102,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {

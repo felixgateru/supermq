@@ -217,7 +217,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authnzClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
+func newService(ctx context.Context, authClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -230,8 +230,8 @@ func newService(ctx context.Context, authnzClient magistrala.AuthServiceClient, 
 		logger.Error(fmt.Sprintf("failed to configure e-mailing util: %s", err.Error()))
 	}
 
-	csvc := users.NewService(cRepo, authnzClient, policyClient, emailerClient, hsr, idp, c.SelfRegister)
-	gsvc := mggroups.NewService(gRepo, idp, authnzClient, policyClient)
+	csvc := users.NewService(cRepo, authClient, policyClient, emailerClient, hsr, idp, c.SelfRegister)
+	gsvc := mggroups.NewService(gRepo, idp, authClient, policyClient)
 
 	csvc, err = uevents.NewEventStoreMiddleware(ctx, csvc, c.ESURL)
 	if err != nil {
@@ -256,7 +256,7 @@ func newService(ctx context.Context, authnzClient magistrala.AuthServiceClient, 
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create admin client: %s", err))
 	}
-	if err := createAdminPolicy(ctx, clientID, authnzClient, policyClient); err != nil {
+	if err := createAdminPolicy(ctx, clientID, authClient, policyClient); err != nil {
 		return nil, nil, err
 	}
 
@@ -305,8 +305,8 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 	return client.ID, nil
 }
 
-func createAdminPolicy(ctx context.Context, clientID string, authnzClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient) error {
-	res, err := authnzClient.Authorize(ctx, &magistrala.AuthorizeReq{
+func createAdminPolicy(ctx context.Context, clientID string, authClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient) error {
+	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: authSvc.UserType,
 		Subject:     clientID,
 		Permission:  authSvc.AdministratorRelation,

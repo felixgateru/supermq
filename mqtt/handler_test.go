@@ -121,7 +121,7 @@ func TestAuthConnect(t *testing.T) {
 }
 
 func TestAuthPublish(t *testing.T) {
-	handler, auth, _ := newHandler()
+	handler, things, _ := newHandler()
 
 	cases := []struct {
 		desc    string
@@ -161,7 +161,7 @@ func TestAuthPublish(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repocall := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
+		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
 		ctx := context.TODO()
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)
@@ -173,7 +173,7 @@ func TestAuthPublish(t *testing.T) {
 }
 
 func TestAuthSubscribe(t *testing.T) {
-	handler, auth, _ := newHandler()
+	handler, things, _ := newHandler()
 
 	cases := []struct {
 		desc    string
@@ -214,7 +214,7 @@ func TestAuthSubscribe(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repocall := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
+		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
 		ctx := context.TODO()
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)
@@ -455,7 +455,7 @@ func newHandler() (session.Handler, *thmocks.ThingsServiceClient, *mocks.EventSt
 	if err != nil {
 		log.Fatalf("failed to create logger: %s", err)
 	}
-	auth := new(thmocks.ThingsServiceClient)
+	things := new(thmocks.ThingsServiceClient)
 	eventStore := new(mocks.EventStore)
-	return mqtt.NewHandler(mocks.NewPublisher(), eventStore, logger, auth), auth, eventStore
+	return mqtt.NewHandler(mocks.NewPublisher(), eventStore, logger, things), things, eventStore
 }

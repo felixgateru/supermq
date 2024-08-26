@@ -104,7 +104,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -154,8 +154,8 @@ func main() {
 	}
 }
 
-func newService(tc magistrala.ThingsServiceClient, nps messaging.PubSub, logger *slog.Logger, tracer trace.Tracer) ws.Service {
-	svc := ws.New(tc, nps)
+func newService(thingsClient magistrala.ThingsServiceClient, nps messaging.PubSub, logger *slog.Logger, tracer trace.Tracer) ws.Service {
+	svc := ws.New(thingsClient, nps)
 	svc = tracing.New(tracer, svc)
 	svc = api.LoggingMiddleware(svc, logger)
 	counter, latency := prometheus.MakeMetrics("ws_adapter", "api")

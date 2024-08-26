@@ -130,8 +130,8 @@ func TestReadAll(t *testing.T) {
 
 	repo := new(mocks.MessageRepository)
 	auth := new(authmocks.AuthServiceClient)
-	tauth := new(thmocks.ThingsServiceClient)
-	ts := newServer(repo, auth, tauth)
+	things := new(thmocks.ThingsServiceClient)
+	ts := newServer(repo, auth, things)
 	defer ts.Close()
 
 	cases := []struct {
@@ -981,7 +981,7 @@ func TestReadAll(t *testing.T) {
 		authCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: tc.authResponse}, tc.err)
 		repo.On("ReadAll", chanID, tc.res.PageMetadata).Return(readers.MessagesPage{Total: tc.res.Total, Messages: fromSenml(tc.res.Messages)}, nil)
 		if tc.key != "" {
-			repoCall = tauth.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: tc.authResponse}, tc.err)
+			repoCall = things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: tc.authResponse}, tc.err)
 		}
 		req := testRequest{
 			client: ts.Client(),

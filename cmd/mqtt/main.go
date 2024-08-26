@@ -180,7 +180,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	h := mqtt.NewHandler(np, es, logger, thingsClient)
 	h = handler.NewTracing(tracer, h)

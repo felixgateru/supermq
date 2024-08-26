@@ -54,14 +54,14 @@ const (
 var errUserAccess = errors.New("user has no permission")
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(svc readers.MessageRepository, uauth magistrala.AuthServiceClient, taauth magistrala.ThingsServiceClient, svcName, instanceID string) http.Handler {
+func MakeHandler(svc readers.MessageRepository, auth magistrala.AuthServiceClient, things magistrala.ThingsServiceClient, svcName, instanceID string) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
 	mux := chi.NewRouter()
 	mux.Get("/channels/{chanID}/messages", kithttp.NewServer(
-		listMessagesEndpoint(svc, uauth, taauth),
+		listMessagesEndpoint(svc, auth, things),
 		decodeList,
 		encodeResponse,
 		opts...,

@@ -26,10 +26,10 @@ import (
 func TestSetupAuth(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	registerAuthnzServiceServer := func(srv *grpc.Server) {
+	registerAuthServiceServer := func(srv *grpc.Server) {
 		magistrala.RegisterAuthServiceServer(srv, authgrpcapi.NewAuthServer(new(mocks.Service)))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthnzServiceServer, mglog.NewMock())
+	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthServiceServer, mglog.NewMock())
 	go func() {
 		err := gs.Start()
 		assert.Nil(t, err, fmt.Sprintf(`"Unexpected error creating server %s"`, err))
@@ -77,10 +77,10 @@ func TestSetupAuth(t *testing.T) {
 func TestSetupThingsClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	registerAuthzServiceServer := func(srv *grpc.Server) {
+	registerThingsServiceServer := func(srv *grpc.Server) {
 		magistrala.RegisterThingsServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, "things", server.Config{Port: "12345"}, registerAuthzServiceServer, mglog.NewMock())
+	gs := grpcserver.NewServer(ctx, cancel, "things", server.Config{Port: "12345"}, registerThingsServiceServer, mglog.NewMock())
 	go func() {
 		err := gs.Start()
 		assert.Nil(t, err, fmt.Sprintf(`"Unexpected error creating server %s"`, err))

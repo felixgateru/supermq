@@ -98,7 +98,7 @@ func main() {
 	}
 	defer authHandler.Close()
 
-	logger.Info("Successfully connected to auth gRPC server " + authHandler.Secure())
+	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
 	authConfig = auth.Config{}
 	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
@@ -115,7 +115,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("Successfully connected to things grpc server " + thingsHandler.Secure())
+	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	repo := newService(db, logger)
 

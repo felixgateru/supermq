@@ -64,11 +64,6 @@ const (
 	streamID = "magistrala.things"
 )
 
-var (
-	authClient   magistrala.AuthServiceClient
-	policyClient magistrala.PolicyServiceClient
-)
-
 type config struct {
 	LogLevel         string        `env:"MG_THINGS_LOG_LEVEL"           envDefault:"info"`
 	StandaloneID     string        `env:"MG_THINGS_STANDALONE_ID"       envDefault:""`
@@ -149,6 +144,10 @@ func main() {
 	}
 	defer cacheclient.Close()
 
+	var (
+		authClient   magistrala.AuthServiceClient
+		policyClient magistrala.PolicyServiceClient
+	)
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
 	case true:
 		authClient = localusers.NewAuthService(cfg.StandaloneID, cfg.StandaloneToken)
