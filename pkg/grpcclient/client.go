@@ -19,7 +19,7 @@ var errSvcNotServing = errors.New("service is not serving")
 //
 // For example:
 //
-//	authClient, authHandler, err := auth.SetupAuth(ctx, auth.Config{}).
+// authClient, authHandler, err := auth.SetupAuth(ctx, auth.Config{}).
 func SetupAuthClient(ctx context.Context, cfg Config) (magistrala.AuthServiceClient, Handler, error) {
 	client, err := newHandler(cfg)
 	if err != nil {
