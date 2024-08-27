@@ -23,8 +23,8 @@ import (
 	"github.com/absmach/magistrala/mqtt"
 	"github.com/absmach/magistrala/mqtt/events"
 	mqtttracing "github.com/absmach/magistrala/mqtt/tracing"
-	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/messaging/brokers"
 	brokerstracing "github.com/absmach/magistrala/pkg/messaging/brokers/tracing"
@@ -42,9 +42,9 @@ import (
 )
 
 const (
-	svcName        = "mqtt"
-	envPrefixAuthz = "MG_THINGS_AUTH_GRPC_"
-	wsPathPrefix   = "/mqtt"
+	svcName         = "mqtt"
+	envPrefixThings = "MG_THINGS_AUTH_GRPC_"
+	wsPathPrefix    = "/mqtt"
 )
 
 type config struct {
@@ -165,14 +165,14 @@ func main() {
 		return
 	}
 
-	authConfig := auth.Config{}
-	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
+	thingsClientCfg := grpcclient.Config{}
+	if err := env.ParseWithOptions(&thingsClientCfg, env.Options{Prefix: envPrefixThings}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load %s auth configuration : %s", svcName, err))
 		exitCode = 1
 		return
 	}
 
-	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
+	thingsClient, thingsHandler, err := grpcclient.SetupThingsClient(ctx, thingsClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1

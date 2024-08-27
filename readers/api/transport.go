@@ -241,10 +241,10 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-func authorize(ctx context.Context, req listMessagesReq, uauth magistrala.AuthServiceClient, taauth magistrala.ThingsServiceClient) (err error) {
+func authorize(ctx context.Context, req listMessagesReq, auth magistrala.AuthServiceClient, things magistrala.ThingsServiceClient) (err error) {
 	switch {
 	case req.token != "":
-		if _, err = uauth.Authorize(ctx, &magistrala.AuthorizeReq{
+		if _, err = auth.Authorize(ctx, &magistrala.AuthorizeReq{
 			SubjectType: userType,
 			SubjectKind: tokenKind,
 			Subject:     req.token,
@@ -260,7 +260,7 @@ func authorize(ctx context.Context, req listMessagesReq, uauth magistrala.AuthSe
 		}
 		return nil
 	case req.key != "":
-		if _, err = taauth.Authorize(ctx, &magistrala.AuthorizeReq{
+		if _, err = things.Authorize(ctx, &magistrala.AuthorizeReq{
 			SubjectType: groupType,
 			Subject:     req.key,
 			ObjectType:  thingType,

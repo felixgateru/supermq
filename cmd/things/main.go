@@ -22,8 +22,8 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mglog "github.com/absmach/magistrala/logger"
-	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/groups"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
@@ -154,14 +154,14 @@ func main() {
 		policyClient = localusers.NewPolicyService(cfg.StandaloneID, cfg.StandaloneToken)
 		logger.Info("Using standalone auth service")
 	default:
-		authConfig := auth.Config{}
-		if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuth}); err != nil {
+		clientConfig := grpcclient.Config{}
+		if err := env.ParseWithOptions(&clientConfig, env.Options{Prefix: envPrefixAuth}); err != nil {
 			logger.Error(fmt.Sprintf("failed to load %s auth configuration : %s", svcName, err))
 			exitCode = 1
 			return
 		}
 
-		authServiceClient, authHandler, err := auth.SetupAuthClient(ctx, authConfig)
+		authServiceClient, authHandler, err := grpcclient.SetupAuthClient(ctx, clientConfig)
 		if err != nil {
 			logger.Error(err.Error())
 			exitCode = 1
@@ -171,7 +171,7 @@ func main() {
 		authClient = authServiceClient
 		logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
-		policyServiceClient, policyHandler, err := auth.SetupPolicyClient(ctx, authConfig)
+		policyServiceClient, policyHandler, err := grpcclient.SetupPolicyClient(ctx, clientConfig)
 		if err != nil {
 			logger.Error(err.Error())
 			exitCode = 1

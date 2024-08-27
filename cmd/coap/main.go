@@ -17,7 +17,7 @@ import (
 	"github.com/absmach/magistrala/coap/api"
 	"github.com/absmach/magistrala/coap/tracing"
 	mglog "github.com/absmach/magistrala/logger"
-	"github.com/absmach/magistrala/pkg/auth"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/messaging/brokers"
 	brokerstracing "github.com/absmach/magistrala/pkg/messaging/brokers/tracing"
@@ -31,12 +31,12 @@ import (
 )
 
 const (
-	svcName        = "coap_adapter"
-	envPrefix      = "MG_COAP_ADAPTER_"
-	envPrefixHTTP  = "MG_COAP_ADAPTER_HTTP_"
-	envPrefixAuthz = "MG_THINGS_AUTH_GRPC_"
-	defSvcHTTPPort = "5683"
-	defSvcCoAPPort = "5683"
+	svcName         = "coap_adapter"
+	envPrefix       = "MG_COAP_ADAPTER_"
+	envPrefixHTTP   = "MG_COAP_ADAPTER_HTTP_"
+	envPrefixThings = "MG_THINGS_AUTH_GRPC_"
+	defSvcHTTPPort  = "5683"
+	defSvcCoAPPort  = "5683"
 )
 
 type config struct {
@@ -87,14 +87,14 @@ func main() {
 		return
 	}
 
-	authConfig := auth.Config{}
-	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
+	thingsClientCfg := grpcclient.Config{}
+	if err := env.ParseWithOptions(&thingsClientCfg, env.Options{Prefix: envPrefixThings}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load %s auth configuration : %s", svcName, err))
 		exitCode = 1
 		return
 	}
 
-	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
+	thingsClient, thingsHandler, err := grpcclient.SetupThingsClient(ctx, thingsClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1

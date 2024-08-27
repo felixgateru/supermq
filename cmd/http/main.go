@@ -19,7 +19,7 @@ import (
 	adapter "github.com/absmach/magistrala/http"
 	"github.com/absmach/magistrala/http/api"
 	mglog "github.com/absmach/magistrala/logger"
-	"github.com/absmach/magistrala/pkg/auth"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/messaging"
 	"github.com/absmach/magistrala/pkg/messaging/brokers"
@@ -38,12 +38,12 @@ import (
 )
 
 const (
-	svcName        = "http_adapter"
-	envPrefix      = "MG_HTTP_ADAPTER_"
-	envPrefixAuthz = "MG_THINGS_AUTH_GRPC_"
-	defSvcHTTPPort = "80"
-	targetHTTPPort = "81"
-	targetHTTPHost = "http://localhost"
+	svcName         = "http_adapter"
+	envPrefix       = "MG_HTTP_ADAPTER_"
+	envPrefixThings = "MG_THINGS_AUTH_GRPC_"
+	defSvcHTTPPort  = "80"
+	targetHTTPPort  = "81"
+	targetHTTPHost  = "http://localhost"
 )
 
 type config struct {
@@ -87,14 +87,14 @@ func main() {
 		return
 	}
 
-	authConfig := auth.Config{}
-	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuthz}); err != nil {
+	thingsClientCfg := grpcclient.Config{}
+	if err := env.ParseWithOptions(&thingsClientCfg, env.Options{Prefix: envPrefixThings}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load %s auth configuration : %s", svcName, err))
 		exitCode = 1
 		return
 	}
 
-	thingsClient, thingsHandler, err := auth.SetupThingsClient(ctx, authConfig)
+	thingsClient, thingsHandler, err := grpcclient.SetupThingsClient(ctx, thingsClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1

@@ -1,7 +1,7 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-package auth_test
+package grpcclient_test
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	authgrpcapi "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/auth/mocks"
 	mglog "github.com/absmach/magistrala/logger"
-	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	"github.com/absmach/magistrala/pkg/server"
 	grpcserver "github.com/absmach/magistrala/pkg/server/grpc"
 	thingsgrpcapi "github.com/absmach/magistrala/things/api/grpc"
@@ -41,12 +41,12 @@ func TestSetupAuth(t *testing.T) {
 
 	cases := []struct {
 		desc   string
-		config auth.Config
+		config grpcclient.Config
 		err    error
 	}{
 		{
 			desc: "successful",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "localhost:12345",
 				Timeout: time.Second,
 			},
@@ -54,7 +54,7 @@ func TestSetupAuth(t *testing.T) {
 		},
 		{
 			desc: "failed with empty URL",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "",
 				Timeout: time.Second,
 			},
@@ -64,7 +64,7 @@ func TestSetupAuth(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupAuthClient(context.Background(), c.config)
+			client, handler, err := grpcclient.SetupAuthClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
@@ -92,12 +92,12 @@ func TestSetupThingsClient(t *testing.T) {
 
 	cases := []struct {
 		desc   string
-		config auth.Config
+		config grpcclient.Config
 		err    error
 	}{
 		{
 			desc: "successful",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "localhost:12345",
 				Timeout: time.Second,
 			},
@@ -105,7 +105,7 @@ func TestSetupThingsClient(t *testing.T) {
 		},
 		{
 			desc: "failed with empty URL",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "",
 				Timeout: time.Second,
 			},
@@ -115,7 +115,7 @@ func TestSetupThingsClient(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupThingsClient(context.Background(), c.config)
+			client, handler, err := grpcclient.SetupThingsClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)
@@ -143,12 +143,12 @@ func TestSetupPolicyClient(t *testing.T) {
 
 	cases := []struct {
 		desc   string
-		config auth.Config
+		config grpcclient.Config
 		err    error
 	}{
 		{
 			desc: "successfully",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "localhost:12345",
 				Timeout: time.Second,
 			},
@@ -156,7 +156,7 @@ func TestSetupPolicyClient(t *testing.T) {
 		},
 		{
 			desc: "failed with empty URL",
-			config: auth.Config{
+			config: grpcclient.Config{
 				URL:     "",
 				Timeout: time.Second,
 			},
@@ -166,7 +166,7 @@ func TestSetupPolicyClient(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := auth.SetupPolicyClient(context.Background(), c.config)
+			client, handler, err := grpcclient.SetupPolicyClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)

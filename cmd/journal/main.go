@@ -20,8 +20,8 @@ import (
 	"github.com/absmach/magistrala/journal/middleware"
 	journalpg "github.com/absmach/magistrala/journal/postgres"
 	mglog "github.com/absmach/magistrala/logger"
-	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/events/store"
+	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
@@ -92,14 +92,14 @@ func main() {
 	}
 	defer db.Close()
 
-	authConfig := auth.Config{}
-	if err := env.ParseWithOptions(&authConfig, env.Options{Prefix: envPrefixAuth}); err != nil {
+	authClientCfg := grpcclient.Config{}
+	if err := env.ParseWithOptions(&authClientCfg, env.Options{Prefix: envPrefixAuth}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load %s auth configuration : %s", svcName, err))
 		exitCode = 1
 		return
 	}
 
-	authClient, authHandler, err := auth.SetupAuthClient(ctx, authConfig)
+	authClient, authHandler, err := grpcclient.SetupAuthClient(ctx, authClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
