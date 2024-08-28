@@ -16,6 +16,7 @@ import (
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
+	"github.com/absmach/magistrala/pkg/policy"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 )
 
@@ -134,7 +135,7 @@ func New(auth grpcclient.AuthServiceClient, policy magistrala.PolicyServiceClien
 		configs:    configs,
 		sdk:        sdk,
 		auth:       auth,
-		policy:     policy,
+		policy:     policyService,
 		encKey:     encKey,
 		idProvider: idp,
 	}
@@ -314,7 +315,7 @@ func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrNotFound, err)
 	}
-	return tids.Policies, nil
+	return tids, nil
 }
 
 func (bs bootstrapService) checkSuperAdmin(ctx context.Context, userID string) error {

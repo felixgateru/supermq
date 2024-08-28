@@ -21,6 +21,7 @@ import (
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/events/store"
+	policymocks "github.com/absmach/magistrala/pkg/policy/mocks"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 	sdkmocks "github.com/absmach/magistrala/pkg/sdk/mocks"
 	"github.com/absmach/magistrala/pkg/uuid"
@@ -88,14 +89,14 @@ type testVariable struct {
 	svc    bootstrap.Service
 	boot   *mocks.ConfigRepository
 	auth   *authmocks.AuthServiceClient
-	policy *authmocks.PolicyServiceClient
+	policy *policymocks.PolicyService
 	sdk    *sdkmocks.SDK
 }
 
 func newTestVariable(t *testing.T, redisURL string) testVariable {
 	boot := new(mocks.ConfigRepository)
 	auth := new(authmocks.AuthServiceClient)
-	policy := new(authmocks.PolicyServiceClient)
+	policy := new(policymocks.PolicyService)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(auth, policy, boot, sdk, encKey, idp)
