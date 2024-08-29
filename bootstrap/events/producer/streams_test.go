@@ -815,7 +815,7 @@ func TestList(t *testing.T) {
 		identifyErr         error
 		superAdminAuthRes   *magistrala.AuthorizeRes
 		domainAdminAuthRes  *magistrala.AuthorizeRes
-		listObjectsResponse *magistrala.ListObjectsRes
+		listObjectsResponse []string
 		listObjectsErr      error
 		superAdmiAuthErr    error
 		domainAdmiAuthErr   error
@@ -838,7 +838,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			err:                 nil,
 			event: map[string]interface{}{
 				"thing_id":    c.ThingID,
@@ -867,7 +867,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			err:                 nil,
 			event: map[string]interface{}{
 				"thing_id":    c.ThingID,
@@ -896,7 +896,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			err:                 nil,
 			event: map[string]interface{}{
 				"thing_id":    c.ThingID,
@@ -927,7 +927,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			superAdmiAuthErr:    svcerr.ErrAuthorization,
 			err:                 nil,
@@ -941,7 +941,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
 			superAdmiAuthErr:    svcerr.ErrAuthorization,
@@ -957,7 +957,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
 			listObjectsErr:      svcerr.ErrNotFound,
@@ -973,7 +973,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: true},
 			retrieveErr:         nil,
 			err:                 nil,
@@ -987,7 +987,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: true},
 			retrieveErr:         nil,
@@ -1002,7 +1002,7 @@ func TestList(t *testing.T) {
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
-			listObjectsResponse: &magistrala.ListObjectsRes{},
+			listObjectsResponse: []string{},
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
 			retrieveErr:         nil,
