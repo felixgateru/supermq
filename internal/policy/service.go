@@ -6,17 +6,54 @@ package policy
 import (
 	"context"
 
-	"github.com/absmach/magistrala"
+	"github.com/absmach/magistrala/pkg/errors"
+	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/policy"
 )
 
+var errPlatform = errors.New("invalid platform id")
+
+var (
+	defThingsFilterPermissions = []string{
+		policy.AdminPermission,
+		policy.DeletePermission,
+		policy.EditPermission,
+		policy.ViewPermission,
+		policy.SharePermission,
+		policy.PublishPermission,
+		policy.SubscribePermission,
+	}
+
+	defGroupsFilterPermissions = []string{
+		policy.AdminPermission,
+		policy.DeletePermission,
+		policy.EditPermission,
+		policy.ViewPermission,
+		policy.MembershipPermission,
+		policy.SharePermission,
+	}
+
+	defDomainsFilterPermissions = []string{
+		policy.AdminPermission,
+		policy.EditPermission,
+		policy.ViewPermission,
+		policy.MembershipPermission,
+		policy.SharePermission,
+	}
+
+	defPlatformFilterPermissions = []string{
+		policy.AdminPermission,
+		policy.MembershipPermission,
+	}
+)
+
 type service struct {
-	policy magistrala.PolicyServiceClient
+	agent policy.PolicyAgent
 }
 
-func NewService(policyClient magistrala.PolicyServiceClient) policy.PolicyService {
+func NewPolicyService(policyAgent policy.PolicyAgent) policy.PolicyService {
 	return &service{
-		policy: policyClient,
+		agent: policyAgent,
 	}
 }
 
@@ -25,8 +62,7 @@ func (svc service) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) 
 	if err != nil {
 		return false, err
 	}
-
-	return res.GetAdded(), nil
+	return svc.agent.AddPolicy(ctx, pr)
 }
 
 func (svc service) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (bool, error) {
@@ -51,25 +87,32 @@ func (svc service) DeletePolicies(ctx context.Context, req *magistrala.DeletePol
 	if err != nil {
 		return false, err
 	}
-	return res.GetDeleted(), nil
+	return svc.agent.DeletePolicies(ctx, prs)
 }
 
 func (svc service) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
 	res, err := svc.policy.ListObjects(ctx, req)
 	if err != nil {
-		return nil, err
+		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-
-	return res.Policies, nil
+	var page policy.PolicyPage
+	for _, tuple := range res {
+		page.Policies = append(page.Policies, tuple.Object)
+	}
+	page.NextPageToken = npt
+	return page, nil
 }
 
 func (svc service) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
 	res, err := svc.policy.ListAllObjects(ctx, req)
 	if err != nil {
-		return nil, err
+		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-
-	return res.Policies, nil
+	var page policy.PolicyPage
+	for _, tuple := range res {
+		page.Policies = append(page.Policies, tuple.Object)
+	}
+	return page, nil
 }
 
 func (svc service) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (uint64, error) {
@@ -84,19 +127,26 @@ func (svc service) CountObjects(ctx context.Context, req *magistrala.CountObject
 func (svc service) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
 	res, err := svc.policy.ListSubjects(ctx, req)
 	if err != nil {
-		return nil, err
+		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-
-	return res.Policies, nil
+	var page policy.PolicyPage
+	for _, tuple := range res {
+		page.Policies = append(page.Policies, tuple.Subject)
+	}
+	page.NextPageToken = npt
+	return page, nil
 }
 
 func (svc service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
 	res, err := svc.policy.ListAllSubjects(ctx, req)
 	if err != nil {
-		return nil, err
+		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-
-	return res.Policies, nil
+	var page policy.PolicyPage
+	for _, tuple := range res {
+		page.Policies = append(page.Policies, tuple.Subject)
+	}
+	return page, nil
 }
 
 func (svc service) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (uint64, error) {
@@ -111,10 +161,10 @@ func (svc service) CountSubjects(ctx context.Context, req *magistrala.CountSubje
 func (svc service) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) ([]string, error) {
 	res, err := svc.policy.ListPermissions(ctx, req)
 	if err != nil {
-		return nil, err
+		return []string{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 
-	return res.GetPermissions(), nil
+	return pers, nil
 }
 
 func (svc service) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (bool, error) {
@@ -122,6 +172,5 @@ func (svc service) DeleteEntityPolicies(ctx context.Context, req *magistrala.Del
 	if err != nil {
 		return false, err
 	}
-
-	return res.GetDeleted(), nil
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/absmach/magistrala"
 	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
+	"github.com/absmach/magistrala/pkg/policy"
 	"google.golang.org/grpc"
 )
 
@@ -64,57 +65,57 @@ type singleUserPolicyClient struct {
 }
 
 // NewPolicyService creates single user policy service for constrained environments.
-func NewPolicyService(id, token string) magistrala.PolicyServiceClient {
+func NewPolicyService(id, token string) policy.PolicyService {
 	return singleUserPolicyClient{
 		id:    id,
 		token: token,
 	}
 }
 
-func (repo singleUserPolicyClient) AddPolicy(ctx context.Context, in *magistrala.AddPolicyReq, opts ...grpc.CallOption) (*magistrala.AddPolicyRes, error) {
+func (repo singleUserPolicyClient) AddPolicy(ctx context.Context, pr policy.PolicyReq) error {
+	return nil
+}
+
+func (repo singleUserPolicyClient) AddPolicies(ctx context.Context, prs []policy.PolicyReq) error {
+	return nil
+}
+
+func (repo singleUserPolicyClient) DeletePolicyFilter(ctx context.Context, pr policy.PolicyReq) error {
+	return nil
+}
+
+func (repo singleUserPolicyClient) DeletePolicies(ctx context.Context, prs []policy.PolicyReq) error {
+	return nil
+}
+
+func (repo singleUserPolicyClient) ListObjects(ctx context.Context, pr policy.PolicyReq, nextPageToken string, limit uint64) (policy.PolicyPage, error) {
+	return policy.PolicyPage{}, nil
+}
+
+func (repo singleUserPolicyClient) ListAllObjects(ctx context.Context, pr policy.PolicyReq) (policy.PolicyPage, error) {
+	return policy.PolicyPage{}, nil
+}
+
+func (repo singleUserPolicyClient) CountObjects(ctx context.Context, pr policy.PolicyReq) (uint64, error) {
+	return 0, nil
+}
+
+func (repo singleUserPolicyClient) ListSubjects(ctx context.Context, pr policy.PolicyReq, nextPageToken string, limit uint64) (policy.PolicyPage, error) {
+	return policy.PolicyPage{}, nil
+}
+
+func (repo singleUserPolicyClient) ListAllSubjects(ctx context.Context, pr policy.PolicyReq) (policy.PolicyPage, error) {
+	return policy.PolicyPage{}, nil
+}
+
+func (repo singleUserPolicyClient) CountSubjects(ctx context.Context, pr policy.PolicyReq) (uint64, error) {
+	return 0, nil
+}
+
+func (repo singleUserPolicyClient) ListPermissions(ctx context.Context, pr policy.PolicyReq, permissionsFilter []string) (policy.Permissions, error) {
 	return nil, nil
 }
 
-func (repo singleUserPolicyClient) AddPolicies(ctx context.Context, in *magistrala.AddPoliciesReq, opts ...grpc.CallOption) (*magistrala.AddPoliciesRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) DeletePolicyFilter(ctx context.Context, in *magistrala.DeletePolicyFilterReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) DeletePolicies(ctx context.Context, in *magistrala.DeletePoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) ListObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) ListAllObjects(ctx context.Context, in *magistrala.ListObjectsReq, opts ...grpc.CallOption) (*magistrala.ListObjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) CountObjects(ctx context.Context, in *magistrala.CountObjectsReq, opts ...grpc.CallOption) (*magistrala.CountObjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) ListSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) ListAllSubjects(ctx context.Context, in *magistrala.ListSubjectsReq, opts ...grpc.CallOption) (*magistrala.ListSubjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) CountSubjects(ctx context.Context, in *magistrala.CountSubjectsReq, opts ...grpc.CallOption) (*magistrala.CountSubjectsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) ListPermissions(ctx context.Context, in *magistrala.ListPermissionsReq, opts ...grpc.CallOption) (*magistrala.ListPermissionsRes, error) {
-	return nil, nil
-}
-
-func (repo singleUserPolicyClient) DeleteEntityPolicies(ctx context.Context, in *magistrala.DeleteEntityPoliciesReq, opts ...grpc.CallOption) (*magistrala.DeletePolicyRes, error) {
-	return nil, nil
+func (repo singleUserPolicyClient) DeleteEntityPolicies(ctx context.Context, entityType, id string) error {
+	return nil
 }

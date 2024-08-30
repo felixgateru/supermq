@@ -23,10 +23,12 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
+	"github.com/absmach/magistrala/internal/policy/agent"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/groups"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
+	"github.com/absmach/magistrala/pkg/policy"
 	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
 	"github.com/absmach/magistrala/pkg/prometheus"
@@ -43,6 +45,8 @@ import (
 	thingspg "github.com/absmach/magistrala/things/postgres"
 	localusers "github.com/absmach/magistrala/things/standalone"
 	ctracing "github.com/absmach/magistrala/things/tracing"
+	"github.com/authzed/authzed-go/v1"
+	"github.com/authzed/grpcutil"
 	"github.com/caarlos0/env/v10"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-redis/redis/v8"
@@ -50,6 +54,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -153,7 +158,7 @@ func main() {
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
 	case true:
 		authClient = localusers.NewAuthService(cfg.StandaloneID, cfg.StandaloneToken)
-		policyClient = localusers.NewPolicyService(cfg.StandaloneID, cfg.StandaloneToken)
+		policyService = localusers.NewPolicyService(cfg.StandaloneID, cfg.StandaloneToken)
 		logger.Info("Using standalone auth service")
 	default:
 		clientConfig := grpcclient.Config{}
@@ -173,18 +178,16 @@ func main() {
 		authClient = authServiceClient
 		logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
-		policyServiceClient, policyHandler, err := grpcclient.SetupPolicyClient(ctx, clientConfig)
+		policyService, err = newPolicyService(cfg, logger)
 		if err != nil {
 			logger.Error(err.Error())
 			exitCode = 1
 			return
 		}
-		defer policyHandler.Close()
-		policyClient = policyServiceClient
-		logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + policyHandler.Secure())
+		logger.Info("Policy service successfully connected to spicedb gRPC server")
 	}
 
-	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyClient, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
+	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyService, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create services: %s", err))
 		exitCode = 1
@@ -244,8 +247,6 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 
 	thingCache := thcache.NewCache(cacheClient, keyDuration)
 
-	policyService := mgpolicy.NewService(policyClient)
-
 	csvc := things.NewService(authClient, policyService, cRepo, gRepo, thingCache, idp)
 	gsvc := mggroups.NewService(gRepo, idp, authClient, policyService)
 
@@ -270,4 +271,19 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 	gsvc = gapi.MetricsMiddleware(gsvc, counter, latency)
 
 	return csvc, gsvc, err
+}
+
+func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyService, error) {
+	client, err := authzed.NewClientWithExperimentalAPIs(
+		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpcutil.WithInsecureBearerToken(cfg.SpicedbPreSharedKey),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pa := agent.NewPolicyAgent(client, logger)
+	policyService := mgpolicy.NewPolicyService(pa)
+	return policyService, nil
 }

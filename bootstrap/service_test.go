@@ -15,13 +15,13 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
-	authsvc "github.com/absmach/magistrala/auth"
 	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/bootstrap"
 	"github.com/absmach/magistrala/bootstrap/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
+	policysvc "github.com/absmach/magistrala/pkg/policy"
 	policymocks "github.com/absmach/magistrala/pkg/policy/mocks"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 	sdkmocks "github.com/absmach/magistrala/pkg/sdk/mocks"
@@ -671,7 +671,7 @@ func TestList(t *testing.T) {
 		domainAdminAuthRes  *magistrala.AuthorizeRes
 		superAdmiAuthErr    error
 		domainAdmiAuthErr   error
-		listObjectsResponse []string
+		listObjectsResponse policysvc.PolicyPage
 		authorizeErr        error
 		identifyErr         error
 		listObjectsErr      error
@@ -691,7 +691,7 @@ func TestList(t *testing.T) {
 			userID:              validID,
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: true},
-			listObjectsResponse: []string{},
+			listObjectsResponse: policysvc.PolicyPage{},
 			offset:              0,
 			limit:               10,
 			err:                 nil,
@@ -704,7 +704,7 @@ func TestList(t *testing.T) {
 			userID:              validID,
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{},
+			listObjectsResponse: policysvc.PolicyPage{},
 			offset:              0,
 			limit:               10,
 			err:                 nil,
@@ -723,7 +723,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: true},
-			listObjectsResponse: []string{},
+			listObjectsResponse: policysvc.PolicyPage{},
 			offset:              0,
 			limit:               10,
 			err:                 nil,
@@ -737,7 +737,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{},
+			listObjectsResponse: policysvc.PolicyPage{},
 			offset:              0,
 			limit:               10,
 			err:                 nil,
@@ -756,7 +756,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{"test", "test"},
+			listObjectsResponse: policysvc.PolicyPage{Policies: []string{"test", "test"}},
 			offset:              0,
 			limit:               10,
 			err:                 nil,
@@ -810,7 +810,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{"test", "test"},
+			listObjectsResponse: policysvc.PolicyPage{Policies: []string{"test", "test"}},
 			offset:              0,
 			limit:               100,
 			err:                 nil,
@@ -891,7 +891,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{"test", "test"},
+			listObjectsResponse: policysvc.PolicyPage{Policies: []string{"test", "test"}},
 			offset:              95,
 			limit:               10,
 			err:                 nil,
@@ -946,7 +946,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{"test", "test"},
+			listObjectsResponse: policysvc.PolicyPage{Policies: []string{"test", "test"}},
 			offset:              35,
 			limit:               20,
 			err:                 nil,
@@ -962,7 +962,7 @@ func TestList(t *testing.T) {
 			domainID:            domainID,
 			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
 			domainAdminAuthRes:  &magistrala.AuthorizeRes{Authorized: false},
-			listObjectsResponse: []string{},
+			listObjectsResponse: policysvc.PolicyPage{},
 			listObjectsErr:      svcerr.ErrNotFound,
 			err:                 svcerr.ErrNotFound,
 		},
@@ -971,25 +971,25 @@ func TestList(t *testing.T) {
 	for _, tc := range cases {
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{Id: tc.userID, DomainId: tc.domainID}, tc.identifyErr)
 		authCall1 := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
-			SubjectType: authsvc.UserType,
+			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
-			Permission:  authsvc.AdminPermission,
-			ObjectType:  authsvc.PlatformType,
-			Object:      authsvc.MagistralaObject,
+			Permission:  policysvc.AdminPermission,
+			ObjectType:  policysvc.PlatformType,
+			Object:      policysvc.MagistralaObject,
 		}).Return(tc.superAdminAuthRes, tc.superAdmiAuthErr)
 		authCall2 := auth.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
-			SubjectType: authsvc.UserType,
-			SubjectKind: authsvc.UsersKind,
+			SubjectType: policysvc.UserType,
+			SubjectKind: policysvc.UsersKind,
 			Subject:     tc.userID,
-			Permission:  authsvc.AdminPermission,
-			ObjectType:  authsvc.DomainType,
+			Permission:  policysvc.AdminPermission,
+			ObjectType:  policysvc.DomainType,
 			Object:      tc.domainID,
 		}).Return(tc.domainAdminAuthRes, tc.domainAdmiAuthErr)
-		authCall3 := policy.On("ListAllObjects", mock.Anything, &magistrala.ListObjectsReq{
-			SubjectType: authsvc.UserType,
+		authCall3 := policy.On("ListAllObjects", mock.Anything, policysvc.PolicyReq{
+			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
-			Permission:  authsvc.ViewPermission,
-			ObjectType:  authsvc.ThingType,
+			Permission:  policysvc.ViewPermission,
+			ObjectType:  policysvc.ThingType,
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		repoCall := boot.On("RetrieveAll", context.Background(), mock.Anything, mock.Anything, tc.filter, tc.offset, tc.limit).Return(tc.config, tc.retrieveErr)
 

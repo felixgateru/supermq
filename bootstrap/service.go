@@ -134,7 +134,7 @@ func New(auth grpcclient.AuthServiceClient, policyService policy.PolicyService, 
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,
-		auth:       auth,
+		auth:       authClient,
 		policy:     policyService,
 		encKey:     encKey,
 		idProvider: idp,
@@ -306,7 +306,7 @@ func (bs bootstrapService) UpdateConnections(ctx context.Context, token, id stri
 }
 
 func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]string, error) {
-	tids, err := bs.policy.ListAllObjects(ctx, &magistrala.ListObjectsReq{
+	tids, err := bs.policy.ListAllObjects(ctx, policy.PolicyReq{
 		SubjectType: auth.UserType,
 		Subject:     userID,
 		Permission:  auth.ViewPermission,
@@ -315,7 +315,7 @@ func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrNotFound, err)
 	}
-	return tids, nil
+	return tids.Policies, nil
 }
 
 func (bs bootstrapService) checkSuperAdmin(ctx context.Context, userID string) error {
