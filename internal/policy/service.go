@@ -20,8 +20,8 @@ func NewService(policyClient magistrala.PolicyServiceClient) policy.PolicyServic
 	}
 }
 
-func (s *service) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (bool, error) {
-	res, err := s.policy.AddPolicy(ctx, req)
+func (svc service) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (bool, error) {
+	res, err := svc.policy.AddPolicy(ctx, req)
 	if err != nil {
 		return false, err
 	}
@@ -29,7 +29,7 @@ func (s *service) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (
 	return res.GetAdded(), nil
 }
 
-func (svc *service) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (bool, error) {
+func (svc service) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (bool, error) {
 	res, err := svc.policy.AddPolicies(ctx, req)
 	if err != nil {
 		return false, err
@@ -38,24 +38,24 @@ func (svc *service) AddPolicies(ctx context.Context, req *magistrala.AddPolicies
 	return res.GetAdded(), nil
 }
 
-func (s *service) DeletePolicyFilter(ctx context.Context, req *magistrala.DeletePolicyFilterReq) (bool, error) {
-	res, err := s.policy.DeletePolicyFilter(ctx, req)
+func (svc service) DeletePolicyFilter(ctx context.Context, req *magistrala.DeletePolicyFilterReq) (bool, error) {
+	res, err := svc.policy.DeletePolicyFilter(ctx, req)
 	if err != nil {
 		return false, err
 	}
 	return res.GetDeleted(), nil
 }
 
-func (s *service) DeletePolicies(ctx context.Context, req *magistrala.DeletePoliciesReq) (bool, error) {
-	res, err := s.policy.DeletePolicies(ctx, req)
+func (svc service) DeletePolicies(ctx context.Context, req *magistrala.DeletePoliciesReq) (bool, error) {
+	res, err := svc.policy.DeletePolicies(ctx, req)
 	if err != nil {
 		return false, err
 	}
 	return res.GetDeleted(), nil
 }
 
-func (s *service) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
-	res, err := s.policy.ListObjects(ctx, req)
+func (svc service) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
+	res, err := svc.policy.ListObjects(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +63,8 @@ func (s *service) ListObjects(ctx context.Context, req *magistrala.ListObjectsRe
 	return res.Policies, nil
 }
 
-func (s *service) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
-	res, err := s.policy.ListAllObjects(ctx, req)
+func (svc service) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
+	res, err := svc.policy.ListAllObjects(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -72,8 +72,8 @@ func (s *service) ListAllObjects(ctx context.Context, req *magistrala.ListObject
 	return res.Policies, nil
 }
 
-func (s *service) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (uint64, error) {
-	res, err := s.policy.CountObjects(ctx, req)
+func (svc service) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (uint64, error) {
+	res, err := svc.policy.CountObjects(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -81,8 +81,8 @@ func (s *service) CountObjects(ctx context.Context, req *magistrala.CountObjects
 	return res.Count, nil
 }
 
-func (s *service) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
-	res, err := s.policy.ListSubjects(ctx, req)
+func (svc service) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
+	res, err := svc.policy.ListSubjects(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +90,8 @@ func (s *service) ListSubjects(ctx context.Context, req *magistrala.ListSubjects
 	return res.Policies, nil
 }
 
-func (s *service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
-	res, err := s.policy.ListAllSubjects(ctx, req)
+func (svc service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
+	res, err := svc.policy.ListAllSubjects(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +99,8 @@ func (s *service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubje
 	return res.Policies, nil
 }
 
-func (s *service) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (uint64, error) {
-	res, err := s.policy.CountSubjects(ctx, req)
+func (svc service) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (uint64, error) {
+	res, err := svc.policy.CountSubjects(ctx, req)
 	if err != nil {
 		return 0, err
 	}
@@ -108,8 +108,8 @@ func (s *service) CountSubjects(ctx context.Context, req *magistrala.CountSubjec
 	return res.Count, nil
 }
 
-func (s *service) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) ([]string, error) {
-	res, err := s.policy.ListPermissions(ctx, req)
+func (svc service) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) ([]string, error) {
+	res, err := svc.policy.ListPermissions(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -117,8 +117,8 @@ func (s *service) ListPermissions(ctx context.Context, req *magistrala.ListPermi
 	return res.GetPermissions(), nil
 }
 
-func (s *service) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (bool, error) {
-	res, err := s.policy.DeleteEntityPolicies(ctx, req)
+func (svc service) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (bool, error) {
+	res, err := svc.policy.DeleteEntityPolicies(ctx, req)
 	if err != nil {
 		return false, err
 	}
