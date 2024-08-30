@@ -22,6 +22,7 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
+	"github.com/absmach/magistrala/internal/policy/agent"
 	mglog "github.com/absmach/magistrala/logger"
 	authclient "github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/groups"
@@ -190,7 +191,7 @@ func main() {
 		logger.Info("Policy client successfully connected to spicedb gRPC server")
 	}
 
-	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyClient, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
+	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyService, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create services: %s", err))
 		exitCode = 1

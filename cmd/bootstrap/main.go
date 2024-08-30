@@ -22,6 +22,7 @@ import (
 	bootstrappg "github.com/absmach/magistrala/bootstrap/postgres"
 	"github.com/absmach/magistrala/bootstrap/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
+	"github.com/absmach/magistrala/internal/policy/agent"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -149,7 +150,7 @@ func main() {
 	tracer := tp.Tracer(svcName)
 
 	// Create new service
-	svc, err := newService(ctx, authClient, policyClient, db, tracer, logger, cfg, dbConfig)
+	svc, err := newService(ctx, authClient, policyService, db, tracer, logger, cfg, dbConfig)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
