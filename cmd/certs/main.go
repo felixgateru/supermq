@@ -14,7 +14,6 @@ import (
 
 	chclient "github.com/absmach/callhome/pkg/client"
 	"github.com/absmach/magistrala"
-	authclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/certs/api"
 	vault "github.com/absmach/magistrala/certs/pki"
@@ -48,7 +47,7 @@ const (
 type config struct {
 	LogLevel      string  `env:"MG_CERTS_LOG_LEVEL"        envDefault:"info"`
 	ThingsURL     string  `env:"MG_THINGS_URL"             envDefault:"http://localhost:9000"`
-	JaegerURL     url.URL `env:"MG_JAEGER_URL"                   envDefault:"http://localhost:4318/v1/traces"`
+	JaegerURL     url.URL `env:"MG_JAEGER_URL"             envDefault:"http://localhost:4318/v1/traces"`
 	SendTelemetry bool    `env:"MG_SEND_TELEMETRY"         envDefault:"true"`
 	InstanceID    string  `env:"MG_CERTS_INSTANCE_ID"      envDefault:""`
 	TraceRatio    float64 `env:"MG_JAEGER_TRACE_RATIO"     envDefault:"1.0"`
@@ -178,7 +177,7 @@ func main() {
 	}
 }
 
-func newService(authClient authclient.AuthServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config, pkiAgent vault.Agent) certs.Service {
+func newService(authClient magistrala.AuthnServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config, pkiAgent vault.Agent) certs.Service {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	certsRepo := certspg.NewRepository(database, logger)
 	config := mgsdk.Config{

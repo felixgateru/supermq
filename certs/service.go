@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/certs/pki"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -51,14 +50,14 @@ type Service interface {
 }
 
 type certsService struct {
-	auth      grpcclient.AuthServiceClient
+	auth      magistrala.AuthnServiceClient
 	certsRepo Repository
 	sdk       mgsdk.SDK
 	pki       pki.Agent
 }
 
 // New returns new Certs service.
-func New(auth grpcclient.AuthServiceClient, certs Repository, sdk mgsdk.SDK, pkiAgent pki.Agent) Service {
+func New(auth magistrala.AuthnServiceClient, certs Repository, sdk mgsdk.SDK, pkiAgent pki.Agent) Service {
 	return &certsService{
 		certsRepo: certs,
 		sdk:       sdk,

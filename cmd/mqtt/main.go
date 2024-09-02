@@ -60,7 +60,7 @@ type config struct {
 	HTTPTargetPort        string        `env:"MG_MQTT_ADAPTER_WS_TARGET_PORT"               envDefault:"8080"`
 	HTTPTargetPath        string        `env:"MG_MQTT_ADAPTER_WS_TARGET_PATH"               envDefault:"/mqtt"`
 	Instance              string        `env:"MG_MQTT_ADAPTER_INSTANCE"                     envDefault:""`
-	JaegerURL             url.URL       `env:"MG_JAEGER_URL"                   envDefault:"http://localhost:4318/v1/traces"`
+	JaegerURL             url.URL       `env:"MG_JAEGER_URL"                                envDefault:"http://localhost:4318/v1/traces"`
 	BrokerURL             string        `env:"MG_MESSAGE_BROKER_URL"                        envDefault:"nats://localhost:4222"`
 	SendTelemetry         bool          `env:"MG_SEND_TELEMETRY"                            envDefault:"true"`
 	InstanceID            string        `env:"MG_MQTT_ADAPTER_INSTANCE_ID"                  envDefault:""`
@@ -180,7 +180,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("Things service gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	h := mqtt.NewHandler(np, es, logger, thingsClient)
 	h = handler.NewTracing(tracer, h)

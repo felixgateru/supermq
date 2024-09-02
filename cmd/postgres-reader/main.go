@@ -115,7 +115,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("ThingsService gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("Things service gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
 
 	repo := newService(db, logger)
 
