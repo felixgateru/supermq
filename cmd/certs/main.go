@@ -14,7 +14,6 @@ import (
 
 	chclient "github.com/absmach/callhome/pkg/client"
 	"github.com/absmach/magistrala"
-	authclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/certs/api"
 	vault "github.com/absmach/magistrala/certs/pki"
