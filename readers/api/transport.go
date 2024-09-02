@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/absmach/magistrala"
-	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
