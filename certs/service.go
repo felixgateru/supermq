@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/certs/pki"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
