@@ -39,7 +39,7 @@ func startGRPCServer(svc *mocks.Service, port int) {
 		panic(fmt.Sprintf("failed to obtain port: %s", err))
 	}
 	server := grpc.NewServer()
-	magistrala.RegisterThingsServiceServer(server, grpcapi.NewServer(svc))
+	magistrala.RegisterAuthzServiceServer(server, grpcapi.NewServer(svc))
 	go func() {
 		if err := server.Serve(listener); err != nil {
 			panic(fmt.Sprintf("failed to serve: %s", err))

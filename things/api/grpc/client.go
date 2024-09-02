@@ -18,9 +18,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const svcName = "magistrala.ThingsService"
+const svcName = "magistrala.AuthzService"
 
-var _ magistrala.ThingsServiceClient = (*grpcClient)(nil)
+var _ magistrala.AuthzServiceClient = (*grpcClient)(nil)
 
 type grpcClient struct {
 	timeout   time.Duration
@@ -28,7 +28,7 @@ type grpcClient struct {
 }
 
 // NewClient returns new gRPC client instance.
-func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.ThingsServiceClient {
+func NewClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthzServiceClient {
 	return &grpcClient{
 		authorize: kitgrpc.NewClient(
 			conn,
