@@ -17,21 +17,45 @@ import (
 )
 
 var (
-	_ magistrala.AuthServiceServer   = (*authGrpcServer)(nil)
+	_ magistrala.AuthzServiceServer  = (*authzGrpcServer)(nil)
+	_ magistrala.AuthnServiceServer  = (*authnGrpcServer)(nil)
 	_ magistrala.PolicyServiceServer = (*policyGrpcServer)(nil)
 )
 
-type authGrpcServer struct {
-	magistrala.UnimplementedAuthServiceServer
-	issue     kitgrpc.Handler
-	refresh   kitgrpc.Handler
-	identify  kitgrpc.Handler
+type authzGrpcServer struct {
+	magistrala.UnimplementedAuthzServiceServer
 	authorize kitgrpc.Handler
 }
 
-// NewAuthServer returns new AuthServiceServer instance.
-func NewAuthServer(svc auth.Service) magistrala.AuthServiceServer {
-	return &authGrpcServer{
+// NewAuthzServer returns new AuthzServiceServer instance.
+func NewAuthzServer(svc auth.Service) magistrala.AuthzServiceServer {
+	return &authzGrpcServer{
+		authorize: kitgrpc.NewServer(
+			(authorizeEndpoint(svc)),
+			decodeAuthorizeRequest,
+			encodeAuthorizeResponse,
+		),
+	}
+}
+
+func (s *authzGrpcServer) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) (*magistrala.AuthorizeRes, error) {
+	_, res, err := s.authorize.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, encodeError(err)
+	}
+	return res.(*magistrala.AuthorizeRes), nil
+}
+
+type authnGrpcServer struct {
+	magistrala.UnimplementedAuthnServiceServer
+	issue    kitgrpc.Handler
+	refresh  kitgrpc.Handler
+	identify kitgrpc.Handler
+}
+
+// NewAuthnServer returns new AuthnServiceServer instance.
+func NewAuthnServer(svc auth.Service) magistrala.AuthnServiceServer {
+	return &authnGrpcServer{
 		issue: kitgrpc.NewServer(
 			(issueEndpoint(svc)),
 			decodeIssueRequest,
@@ -47,15 +71,10 @@ func NewAuthServer(svc auth.Service) magistrala.AuthServiceServer {
 			decodeIdentifyRequest,
 			encodeIdentifyResponse,
 		),
-		authorize: kitgrpc.NewServer(
-			(authorizeEndpoint(svc)),
-			decodeAuthorizeRequest,
-			encodeAuthorizeResponse,
-		),
 	}
 }
 
-func (s *authGrpcServer) Issue(ctx context.Context, req *magistrala.IssueReq) (*magistrala.Token, error) {
+func (s *authnGrpcServer) Issue(ctx context.Context, req *magistrala.IssueReq) (*magistrala.Token, error) {
 	_, res, err := s.issue.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -63,7 +82,7 @@ func (s *authGrpcServer) Issue(ctx context.Context, req *magistrala.IssueReq) (*
 	return res.(*magistrala.Token), nil
 }
 
-func (s *authGrpcServer) Refresh(ctx context.Context, req *magistrala.RefreshReq) (*magistrala.Token, error) {
+func (s *authnGrpcServer) Refresh(ctx context.Context, req *magistrala.RefreshReq) (*magistrala.Token, error) {
 	_, res, err := s.refresh.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, encodeError(err)
@@ -71,20 +90,12 @@ func (s *authGrpcServer) Refresh(ctx context.Context, req *magistrala.RefreshReq
 	return res.(*magistrala.Token), nil
 }
 
-func (s *authGrpcServer) Identify(ctx context.Context, token *magistrala.IdentityReq) (*magistrala.IdentityRes, error) {
+func (s *authnGrpcServer) Identify(ctx context.Context, token *magistrala.IdentityReq) (*magistrala.IdentityRes, error) {
 	_, res, err := s.identify.ServeGRPC(ctx, token)
 	if err != nil {
 		return nil, encodeError(err)
 	}
 	return res.(*magistrala.IdentityRes), nil
-}
-
-func (s *authGrpcServer) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) (*magistrala.AuthorizeRes, error) {
-	_, res, err := s.authorize.ServeGRPC(ctx, req)
-	if err != nil {
-		return nil, encodeError(err)
-	}
-	return res.(*magistrala.AuthorizeRes), nil
 }
 
 type policyGrpcServer struct {

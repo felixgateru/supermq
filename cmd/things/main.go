@@ -15,6 +15,7 @@ import (
 
 	chclient "github.com/absmach/callhome/pkg/client"
 	"github.com/absmach/magistrala"
+	authclient "github.com/absmach/magistrala/auth/api/grpc"
 	redisclient "github.com/absmach/magistrala/internal/clients/redis"
 	mggroups "github.com/absmach/magistrala/internal/groups"
 	gapi "github.com/absmach/magistrala/internal/groups/api"
@@ -145,7 +146,7 @@ func main() {
 	defer cacheclient.Close()
 
 	var (
-		authClient   magistrala.AuthServiceClient
+		authClient   authclient.AuthServiceClient
 		policyClient magistrala.PolicyServiceClient
 	)
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
@@ -206,7 +207,7 @@ func main() {
 	}
 	registerThingsServer := func(srv *grpc.Server) {
 		reflection.Register(srv)
-		magistrala.RegisterThingsServiceServer(srv, grpcapi.NewServer(csvc))
+		magistrala.RegisterAuthzServiceServer(srv, grpcapi.NewServer(csvc))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerThingsServer, logger)
 
@@ -233,7 +234,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient magistrala.AuthServiceClient, policyClient magistrala.PolicyServiceClient, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
+func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := thingspg.NewRepository(database)
 	gRepo := gpostgres.New(database)

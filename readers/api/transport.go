@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/absmach/magistrala"
+	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -54,7 +55,7 @@ const (
 var errUserAccess = errors.New("user has no permission")
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(svc readers.MessageRepository, auth magistrala.AuthServiceClient, things magistrala.ThingsServiceClient, svcName, instanceID string) http.Handler {
+func MakeHandler(svc readers.MessageRepository, auth grpcclient.AuthServiceClient, things magistrala.AuthzServiceClient, svcName, instanceID string) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(encodeError),
 	}
@@ -241,7 +242,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-func authorize(ctx context.Context, req listMessagesReq, auth magistrala.AuthServiceClient, things magistrala.ThingsServiceClient) (err error) {
+func authorize(ctx context.Context, req listMessagesReq, auth grpcclient.AuthServiceClient, things magistrala.AuthzServiceClient) (err error) {
 	switch {
 	case req.token != "":
 		if _, err = auth.Authorize(ctx, &magistrala.AuthorizeReq{

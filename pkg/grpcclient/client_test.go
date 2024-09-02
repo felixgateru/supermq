@@ -27,7 +27,8 @@ func TestSetupAuth(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerAuthServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterAuthServiceServer(srv, authgrpcapi.NewAuthServer(new(mocks.Service)))
+		magistrala.RegisterAuthzServiceServer(srv, authgrpcapi.NewAuthzServer(new(mocks.Service)))
+		magistrala.RegisterAuthnServiceServer(srv, authgrpcapi.NewAuthnServer(new(mocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerAuthServiceServer, mglog.NewMock())
 	go func() {
@@ -78,7 +79,7 @@ func TestSetupThingsClient(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	registerThingsServiceServer := func(srv *grpc.Server) {
-		magistrala.RegisterThingsServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
+		magistrala.RegisterAuthzServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
 	}
 	gs := grpcserver.NewServer(ctx, cancel, "things", server.Config{Port: "12345"}, registerThingsServiceServer, mglog.NewMock())
 	go func() {

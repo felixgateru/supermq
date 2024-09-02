@@ -22,100 +22,100 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	ThingsService_Authorize_FullMethodName = "/magistrala.ThingsService/Authorize"
+	AuthzService_Authorize_FullMethodName = "/magistrala.AuthzService/Authorize"
 )
 
-// ThingsServiceClient is the client API for ThingsService service.
+// AuthzServiceClient is the client API for AuthzService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ThingsService is a service that provides authentication and authorization
-// functionalities for the things service.
-type ThingsServiceClient interface {
+// AuthzService is a service that provides authorization functionalities
+// for magistrala services.
+type AuthzServiceClient interface {
 	// Authorize checks if the subject is authorized to perform
 	// the action on the object.
 	Authorize(ctx context.Context, in *AuthorizeReq, opts ...grpc.CallOption) (*AuthorizeRes, error)
 }
 
-type thingsServiceClient struct {
+type authzServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewThingsServiceClient(cc grpc.ClientConnInterface) ThingsServiceClient {
-	return &thingsServiceClient{cc}
+func NewAuthzServiceClient(cc grpc.ClientConnInterface) AuthzServiceClient {
+	return &authzServiceClient{cc}
 }
 
-func (c *thingsServiceClient) Authorize(ctx context.Context, in *AuthorizeReq, opts ...grpc.CallOption) (*AuthorizeRes, error) {
+func (c *authzServiceClient) Authorize(ctx context.Context, in *AuthorizeReq, opts ...grpc.CallOption) (*AuthorizeRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AuthorizeRes)
-	err := c.cc.Invoke(ctx, ThingsService_Authorize_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthzService_Authorize_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ThingsServiceServer is the server API for ThingsService service.
-// All implementations must embed UnimplementedThingsServiceServer
+// AuthzServiceServer is the server API for AuthzService service.
+// All implementations must embed UnimplementedAuthzServiceServer
 // for forward compatibility
 //
-// ThingsService is a service that provides authentication and authorization
-// functionalities for the things service.
-type ThingsServiceServer interface {
+// AuthzService is a service that provides authorization functionalities
+// for magistrala services.
+type AuthzServiceServer interface {
 	// Authorize checks if the subject is authorized to perform
 	// the action on the object.
 	Authorize(context.Context, *AuthorizeReq) (*AuthorizeRes, error)
-	mustEmbedUnimplementedThingsServiceServer()
+	mustEmbedUnimplementedAuthzServiceServer()
 }
 
-// UnimplementedThingsServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedThingsServiceServer struct {
+// UnimplementedAuthzServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedAuthzServiceServer struct {
 }
 
-func (UnimplementedThingsServiceServer) Authorize(context.Context, *AuthorizeReq) (*AuthorizeRes, error) {
+func (UnimplementedAuthzServiceServer) Authorize(context.Context, *AuthorizeReq) (*AuthorizeRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Authorize not implemented")
 }
-func (UnimplementedThingsServiceServer) mustEmbedUnimplementedThingsServiceServer() {}
+func (UnimplementedAuthzServiceServer) mustEmbedUnimplementedAuthzServiceServer() {}
 
-// UnsafeThingsServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ThingsServiceServer will
+// UnsafeAuthzServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthzServiceServer will
 // result in compilation errors.
-type UnsafeThingsServiceServer interface {
-	mustEmbedUnimplementedThingsServiceServer()
+type UnsafeAuthzServiceServer interface {
+	mustEmbedUnimplementedAuthzServiceServer()
 }
 
-func RegisterThingsServiceServer(s grpc.ServiceRegistrar, srv ThingsServiceServer) {
-	s.RegisterService(&ThingsService_ServiceDesc, srv)
+func RegisterAuthzServiceServer(s grpc.ServiceRegistrar, srv AuthzServiceServer) {
+	s.RegisterService(&AuthzService_ServiceDesc, srv)
 }
 
-func _ThingsService_Authorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthzService_Authorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AuthorizeReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ThingsServiceServer).Authorize(ctx, in)
+		return srv.(AuthzServiceServer).Authorize(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ThingsService_Authorize_FullMethodName,
+		FullMethod: AuthzService_Authorize_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ThingsServiceServer).Authorize(ctx, req.(*AuthorizeReq))
+		return srv.(AuthzServiceServer).Authorize(ctx, req.(*AuthorizeReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ThingsService_ServiceDesc is the grpc.ServiceDesc for ThingsService service.
+// AuthzService_ServiceDesc is the grpc.ServiceDesc for AuthzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ThingsService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "magistrala.ThingsService",
-	HandlerType: (*ThingsServiceServer)(nil),
+var AuthzService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "magistrala.AuthzService",
+	HandlerType: (*AuthzServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Authorize",
-			Handler:    _ThingsService_Authorize_Handler,
+			Handler:    _AuthzService_Authorize_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -123,210 +123,172 @@ var ThingsService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AuthService_Issue_FullMethodName     = "/magistrala.AuthService/Issue"
-	AuthService_Refresh_FullMethodName   = "/magistrala.AuthService/Refresh"
-	AuthService_Identify_FullMethodName  = "/magistrala.AuthService/Identify"
-	AuthService_Authorize_FullMethodName = "/magistrala.AuthService/Authorize"
+	AuthnService_Issue_FullMethodName    = "/magistrala.AuthnService/Issue"
+	AuthnService_Refresh_FullMethodName  = "/magistrala.AuthnService/Refresh"
+	AuthnService_Identify_FullMethodName = "/magistrala.AuthnService/Identify"
 )
 
-// AuthServiceClient is the client API for AuthService service.
+// AuthnServiceClient is the client API for AuthnService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AuthService is a service that provides authentication and authorization
-// functionalities for magistrala services.
-type AuthServiceClient interface {
+// AuthnService is a service that provides authentication functionalities
+// for magistrala services.
+type AuthnServiceClient interface {
 	Issue(ctx context.Context, in *IssueReq, opts ...grpc.CallOption) (*Token, error)
 	Refresh(ctx context.Context, in *RefreshReq, opts ...grpc.CallOption) (*Token, error)
 	Identify(ctx context.Context, in *IdentityReq, opts ...grpc.CallOption) (*IdentityRes, error)
-	Authorize(ctx context.Context, in *AuthorizeReq, opts ...grpc.CallOption) (*AuthorizeRes, error)
 }
 
-type authServiceClient struct {
+type authnServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
-	return &authServiceClient{cc}
+func NewAuthnServiceClient(cc grpc.ClientConnInterface) AuthnServiceClient {
+	return &authnServiceClient{cc}
 }
 
-func (c *authServiceClient) Issue(ctx context.Context, in *IssueReq, opts ...grpc.CallOption) (*Token, error) {
+func (c *authnServiceClient) Issue(ctx context.Context, in *IssueReq, opts ...grpc.CallOption) (*Token, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Token)
-	err := c.cc.Invoke(ctx, AuthService_Issue_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthnService_Issue_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Refresh(ctx context.Context, in *RefreshReq, opts ...grpc.CallOption) (*Token, error) {
+func (c *authnServiceClient) Refresh(ctx context.Context, in *RefreshReq, opts ...grpc.CallOption) (*Token, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Token)
-	err := c.cc.Invoke(ctx, AuthService_Refresh_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthnService_Refresh_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Identify(ctx context.Context, in *IdentityReq, opts ...grpc.CallOption) (*IdentityRes, error) {
+func (c *authnServiceClient) Identify(ctx context.Context, in *IdentityReq, opts ...grpc.CallOption) (*IdentityRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentityRes)
-	err := c.cc.Invoke(ctx, AuthService_Identify_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthnService_Identify_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authServiceClient) Authorize(ctx context.Context, in *AuthorizeReq, opts ...grpc.CallOption) (*AuthorizeRes, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AuthorizeRes)
-	err := c.cc.Invoke(ctx, AuthService_Authorize_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// AuthServiceServer is the server API for AuthService service.
-// All implementations must embed UnimplementedAuthServiceServer
+// AuthnServiceServer is the server API for AuthnService service.
+// All implementations must embed UnimplementedAuthnServiceServer
 // for forward compatibility
 //
-// AuthService is a service that provides authentication and authorization
-// functionalities for magistrala services.
-type AuthServiceServer interface {
+// AuthnService is a service that provides authentication functionalities
+// for magistrala services.
+type AuthnServiceServer interface {
 	Issue(context.Context, *IssueReq) (*Token, error)
 	Refresh(context.Context, *RefreshReq) (*Token, error)
 	Identify(context.Context, *IdentityReq) (*IdentityRes, error)
-	Authorize(context.Context, *AuthorizeReq) (*AuthorizeRes, error)
-	mustEmbedUnimplementedAuthServiceServer()
+	mustEmbedUnimplementedAuthnServiceServer()
 }
 
-// UnimplementedAuthServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedAuthServiceServer struct {
+// UnimplementedAuthnServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedAuthnServiceServer struct {
 }
 
-func (UnimplementedAuthServiceServer) Issue(context.Context, *IssueReq) (*Token, error) {
+func (UnimplementedAuthnServiceServer) Issue(context.Context, *IssueReq) (*Token, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Issue not implemented")
 }
-func (UnimplementedAuthServiceServer) Refresh(context.Context, *RefreshReq) (*Token, error) {
+func (UnimplementedAuthnServiceServer) Refresh(context.Context, *RefreshReq) (*Token, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
 }
-func (UnimplementedAuthServiceServer) Identify(context.Context, *IdentityReq) (*IdentityRes, error) {
+func (UnimplementedAuthnServiceServer) Identify(context.Context, *IdentityReq) (*IdentityRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Identify not implemented")
 }
-func (UnimplementedAuthServiceServer) Authorize(context.Context, *AuthorizeReq) (*AuthorizeRes, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Authorize not implemented")
-}
-func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
+func (UnimplementedAuthnServiceServer) mustEmbedUnimplementedAuthnServiceServer() {}
 
-// UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to AuthServiceServer will
+// UnsafeAuthnServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthnServiceServer will
 // result in compilation errors.
-type UnsafeAuthServiceServer interface {
-	mustEmbedUnimplementedAuthServiceServer()
+type UnsafeAuthnServiceServer interface {
+	mustEmbedUnimplementedAuthnServiceServer()
 }
 
-func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
-	s.RegisterService(&AuthService_ServiceDesc, srv)
+func RegisterAuthnServiceServer(s grpc.ServiceRegistrar, srv AuthnServiceServer) {
+	s.RegisterService(&AuthnService_ServiceDesc, srv)
 }
 
-func _AuthService_Issue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthnService_Issue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IssueReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).Issue(ctx, in)
+		return srv.(AuthnServiceServer).Issue(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_Issue_FullMethodName,
+		FullMethod: AuthnService_Issue_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Issue(ctx, req.(*IssueReq))
+		return srv.(AuthnServiceServer).Issue(ctx, req.(*IssueReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthnService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).Refresh(ctx, in)
+		return srv.(AuthnServiceServer).Refresh(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_Refresh_FullMethodName,
+		FullMethod: AuthnService_Refresh_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Refresh(ctx, req.(*RefreshReq))
+		return srv.(AuthnServiceServer).Refresh(ctx, req.(*RefreshReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Identify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthnService_Identify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IdentityReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthServiceServer).Identify(ctx, in)
+		return srv.(AuthnServiceServer).Identify(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthService_Identify_FullMethodName,
+		FullMethod: AuthnService_Identify_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Identify(ctx, req.(*IdentityReq))
+		return srv.(AuthnServiceServer).Identify(ctx, req.(*IdentityReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_Authorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AuthorizeReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthServiceServer).Authorize(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthService_Authorize_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).Authorize(ctx, req.(*AuthorizeReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
+// AuthnService_ServiceDesc is the grpc.ServiceDesc for AuthnService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var AuthService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "magistrala.AuthService",
-	HandlerType: (*AuthServiceServer)(nil),
+var AuthnService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "magistrala.AuthnService",
+	HandlerType: (*AuthnServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Issue",
-			Handler:    _AuthService_Issue_Handler,
+			Handler:    _AuthnService_Issue_Handler,
 		},
 		{
 			MethodName: "Refresh",
-			Handler:    _AuthService_Refresh_Handler,
+			Handler:    _AuthnService_Refresh_Handler,
 		},
 		{
 			MethodName: "Identify",
-			Handler:    _AuthService_Identify_Handler,
-		},
-		{
-			MethodName: "Authorize",
-			Handler:    _AuthService_Authorize_Handler,
+			Handler:    _AuthnService_Identify_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

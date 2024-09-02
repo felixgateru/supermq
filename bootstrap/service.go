@@ -12,6 +12,7 @@ import (
 
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/auth"
+	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -119,7 +120,7 @@ type ConfigReader interface {
 }
 
 type bootstrapService struct {
-	auth       magistrala.AuthServiceClient
+	auth       grpcclient.AuthServiceClient
 	policy     magistrala.PolicyServiceClient
 	configs    ConfigRepository
 	sdk        mgsdk.SDK
@@ -128,7 +129,7 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(auth magistrala.AuthServiceClient, policy magistrala.PolicyServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(auth grpcclient.AuthServiceClient, policy magistrala.PolicyServiceClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,

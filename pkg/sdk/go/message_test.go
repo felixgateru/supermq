@@ -53,7 +53,7 @@ func setupMessages() (*httptest.Server, *authmocks.AuthServiceClient, *pubsub.Pu
 func setupReader() (*httptest.Server, *authmocks.AuthServiceClient, *readersmocks.MessageRepository) {
 	repo := new(readersmocks.MessageRepository)
 	auth := new(authmocks.AuthServiceClient)
-	tauth := new(thmocks.ThingsServiceClient)
+	tauth := new(thmocks.AuthzServiceClient)
 
 	mux := readersapi.MakeHandler(repo, auth, tauth, "test", "")
 	return httptest.NewServer(mux), auth, repo

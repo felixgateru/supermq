@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/absmach/magistrala"
+	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	"github.com/absmach/magistrala/consumers"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -42,7 +43,7 @@ type Service interface {
 var _ Service = (*notifierService)(nil)
 
 type notifierService struct {
-	auth     magistrala.AuthServiceClient
+	auth     grpcclient.AuthServiceClient
 	subs     SubscriptionsRepository
 	idp      magistrala.IDProvider
 	notifier Notifier
@@ -51,7 +52,7 @@ type notifierService struct {
 }
 
 // New instantiates the subscriptions service implementation.
-func New(auth magistrala.AuthServiceClient, subs SubscriptionsRepository, idp magistrala.IDProvider, notifier Notifier, from string) Service {
+func New(auth grpcclient.AuthServiceClient, subs SubscriptionsRepository, idp magistrala.IDProvider, notifier Notifier, from string) Service {
 	return &notifierService{
 		auth:     auth,
 		subs:     subs,

@@ -36,7 +36,7 @@ const (
 
 var msg = []byte(`[{"n":"current","t":-1,"v":1.6}]`)
 
-func newService(things magistrala.ThingsServiceClient) (ws.Service, *mocks.PubSub) {
+func newService(things magistrala.AuthzServiceClient) (ws.Service, *mocks.PubSub) {
 	pubsub := new(mocks.PubSub)
 	return ws.New(things, pubsub), pubsub
 }
@@ -90,7 +90,7 @@ func handshake(tsURL, chanID, subtopic, thingKey string, addHeader bool) (*webso
 }
 
 func TestHandshake(t *testing.T) {
-	things := new(thmocks.ThingsServiceClient)
+	things := new(thmocks.AuthzServiceClient)
 	svc, pubsub := newService(things)
 	target := newHTTPServer(svc)
 	defer target.Close()

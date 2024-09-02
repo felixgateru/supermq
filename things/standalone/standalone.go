@@ -7,12 +7,13 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
+	grpcclient "github.com/absmach/magistrala/auth/api/grpc"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"google.golang.org/grpc"
 )
 
 var (
-	_ magistrala.AuthServiceClient   = (*singleUserAuth)(nil)
+	_ grpcclient.AuthServiceClient   = (*singleUserAuth)(nil)
 	_ magistrala.PolicyServiceClient = (*singleUserPolicyClient)(nil)
 )
 
@@ -22,7 +23,7 @@ type singleUserAuth struct {
 }
 
 // NewAuthService creates single user repository for constrained environments.
-func NewAuthService(id, token string) magistrala.AuthServiceClient {
+func NewAuthService(id, token string) grpcclient.AuthServiceClient {
 	return singleUserAuth{
 		id:    id,
 		token: token,

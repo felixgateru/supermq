@@ -20,14 +20,21 @@ import (
 )
 
 const (
-	authSvcName   = "magistrala.AuthService"
+	authzSvcName  = "magistrala.AuthzService"
+	authnSvcName  = "magistrala.AuthnService"
 	policySvcName = "magistrala.PolicyService"
 )
 
 var (
-	_ magistrala.AuthServiceClient   = (*authGrpcClient)(nil)
+	_ AuthServiceClient              = (*authGrpcClient)(nil)
 	_ magistrala.PolicyServiceClient = (*policyGrpcClient)(nil)
 )
+
+//go:generate mockery --name AuthServiceClient --output=../../mocks --filename auth_client.go --quiet --note "Copyright (c) Abstract Machines"
+type AuthServiceClient interface {
+	magistrala.AuthzServiceClient
+	magistrala.AuthnServiceClient
+}
 
 type authGrpcClient struct {
 	issue     endpoint.Endpoint
@@ -38,11 +45,11 @@ type authGrpcClient struct {
 }
 
 // NewAuthClient returns new auth gRPC client instance.
-func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.AuthServiceClient {
+func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) AuthServiceClient {
 	return &authGrpcClient{
 		issue: kitgrpc.NewClient(
 			conn,
-			authSvcName,
+			authnSvcName,
 			"Issue",
 			encodeIssueRequest,
 			decodeIssueResponse,
@@ -50,7 +57,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		refresh: kitgrpc.NewClient(
 			conn,
-			authSvcName,
+			authnSvcName,
 			"Refresh",
 			encodeRefreshRequest,
 			decodeRefreshResponse,
@@ -58,7 +65,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		identify: kitgrpc.NewClient(
 			conn,
-			authSvcName,
+			authnSvcName,
 			"Identify",
 			encodeIdentifyRequest,
 			decodeIdentifyResponse,
@@ -66,7 +73,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 		).Endpoint(),
 		authorize: kitgrpc.NewClient(
 			conn,
-			authSvcName,
+			authzSvcName,
 			"Authorize",
 			encodeAuthorizeRequest,
 			decodeAuthorizeResponse,

@@ -55,7 +55,8 @@ var (
 func startGRPCServer(svc auth.Service, port int) {
 	listener, _ := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	server := grpc.NewServer()
-	magistrala.RegisterAuthServiceServer(server, grpcapi.NewAuthServer(svc))
+	magistrala.RegisterAuthzServiceServer(server, grpcapi.NewAuthzServer(svc))
+	magistrala.RegisterAuthnServiceServer(server, grpcapi.NewAuthnServer(svc))
 	magistrala.RegisterPolicyServiceServer(server, grpcapi.NewPolicyServer(svc))
 	go func() {
 		err := server.Serve(listener)
