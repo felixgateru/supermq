@@ -310,7 +310,7 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 	return client.ID, nil
 }
 
-func createAdminPolicy(ctx context.Context, clientID string, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient) error {
+func createAdminPolicy(ctx context.Context, clientID string, authClient authclient.AuthServiceClient, policyService policy.PolicyService) error {
 	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: authSvc.UserType,
 		Subject:     clientID,

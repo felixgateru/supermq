@@ -29,12 +29,12 @@ var (
 type service struct {
 	groups     groups.Repository
 	auth       grpcclient.AuthServiceClient
-	policy     magistrala.PolicyServiceClient
+	policy     policy.PolicyService
 	idProvider magistrala.IDProvider
 }
 
 // NewService returns a new Clients service implementation.
-func NewService(g groups.Repository, idp magistrala.IDProvider, authClient grpcclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient) groups.Service {
+func NewService(g groups.Repository, idp magistrala.IDProvider, authClient grpcclient.AuthServiceClient, policyService policy.PolicyService) groups.Service {
 	return service{
 		groups:     g,
 		idProvider: idp,

@@ -13,14 +13,14 @@ import (
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	mggroups "github.com/absmach/magistrala/pkg/groups"
-	mgpolicy "github.com/absmach/magistrala/pkg/policy"
+	"github.com/absmach/magistrala/pkg/policy"
 	"github.com/absmach/magistrala/things/postgres"
 	"golang.org/x/sync/errgroup"
 )
 
 type service struct {
 	auth        grpcclient.AuthServiceClient
-	policy      magistrala.PolicyServiceClient
+	policy      policy.PolicyService
 	clients     postgres.Repository
 	clientCache Cache
 	idProvider  magistrala.IDProvider
@@ -28,10 +28,10 @@ type service struct {
 }
 
 // NewService returns a new Clients service implementation.
-func NewService(auth grpcclient.AuthServiceClient, policy magistrala.PolicyServiceClient, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
+func NewService(auth grpcclient.AuthServiceClient, policyService policy.PolicyService, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
 	return service{
 		auth:        auth,
-		policy:      policy,
+		policy:      policyService,
 		clients:     c,
 		grepo:       grepo,
 		clientCache: tcache,
