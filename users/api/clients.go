@@ -26,7 +26,7 @@ import (
 var passRegex = regexp.MustCompile("^.{8,}$")
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
+func clientsHandler(svc users.Service, selfRegister bool, r *chi.Mux, logger *slog.Logger, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
 	passRegex = pr
 
 	opts := []kithttp.ServerOption{
@@ -35,7 +35,7 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-			registrationEndpoint(svc),
+			registrationEndpoint(svc, selfRegister),
 			decodeCreateClientReq,
 			api.EncodeResponse,
 			opts...,
@@ -194,9 +194,9 @@ func clientsHandler(svc users.Service, r *chi.Mux, logger *slog.Logger, pr *rege
 		opts...,
 	), "list_users_by_domain_id").ServeHTTP)
 
-	for _, provider := range providers {
-		r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc))
-	}
+	// for _, provider := range providers {
+	// 	r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc))
+	// }
 
 	return r
 }

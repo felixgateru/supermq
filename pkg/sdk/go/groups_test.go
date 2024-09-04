@@ -44,7 +44,7 @@ func setupGroups() (*httptest.Server, *mocks.Service) {
 	mux := chi.NewRouter()
 	provider := new(oauth2mocks.Provider)
 	provider.On("Name").Return("test")
-	api.MakeHandler(usvc, gsvc, mux, logger, "", passRegex, provider)
+	api.MakeHandler(usvc, true, gsvc, mux, logger, "", passRegex, provider)
 
 	return httptest.NewServer(mux), gsvc
 }
