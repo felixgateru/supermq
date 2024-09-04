@@ -230,7 +230,7 @@ func (svc service) ListMembers(ctx context.Context, session authn.Session, group
 
 		members := []groups.Member{}
 
-		for _, id := range tids.Policies {
+		for _, id := range tids {
 			members = append(members, groups.Member{
 				ID:   id,
 				Type: policies.ThingType,
@@ -255,7 +255,7 @@ func (svc service) ListMembers(ctx context.Context, session authn.Session, group
 
 		members := []groups.Member{}
 
-		for _, id := range uids.Policies {
+		for _, id := range uids {
 			members = append(members, groups.Member{
 				ID:   id,
 				Type: policies.UserType,
@@ -533,7 +533,7 @@ func (svc service) listAllGroupsOfUserID(ctx context.Context, userID, permission
 	if err != nil {
 		return []string{}, err
 	}
-	return allowedIDs.Policies, nil
+	return allowedIDs, nil
 }
 
 func (svc service) changeGroupStatus(ctx context.Context, session authn.Session, group groups.Group) (groups.Group, error) {

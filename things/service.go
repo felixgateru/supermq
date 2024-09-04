@@ -209,7 +209,7 @@ func (svc service) listClientIDs(ctx context.Context, userID, permission string)
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrNotFound, err)
 	}
-	return tids.Policies, nil
+	return tids, nil
 }
 
 func (svc service) filterAllowedThingIDs(ctx context.Context, userID, permission string, thingIDs []string) ([]string, error) {
@@ -224,7 +224,7 @@ func (svc service) filterAllowedThingIDs(ctx context.Context, userID, permission
 		return nil, errors.Wrap(svcerr.ErrNotFound, err)
 	}
 	for _, thingID := range thingIDs {
-		for _, tid := range tids.Policies {
+		for _, tid := range tids {
 			if thingID == tid {
 				ids = append(ids, thingID)
 			}
@@ -397,7 +397,7 @@ func (svc service) ListClientsByGroup(ctx context.Context, session authn.Session
 		return mgclients.MembersPage{}, errors.Wrap(svcerr.ErrNotFound, err)
 	}
 
-	pm.IDs = tids.Policies
+	pm.IDs = tids
 
 	cp, err := svc.clients.RetrieveAllByIDs(ctx, pm)
 	if err != nil {
