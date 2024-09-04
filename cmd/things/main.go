@@ -24,6 +24,7 @@ import (
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
 	"github.com/absmach/magistrala/internal/policy/agent"
+	"github.com/absmach/magistrala/internal/policy/middleware"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/groups"
 	"github.com/absmach/magistrala/pkg/grpcclient"
@@ -72,16 +73,20 @@ const (
 )
 
 type config struct {
-	LogLevel         string        `env:"MG_THINGS_LOG_LEVEL"           envDefault:"info"`
-	StandaloneID     string        `env:"MG_THINGS_STANDALONE_ID"       envDefault:""`
-	StandaloneToken  string        `env:"MG_THINGS_STANDALONE_TOKEN"    envDefault:""`
-	JaegerURL        url.URL       `env:"MG_JAEGER_URL"                 envDefault:"http://localhost:4318/v1/traces"`
-	CacheKeyDuration time.Duration `env:"MG_THINGS_CACHE_KEY_DURATION"  envDefault:"10m"`
-	SendTelemetry    bool          `env:"MG_SEND_TELEMETRY"             envDefault:"true"`
-	InstanceID       string        `env:"MG_THINGS_INSTANCE_ID"         envDefault:""`
-	ESURL            string        `env:"MG_ES_URL"                     envDefault:"nats://localhost:4222"`
-	CacheURL         string        `env:"MG_THINGS_CACHE_URL"           envDefault:"redis://localhost:6379/0"`
-	TraceRatio       float64       `env:"MG_JAEGER_TRACE_RATIO"         envDefault:"1.0"`
+	LogLevel            string        `env:"MG_THINGS_LOG_LEVEL"           envDefault:"info"`
+	StandaloneID        string        `env:"MG_THINGS_STANDALONE_ID"       envDefault:""`
+	StandaloneToken     string        `env:"MG_THINGS_STANDALONE_TOKEN"    envDefault:""`
+	JaegerURL           url.URL       `env:"MG_JAEGER_URL"                 envDefault:"http://localhost:4318/v1/traces"`
+	CacheKeyDuration    time.Duration `env:"MG_THINGS_CACHE_KEY_DURATION"  envDefault:"10m"`
+	SendTelemetry       bool          `env:"MG_SEND_TELEMETRY"             envDefault:"true"`
+	InstanceID          string        `env:"MG_THINGS_INSTANCE_ID"         envDefault:""`
+	ESURL               string        `env:"MG_ES_URL"                     envDefault:"nats://localhost:4222"`
+	CacheURL            string        `env:"MG_THINGS_CACHE_URL"           envDefault:"redis://localhost:6379/0"`
+	TraceRatio          float64       `env:"MG_JAEGER_TRACE_RATIO"         envDefault:"1.0"`
+	SpicedbHost         string        `env:"MG_SPICEDB_HOST"               envDefault:"localhost"`
+	SpicedbPort         string        `env:"MG_SPICEDB_PORT"               envDefault:"50051"`
+	SpicedbSchemaFile   string        `env:"MG_SPICEDB_SCHEMA_FILE"        envDefault:"./docker/spicedb/schema.zed"`
+	SpicedbPreSharedKey string        `env:"MG_SPICEDB_PRE_SHARED_KEY"     envDefault:"12345678"`
 }
 
 func main() {
@@ -152,8 +157,8 @@ func main() {
 	defer cacheclient.Close()
 
 	var (
-		authClient   authclient.AuthServiceClient
-		policyClient magistrala.PolicyServiceClient
+		authClient    authclient.AuthServiceClient
+		policyService policy.PolicyService
 	)
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
 	case true:
@@ -238,7 +243,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
+func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authClient authclient.AuthServiceClient, policyService policy.PolicyService, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := thingspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -246,6 +251,10 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 	idp := uuid.New()
 
 	thingCache := thcache.NewCache(cacheClient, keyDuration)
+
+	policyService = middleware.LoggingMiddleware(policyService, logger)
+	counter, latency := prometheus.MakeMetrics(fmt.Sprintf("%s_policy", svcName), "api")
+	policyService = middleware.MetricsMiddleware(policyService, counter, latency)
 
 	csvc := things.NewService(authClient, policyService, cRepo, gRepo, thingCache, idp)
 	gsvc := mggroups.NewService(gRepo, idp, authClient, policyService)
@@ -262,7 +271,7 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 
 	csvc = ctracing.New(csvc, tracer)
 	csvc = api.LoggingMiddleware(csvc, logger)
-	counter, latency := prometheus.MakeMetrics(svcName, "api")
+	counter, latency = prometheus.MakeMetrics(svcName, "api")
 	csvc = api.MetricsMiddleware(csvc, counter, latency)
 
 	gsvc = gtracing.New(gsvc, tracer)

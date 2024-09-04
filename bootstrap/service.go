@@ -130,7 +130,7 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(auth grpcclient.AuthServiceClient, policyService policy.PolicyService, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(authClient grpcclient.AuthServiceClient, policyService policy.PolicyService, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,

@@ -23,6 +23,7 @@ import (
 	"github.com/absmach/magistrala/bootstrap/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
 	"github.com/absmach/magistrala/internal/policy/agent"
+	"github.com/absmach/magistrala/internal/policy/middleware"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -59,15 +60,19 @@ const (
 )
 
 type config struct {
-	LogLevel       string  `env:"MG_BOOTSTRAP_LOG_LEVEL"        envDefault:"info"`
-	EncKey         string  `env:"MG_BOOTSTRAP_ENCRYPT_KEY"      envDefault:"12345678910111213141516171819202"`
-	ESConsumerName string  `env:"MG_BOOTSTRAP_EVENT_CONSUMER"   envDefault:"bootstrap"`
-	ThingsURL      string  `env:"MG_THINGS_URL"                 envDefault:"http://localhost:9000"`
-	JaegerURL      url.URL `env:"MG_JAEGER_URL"                 envDefault:"http://localhost:4318/v1/traces"`
-	SendTelemetry  bool    `env:"MG_SEND_TELEMETRY"             envDefault:"true"`
-	InstanceID     string  `env:"MG_BOOTSTRAP_INSTANCE_ID"      envDefault:""`
-	ESURL          string  `env:"MG_ES_URL"                     envDefault:"nats://localhost:4222"`
-	TraceRatio     float64 `env:"MG_JAEGER_TRACE_RATIO"         envDefault:"1.0"`
+	LogLevel            string  `env:"MG_BOOTSTRAP_LOG_LEVEL"        envDefault:"info"`
+	EncKey              string  `env:"MG_BOOTSTRAP_ENCRYPT_KEY"      envDefault:"12345678910111213141516171819202"`
+	ESConsumerName      string  `env:"MG_BOOTSTRAP_EVENT_CONSUMER"   envDefault:"bootstrap"`
+	ThingsURL           string  `env:"MG_THINGS_URL"                 envDefault:"http://localhost:9000"`
+	JaegerURL           url.URL `env:"MG_JAEGER_URL"                 envDefault:"http://localhost:4318/v1/traces"`
+	SendTelemetry       bool    `env:"MG_SEND_TELEMETRY"             envDefault:"true"`
+	InstanceID          string  `env:"MG_BOOTSTRAP_INSTANCE_ID"      envDefault:""`
+	ESURL               string  `env:"MG_ES_URL"                     envDefault:"nats://localhost:4222"`
+	TraceRatio          float64 `env:"MG_JAEGER_TRACE_RATIO"         envDefault:"1.0"`
+	SpicedbHost         string  `env:"MG_SPICEDB_HOST"               envDefault:"localhost"`
+	SpicedbPort         string  `env:"MG_SPICEDB_PORT"               envDefault:"50051"`
+	SpicedbSchemaFile   string  `env:"MG_SPICEDB_SCHEMA_FILE"        envDefault:"./docker/spicedb/schema.zed"`
+	SpicedbPreSharedKey string  `env:"MG_SPICEDB_PRE_SHARED_KEY"     envDefault:"12345678"`
 }
 
 func main() {
@@ -187,7 +192,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyService policy.PolicyService, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)
@@ -199,6 +204,10 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	sdk := mgsdk.NewSDK(config)
 	idp := uuid.New()
 
+	policyService = middleware.LoggingMiddleware(policyService, logger)
+	counter, latency := prometheus.MakeMetrics(fmt.Sprintf("%s_policy", svcName), "api")
+	policyService = middleware.MetricsMiddleware(policyService, counter, latency)
+
 	svc := bootstrap.New(authClient, policyService, repoConfig, sdk, []byte(cfg.EncKey), idp)
 
 	publisher, err := store.NewPublisher(ctx, cfg.ESURL, streamID)
@@ -208,7 +217,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 
 	svc = producer.NewEventStoreMiddleware(svc, publisher)
 	svc = api.LoggingMiddleware(svc, logger)
-	counter, latency := prometheus.MakeMetrics(svcName, "api")
+	counter, latency = prometheus.MakeMetrics(svcName, "api")
 	svc = api.MetricsMiddleware(svc, counter, latency)
 	svc = tracing.New(svc, tracer)
 

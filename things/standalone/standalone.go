@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	_ grpcclient.AuthServiceClient   = (*singleUserAuth)(nil)
-	_ magistrala.PolicyServiceClient = (*singleUserPolicyClient)(nil)
+	_ grpcclient.AuthServiceClient = (*singleUserAuth)(nil)
+	_ policy.PolicyService         = (*singleUserPolicyClient)(nil)
 )
 
 type singleUserAuth struct {

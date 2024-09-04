@@ -26,6 +26,7 @@ import (
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
 	"github.com/absmach/magistrala/internal/policy/agent"
+	"github.com/absmach/magistrala/internal/policy/middleware"
 	mglog "github.com/absmach/magistrala/logger"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/groups"
@@ -71,22 +72,26 @@ const (
 )
 
 type config struct {
-	LogLevel           string        `env:"MG_USERS_LOG_LEVEL"           envDefault:"info"`
-	AdminEmail         string        `env:"MG_USERS_ADMIN_EMAIL"         envDefault:"admin@example.com"`
-	AdminPassword      string        `env:"MG_USERS_ADMIN_PASSWORD"      envDefault:"12345678"`
-	PassRegexText      string        `env:"MG_USERS_PASS_REGEX"          envDefault:"^.{8,}$"`
-	ResetURL           string        `env:"MG_TOKEN_RESET_ENDPOINT"      envDefault:"/reset-request"`
-	JaegerURL          url.URL       `env:"MG_JAEGER_URL"                envDefault:"http://localhost:4318/v1/traces"`
-	SendTelemetry      bool          `env:"MG_SEND_TELEMETRY"            envDefault:"true"`
-	InstanceID         string        `env:"MG_USERS_INSTANCE_ID"         envDefault:""`
-	ESURL              string        `env:"MG_ES_URL"                    envDefault:"nats://localhost:4222"`
-	TraceRatio         float64       `env:"MG_JAEGER_TRACE_RATIO"        envDefault:"1.0"`
-	SelfRegister       bool          `env:"MG_USERS_ALLOW_SELF_REGISTER" envDefault:"false"`
-	OAuthUIRedirectURL string        `env:"MG_OAUTH_UI_REDIRECT_URL"     envDefault:"http://localhost:9095/domains"`
-	OAuthUIErrorURL    string        `env:"MG_OAUTH_UI_ERROR_URL"        envDefault:"http://localhost:9095/error"`
-	DeleteInterval     time.Duration `env:"MG_USERS_DELETE_INTERVAL"     envDefault:"24h"`
-	DeleteAfter        time.Duration `env:"MG_USERS_DELETE_AFTER"        envDefault:"720h"`
-	PassRegex          *regexp.Regexp
+	LogLevel            string        `env:"MG_USERS_LOG_LEVEL"           envDefault:"info"`
+	AdminEmail          string        `env:"MG_USERS_ADMIN_EMAIL"         envDefault:"admin@example.com"`
+	AdminPassword       string        `env:"MG_USERS_ADMIN_PASSWORD"      envDefault:"12345678"`
+	PassRegexText       string        `env:"MG_USERS_PASS_REGEX"          envDefault:"^.{8,}$"`
+	ResetURL            string        `env:"MG_TOKEN_RESET_ENDPOINT"      envDefault:"/reset-request"`
+	JaegerURL           url.URL       `env:"MG_JAEGER_URL"                envDefault:"http://localhost:4318/v1/traces"`
+	SendTelemetry       bool          `env:"MG_SEND_TELEMETRY"            envDefault:"true"`
+	InstanceID          string        `env:"MG_USERS_INSTANCE_ID"         envDefault:""`
+	ESURL               string        `env:"MG_ES_URL"                    envDefault:"nats://localhost:4222"`
+	TraceRatio          float64       `env:"MG_JAEGER_TRACE_RATIO"        envDefault:"1.0"`
+	SelfRegister        bool          `env:"MG_USERS_ALLOW_SELF_REGISTER" envDefault:"false"`
+	OAuthUIRedirectURL  string        `env:"MG_OAUTH_UI_REDIRECT_URL"     envDefault:"http://localhost:9095/domains"`
+	OAuthUIErrorURL     string        `env:"MG_OAUTH_UI_ERROR_URL"        envDefault:"http://localhost:9095/error"`
+	DeleteInterval      time.Duration `env:"MG_USERS_DELETE_INTERVAL"     envDefault:"24h"`
+	DeleteAfter         time.Duration `env:"MG_USERS_DELETE_AFTER"        envDefault:"720h"`
+	SpicedbHost         string        `env:"MG_SPICEDB_HOST"              envDefault:"localhost"`
+	SpicedbPort         string        `env:"MG_SPICEDB_PORT"              envDefault:"50051"`
+	SpicedbSchemaFile   string        `env:"MG_SPICEDB_SCHEMA_FILE"       envDefault:"./docker/spicedb/schema.zed"`
+	SpicedbPreSharedKey string        `env:"MG_SPICEDB_PRE_SHARED_KEY"    envDefault:"12345678"`
+	PassRegex           *regexp.Regexp
 }
 
 func main() {
@@ -232,7 +237,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
+func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, policyService policy.PolicyService, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -244,6 +249,10 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to configure e-mailing util: %s", err.Error()))
 	}
+
+	policyService = middleware.LoggingMiddleware(policyService, logger)
+	counter, latency := prometheus.MakeMetrics(fmt.Sprintf("%s_policy", svcName), "api")
+	policyService = middleware.MetricsMiddleware(policyService, counter, latency)
 
 	csvc := users.NewService(cRepo, authClient, policyService, emailerClient, hsr, idp, c.SelfRegister)
 	gsvc := mggroups.NewService(gRepo, idp, authClient, policyService)
@@ -259,7 +268,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 
 	csvc = ctracing.New(csvc, tracer)
 	csvc = capi.LoggingMiddleware(csvc, logger)
-	counter, latency := prometheus.MakeMetrics(svcName, "api")
+	counter, latency = prometheus.MakeMetrics(svcName, "api")
 	csvc = capi.MetricsMiddleware(csvc, counter, latency)
 
 	gsvc = gtracing.New(gsvc, tracer)

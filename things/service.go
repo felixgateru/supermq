@@ -28,9 +28,9 @@ type service struct {
 }
 
 // NewService returns a new Clients service implementation.
-func NewService(auth grpcclient.AuthServiceClient, policyService policy.PolicyService, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
+func NewService(authClient grpcclient.AuthServiceClient, policyService policy.PolicyService, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
 	return service{
-		auth:        auth,
+		auth:        authClient,
 		policy:      policyService,
 		clients:     c,
 		grepo:       grepo,

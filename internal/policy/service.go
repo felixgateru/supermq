@@ -57,41 +57,40 @@ func NewPolicyService(policyAgent policy.PolicyAgent) policy.PolicyService {
 	}
 }
 
-func (svc service) AddPolicy(ctx context.Context, req *magistrala.AddPolicyReq) (bool, error) {
-	res, err := svc.policy.AddPolicy(ctx, req)
-	if err != nil {
-		return false, err
+func (svc service) AddPolicy(ctx context.Context, pr policy.PolicyReq) error {
+	if err := svc.policyValidation(pr); err != nil {
+		return errors.Wrap(svcerr.ErrInvalidPolicy, err)
 	}
 	return svc.agent.AddPolicy(ctx, pr)
 }
 
-func (svc service) AddPolicies(ctx context.Context, req *magistrala.AddPoliciesReq) (bool, error) {
-	res, err := svc.policy.AddPolicies(ctx, req)
-	if err != nil {
-		return false, err
+func (svc service) AddPolicies(ctx context.Context, prs []policy.PolicyReq) error {
+	for _, pr := range prs {
+		if err := svc.policyValidation(pr); err != nil {
+			return errors.Wrap(svcerr.ErrInvalidPolicy, err)
+		}
 	}
-
-	return res.GetAdded(), nil
+	return svc.agent.AddPolicies(ctx, prs)
 }
 
-func (svc service) DeletePolicyFilter(ctx context.Context, req *magistrala.DeletePolicyFilterReq) (bool, error) {
-	res, err := svc.policy.DeletePolicyFilter(ctx, req)
-	if err != nil {
-		return false, err
-	}
-	return res.GetDeleted(), nil
+func (svc service) DeletePolicyFilter(ctx context.Context, pr policy.PolicyReq) error {
+	return svc.agent.DeletePolicyFilter(ctx, pr)
 }
 
-func (svc service) DeletePolicies(ctx context.Context, req *magistrala.DeletePoliciesReq) (bool, error) {
-	res, err := svc.policy.DeletePolicies(ctx, req)
-	if err != nil {
-		return false, err
+func (svc service) DeletePolicies(ctx context.Context, prs []policy.PolicyReq) error {
+	for _, pr := range prs {
+		if err := svc.policyValidation(pr); err != nil {
+			return errors.Wrap(svcerr.ErrInvalidPolicy, err)
+		}
 	}
 	return svc.agent.DeletePolicies(ctx, prs)
 }
 
-func (svc service) ListObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
-	res, err := svc.policy.ListObjects(ctx, req)
+func (svc service) ListObjects(ctx context.Context, pr policy.PolicyReq, nextPageToken string, limit uint64) (policy.PolicyPage, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	res, npt, err := svc.agent.RetrieveObjects(ctx, pr, nextPageToken, limit)
 	if err != nil {
 		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -103,8 +102,8 @@ func (svc service) ListObjects(ctx context.Context, req *magistrala.ListObjectsR
 	return page, nil
 }
 
-func (svc service) ListAllObjects(ctx context.Context, req *magistrala.ListObjectsReq) ([]string, error) {
-	res, err := svc.policy.ListAllObjects(ctx, req)
+func (svc service) ListAllObjects(ctx context.Context, pr policy.PolicyReq) (policy.PolicyPage, error) {
+	res, err := svc.agent.RetrieveAllObjects(ctx, pr)
 	if err != nil {
 		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -115,17 +114,15 @@ func (svc service) ListAllObjects(ctx context.Context, req *magistrala.ListObjec
 	return page, nil
 }
 
-func (svc service) CountObjects(ctx context.Context, req *magistrala.CountObjectsReq) (uint64, error) {
-	res, err := svc.policy.CountObjects(ctx, req)
-	if err != nil {
-		return 0, err
-	}
-
-	return res.Count, nil
+func (svc service) CountObjects(ctx context.Context, pr policy.PolicyReq) (uint64, error) {
+	return svc.agent.RetrieveAllObjectsCount(ctx, pr)
 }
 
-func (svc service) ListSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
-	res, err := svc.policy.ListSubjects(ctx, req)
+func (svc service) ListSubjects(ctx context.Context, pr policy.PolicyReq, nextPageToken string, limit uint64) (policy.PolicyPage, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	res, npt, err := svc.agent.RetrieveSubjects(ctx, pr, nextPageToken, limit)
 	if err != nil {
 		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -137,8 +134,8 @@ func (svc service) ListSubjects(ctx context.Context, req *magistrala.ListSubject
 	return page, nil
 }
 
-func (svc service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubjectsReq) ([]string, error) {
-	res, err := svc.policy.ListAllSubjects(ctx, req)
+func (svc service) ListAllSubjects(ctx context.Context, pr policy.PolicyReq) (policy.PolicyPage, error) {
+	res, err := svc.agent.RetrieveAllSubjects(ctx, pr)
 	if err != nil {
 		return policy.PolicyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -149,17 +146,26 @@ func (svc service) ListAllSubjects(ctx context.Context, req *magistrala.ListSubj
 	return page, nil
 }
 
-func (svc service) CountSubjects(ctx context.Context, req *magistrala.CountSubjectsReq) (uint64, error) {
-	res, err := svc.policy.CountSubjects(ctx, req)
-	if err != nil {
-		return 0, err
-	}
-
-	return res.Count, nil
+func (svc service) CountSubjects(ctx context.Context, pr policy.PolicyReq) (uint64, error) {
+	return svc.agent.RetrieveAllSubjectsCount(ctx, pr)
 }
 
-func (svc service) ListPermissions(ctx context.Context, req *magistrala.ListPermissionsReq) ([]string, error) {
-	res, err := svc.policy.ListPermissions(ctx, req)
+func (svc service) ListPermissions(ctx context.Context, pr policy.PolicyReq, permissionsFilter []string) (policy.Permissions, error) {
+	if len(permissionsFilter) == 0 {
+		switch pr.ObjectType {
+		case policy.ThingType:
+			permissionsFilter = defThingsFilterPermissions
+		case policy.GroupType:
+			permissionsFilter = defGroupsFilterPermissions
+		case policy.PlatformType:
+			permissionsFilter = defPlatformFilterPermissions
+		case policy.DomainType:
+			permissionsFilter = defDomainsFilterPermissions
+		default:
+			return nil, svcerr.ErrMalformedEntity
+		}
+	}
+	pers, err := svc.agent.RetrievePermissions(ctx, pr, permissionsFilter)
 	if err != nil {
 		return []string{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -167,10 +173,9 @@ func (svc service) ListPermissions(ctx context.Context, req *magistrala.ListPerm
 	return pers, nil
 }
 
-func (svc service) DeleteEntityPolicies(ctx context.Context, req *magistrala.DeleteEntityPoliciesReq) (bool, error) {
-	res, err := svc.policy.DeleteEntityPolicies(ctx, req)
-	if err != nil {
-		return false, err
+func (svc *service) policyValidation(pr policy.PolicyReq) error {
+	if pr.ObjectType == policy.PlatformType && pr.Object != policy.MagistralaObject {
+		return errPlatform
 	}
 	return nil
 }
