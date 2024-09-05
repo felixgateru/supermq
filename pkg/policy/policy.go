@@ -161,8 +161,8 @@ type PolicyAgent interface {
 	RetrievePermissions(ctx context.Context, pr PolicyReq, filterPermission []string) (Permissions, error)
 }
 
-//go:generate mockery --name PolicyService --filename service.go --quiet --note "Copyright (c) Abstract Machines"
-type PolicyService interface {
+//go:generate mockery --name PolicyClient --filename client.go --quiet --note "Copyright (c) Abstract Machines"
+type PolicyClient interface {
 	// AddPolicy creates a policy for the given subject, so that, after
 	// AddPolicy, `subject` has a `relation` on `object`. Returns a non-nil
 	// error in case of failures.

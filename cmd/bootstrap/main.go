@@ -22,8 +22,7 @@ import (
 	bootstrappg "github.com/absmach/magistrala/bootstrap/postgres"
 	"github.com/absmach/magistrala/bootstrap/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	"github.com/absmach/magistrala/internal/policy/agent"
-	"github.com/absmach/magistrala/internal/policy/middleware"
+	"github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -192,7 +191,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyService policy.PolicyService, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient policy.PolicyClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)
@@ -204,11 +203,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	sdk := mgsdk.NewSDK(config)
 	idp := uuid.New()
 
-	policyService = middleware.LoggingMiddleware(policyService, logger)
-	counter, latency := prometheus.MakeMetrics(fmt.Sprintf("%s_policy", svcName), "api")
-	policyService = middleware.MetricsMiddleware(policyService, counter, latency)
-
-	svc := bootstrap.New(authClient, policyService, repoConfig, sdk, []byte(cfg.EncKey), idp)
+	svc := bootstrap.New(authClient, policyClient, repoConfig, sdk, []byte(cfg.EncKey), idp)
 
 	publisher, err := store.NewPublisher(ctx, cfg.ESURL, streamID)
 	if err != nil {
@@ -217,7 +212,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 
 	svc = producer.NewEventStoreMiddleware(svc, publisher)
 	svc = api.LoggingMiddleware(svc, logger)
-	counter, latency = prometheus.MakeMetrics(svcName, "api")
+	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	svc = api.MetricsMiddleware(svc, counter, latency)
 	svc = tracing.New(svc, tracer)
 
@@ -238,7 +233,7 @@ func subscribeToThingsES(ctx context.Context, svc bootstrap.Service, cfg config,
 	return subscriber.Subscribe(ctx, subConfig)
 }
 
-func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyService, error) {
+func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -248,7 +243,7 @@ func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyService, er
 		return nil, err
 	}
 
-	pa := agent.NewPolicyAgent(client, logger)
+	pa := spicedb.NewPolicyAgent(client, logger)
 	policyService := mgpolicy.NewPolicyService(pa)
 	return policyService, nil
 }

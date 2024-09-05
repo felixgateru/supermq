@@ -15,7 +15,7 @@ import (
 
 var (
 	_ grpcclient.AuthServiceClient = (*singleUserAuth)(nil)
-	_ policy.PolicyService         = (*singleUserPolicyClient)(nil)
+	_ policy.PolicyClient          = (*singleUserPolicyClient)(nil)
 )
 
 type singleUserAuth struct {
@@ -65,7 +65,7 @@ type singleUserPolicyClient struct {
 }
 
 // NewPolicyService creates single user policy service for constrained environments.
-func NewPolicyService(id, token string) policy.PolicyService {
+func NewPolicyService(id, token string) policy.PolicyClient {
 	return singleUserPolicyClient{
 		id:    id,
 		token: token,

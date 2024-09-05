@@ -51,7 +51,7 @@ type service struct {
 	agent policy.PolicyAgent
 }
 
-func NewPolicyService(policyAgent policy.PolicyAgent) policy.PolicyService {
+func NewPolicyService(policyAgent policy.PolicyAgent) policy.PolicyClient {
 	return &service{
 		agent: policyAgent,
 	}

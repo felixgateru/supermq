@@ -25,8 +25,7 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	"github.com/absmach/magistrala/internal/policy/agent"
-	"github.com/absmach/magistrala/internal/policy/middleware"
+	"github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/groups"
@@ -237,7 +236,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient authclient.AuthServiceClient, policyClient magistrala.PolicyServiceClient, policyService policy.PolicyService, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
+func newService(ctx context.Context, authClient authclient.AuthServiceClient, authPolicyClient magistrala.PolicyServiceClient, policyClient policy.PolicyClient, db *sqlx.DB, dbConfig pgclient.Config, tracer trace.Tracer, c config, ec email.Config, logger *slog.Logger) (users.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := clientspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -250,12 +249,8 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 		logger.Error(fmt.Sprintf("failed to configure e-mailing util: %s", err.Error()))
 	}
 
-	policyService = middleware.LoggingMiddleware(policyService, logger)
-	counter, latency := prometheus.MakeMetrics(fmt.Sprintf("%s_policy", svcName), "api")
-	policyService = middleware.MetricsMiddleware(policyService, counter, latency)
-
-	csvc := users.NewService(cRepo, authClient, policyService, emailerClient, hsr, idp, c.SelfRegister)
-	gsvc := mggroups.NewService(gRepo, idp, authClient, policyService)
+	csvc := users.NewService(cRepo, authClient, policyClient, emailerClient, hsr, idp, c.SelfRegister)
+	gsvc := mggroups.NewService(gRepo, idp, authClient, policyClient)
 
 	csvc, err = uevents.NewEventStoreMiddleware(ctx, csvc, c.ESURL)
 	if err != nil {
@@ -268,7 +263,7 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 
 	csvc = ctracing.New(csvc, tracer)
 	csvc = capi.LoggingMiddleware(csvc, logger)
-	counter, latency = prometheus.MakeMetrics(svcName, "api")
+	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	csvc = capi.MetricsMiddleware(csvc, counter, latency)
 
 	gsvc = gtracing.New(gsvc, tracer)
@@ -280,11 +275,11 @@ func newService(ctx context.Context, authClient authclient.AuthServiceClient, po
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create admin client: %s", err))
 	}
-	if err := createAdminPolicy(ctx, clientID, authClient, policyService); err != nil {
+	if err := createAdminPolicy(ctx, clientID, authClient, policyClient); err != nil {
 		return nil, nil, err
 	}
 
-	users.NewDeleteHandler(ctx, cRepo, policyClient, c.DeleteInterval, c.DeleteAfter, logger)
+	users.NewDeleteHandler(ctx, cRepo, authPolicyClient, c.DeleteInterval, c.DeleteAfter, logger)
 
 	return csvc, gsvc, err
 }
@@ -329,7 +324,7 @@ func createAdmin(ctx context.Context, c config, crepo clientspg.Repository, hsr 
 	return client.ID, nil
 }
 
-func createAdminPolicy(ctx context.Context, clientID string, authClient authclient.AuthServiceClient, policyService policy.PolicyService) error {
+func createAdminPolicy(ctx context.Context, clientID string, authClient authclient.AuthServiceClient, policyService policy.PolicyClient) error {
 	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: authSvc.UserType,
 		Subject:     clientID,
@@ -352,7 +347,7 @@ func createAdminPolicy(ctx context.Context, clientID string, authClient authclie
 	return nil
 }
 
-func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyService, error) {
+func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -362,7 +357,7 @@ func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyService, er
 		return nil, err
 	}
 
-	pa := agent.NewPolicyAgent(client, logger)
+	pa := spicedb.NewPolicyAgent(client, logger)
 	policyService := mgpolicy.NewPolicyService(pa)
 	return policyService, nil
 }

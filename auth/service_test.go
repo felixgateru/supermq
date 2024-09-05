@@ -62,14 +62,14 @@ var (
 	krepo  *mocks.KeyRepository
 	prepo  *mocks.PolicyAgent
 	drepo  *mocks.DomainsRepository
-	policy *policymocks.PolicyService
+	policy *policymocks.PolicyClient
 )
 
 func newService() (auth.Service, string) {
 	krepo = new(mocks.KeyRepository)
 	prepo = new(mocks.PolicyAgent)
 	drepo = new(mocks.DomainsRepository)
-	policy = new(policymocks.PolicyService)
+	policy = new(policymocks.PolicyClient)
 	idProvider := uuid.NewMock()
 
 	t := jwt.New([]byte(secret))

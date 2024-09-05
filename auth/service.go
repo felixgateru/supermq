@@ -79,7 +79,7 @@ type service struct {
 	domains            DomainsRepository
 	idProvider         magistrala.IDProvider
 	agent              PolicyAgent
-	policy             policy.PolicyService
+	policy             policy.PolicyClient
 	tokenizer          Tokenizer
 	loginDuration      time.Duration
 	refreshDuration    time.Duration
@@ -87,14 +87,14 @@ type service struct {
 }
 
 // New instantiates the auth service implementation.
-func New(keys KeyRepository, domains DomainsRepository, idp magistrala.IDProvider, tokenizer Tokenizer, policyAgent PolicyAgent, policyService policy.PolicyService, loginDuration, refreshDuration, invitationDuration time.Duration) Service {
+func New(keys KeyRepository, domains DomainsRepository, idp magistrala.IDProvider, tokenizer Tokenizer, policyAgent PolicyAgent, policyClient policy.PolicyClient, loginDuration, refreshDuration, invitationDuration time.Duration) Service {
 	return &service{
 		tokenizer:          tokenizer,
 		domains:            domains,
 		keys:               keys,
 		idProvider:         idp,
 		agent:              policyAgent,
-		policy:             policyService,
+		policy:             policyClient,
 		loginDuration:      loginDuration,
 		refreshDuration:    refreshDuration,
 		invitationDuration: invitationDuration,

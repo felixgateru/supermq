@@ -24,7 +24,7 @@ import (
 	"github.com/absmach/magistrala/auth/spicedb"
 	"github.com/absmach/magistrala/auth/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	mgagent "github.com/absmach/magistrala/internal/policy/agent"
+	mgagent "github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/postgres"

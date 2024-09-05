@@ -47,9 +47,9 @@ var (
 	errRemovePolicies = errors.New("failed to delete policies")
 )
 
-func newService() (things.Service, *mocks.Repository, *authmocks.AuthServiceClient, *policymocks.PolicyService, *mocks.Cache) {
+func newService() (things.Service, *mocks.Repository, *authmocks.AuthServiceClient, *policymocks.PolicyClient, *mocks.Cache) {
 	auth := new(authmocks.AuthServiceClient)
-	policyClient := new(policymocks.PolicyService)
+	policyClient := new(policymocks.PolicyClient)
 	thingCache := new(mocks.Cache)
 	idProvider := uuid.NewMock()
 	cRepo := new(mocks.Repository)

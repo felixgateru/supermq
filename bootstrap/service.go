@@ -122,7 +122,7 @@ type ConfigReader interface {
 
 type bootstrapService struct {
 	auth       grpcclient.AuthServiceClient
-	policy     policy.PolicyService
+	policy     policy.PolicyClient
 	configs    ConfigRepository
 	sdk        mgsdk.SDK
 	encKey     []byte
@@ -130,12 +130,12 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(authClient grpcclient.AuthServiceClient, policyService policy.PolicyService, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(authClient grpcclient.AuthServiceClient, policyClient policy.PolicyClient, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		configs:    configs,
 		sdk:        sdk,
 		auth:       authClient,
-		policy:     policyService,
+		policy:     policyClient,
 		encKey:     encKey,
 		idProvider: idp,
 	}

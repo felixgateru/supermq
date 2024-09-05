@@ -20,7 +20,7 @@ import (
 
 type service struct {
 	auth        grpcclient.AuthServiceClient
-	policy      policy.PolicyService
+	policy      policy.PolicyClient
 	clients     postgres.Repository
 	clientCache Cache
 	idProvider  magistrala.IDProvider
@@ -28,10 +28,10 @@ type service struct {
 }
 
 // NewService returns a new Clients service implementation.
-func NewService(authClient grpcclient.AuthServiceClient, policyService policy.PolicyService, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
+func NewService(authClient grpcclient.AuthServiceClient, policyClient policy.PolicyClient, c postgres.Repository, grepo mggroups.Repository, tcache Cache, idp magistrala.IDProvider) Service {
 	return service{
 		auth:        authClient,
-		policy:      policyService,
+		policy:      policyClient,
 		clients:     c,
 		grepo:       grepo,
 		clientCache: tcache,

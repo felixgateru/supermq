@@ -72,11 +72,11 @@ func newService() (auth.Service, *mocks.KeyRepository) {
 	prepo := new(mocks.PolicyAgent)
 	drepo := new(mocks.DomainsRepository)
 	idProvider := uuid.NewMock()
-	policySvc := new(policymocks.PolicyService)
+	policy := new(policymocks.PolicyClient)
 
 	t := jwt.New([]byte(secret))
 
-	return auth.New(krepo, drepo, idProvider, t, prepo, policySvc, loginDuration, refreshDuration, invalidDuration), krepo
+	return auth.New(krepo, drepo, idProvider, t, prepo, policy, loginDuration, refreshDuration, invalidDuration), krepo
 }
 
 func newServer(svc auth.Service) *httptest.Server {
