@@ -6,7 +6,6 @@ package spicedb
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 
 	"github.com/absmach/magistrala/auth"
@@ -68,47 +67,6 @@ func (pa *policyAgent) CheckPolicy(ctx context.Context, pr auth.PolicyReq) error
 		return errors.Wrap(svcerr.ErrAuthorization, errors.New(reason))
 	}
 	return svcerr.ErrAuthorization
-}
-
-func (pa *policyAgent) Watch(ctx context.Context, continueToken string) {
-	stream, err := pa.client.WatchServiceClient.Watch(ctx, &v1.WatchRequest{
-		OptionalObjectTypes: []string{},
-		OptionalStartCursor: &v1.ZedToken{Token: continueToken},
-	})
-	if err != nil {
-		pa.logger.Error(fmt.Sprintf("got error while watching: %s", err.Error()))
-	}
-	for {
-		watchResp, err := stream.Recv()
-		switch err {
-		case nil:
-			pa.publishToStream(watchResp)
-		case io.EOF:
-			pa.logger.Info("got EOF while watch streaming")
-			return
-		default:
-			pa.logger.Error(fmt.Sprintf("got error while watch streaming : %s", err.Error()))
-			return
-		}
-	}
-}
-
-func (pa *policyAgent) publishToStream(resp *v1.WatchResponse) {
-	pa.logger.Info(fmt.Sprintf("Publish next token %s", resp.ChangesThrough.Token))
-
-	for _, update := range resp.Updates {
-		operation := v1.RelationshipUpdate_Operation_name[int32(update.Operation)]
-		objectType := update.Relationship.Resource.ObjectType
-		objectID := update.Relationship.Resource.ObjectId
-		relation := update.Relationship.Relation
-		subjectType := update.Relationship.Subject.Object.ObjectType
-		subjectRelation := update.Relationship.Subject.OptionalRelation
-		subjectID := update.Relationship.Subject.Object.ObjectId
-
-		pa.logger.Info(fmt.Sprintf(`
-		Operation : %s	object_type: %s		object_id: %s 	relation: %s 	subject_type: %s 	subject_relation: %s	subject_id: %s
-		`, operation, objectType, objectID, relation, subjectType, subjectRelation, subjectID))
-	}
 }
 
 func handleSpicedbError(err error) error {

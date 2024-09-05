@@ -351,14 +351,14 @@ func TestDeleteUserPolicies(t *testing.T) {
 	cases := []struct {
 		desc                    string
 		token                   string
-		deleteEntityPoliciesReq *magistrala.DeleteUserPoliciesReq
+		deleteUserPoliciesReq *magistrala.DeleteUserPoliciesReq
 		deletePolicyRes         *magistrala.DeletePolicyRes
 		err                     error
 	}{
 		{
 			desc:  "delete valid req",
 			token: validToken,
-			deleteEntityPoliciesReq: &magistrala.DeleteUserPoliciesReq{
+			deleteUserPoliciesReq: &magistrala.DeleteUserPoliciesReq{
 				Id: id,
 			},
 			deletePolicyRes: &magistrala.DeletePolicyRes{Deleted: true},
@@ -367,14 +367,14 @@ func TestDeleteUserPolicies(t *testing.T) {
 		{
 			desc:                    "delete invalid req with invalid token",
 			token:                   inValidToken,
-			deleteEntityPoliciesReq: &magistrala.DeleteUserPoliciesReq{},
+			deleteUserPoliciesReq: &magistrala.DeleteUserPoliciesReq{},
 			deletePolicyRes:         &magistrala.DeletePolicyRes{Deleted: false},
 			err:                     apiutil.ErrMissingID,
 		},
 		{
 			desc:  "delete invalid req with invalid token",
 			token: inValidToken,
-			deleteEntityPoliciesReq: &magistrala.DeleteUserPoliciesReq{
+			deleteUserPoliciesReq: &magistrala.DeleteUserPoliciesReq{
 				Id: id,
 			},
 			deletePolicyRes: &magistrala.DeletePolicyRes{Deleted: false},
@@ -382,8 +382,8 @@ func TestDeleteUserPolicies(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		repoCall := svc.On("DeleteEntityPolicies", mock.Anything, tc.deleteEntityPoliciesReq.Id).Return(tc.err)
-		dpr, err := client.DeleteUserPolicies(context.Background(), tc.deleteEntityPoliciesReq)
+		repoCall := svc.On("DeleteUserPolicies", mock.Anything, tc.deleteUserPoliciesReq.Id).Return(tc.err)
+		dpr, err := client.DeleteUserPolicies(context.Background(), tc.deleteUserPoliciesReq)
 		assert.Equal(t, tc.deletePolicyRes.GetDeleted(), dpr.GetDeleted(), fmt.Sprintf("%s: expected %v got %v", tc.desc, tc.deletePolicyRes.GetDeleted(), dpr.GetDeleted()))
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Unset()
