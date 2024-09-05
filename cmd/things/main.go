@@ -23,7 +23,6 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	"github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/groups"
 	"github.com/absmach/magistrala/pkg/grpcclient"
@@ -156,13 +155,13 @@ func main() {
 	defer cacheclient.Close()
 
 	var (
-		authClient    authclient.AuthServiceClient
-		policyService policy.PolicyClient
+		authClient   authclient.AuthServiceClient
+		policyClient policy.PolicyClient
 	)
 	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
 	case true:
-		authClient = localusers.NewAuthService(cfg.StandaloneID, cfg.StandaloneToken)
-		policyService = localusers.NewPolicyService(cfg.StandaloneID, cfg.StandaloneToken)
+		authClient = localusers.NewAuthClient(cfg.StandaloneID, cfg.StandaloneToken)
+		policyClient = localusers.NewPolicyClient(cfg.StandaloneID, cfg.StandaloneToken)
 		logger.Info("Using standalone auth service")
 	default:
 		clientConfig := grpcclient.Config{}
@@ -182,16 +181,16 @@ func main() {
 		authClient = authServiceClient
 		logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
-		policyService, err = newPolicyService(cfg, logger)
+		policyClient, err = newPolicyClient(cfg, logger)
 		if err != nil {
 			logger.Error(err.Error())
 			exitCode = 1
 			return
 		}
-		logger.Info("Policy service successfully connected to spicedb gRPC server")
+		logger.Info("Policy client successfully connected to spicedb gRPC server")
 	}
 
-	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyService, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
+	csvc, gsvc, err := newService(ctx, db, dbConfig, authClient, policyClient, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create services: %s", err))
 		exitCode = 1
@@ -277,7 +276,7 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 	return csvc, gsvc, err
 }
 
-func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
+func newPolicyClient(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -286,8 +285,7 @@ func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, err
 	if err != nil {
 		return nil, err
 	}
+	policyClient := mgpolicy.NewPolicyClient(client, logger)
 
-	pa := spicedb.NewPolicyAgent(client, logger)
-	policyService := mgpolicy.NewPolicyService(pa)
-	return policyService, nil
+	return policyClient, nil
 }

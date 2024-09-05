@@ -23,8 +23,8 @@ type singleUserAuth struct {
 	token string
 }
 
-// NewAuthService creates single user repository for constrained environments.
-func NewAuthService(id, token string) grpcclient.AuthServiceClient {
+// NewAuthClient creates single user auth client for constrained environments.
+func NewAuthClient(id, token string) grpcclient.AuthServiceClient {
 	return singleUserAuth{
 		id:    id,
 		token: token,
@@ -64,8 +64,8 @@ type singleUserPolicyClient struct {
 	token string
 }
 
-// NewPolicyService creates single user policy service for constrained environments.
-func NewPolicyService(id, token string) policy.PolicyClient {
+// NewPolicyClient creates single user policy client for constrained environments.
+func NewPolicyClient(id, token string) policy.PolicyClient {
 	return singleUserPolicyClient{
 		id:    id,
 		token: token,

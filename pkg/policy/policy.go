@@ -119,48 +119,9 @@ type PolicyPage struct {
 
 type Permissions []string
 
-// PolicyAgent facilitates the communication to authorization
-// services and implements Authz functionalities for certain
-// authorization services (e.g. ORY Keto).
+// PolicyClient facilitates the communication to authorization
+// services and implements Authz functionalities for spicedb
 //
-//go:generate mockery --name PolicyAgent --output=./mocks --filename agent.go --quiet --note "Copyright (c) Abstract Machines"
-type PolicyAgent interface {
-	// AddPolicy creates a policy for the given subject, so that, after
-	// AddPolicy, `subject` has a `relation` on `object`. Returns a non-nil
-	// error in case of failures.
-	AddPolicy(ctx context.Context, pr PolicyReq) error
-
-	// AddPolicies creates a Bulk Policies  for the given request
-	AddPolicies(ctx context.Context, prs []PolicyReq) error
-
-	// DeletePolicyFilter removes policy for given policy filter request.
-	DeletePolicyFilter(ctx context.Context, pr PolicyReq) error
-
-	// DeletePolicies removes a bulk policies for the given request.
-	DeletePolicies(ctx context.Context, prs []PolicyReq) error
-
-	// RetrieveObjects
-	RetrieveObjects(ctx context.Context, pr PolicyReq, nextPageToken string, limit uint64) ([]PolicyRes, string, error)
-
-	// RetrieveAllObjects
-	RetrieveAllObjects(ctx context.Context, pr PolicyReq) ([]PolicyRes, error)
-
-	// RetrieveAllObjectsCount
-	RetrieveAllObjectsCount(ctx context.Context, pr PolicyReq) (uint64, error)
-
-	// RetrieveSubjects
-	RetrieveSubjects(ctx context.Context, pr PolicyReq, nextPageToken string, limit uint64) ([]PolicyRes, string, error)
-
-	// RetrieveAllSubjects
-	RetrieveAllSubjects(ctx context.Context, pr PolicyReq) ([]PolicyRes, error)
-
-	// RetrieveAllSubjectsCount
-	RetrieveAllSubjectsCount(ctx context.Context, pr PolicyReq) (uint64, error)
-
-	// (ctx context.Context, pr PolicyReq, filterPermissions []string) ([]policy.PolicyReq, error)
-	RetrievePermissions(ctx context.Context, pr PolicyReq, filterPermission []string) (Permissions, error)
-}
-
 //go:generate mockery --name PolicyClient --filename client.go --quiet --note "Copyright (c) Abstract Machines"
 type PolicyClient interface {
 	// AddPolicy creates a policy for the given subject, so that, after

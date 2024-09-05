@@ -25,7 +25,6 @@ import (
 	gpostgres "github.com/absmach/magistrala/internal/groups/postgres"
 	gtracing "github.com/absmach/magistrala/internal/groups/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	"github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/groups"
@@ -176,24 +175,24 @@ func main() {
 	defer authHandler.Close()
 	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
-	policyClient, policyHandler, err := grpcclient.SetupPolicyClient(ctx, clientConfig)
+	authPolicyClient, authPolicyHandler, err := grpcclient.SetupPolicyClient(ctx, clientConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	defer policyHandler.Close()
-	logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + policyHandler.Secure())
+	defer authPolicyHandler.Close()
+	logger.Info("PolicyService gRPC client successfully connected to auth gRPC server " + authPolicyHandler.Secure())
 
-	policyService, err := newPolicyService(cfg, logger)
+	policyClient, err := newPolicyClient(cfg, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	logger.Info("Policy service successfully connected to spicedb gRPC server")
+	logger.Info("Policy client successfully connected to spicedb gRPC server")
 
-	csvc, gsvc, err := newService(ctx, authClient, policyClient, policyService, db, dbConfig, tracer, cfg, ec, logger)
+	csvc, gsvc, err := newService(ctx, authClient, authPolicyClient, policyClient, db, dbConfig, tracer, cfg, ec, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to setup service: %s", err))
 		exitCode = 1
@@ -347,7 +346,7 @@ func createAdminPolicy(ctx context.Context, clientID string, authClient authclie
 	return nil
 }
 
-func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
+func newPolicyClient(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -356,8 +355,7 @@ func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, err
 	if err != nil {
 		return nil, err
 	}
+	policyClient := mgpolicy.NewPolicyClient(client, logger)
 
-	pa := spicedb.NewPolicyAgent(client, logger)
-	policyService := mgpolicy.NewPolicyService(pa)
-	return policyService, nil
+	return policyClient, nil
 }

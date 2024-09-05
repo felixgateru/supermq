@@ -22,7 +22,6 @@ import (
 	bootstrappg "github.com/absmach/magistrala/bootstrap/postgres"
 	"github.com/absmach/magistrala/bootstrap/tracing"
 	mgpolicy "github.com/absmach/magistrala/internal/policy"
-	"github.com/absmach/magistrala/internal/policy/spicedb"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -128,13 +127,13 @@ func main() {
 	defer authHandler.Close()
 	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
 
-	policyService, err := newPolicyService(cfg, logger)
+	policyClient, err := newPolicyClient(cfg, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
-	logger.Info("Policy service successfully connected to spicedb gRPC server")
+	logger.Info("Policy client successfully connected to spicedb gRPC server")
 
 	tp, err := jaeger.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
@@ -150,7 +149,7 @@ func main() {
 	tracer := tp.Tracer(svcName)
 
 	// Create new service
-	svc, err := newService(ctx, authClient, policyService, db, tracer, logger, cfg, dbConfig)
+	svc, err := newService(ctx, authClient, policyClient, db, tracer, logger, cfg, dbConfig)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
@@ -233,7 +232,7 @@ func subscribeToThingsES(ctx context.Context, svc bootstrap.Service, cfg config,
 	return subscriber.Subscribe(ctx, subConfig)
 }
 
-func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
+func newPolicyClient(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -242,8 +241,7 @@ func newPolicyService(cfg config, logger *slog.Logger) (policy.PolicyClient, err
 	if err != nil {
 		return nil, err
 	}
+	policyClient := mgpolicy.NewPolicyClient(client, logger)
 
-	pa := spicedb.NewPolicyAgent(client, logger)
-	policyService := mgpolicy.NewPolicyService(pa)
-	return policyService, nil
+	return policyClient, nil
 }
