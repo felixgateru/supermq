@@ -437,7 +437,7 @@ func (svc service) ListMembers(ctx context.Context, session authn.Session, objec
 	if err != nil {
 		return mgclients.MembersPage{}, errors.Wrap(svcerr.ErrNotFound, err)
 	}
-	if len(duids) == 0 {
+	if len(duids.Policies) == 0 {
 		return mgclients.MembersPage{
 			Page: mgclients.Page{Total: 0, Offset: pm.Offset, Limit: pm.Limit},
 		}, nil

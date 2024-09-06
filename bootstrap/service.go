@@ -271,7 +271,7 @@ func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]
 	if err != nil {
 		return nil, errors.Wrap(svcerr.ErrNotFound, err)
 	}
-	return tids, nil
+	return tids.Policies, nil
 }
 
 func (bs bootstrapService) List(ctx context.Context, session mgauthn.Session, filter Filter, offset, limit uint64) (ConfigsPage, error) {
