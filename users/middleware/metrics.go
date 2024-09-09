@@ -201,13 +201,14 @@ func (ms *metricsMiddleware) Identify(ctx context.Context, authObject auth.AuthO
 	return ms.svc.Identify(ctx, authObject)
 }
 
-// func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (*magistrala.Token, error) {
-// 	defer func(begin time.Time) {
-// 		ms.counter.With("method", "oauth_callback").Add(1)
-// 		ms.latency.With("method", "oauth_callback").Observe(time.Since(begin).Seconds())
-// 	}(time.Now())
-// 	return ms.svc.OAuthCallback(ctx, client)
-// }
+// OAuthCallback instruments OAuthCallback method with metrics.
+func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "oauth_callback").Add(1)
+		ms.latency.With("method", "oauth_callback").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	return ms.svc.OAuthCallback(ctx, client)
+}
 
 // DeleteClient instruments DeleteClient method with metrics.
 func (ms *metricsMiddleware) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
@@ -216,4 +217,13 @@ func (ms *metricsMiddleware) DeleteClient(ctx context.Context, authObject auth.A
 		ms.latency.With("method", "delete_client").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return ms.svc.DeleteClient(ctx, authObject, id)
+}
+
+// AddClientPolicy instruments AddClientPolicy method with metrics.
+func (ms *metricsMiddleware) AddClientPolicy(ctx context.Context, client mgclients.Client) error {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "add_client_policy").Add(1)
+		ms.latency.With("method", "add_client_policy").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	return ms.svc.AddClientPolicy(ctx, client)
 }

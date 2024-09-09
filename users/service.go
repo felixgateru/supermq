@@ -12,6 +12,7 @@ import (
 	authclient "github.com/absmach/magistrala/pkg/auth"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
+	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/policy"
 	"github.com/absmach/magistrala/users/postgres"
@@ -515,33 +516,29 @@ func (svc *service) checkSuperAdmin(ctx context.Context, authObject auth.AuthObj
 	return nil
 }
 
-// func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (*magistrala.Token, error) {
-// 	rclient, err := svc.clients.RetrieveByIdentity(ctx, client.Credentials.Identity)
-// 	if err != nil {
-// 		switch errors.Contains(err, repoerr.ErrNotFound) {
-// 		case true:
-// 			rclient, err = svc.RegisterClient(ctx, authWrapper.AuthObject{}, client, true)
-// 			if err != nil {
-// 				return &magistrala.Token{}, err
-// 			}
-// 		default:
-// 			return &magistrala.Token{}, err
-// 		}
-// 	}
+func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+	rclient, err := svc.clients.RetrieveByIdentity(ctx, client.Credentials.Identity)
+	if err != nil {
+		switch errors.Contains(err, repoerr.ErrNotFound) {
+		case true:
+			rclient, err = svc.RegisterClient(ctx, auth.AuthObject{}, client, true)
+			if err != nil {
+				return auth.Token{}, err
+			}
+		default:
+			return auth.Token{}, err
+		}
+	}
 
-// 	if _, err = svc.authorize(ctx, auth.UserType, auth.UsersKind, rclient.ID, auth.MembershipPermission, auth.PlatformType, auth.MagistralaObject); err != nil {
-// 		if err := svc.addClientPolicy(ctx, rclient.ID, rclient.Role); err != nil {
-// 			return &magistrala.Token{}, err
-// 		}
-// 	}
+	return auth.Token{
+		UserID: rclient.ID,
+		Role:   rclient.Role,
+	}, nil
+}
 
-// 	claims := &magistrala.IssueReq{
-// 		UserId: rclient.ID,
-// 		Type:   uint32(auth.AccessKey),
-// 	}
-
-// 	return svc.auth.Issue(ctx, claims)
-// }
+func (svc service) AddClientPolicy(ctx context.Context, client mgclients.Client) error {
+	return svc.addClientPolicy(ctx, client.ID, client.Role)
+}
 
 func (svc service) Identify(ctx context.Context, authObject auth.AuthObject) (string, error) {
 	return authObject.UserID, nil

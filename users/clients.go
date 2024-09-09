@@ -82,5 +82,8 @@ type Service interface {
 
 	// OAuthCallback handles the callback from any supported OAuth provider.
 	// It processes the OAuth tokens and either signs in or signs up the user based on the provided state.
-	// OAuthCallback(ctx context.Context, client clients.Client) (*magistrala.Token, error)
+	OAuthCallback(ctx context.Context, client clients.Client) (auth.Token, error)
+
+	// AddClientPolicy adds a policy to the client.
+	AddClientPolicy(ctx context.Context, client clients.Client) error
 }

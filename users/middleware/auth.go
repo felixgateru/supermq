@@ -337,6 +337,54 @@ func (am authMiddleware) RefreshToken(ctx context.Context, authObject auth.AuthO
 	}, nil
 }
 
+func (am authMiddleware) OAuthCallback(ctx context.Context, client clients.Client) (auth.Token, error) {
+	svcResp, err := am.svc.OAuthCallback(ctx, client)
+	if err != nil {
+		return auth.Token{}, err
+	}
+
+	cli := clients.Client{
+		ID:   svcResp.UserID,
+		Role: svcResp.Role,
+	}
+	err = am.AddClientPolicy(ctx, cli)
+	if err != nil {
+		return auth.Token{}, err
+	}
+
+	tkn, err := am.auth.Issue(ctx, &magistrala.IssueReq{
+		UserId: svcResp.UserID,
+		Type:   uint32(mgauth.AccessKey),
+	})
+	if err != nil {
+		return auth.Token{}, errors.Wrap(errIssueToken, err)
+	}
+	return auth.Token{
+		AccessToken:  tkn.AccessToken,
+		RefreshToken: tkn.RefreshToken,
+		AccessType:   tkn.AccessType,
+	}, nil
+}
+
+func (am authMiddleware) AddClientPolicy(ctx context.Context, client clients.Client) error {
+	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.UsersKind,
+		Subject:     client.ID,
+		Permission:  policy.MembershipPermission,
+		ObjectType:  policy.PlatformType,
+		Object:      policy.MagistralaObject,
+	})
+	if err != nil {
+		return errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if !res.Authorized {
+		return svcerr.ErrAuthorization
+	}
+
+	return am.svc.AddClientPolicy(ctx, client)
+}
+
 func (am authMiddleware) checkSuperAdmin(ctx context.Context, adminID string) error {
 	if _, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: policy.UserType,

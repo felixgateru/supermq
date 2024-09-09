@@ -313,22 +313,22 @@ func (es *eventStore) SendPasswordReset(ctx context.Context, host, email, user, 
 	return es.Publish(ctx, event)
 }
 
-// func (es *eventStore) OAuthCallback(ctx context.Context, client mgclients.Client) (*magistrala.Token, error) {
-// 	token, err := es.svc.OAuthCallback(ctx, client)
-// 	if err != nil {
-// 		return token, err
-// 	}
+func (es *eventStore) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+	token, err := es.svc.OAuthCallback(ctx, client)
+	if err != nil {
+		return token, err
+	}
 
-// 	event := oauthCallbackEvent{
-// 		clientID: client.ID,
-// 	}
+	event := oauthCallbackEvent{
+		clientID: client.ID,
+	}
 
-// 	if err := es.Publish(ctx, event); err != nil {
-// 		return token, err
-// 	}
+	if err := es.Publish(ctx, event); err != nil {
+		return token, err
+	}
 
-// 	return token, nil
-// }
+	return token, nil
+}
 
 func (es *eventStore) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
 	if err := es.svc.DeleteClient(ctx, authObject, id); err != nil {
@@ -337,6 +337,19 @@ func (es *eventStore) DeleteClient(ctx context.Context, authObject auth.AuthObje
 
 	event := deleteClientEvent{
 		id: id,
+	}
+
+	return es.Publish(ctx, event)
+}
+
+func (es *eventStore) AddClientPolicy(ctx context.Context, client mgclients.Client) error {
+	if err := es.svc.AddClientPolicy(ctx, client); err != nil {
+		return err
+	}
+
+	event := addClientPolicyEvent{
+		id:   client.ID,
+		role: client.Role.String(),
 	}
 
 	return es.Publish(ctx, event)

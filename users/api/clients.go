@@ -194,9 +194,9 @@ func clientsHandler(svc users.Service, selfRegister bool, r *chi.Mux, logger *sl
 		opts...,
 	), "list_users_by_domain_id").ServeHTTP)
 
-	// for _, provider := range providers {
-	// 	r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc))
-	// }
+	for _, provider := range providers {
+		r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc))
+	}
 
 	return r
 }
@@ -637,7 +637,7 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service) http.Handle
 			})
 			http.SetCookie(w, &http.Cookie{
 				Name:     "refresh_token",
-				Value:    *jwt.RefreshToken,
+				Value:    jwt.RefreshToken,
 				Path:     "/",
 				HttpOnly: true,
 				Secure:   true,

@@ -18,6 +18,24 @@ type Service struct {
 	mock.Mock
 }
 
+// AddClientPolicy provides a mock function with given fields: ctx, client
+func (_m *Service) AddClientPolicy(ctx context.Context, client clients.Client) error {
+	ret := _m.Called(ctx, client)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddClientPolicy")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, clients.Client) error); ok {
+		r0 = rf(ctx, client)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteClient provides a mock function with given fields: ctx, authObject, id
 func (_m *Service) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
 	ret := _m.Called(ctx, authObject, id)
@@ -225,6 +243,34 @@ func (_m *Service) ListMembers(ctx context.Context, authObject auth.AuthObject, 
 
 	if rf, ok := ret.Get(1).(func(context.Context, auth.AuthObject, string, string, clients.Page) error); ok {
 		r1 = rf(ctx, authObject, objectKind, objectID, pm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OAuthCallback provides a mock function with given fields: ctx, client
+func (_m *Service) OAuthCallback(ctx context.Context, client clients.Client) (auth.Token, error) {
+	ret := _m.Called(ctx, client)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OAuthCallback")
+	}
+
+	var r0 auth.Token
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, clients.Client) (auth.Token, error)); ok {
+		return rf(ctx, client)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, clients.Client) auth.Token); ok {
+		r0 = rf(ctx, client)
+	} else {
+		r0 = ret.Get(0).(auth.Token)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, clients.Client) error); ok {
+		r1 = rf(ctx, client)
 	} else {
 		r1 = ret.Error(1)
 	}

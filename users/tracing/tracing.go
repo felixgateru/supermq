@@ -206,15 +206,15 @@ func (tm *tracingMiddleware) Identify(ctx context.Context, authObject auth.AuthO
 	return tm.svc.Identify(ctx, authObject)
 }
 
-// // OAuthCallback traces the "OAuthCallback" operation of the wrapped clients.Service.
-// func (tm *tracingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (*magistrala.Token, error) {
-// 	ctx, span := tm.tracer.Start(ctx, "svc_oauth_callback", trace.WithAttributes(
-// 		attribute.String("client_id", client.ID),
-// 	))
-// 	defer span.End()
+// OAuthCallback traces the "OAuthCallback" operation of the wrapped clients.Service.
+func (tm *tracingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+	ctx, span := tm.tracer.Start(ctx, "svc_oauth_callback", trace.WithAttributes(
+		attribute.String("client_id", client.ID),
+	))
+	defer span.End()
 
-// 	return tm.svc.OAuthCallback(ctx, client)
-// }
+	return tm.svc.OAuthCallback(ctx, client)
+}
 
 // DeleteClient traces the "DeleteClient" operation of the wrapped clients.Service.
 func (tm *tracingMiddleware) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
@@ -222,4 +222,13 @@ func (tm *tracingMiddleware) DeleteClient(ctx context.Context, authObject auth.A
 	defer span.End()
 
 	return tm.svc.DeleteClient(ctx, authObject, id)
+}
+
+func (tm *tracingMiddleware) AddClientPolicy(ctx context.Context, client mgclients.Client) error {
+	ctx, span := tm.tracer.Start(ctx, "svc_add_client_policy", trace.WithAttributes(
+		attribute.String("id", client.ID),
+	))
+	defer span.End()
+
+	return tm.svc.AddClientPolicy(ctx, client)
 }

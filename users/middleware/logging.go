@@ -419,21 +419,21 @@ func (lm *loggingMiddleware) Identify(ctx context.Context, authObject auth.AuthO
 	return lm.svc.Identify(ctx, authObject)
 }
 
-// func (lm *loggingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (token *magistrala.Token, err error) {
-// 	defer func(begin time.Time) {
-// 		args := []any{
-// 			slog.String("duration", time.Since(begin).String()),
-// 			slog.String("user_id", client.ID),
-// 		}
-// 		if err != nil {
-// 			args = append(args, slog.Any("error", err))
-// 			lm.logger.Warn("OAuth callback failed", args...)
-// 			return
-// 		}
-// 		lm.logger.Info("OAuth callback completed successfully", args...)
-// 	}(time.Now())
-// 	return lm.svc.OAuthCallback(ctx, client)
-// }
+func (lm *loggingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (token auth.Token, err error) {
+	defer func(begin time.Time) {
+		args := []any{
+			slog.String("duration", time.Since(begin).String()),
+			slog.String("user_id", client.ID),
+		}
+		if err != nil {
+			args = append(args, slog.Any("error", err))
+			lm.logger.Warn("OAuth callback failed", args...)
+			return
+		}
+		lm.logger.Info("OAuth callback completed successfully", args...)
+	}(time.Now())
+	return lm.svc.OAuthCallback(ctx, client)
+}
 
 // DeleteClient logs the delete_client request. It logs the client id and token and the time it took to complete the request.
 func (lm *loggingMiddleware) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) (err error) {
@@ -450,4 +450,20 @@ func (lm *loggingMiddleware) DeleteClient(ctx context.Context, authObject auth.A
 		lm.logger.Info("Delete user completed successfully", args...)
 	}(time.Now())
 	return lm.svc.DeleteClient(ctx, authObject, id)
+}
+
+func (lm *loggingMiddleware) AddClientPolicy(ctx context.Context, client mgclients.Client) (err error) {
+	defer func(begin time.Time) {
+		args := []any{
+			slog.String("duration", time.Since(begin).String()),
+			slog.String("user_id", client.ID),
+		}
+		if err != nil {
+			args = append(args, slog.Any("error", err))
+			lm.logger.Warn("Add client policy failed", args...)
+			return
+		}
+		lm.logger.Info("Add client policy completed successfully", args...)
+	}(time.Now())
+	return lm.svc.AddClientPolicy(ctx, client)
 }
