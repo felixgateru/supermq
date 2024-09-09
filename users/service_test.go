@@ -209,7 +209,7 @@ func TestRegisterClient(t *testing.T) {
 		policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
 		policyCall1 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
 		repoCall := cRepo.On("Save", context.Background(), mock.Anything).Return(tc.client, tc.saveErr)
-		expected, err := svc.RegisterClient(context.Background(), auth.AuthObject{}, tc.client, true)
+		expected, err := svc.RegisterClient(context.Background(), auth.Session{}, tc.client, true)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
 			tc.client.ID = expected.ID
@@ -231,7 +231,7 @@ func TestRegisterClient(t *testing.T) {
 	cases2 := []struct {
 		desc                      string
 		client                    mgclients.Client
-		authObject                auth.AuthObject
+		session                   auth.Session
 		addPoliciesResponseErr    error
 		deletePoliciesResponseErr error
 		saveErr                   error
@@ -239,15 +239,15 @@ func TestRegisterClient(t *testing.T) {
 		err                       error
 	}{
 		{
-			desc:       "register new client successfully as admin",
-			client:     client,
-			authObject: auth.AuthObject{UserID: validID, SuperAdmin: true},
-			err:        nil,
+			desc:    "register new client successfully as admin",
+			client:  client,
+			session: auth.Session{UserID: validID, SuperAdmin: true},
+			err:     nil,
 		},
 		{
 			desc:               "register a new client as admin with failed check on super admin",
 			client:             client,
-			authObject:         auth.AuthObject{UserID: validID, SuperAdmin: false},
+			session:            auth.Session{UserID: validID, SuperAdmin: false},
 			checkSuperAdminErr: svcerr.ErrAuthorization,
 			err:                svcerr.ErrAuthorization,
 		},
@@ -257,7 +257,7 @@ func TestRegisterClient(t *testing.T) {
 		policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
 		policyCall1 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
 		repoCall1 := cRepo.On("Save", context.Background(), mock.Anything).Return(tc.client, tc.saveErr)
-		expected, err := svc.RegisterClient(context.Background(), auth.AuthObject{UserID: validID}, tc.client, false)
+		expected, err := svc.RegisterClient(context.Background(), auth.Session{UserID: validID}, tc.client, false)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
 			tc.client.ID = expected.ID
@@ -332,8 +332,7 @@ func TestViewClient(t *testing.T) {
 	for _, tc := range cases {
 		repoCall := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.checkSuperAdminErr)
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), tc.clientID).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
-
-		rClient, err := svc.ViewClient(context.Background(), auth.AuthObject{UserID: tc.clientID}, tc.clientID)
+		rClient, err := svc.ViewClient(context.Background(), auth.Session{UserID: tc.clientID}, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		tc.response.Credentials.Secret = ""
 		assert.Equal(t, tc.response, rClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, rClient))
@@ -341,7 +340,6 @@ func TestViewClient(t *testing.T) {
 			ok := repoCall1.Parent.AssertCalled(t, "RetrieveByID", context.Background(), tc.clientID)
 			assert.True(t, ok, fmt.Sprintf("RetrieveByID was not called on %s", tc.desc))
 		}
-
 		repoCall1.Unset()
 		repoCall.Unset()
 	}
@@ -415,7 +413,7 @@ func TestListClients(t *testing.T) {
 	for _, tc := range cases {
 		repoCall := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.superAdminErr)
 		repoCall1 := cRepo.On("RetrieveAll", context.Background(), mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
-		page, err := svc.ListClients(context.Background(), auth.AuthObject{UserID: client.ID}, tc.page)
+		page, err := svc.ListClients(context.Background(), auth.Session{UserID: client.ID}, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
 		if tc.err == nil {
@@ -468,7 +466,7 @@ func TestSearchUsers(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cRepo.On("SearchClients", context.Background(), mock.Anything).Return(tc.response, tc.responseErr)
-		page, err := svc.SearchUsers(context.Background(), auth.AuthObject{}, tc.page)
+		page, err := svc.SearchUsers(context.Background(), auth.Session{}, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
 		repoCall.Unset()
@@ -487,7 +485,7 @@ func TestUpdateClient(t *testing.T) {
 	cases := []struct {
 		desc               string
 		client             mgclients.Client
-		authObject         auth.AuthObject
+		session            auth.Session
 		updateResponse     mgclients.Client
 		token              string
 		updateErr          error
@@ -497,7 +495,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client name  successfully as normal user",
 			client:         client1,
-			authObject:     auth.AuthObject{UserID: client1.ID},
+			session:        auth.Session{UserID: client1.ID},
 			updateResponse: client1,
 			token:          validToken,
 			err:            nil,
@@ -505,7 +503,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update metadata successfully as normal user",
 			client:         client2,
-			authObject:     auth.AuthObject{UserID: client2.ID},
+			session:        auth.Session{UserID: client2.ID},
 			updateResponse: client2,
 			token:          validToken,
 			err:            nil,
@@ -513,7 +511,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client name as normal user with repo error on update",
 			client:         client1,
-			authObject:     auth.AuthObject{UserID: client1.ID},
+			session:        auth.Session{UserID: client1.ID},
 			updateResponse: mgclients.Client{},
 			token:          validToken,
 			updateErr:      errors.ErrMalformedEntity,
@@ -522,7 +520,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client name as admin successfully",
 			client:         client1,
-			authObject:     auth.AuthObject{UserID: adminID, SuperAdmin: true},
+			session:        auth.Session{UserID: adminID, SuperAdmin: true},
 			updateResponse: client1,
 			token:          validToken,
 			err:            nil,
@@ -530,7 +528,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client metadata as admin successfully",
 			client:         client2,
-			authObject:     auth.AuthObject{UserID: adminID, SuperAdmin: true},
+			session:        auth.Session{UserID: adminID, SuperAdmin: true},
 			updateResponse: client2,
 			token:          validToken,
 			err:            nil,
@@ -538,7 +536,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:               "update client with failed check on super admin",
 			client:             client1,
-			authObject:         auth.AuthObject{UserID: adminID},
+			session:            auth.Session{UserID: adminID},
 			token:              validToken,
 			checkSuperAdminErr: svcerr.ErrAuthorization,
 			err:                svcerr.ErrAuthorization,
@@ -546,7 +544,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client name as admin with repo error on update",
 			client:         client1,
-			authObject:     auth.AuthObject{UserID: adminID, SuperAdmin: true},
+			session:        auth.Session{UserID: adminID, SuperAdmin: true},
 			updateResponse: mgclients.Client{},
 			token:          validToken,
 			updateErr:      errors.ErrMalformedEntity,
@@ -557,10 +555,9 @@ func TestUpdateClient(t *testing.T) {
 	for _, tc := range cases {
 		repoCall := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.checkSuperAdminErr)
 		repoCall1 := cRepo.On("Update", context.Background(), mock.Anything).Return(tc.updateResponse, tc.err)
-		updatedClient, err := svc.UpdateClient(context.Background(), tc.authObject, tc.client)
+		updatedClient, err := svc.UpdateClient(context.Background(), tc.session, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.updateResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateResponse, updatedClient))
-
 		if tc.err == nil {
 			ok := repoCall1.Parent.AssertCalled(t, "Update", context.Background(), mock.Anything)
 			assert.True(t, ok, fmt.Sprintf("Update was not called on %s", tc.desc))
@@ -579,7 +576,7 @@ func TestUpdateClientTags(t *testing.T) {
 	cases := []struct {
 		desc                     string
 		client                   mgclients.Client
-		authObject               auth.AuthObject
+		session                  auth.Session
 		updateClientTagsResponse mgclients.Client
 		updateClientTagsErr      error
 		checkSuperAdminErr       error
@@ -588,35 +585,35 @@ func TestUpdateClientTags(t *testing.T) {
 		{
 			desc:                     "update client tags as normal user successfully",
 			client:                   client,
-			authObject:               auth.AuthObject{UserID: client.ID},
+			session:                  auth.Session{UserID: client.ID},
 			updateClientTagsResponse: client,
 			err:                      nil,
 		},
 		{
 			desc:                     "update client tags as normal user with repo error on update",
 			client:                   client,
-			authObject:               auth.AuthObject{UserID: client.ID},
+			session:                  auth.Session{UserID: client.ID},
 			updateClientTagsResponse: mgclients.Client{},
 			updateClientTagsErr:      errors.ErrMalformedEntity,
 			err:                      svcerr.ErrUpdateEntity,
 		},
 		{
-			desc:       "update client tags as admin successfully",
-			client:     client,
-			authObject: auth.AuthObject{UserID: adminID, SuperAdmin: true},
-			err:        nil,
+			desc:    "update client tags as admin successfully",
+			client:  client,
+			session: auth.Session{UserID: adminID, SuperAdmin: true},
+			err:     nil,
 		},
 		{
 			desc:               "update client tags as admin with failed check on super admin",
 			client:             client,
-			authObject:         auth.AuthObject{UserID: adminID},
+			session:            auth.Session{UserID: adminID},
 			checkSuperAdminErr: svcerr.ErrAuthorization,
 			err:                svcerr.ErrAuthorization,
 		},
 		{
 			desc:                     "update client tags as admin with repo error on update",
 			client:                   client,
-			authObject:               auth.AuthObject{UserID: adminID, SuperAdmin: true},
+			session:                  auth.Session{UserID: adminID, SuperAdmin: true},
 			updateClientTagsResponse: mgclients.Client{},
 			updateClientTagsErr:      errors.ErrMalformedEntity,
 			err:                      svcerr.ErrUpdateEntity,
@@ -626,7 +623,7 @@ func TestUpdateClientTags(t *testing.T) {
 	for _, tc := range cases {
 		repoCall := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.checkSuperAdminErr)
 		repoCall1 := cRepo.On("UpdateTags", context.Background(), mock.Anything).Return(tc.updateClientTagsResponse, tc.updateClientTagsErr)
-		updatedClient, err := svc.UpdateClientTags(context.Background(), tc.authObject, tc.client)
+		updatedClient, err := svc.UpdateClientTags(context.Background(), tc.session, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.updateClientTagsResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateClientTagsResponse, updatedClient))
 		if tc.err == nil {
@@ -648,7 +645,7 @@ func TestUpdateClientRole(t *testing.T) {
 	cases := []struct {
 		desc               string
 		client             mgclients.Client
-		authObject         auth.AuthObject
+		session            auth.Session
 		updateRoleResponse mgclients.Client
 		deletePolicyErr    error
 		addPolicyErr       error
@@ -659,56 +656,56 @@ func TestUpdateClientRole(t *testing.T) {
 		{
 			desc:               "update client role successfully",
 			client:             client,
-			authObject:         auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:            auth.Session{UserID: validID, SuperAdmin: true},
 			updateRoleResponse: client,
 			err:                nil,
 		},
 		{
 			desc:               "update client role with failed check on super admin",
 			client:             client,
-			authObject:         auth.AuthObject{UserID: validID, SuperAdmin: false},
+			session:            auth.Session{UserID: validID, SuperAdmin: false},
 			checkSuperAdminErr: svcerr.ErrAuthorization,
 			err:                svcerr.ErrAuthorization,
 		},
 		{
 			desc:         "update client role with failed to add policy",
 			client:       client,
-			authObject:   auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:      auth.Session{UserID: validID, SuperAdmin: true},
 			addPolicyErr: errors.ErrMalformedEntity,
 			err:          svcerr.ErrAddPolicies,
 		},
 		{
 			desc:               "update client role to user role successfully  ",
 			client:             client2,
-			authObject:         auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:            auth.Session{UserID: validID, SuperAdmin: true},
 			updateRoleResponse: client2,
 			err:                nil,
 		},
 		{
 			desc:            "update client role to user role with failed to delete policy",
 			client:          client2,
-			authObject:      auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:         auth.Session{UserID: validID, SuperAdmin: true},
 			deletePolicyErr: svcerr.ErrAuthorization,
 			err:             svcerr.ErrAuthorization,
 		},
 		{
 			desc:            "update client role to user role with failed to delete policy with error",
 			client:          client2,
-			authObject:      auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:         auth.Session{UserID: validID, SuperAdmin: true},
 			deletePolicyErr: svcerr.ErrMalformedEntity,
 			err:             svcerr.ErrDeletePolicies,
 		},
 		{
 			desc:          "Update client with failed repo update and roll back",
 			client:        client,
-			authObject:    auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:       auth.Session{UserID: validID, SuperAdmin: true},
 			updateRoleErr: svcerr.ErrAuthentication,
 			err:           svcerr.ErrAuthentication,
 		},
 		{
 			desc:            "Update client with failed repo update and failedroll back",
 			client:          client,
-			authObject:      auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:         auth.Session{UserID: validID, SuperAdmin: true},
 			deletePolicyErr: svcerr.ErrAuthorization,
 			updateRoleErr:   svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
@@ -722,7 +719,7 @@ func TestUpdateClientRole(t *testing.T) {
 		policyCall1 := policy.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
 		repoCall1 := cRepo.On("UpdateRole", context.Background(), mock.Anything).Return(tc.updateRoleResponse, tc.updateRoleErr)
 
-		updatedClient, err := svc.UpdateClientRole(context.Background(), tc.authObject, tc.client)
+		updatedClient, err := svc.UpdateClientRole(context.Background(), tc.session, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.updateRoleResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateRoleResponse, updatedClient))
 		if tc.err == nil {
@@ -749,7 +746,7 @@ func TestUpdateClientSecret(t *testing.T) {
 		desc                       string
 		oldSecret                  string
 		newSecret                  string
-		authObject                 auth.AuthObject
+		session                    auth.Session
 		retrieveByIDResponse       mgclients.Client
 		retrieveByIdentityResponse mgclients.Client
 		updateSecretResponse       mgclients.Client
@@ -764,7 +761,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                       "update client secret with valid token",
 			oldSecret:                  client.Credentials.Secret,
 			newSecret:                  newSecret,
-			authObject:                 auth.AuthObject{UserID: client.ID},
+			session:                    auth.Session{UserID: client.ID},
 			retrieveByIdentityResponse: rClient,
 			retrieveByIDResponse:       client,
 			updateSecretResponse:       responseClient,
@@ -775,7 +772,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                 "update client secret with failed to retrieve client by ID",
 			oldSecret:            client.Credentials.Secret,
 			newSecret:            newSecret,
-			authObject:           auth.AuthObject{UserID: client.ID},
+			session:              auth.Session{UserID: client.ID},
 			retrieveByIDResponse: mgclients.Client{},
 			retrieveByIDErr:      repoerr.ErrNotFound,
 			err:                  repoerr.ErrNotFound,
@@ -784,7 +781,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                       "update client secret with failed to retrieve client by identity",
 			oldSecret:                  client.Credentials.Secret,
 			newSecret:                  newSecret,
-			authObject:                 auth.AuthObject{UserID: client.ID},
+			session:                    auth.Session{UserID: client.ID},
 			retrieveByIDResponse:       client,
 			retrieveByIdentityResponse: mgclients.Client{},
 			retrieveByIdentityErr:      repoerr.ErrNotFound,
@@ -794,7 +791,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                       "update client secret with invalod old secret",
 			oldSecret:                  "invalid",
 			newSecret:                  newSecret,
-			authObject:                 auth.AuthObject{UserID: client.ID},
+			session:                    auth.Session{UserID: client.ID},
 			retrieveByIDResponse:       client,
 			retrieveByIdentityResponse: rClient,
 			err:                        svcerr.ErrLogin,
@@ -803,7 +800,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                       "update client secret with too long new secret",
 			oldSecret:                  client.Credentials.Secret,
 			newSecret:                  strings.Repeat("a", 73),
-			authObject:                 auth.AuthObject{UserID: client.ID},
+			session:                    auth.Session{UserID: client.ID},
 			retrieveByIDResponse:       client,
 			retrieveByIdentityResponse: rClient,
 			err:                        repoerr.ErrMalformedEntity,
@@ -812,7 +809,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                       "update client secret with failed to update secret",
 			oldSecret:                  client.Credentials.Secret,
 			newSecret:                  newSecret,
-			authObject:                 auth.AuthObject{UserID: client.ID},
+			session:                    auth.Session{UserID: client.ID},
 			retrieveByIDResponse:       client,
 			retrieveByIdentityResponse: rClient,
 			updateSecretResponse:       mgclients.Client{},
@@ -827,7 +824,7 @@ func TestUpdateClientSecret(t *testing.T) {
 		repoCall1 := cRepo.On("RetrieveByIdentity", context.Background(), client.Credentials.Identity).Return(tc.retrieveByIdentityResponse, tc.retrieveByIdentityErr)
 		repoCall2 := cRepo.On("UpdateSecret", context.Background(), mock.Anything).Return(tc.updateSecretResponse, tc.updateSecretErr)
 
-		updatedClient, err := svc.UpdateClientSecret(context.Background(), tc.authObject, tc.oldSecret, tc.newSecret)
+		updatedClient, err := svc.UpdateClientSecret(context.Background(), tc.session, tc.oldSecret, tc.newSecret)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, updatedClient))
 		if tc.err == nil {
@@ -912,7 +909,7 @@ func TestEnableClient(t *testing.T) {
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), tc.id).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
 		repoCall2 := cRepo.On("ChangeStatus", context.Background(), mock.Anything).Return(tc.changeStatusResponse, tc.changeStatusErr)
 
-		_, err := svc.EnableClient(context.Background(), auth.AuthObject{}, tc.id)
+		_, err := svc.EnableClient(context.Background(), auth.Session{}, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {
 			ok := repoCall1.Parent.AssertCalled(t, "RetrieveByID", context.Background(), tc.id)
@@ -992,7 +989,7 @@ func TestDisableClient(t *testing.T) {
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), tc.id).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
 		repoCall2 := cRepo.On("ChangeStatus", context.Background(), mock.Anything).Return(tc.changeStatusResponse, tc.changeStatusErr)
 
-		_, err := svc.DisableClient(context.Background(), auth.AuthObject{}, tc.id)
+		_, err := svc.DisableClient(context.Background(), auth.Session{}, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {
 			ok := repoCall1.Parent.AssertCalled(t, "RetrieveByID", context.Background(), tc.id)
@@ -1017,7 +1014,7 @@ func TestDeleteClient(t *testing.T) {
 	cases := []struct {
 		desc                 string
 		id                   string
-		authObject           auth.AuthObject
+		session              auth.Session
 		client               mgclients.Client
 		retrieveByIDResponse mgclients.Client
 		changeStatusResponse mgclients.Client
@@ -1031,7 +1028,7 @@ func TestDeleteClient(t *testing.T) {
 			desc:                 "delete enabled client",
 			id:                   enabledClient1.ID,
 			client:               enabledClient1,
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: enabledClient1,
 			changeStatusResponse: disenabledClient1,
 			response:             disenabledClient1,
@@ -1041,7 +1038,7 @@ func TestDeleteClient(t *testing.T) {
 			desc:                 "delete enabled client with failed to retrieve client by ID",
 			id:                   enabledClient1.ID,
 			client:               enabledClient1,
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: mgclients.Client{},
 			retrieveByIDErr:      repoerr.ErrNotFound,
 			err:                  repoerr.ErrNotFound,
@@ -1050,7 +1047,7 @@ func TestDeleteClient(t *testing.T) {
 			desc:                 "delete already deleted client",
 			id:                   deletedClient1.ID,
 			client:               deletedClient1,
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: deletedClient1,
 			err:                  errors.ErrStatusAlreadyAssigned,
 		},
@@ -1058,7 +1055,7 @@ func TestDeleteClient(t *testing.T) {
 			desc:                 "delete enabled client with failed to change status",
 			id:                   enabledClient1.ID,
 			client:               enabledClient1,
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: enabledClient1,
 			changeStatusResponse: mgclients.Client{},
 			changeStatusErr:      repoerr.ErrMalformedEntity,
@@ -1070,7 +1067,7 @@ func TestDeleteClient(t *testing.T) {
 		repoCall2 := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.checkSuperAdminErr)
 		repoCall3 := cRepo.On("RetrieveByID", context.Background(), tc.id).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
 		repoCall4 := cRepo.On("ChangeStatus", context.Background(), mock.Anything).Return(tc.changeStatusResponse, tc.changeStatusErr)
-		err := svc.DeleteClient(context.Background(), tc.authObject, tc.id)
+		err := svc.DeleteClient(context.Background(), tc.session, tc.id)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {
 			ok := repoCall3.Parent.AssertCalled(t, "RetrieveByID", context.Background(), tc.id)
@@ -1366,11 +1363,9 @@ func TestListMembers(t *testing.T) {
 		policyCall := policy.On("ListAllSubjects", context.Background(), tc.listAllSubjectsReq).Return(tc.listAllSubjectsResponse, tc.listAllSubjectsErr)
 		repoCall := cRepo.On("RetrieveAll", context.Background(), mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
 		policyCall1 := policy.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionErr)
-
-		page, err := svc.ListMembers(context.Background(), auth.AuthObject{}, tc.objectKind, tc.objectID, tc.page)
+		page, err := svc.ListMembers(context.Background(), auth.Session{}, tc.objectKind, tc.objectID, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
-
 		policyCall.Unset()
 		repoCall.Unset()
 		policyCall1.Unset()
@@ -1520,7 +1515,7 @@ func TestRefreshToken(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := crepo.On("RetrieveByID", context.Background(), "").Return(tc.repoResp, tc.repoErr)
-		_, err := svc.RefreshToken(context.Background(), auth.AuthObject{}, tc.domainID)
+		_, err := svc.RefreshToken(context.Background(), auth.Session{}, tc.domainID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
 			ok := repoCall.Parent.AssertCalled(t, "RetrieveByID", context.Background(), "")
@@ -1595,7 +1590,7 @@ func TestResetSecret(t *testing.T) {
 	cases := []struct {
 		desc                 string
 		newSecret            string
-		authObject           auth.AuthObject
+		session              auth.Session
 		retrieveByIDResponse mgclients.Client
 		updateSecretResponse mgclients.Client
 		retrieveByIDErr      error
@@ -1605,7 +1600,7 @@ func TestResetSecret(t *testing.T) {
 		{
 			desc:                 "reset secret with successfully",
 			newSecret:            "newStrongSecret",
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: client,
 			updateSecretResponse: mgclients.Client{
 				ID: "clientID",
@@ -1619,15 +1614,15 @@ func TestResetSecret(t *testing.T) {
 		{
 			desc:                 "reset secret with invalid ID",
 			newSecret:            "newStrongSecret",
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: mgclients.Client{},
 			retrieveByIDErr:      repoerr.ErrNotFound,
 			err:                  repoerr.ErrNotFound,
 		},
 		{
-			desc:       "reset secret with empty identity",
-			authObject: auth.AuthObject{UserID: validID, SuperAdmin: true},
-			newSecret:  "newStrongSecret",
+			desc:      "reset secret with empty identity",
+			session:   auth.Session{UserID: validID, SuperAdmin: true},
+			newSecret: "newStrongSecret",
 			retrieveByIDResponse: mgclients.Client{
 				ID: "clientID",
 				Credentials: mgclients.Credentials{
@@ -1639,7 +1634,7 @@ func TestResetSecret(t *testing.T) {
 		{
 			desc:                 "reset secret with failed to update secret",
 			newSecret:            "newStrongSecret",
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: client,
 			updateSecretResponse: mgclients.Client{},
 			updateSecretErr:      svcerr.ErrUpdateEntity,
@@ -1648,7 +1643,7 @@ func TestResetSecret(t *testing.T) {
 		{
 			desc:                 "reset secret with a too long secret",
 			newSecret:            strings.Repeat("strongSecret", 10),
-			authObject:           auth.AuthObject{UserID: validID, SuperAdmin: true},
+			session:              auth.Session{UserID: validID, SuperAdmin: true},
 			retrieveByIDResponse: client,
 			err:                  errHashPassword,
 		},
@@ -1657,7 +1652,7 @@ func TestResetSecret(t *testing.T) {
 	for _, tc := range cases {
 		repoCall := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
 		repoCall1 := cRepo.On("UpdateSecret", context.Background(), mock.Anything).Return(tc.updateSecretResponse, tc.updateSecretErr)
-		err := svc.ResetSecret(context.Background(), tc.authObject, tc.newSecret)
+		err := svc.ResetSecret(context.Background(), tc.session, tc.newSecret)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall1.Parent.AssertCalled(t, "UpdateSecret", context.Background(), mock.Anything)
 		repoCall.Parent.AssertCalled(t, "RetrieveByID", context.Background(), client.ID)
@@ -1679,7 +1674,7 @@ func TestViewProfile(t *testing.T) {
 	cases := []struct {
 		desc                 string
 		client               mgclients.Client
-		authObject           auth.AuthObject
+		session              auth.Session
 		retrieveByIDResponse mgclients.Client
 		retrieveByIDErr      error
 		err                  error
@@ -1687,14 +1682,14 @@ func TestViewProfile(t *testing.T) {
 		{
 			desc:                 "view profile successfully",
 			client:               client,
-			authObject:           auth.AuthObject{UserID: validID},
+			session:              auth.Session{UserID: validID},
 			retrieveByIDResponse: client,
 			err:                  nil,
 		},
 		{
 			desc:                 "view profile with invalid ID",
 			client:               client,
-			authObject:           auth.AuthObject{UserID: wrongID},
+			session:              auth.Session{UserID: wrongID},
 			retrieveByIDResponse: mgclients.Client{},
 			retrieveByIDErr:      repoerr.ErrNotFound,
 			err:                  repoerr.ErrNotFound,
@@ -1703,7 +1698,7 @@ func TestViewProfile(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.retrieveByIDResponse, tc.retrieveByIDErr)
-		_, err := svc.ViewProfile(context.Background(), tc.authObject)
+		_, err := svc.ViewProfile(context.Background(), tc.session)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Parent.AssertCalled(t, "RetrieveByID", context.Background(), mock.Anything)
 		repoCall.Unset()

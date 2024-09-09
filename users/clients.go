@@ -17,60 +17,60 @@ import (
 type Service interface {
 	// RegisterClient creates new client. In case of the failed registration, a
 	// non-nil error value is returned.
-	RegisterClient(ctx context.Context, authObject auth.AuthObject, client clients.Client, selfRegister bool) (clients.Client, error)
+	RegisterClient(ctx context.Context, session auth.Session, client clients.Client, selfRegister bool) (clients.Client, error)
 
 	// ViewClient retrieves client info for a given client ID and an authorized token.
-	ViewClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error)
+	ViewClient(ctx context.Context, session auth.Session, id string) (clients.Client, error)
 
 	// ViewProfile retrieves client info for a given token.
-	ViewProfile(ctx context.Context, authObject auth.AuthObject) (clients.Client, error)
+	ViewProfile(ctx context.Context, session auth.Session) (clients.Client, error)
 
 	// ListClients retrieves clients list for a valid auth token.
-	ListClients(ctx context.Context, authObject auth.AuthObject, pm clients.Page) (clients.ClientsPage, error)
+	ListClients(ctx context.Context, session auth.Session, pm clients.Page) (clients.ClientsPage, error)
 
 	// ListMembers retrieves everything that is assigned to a group/thing identified by objectID.
-	ListMembers(ctx context.Context, authObject auth.AuthObject, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error)
+	ListMembers(ctx context.Context, session auth.Session, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error)
 
 	// SearchClients searches for users with provided filters for a valid auth token.
-	SearchUsers(ctx context.Context, authObject auth.AuthObject, pm clients.Page) (clients.ClientsPage, error)
+	SearchUsers(ctx context.Context, session auth.Session, pm clients.Page) (clients.ClientsPage, error)
 
 	// UpdateClient updates the client's name and metadata.
-	UpdateClient(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error)
+	UpdateClient(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error)
 
 	// UpdateClientTags updates the client's tags.
-	UpdateClientTags(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error)
+	UpdateClientTags(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error)
 
 	// UpdateClientIdentity updates the client's identity.
-	UpdateClientIdentity(ctx context.Context, authObject auth.AuthObject, id, identity string) (clients.Client, error)
+	UpdateClientIdentity(ctx context.Context, session auth.Session, id, identity string) (clients.Client, error)
 
 	// GenerateResetToken email where mail will be sent.
 	// host is used for generating reset link.
 	GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error)
 
 	// UpdateClientSecret updates the client's secret.
-	UpdateClientSecret(ctx context.Context, authObject auth.AuthObject, oldSecret, newSecret string) (clients.Client, error)
+	UpdateClientSecret(ctx context.Context, session auth.Session, oldSecret, newSecret string) (clients.Client, error)
 
 	// ResetSecret change users secret in reset flow.
 	// token can be authentication token or secret reset token.
-	ResetSecret(ctx context.Context, authObject auth.AuthObject, secret string) error
+	ResetSecret(ctx context.Context, session auth.Session, secret string) error
 
 	// SendPasswordReset sends reset password link to email.
 	SendPasswordReset(ctx context.Context, host, email, user, token string) error
 
 	// UpdateClientRole updates the client's Role.
-	UpdateClientRole(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error)
+	UpdateClientRole(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error)
 
 	// EnableClient logically enableds the client identified with the provided ID.
-	EnableClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error)
+	EnableClient(ctx context.Context, session auth.Session, id string) (clients.Client, error)
 
 	// DisableClient logically disables the client identified with the provided ID.
-	DisableClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error)
+	DisableClient(ctx context.Context, session auth.Session, id string) (clients.Client, error)
 
 	// DeleteClient deletes client with given ID.
-	DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error
+	DeleteClient(ctx context.Context, session auth.Session, id string) error
 
 	// Identify returns the client id from the given token.
-	Identify(ctx context.Context, authObject auth.AuthObject) (string, error)
+	Identify(ctx context.Context, session auth.Session) (string, error)
 
 	// IssueToken issues a new access and refresh token.
 	IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error)
@@ -78,7 +78,7 @@ type Service interface {
 	// RefreshToken refreshes expired access tokens.
 	// After an access token expires, the refresh token is used to get
 	// a new pair of access and refresh tokens.
-	RefreshToken(ctx context.Context, authObject auth.AuthObject, domainID string) (auth.Token, error)
+	RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error)
 
 	// OAuthCallback handles the callback from any supported OAuth provider.
 	// It processes the OAuth tokens and either signs in or signs up the user based on the provided state.

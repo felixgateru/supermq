@@ -21,10 +21,10 @@ func registrationEndpoint(svc users.Service, selfRegister bool) endpoint.Endpoin
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.RegisterClient(ctx, authObject, req.client, selfRegister)
+		client, err := svc.RegisterClient(ctx, session, req.client, selfRegister)
 		if err != nil {
 			return nil, err
 		}
@@ -43,10 +43,10 @@ func viewClientEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.ViewClient(ctx, authObject, req.id)
+		client, err := svc.ViewClient(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
@@ -62,10 +62,10 @@ func viewProfileEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.ViewProfile(ctx, authObject)
+		client, err := svc.ViewProfile(ctx, session)
 		if err != nil {
 			return nil, err
 		}
@@ -93,10 +93,10 @@ func listClientsEndpoint(svc users.Service) endpoint.Endpoint {
 			Dir:      req.dir,
 			Id:       req.id,
 		}
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.ListClients(ctx, authObject, pm)
+		page, err := svc.ListClients(ctx, session, pm)
 		if err != nil {
 			return nil, err
 		}
@@ -132,10 +132,10 @@ func searchClientsEndpoint(svc users.Service) endpoint.Endpoint {
 			Order:  req.Order,
 			Dir:    req.Dir,
 		}
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.SearchUsers(ctx, authObject, pm)
+		page, err := svc.SearchUsers(ctx, session, pm)
 		if err != nil {
 			return nil, err
 		}
@@ -164,10 +164,10 @@ func listMembersByGroupEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.ListMembers(ctx, authObject, req.objectKind, req.objectID, req.Page)
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
@@ -185,10 +185,10 @@ func listMembersByChannelEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.ListMembers(ctx, authObject, req.objectKind, req.objectID, req.Page)
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
@@ -205,10 +205,10 @@ func listMembersByThingEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.ListMembers(ctx, authObject, req.objectKind, req.objectID, req.Page)
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
@@ -225,10 +225,10 @@ func listMembersByDomainEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		page, err := svc.ListMembers(ctx, authObject, req.objectKind, req.objectID, req.Page)
+		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
 		}
@@ -250,10 +250,10 @@ func updateClientEndpoint(svc users.Service) endpoint.Endpoint {
 			Metadata: req.Metadata,
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.UpdateClient(ctx, authObject, client)
+		client, err := svc.UpdateClient(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -273,10 +273,10 @@ func updateClientTagsEndpoint(svc users.Service) endpoint.Endpoint {
 			ID:   req.id,
 			Tags: req.Tags,
 		}
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.UpdateClientTags(ctx, authObject, client)
+		client, err := svc.UpdateClientTags(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -292,10 +292,10 @@ func updateClientIdentityEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.UpdateClientIdentity(ctx, authObject, req.id, req.Identity)
+		client, err := svc.UpdateClientIdentity(ctx, session, req.id, req.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -339,10 +339,10 @@ func passwordResetEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.Token,
 		}
-		if err := svc.ResetSecret(ctx, authObject, req.Password); err != nil {
+		if err := svc.ResetSecret(ctx, session, req.Password); err != nil {
 			return nil, err
 		}
 
@@ -357,10 +357,10 @@ func updateClientSecretEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.UpdateClientSecret(ctx, authObject, req.OldSecret, req.NewSecret)
+		client, err := svc.UpdateClientSecret(ctx, session, req.OldSecret, req.NewSecret)
 		if err != nil {
 			return nil, err
 		}
@@ -380,10 +380,10 @@ func updateClientRoleEndpoint(svc users.Service) endpoint.Endpoint {
 			ID:   req.id,
 			Role: req.role,
 		}
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.UpdateClientRole(ctx, authObject, client)
+		client, err := svc.UpdateClientRole(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -419,10 +419,10 @@ func refreshTokenEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.RefreshToken,
 		}
-		token, err := svc.RefreshToken(ctx, authObject, req.DomainID)
+		token, err := svc.RefreshToken(ctx, session, req.DomainID)
 		if err != nil {
 			return nil, err
 		}
@@ -442,10 +442,10 @@ func enableClientEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.EnableClient(ctx, authObject, req.id)
+		client, err := svc.EnableClient(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
@@ -461,10 +461,10 @@ func disableClientEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		client, err := svc.DisableClient(ctx, authObject, req.id)
+		client, err := svc.DisableClient(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
@@ -480,10 +480,10 @@ func deleteClientEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		authObject := auth.AuthObject{
+		session := auth.Session{
 			Token: req.token,
 		}
-		if err := svc.DeleteClient(ctx, authObject, req.id); err != nil {
+		if err := svc.DeleteClient(ctx, session, req.id); err != nil {
 			return nil, err
 		}
 

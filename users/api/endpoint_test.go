@@ -224,7 +224,7 @@ func TestRegisterClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("RegisterClient", mock.Anything, mock.Anything, tc.client, true).Return(tc.client, tc.err)
+		svcCall := svc.On("RegisterClient", mock.Anything, auth.Session{Token: tc.token}, tc.client, true).Return(tc.client, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -281,7 +281,7 @@ func TestViewClient(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ViewClient", mock.Anything, mock.Anything, tc.id).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("ViewClient", mock.Anything, auth.Session{Token: tc.token}, tc.id).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -338,7 +338,7 @@ func TestViewProfile(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ViewProfile", mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("ViewProfile", mock.Anything, auth.Session{Token: tc.token}).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -641,7 +641,7 @@ func TestListClients(t *testing.T) {
 			token:       tc.token,
 		}
 
-		svcCall := svc.On("ListClients", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.listUsersResponse, tc.err)
+		svcCall := svc.On("ListClients", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(tc.listUsersResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var bodyRes respBody
@@ -762,7 +762,7 @@ func TestSearchUsers(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("SearchUsers", mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("SearchUsers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(
 			mgclients.ClientsPage{
 				Page:    tc.listUsersResponse.Page,
 				Clients: tc.listUsersResponse.Clients,
@@ -871,7 +871,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
 		}
-		svcCall := svc.On("UpdateClient", mock.Anything, mock.Anything, mock.Anything).Return(tc.clientResponse, tc.err)
+		svcCall := svc.On("UpdateClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -982,7 +982,7 @@ func TestUpdateClientTags(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientTags", mock.Anything, mock.Anything, mock.Anything).Return(tc.clientResponse, tc.err)
+		svcCall := svc.On("UpdateClientTags", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1115,7 +1115,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientIdentity", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("UpdateClientIdentity", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1293,7 +1293,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
 		}
-		svcCall := svc.On("ResetSecret", mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
+		svcCall := svc.On("ResetSecret", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
@@ -1389,7 +1389,7 @@ func TestUpdateClientRole(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientRole", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("UpdateClientRole", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1520,8 +1520,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientSecret", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.client, tc.err)
-
+		svcCall := svc.On("UpdateClientSecret", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(tc.client, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1767,7 +1766,7 @@ func TestEnableClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("EnableClient", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("EnableClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		if tc.err != nil {
@@ -1845,7 +1844,7 @@ func TestDisableClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("DisableClient", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("DisableClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
@@ -1913,7 +1912,7 @@ func TestDeleteClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		repoCall := svc.On("DeleteClient", mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
+		repoCall := svc.On("DeleteClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
@@ -2215,7 +2214,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2510,7 +2509,7 @@ func TestListUsersByChannelID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2813,7 +2812,7 @@ func TestListUsersByDomainID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -3087,7 +3086,7 @@ func TestListUsersByThingID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,

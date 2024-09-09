@@ -30,68 +30,68 @@ func AuthMiddleware(svc users.Service, authClient auth.AuthClient) users.Service
 	return &authMiddleware{authClient, svc}
 }
 
-func (am authMiddleware) RegisterClient(ctx context.Context, authObject auth.AuthObject, client clients.Client, selfRegister bool) (clients.Client, error) {
+func (am authMiddleware) RegisterClient(ctx context.Context, session auth.Session, client clients.Client, selfRegister bool) (clients.Client, error) {
 	if !selfRegister {
-		resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+		resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 		if err != nil {
 			return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err != nil {
 			return clients.Client{}, err
 		}
-		authObject.UserID = resp.GetUserId()
+		session.UserID = resp.GetUserId()
 	}
-	authObject.Token = ""
+	session.Token = ""
 
-	return am.svc.RegisterClient(ctx, authObject, client, selfRegister)
+	return am.svc.RegisterClient(ctx, session, client, selfRegister)
 }
 
-func (am authMiddleware) ViewClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) ViewClient(ctx context.Context, session auth.Session, id string) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.ViewClient(ctx, authObject, id)
+	return am.svc.ViewClient(ctx, session, id)
 }
 
-func (am authMiddleware) ViewProfile(ctx context.Context, authObject auth.AuthObject) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) ViewProfile(ctx context.Context, session auth.Session) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.ViewProfile(ctx, authObject)
+	return am.svc.ViewProfile(ctx, session)
 }
 
-func (am authMiddleware) ListClients(ctx context.Context, authObject auth.AuthObject, pm clients.Page) (clients.ClientsPage, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) ListClients(ctx context.Context, session auth.Session, pm clients.Page) (clients.ClientsPage, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.ClientsPage{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.ListClients(ctx, authObject, pm)
+	return am.svc.ListClients(ctx, session, pm)
 }
 
-func (am authMiddleware) ListMembers(ctx context.Context, authObject auth.AuthObject, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) ListMembers(ctx context.Context, session auth.Session, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.DomainID = resp.GetDomainId()
-	authObject.Token = ""
+	session.DomainID = resp.GetDomainId()
+	session.Token = ""
 
 	var objectType string
 	var authzPerm string
@@ -112,7 +112,7 @@ func (am authMiddleware) ListMembers(ctx context.Context, authObject auth.AuthOb
 	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
 		SubjectType: policy.UserType,
 		SubjectKind: policy.TokenKind,
-		Subject:     authObject.Token,
+		Subject:     session.Token,
 		Permission:  authzPerm,
 		ObjectType:  objectType,
 		Object:      objectID,
@@ -124,58 +124,58 @@ func (am authMiddleware) ListMembers(ctx context.Context, authObject auth.AuthOb
 		return clients.MembersPage{}, svcerr.ErrAuthorization
 	}
 
-	return am.svc.ListMembers(ctx, authObject, objectKind, objectID, pm)
+	return am.svc.ListMembers(ctx, session, objectKind, objectID, pm)
 }
 
-func (am authMiddleware) SearchUsers(ctx context.Context, authObject auth.AuthObject, pm clients.Page) (clients.ClientsPage, error) {
-	_, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) SearchUsers(ctx context.Context, session auth.Session, pm clients.Page) (clients.ClientsPage, error) {
+	_, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.ClientsPage{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 
-	return am.svc.SearchUsers(ctx, authObject, pm)
+	return am.svc.SearchUsers(ctx, session, pm)
 }
 
-func (am authMiddleware) UpdateClient(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) UpdateClient(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.UpdateClient(ctx, authObject, client)
+	return am.svc.UpdateClient(ctx, session, client)
 }
 
-func (am authMiddleware) UpdateClientTags(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) UpdateClientTags(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.UpdateClientTags(ctx, authObject, client)
+	return am.svc.UpdateClientTags(ctx, session, client)
 }
 
-func (am authMiddleware) UpdateClientIdentity(ctx context.Context, authObject auth.AuthObject, id, identity string) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) UpdateClientIdentity(ctx context.Context, session auth.Session, id, identity string) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.UpdateClientIdentity(ctx, authObject, id, identity)
+	return am.svc.UpdateClientIdentity(ctx, session, id, identity)
 }
 
 func (am authMiddleware) GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error) {
@@ -198,42 +198,42 @@ func (am authMiddleware) GenerateResetToken(ctx context.Context, email, host str
 	return auth.Token{}, nil
 }
 
-func (am authMiddleware) UpdateClientSecret(ctx context.Context, authObject auth.AuthObject, oldSecret, newSecret string) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) UpdateClientSecret(ctx context.Context, session auth.Session, oldSecret, newSecret string) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.UpdateClientSecret(ctx, authObject, oldSecret, newSecret)
+	return am.svc.UpdateClientSecret(ctx, session, oldSecret, newSecret)
 }
 
-func (am authMiddleware) ResetSecret(ctx context.Context, authObject auth.AuthObject, secret string) error {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) ResetSecret(ctx context.Context, session auth.Session, secret string) error {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.ResetSecret(ctx, authObject, secret)
+	return am.svc.ResetSecret(ctx, session, secret)
 }
 
 func (am authMiddleware) SendPasswordReset(ctx context.Context, host, email, user, token string) error {
 	return am.svc.SendPasswordReset(ctx, host, email, user, token)
 }
 
-func (am authMiddleware) UpdateClientRole(ctx context.Context, authObject auth.AuthObject, client clients.Client) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) UpdateClientRole(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
 	// check if client is a member of the platform
 	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
@@ -251,60 +251,60 @@ func (am authMiddleware) UpdateClientRole(ctx context.Context, authObject auth.A
 		return clients.Client{}, svcerr.ErrAuthorization
 	}
 
-	return am.svc.UpdateClientRole(ctx, authObject, client)
+	return am.svc.UpdateClientRole(ctx, session, client)
 }
 
-func (am authMiddleware) EnableClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) EnableClient(ctx context.Context, session auth.Session, id string) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.EnableClient(ctx, authObject, id)
+	return am.svc.EnableClient(ctx, session, id)
 }
 
-func (am authMiddleware) DisableClient(ctx context.Context, authObject auth.AuthObject, id string) (clients.Client, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) DisableClient(ctx context.Context, session auth.Session, id string) (clients.Client, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.DisableClient(ctx, authObject, id)
+	return am.svc.DisableClient(ctx, session, id)
 }
 
-func (am authMiddleware) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) DeleteClient(ctx context.Context, session auth.Session, id string) error {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
-		authObject.SuperAdmin = true
+		session.SuperAdmin = true
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.DeleteClient(ctx, authObject, id)
+	return am.svc.DeleteClient(ctx, session, id)
 }
 
-func (am authMiddleware) Identify(ctx context.Context, authObject auth.AuthObject) (string, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) Identify(ctx context.Context, session auth.Session) (string, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.GetUserId()
-	authObject.Token = ""
+	session.UserID = resp.GetUserId()
+	session.Token = ""
 
-	return am.svc.Identify(ctx, authObject)
+	return am.svc.Identify(ctx, session)
 }
 
 func (am authMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error) {
@@ -327,19 +327,19 @@ func (am authMiddleware) IssueToken(ctx context.Context, identity, secret, domai
 	}, nil
 }
 
-func (am authMiddleware) RefreshToken(ctx context.Context, authObject auth.AuthObject, domainID string) (auth.Token, error) {
-	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: authObject.Token})
+func (am authMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error) {
+	resp, err := am.auth.Identify(ctx, &magistrala.IdentityReq{Token: session.Token})
 	if err != nil {
 		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.GetUserId()
-	svcResp, err := am.svc.RefreshToken(ctx, authObject, domainID)
+	session.UserID = resp.GetUserId()
+	svcResp, err := am.svc.RefreshToken(ctx, session, domainID)
 	if err != nil {
 		return auth.Token{}, err
 	}
 
 	tkn, err := am.auth.Refresh(ctx, &magistrala.RefreshReq{
-		RefreshToken: authObject.Token,
+		RefreshToken: session.Token,
 		DomainId:     &svcResp.DomainID,
 	})
 	if err != nil {

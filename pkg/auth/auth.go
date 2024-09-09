@@ -21,8 +21,7 @@ type Token struct {
 	Role         clients.Role
 }
 
-type AuthObject struct {
-	ID         string
+type Session struct {
 	UserID     string
 	DomainID   string
 	Token      string

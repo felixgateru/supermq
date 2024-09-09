@@ -38,17 +38,17 @@ type service struct {
 // NewService returns a new Users service implementation.
 func NewService(crepo postgres.Repository, policyClient policy.PolicyClient, emailer Emailer, hasher Hasher, idp magistrala.IDProvider) Service {
 	return service{
-		clients:      crepo,
-		policy:       policyClient,
-		hasher:       hasher,
-		email:        emailer,
-		idProvider:   idp,
+		clients:    crepo,
+		policy:     policyClient,
+		hasher:     hasher,
+		email:      emailer,
+		idProvider: idp,
 	}
 }
 
-func (svc service) RegisterClient(ctx context.Context, authObject auth.AuthObject, cli mgclients.Client, selfRegister bool) (rc mgclients.Client, err error) {
+func (svc service) RegisterClient(ctx context.Context, session auth.Session, cli mgclients.Client, selfRegister bool) (rc mgclients.Client, err error) {
 	if !selfRegister {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{}, err
 		}
 	}
@@ -111,13 +111,13 @@ func (svc service) IssueToken(ctx context.Context, identity, secret, domainID st
 	}, nil
 }
 
-func (svc service) RefreshToken(ctx context.Context, authObject auth.AuthObject, domainID string) (auth.Token, error) {
+func (svc service) RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error) {
 	var d string
 	if domainID != "" {
 		d = domainID
 	}
 
-	dbUser, err := svc.clients.RetrieveByID(ctx, authObject.UserID)
+	dbUser, err := svc.clients.RetrieveByID(ctx, session.UserID)
 	if err != nil {
 		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -130,14 +130,14 @@ func (svc service) RefreshToken(ctx context.Context, authObject auth.AuthObject,
 	}, nil
 }
 
-func (svc service) ViewClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
+func (svc service) ViewClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
 	client, err := svc.clients.RetrieveByID(ctx, id)
 	if err != nil {
 		return mgclients.Client{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 
-	if authObject.UserID != id {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+	if session.UserID != id {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{Name: client.Name, ID: client.ID}, nil
 		}
 	}
@@ -147,8 +147,8 @@ func (svc service) ViewClient(ctx context.Context, authObject auth.AuthObject, i
 	return client, nil
 }
 
-func (svc service) ViewProfile(ctx context.Context, authObject auth.AuthObject) (mgclients.Client, error) {
-	client, err := svc.clients.RetrieveByID(ctx, authObject.UserID)
+func (svc service) ViewProfile(ctx context.Context, session auth.Session) (mgclients.Client, error) {
+	client, err := svc.clients.RetrieveByID(ctx, session.UserID)
 	if err != nil {
 		return mgclients.Client{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -157,8 +157,8 @@ func (svc service) ViewProfile(ctx context.Context, authObject auth.AuthObject) 
 	return client, nil
 }
 
-func (svc service) ListClients(ctx context.Context, authObject auth.AuthObject, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) ListClients(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
+	if err := svc.checkSuperAdmin(ctx, session); err != nil {
 		return mgclients.ClientsPage{}, err
 	}
 
@@ -170,7 +170,7 @@ func (svc service) ListClients(ctx context.Context, authObject auth.AuthObject, 
 	return pg, err
 }
 
-func (svc service) SearchUsers(ctx context.Context, authObject auth.AuthObject, pm mgclients.Page) (mgclients.ClientsPage, error) {
+func (svc service) SearchUsers(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
 	page := mgclients.Page{
 		Offset: pm.Offset,
 		Limit:  pm.Limit,
@@ -187,9 +187,9 @@ func (svc service) SearchUsers(ctx context.Context, authObject auth.AuthObject, 
 	return cp, nil
 }
 
-func (svc service) UpdateClient(ctx context.Context, authObject auth.AuthObject, cli mgclients.Client) (mgclients.Client, error) {
-	if authObject.UserID != cli.ID {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) UpdateClient(ctx context.Context, session auth.Session, cli mgclients.Client) (mgclients.Client, error) {
+	if session.UserID != cli.ID {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{}, err
 		}
 	}
@@ -199,7 +199,7 @@ func (svc service) UpdateClient(ctx context.Context, authObject auth.AuthObject,
 		Name:      cli.Name,
 		Metadata:  cli.Metadata,
 		UpdatedAt: time.Now(),
-		UpdatedBy: authObject.UserID,
+		UpdatedBy: session.UserID,
 	}
 
 	client, err := svc.clients.Update(ctx, client)
@@ -209,9 +209,9 @@ func (svc service) UpdateClient(ctx context.Context, authObject auth.AuthObject,
 	return client, nil
 }
 
-func (svc service) UpdateClientTags(ctx context.Context, authObject auth.AuthObject, cli mgclients.Client) (mgclients.Client, error) {
-	if authObject.UserID != cli.ID {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) UpdateClientTags(ctx context.Context, session auth.Session, cli mgclients.Client) (mgclients.Client, error) {
+	if session.UserID != cli.ID {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{}, err
 		}
 	}
@@ -220,7 +220,7 @@ func (svc service) UpdateClientTags(ctx context.Context, authObject auth.AuthObj
 		ID:        cli.ID,
 		Tags:      cli.Tags,
 		UpdatedAt: time.Now(),
-		UpdatedBy: authObject.UserID,
+		UpdatedBy: session.UserID,
 	}
 	client, err := svc.clients.UpdateTags(ctx, client)
 	if err != nil {
@@ -230,9 +230,9 @@ func (svc service) UpdateClientTags(ctx context.Context, authObject auth.AuthObj
 	return client, nil
 }
 
-func (svc service) UpdateClientIdentity(ctx context.Context, authObject auth.AuthObject, clientID, identity string) (mgclients.Client, error) {
-	if authObject.UserID != clientID {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) UpdateClientIdentity(ctx context.Context, session auth.Session, clientID, identity string) (mgclients.Client, error) {
+	if session.UserID != clientID {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{}, err
 		}
 	}
@@ -243,7 +243,7 @@ func (svc service) UpdateClientIdentity(ctx context.Context, authObject auth.Aut
 			Identity: identity,
 		},
 		UpdatedAt: time.Now(),
-		UpdatedBy: authObject.UserID,
+		UpdatedBy: session.UserID,
 	}
 	cli, err := svc.clients.UpdateIdentity(ctx, cli)
 	if err != nil {
@@ -264,8 +264,8 @@ func (svc service) GenerateResetToken(ctx context.Context, email, host string) (
 	}, nil
 }
 
-func (svc service) ResetSecret(ctx context.Context, authObject auth.AuthObject, secret string) error {
-	c, err := svc.clients.RetrieveByID(ctx, authObject.UserID)
+func (svc service) ResetSecret(ctx context.Context, session auth.Session, secret string) error {
+	c, err := svc.clients.RetrieveByID(ctx, session.UserID)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -281,7 +281,7 @@ func (svc service) ResetSecret(ctx context.Context, authObject auth.AuthObject, 
 			Secret:   secret,
 		},
 		UpdatedAt: time.Now(),
-		UpdatedBy: authObject.UserID,
+		UpdatedBy: session.UserID,
 	}
 	if _, err := svc.clients.UpdateSecret(ctx, c); err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -289,8 +289,8 @@ func (svc service) ResetSecret(ctx context.Context, authObject auth.AuthObject, 
 	return nil
 }
 
-func (svc service) UpdateClientSecret(ctx context.Context, authObject auth.AuthObject, oldSecret, newSecret string) (mgclients.Client, error) {
-	dbClient, err := svc.clients.RetrieveByID(ctx, authObject.UserID)
+func (svc service) UpdateClientSecret(ctx context.Context, session auth.Session, oldSecret, newSecret string) (mgclients.Client, error) {
+	dbClient, err := svc.clients.RetrieveByID(ctx, session.UserID)
 	if err != nil {
 		return mgclients.Client{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -303,7 +303,7 @@ func (svc service) UpdateClientSecret(ctx context.Context, authObject auth.AuthO
 	}
 	dbClient.Credentials.Secret = newSecret
 	dbClient.UpdatedAt = time.Now()
-	dbClient.UpdatedBy = authObject.UserID
+	dbClient.UpdatedBy = session.UserID
 
 	dbClient, err = svc.clients.UpdateSecret(ctx, dbClient)
 	if err != nil {
@@ -318,15 +318,15 @@ func (svc service) SendPasswordReset(_ context.Context, host, email, user, token
 	return svc.email.SendPasswordReset(to, host, user, token)
 }
 
-func (svc service) UpdateClientRole(ctx context.Context, authObject auth.AuthObject, cli mgclients.Client) (mgclients.Client, error) {
-	if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) UpdateClientRole(ctx context.Context, session auth.Session, cli mgclients.Client) (mgclients.Client, error) {
+	if err := svc.checkSuperAdmin(ctx, session); err != nil {
 		return mgclients.Client{}, err
 	}
 	client := mgclients.Client{
 		ID:        cli.ID,
 		Role:      cli.Role,
 		UpdatedAt: time.Now(),
-		UpdatedBy: authObject.UserID,
+		UpdatedBy: session.UserID,
 	}
 
 	if err := svc.updateClientPolicy(ctx, cli.ID, cli.Role); err != nil {
@@ -344,13 +344,13 @@ func (svc service) UpdateClientRole(ctx context.Context, authObject auth.AuthObj
 	return client, nil
 }
 
-func (svc service) EnableClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
+func (svc service) EnableClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
 	client := mgclients.Client{
 		ID:        id,
 		UpdatedAt: time.Now(),
 		Status:    mgclients.EnabledStatus,
 	}
-	client, err := svc.changeClientStatus(ctx, authObject, client)
+	client, err := svc.changeClientStatus(ctx, session, client)
 	if err != nil {
 		return mgclients.Client{}, errors.Wrap(mgclients.ErrEnableClient, err)
 	}
@@ -358,13 +358,13 @@ func (svc service) EnableClient(ctx context.Context, authObject auth.AuthObject,
 	return client, nil
 }
 
-func (svc service) DisableClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
+func (svc service) DisableClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
 	client := mgclients.Client{
 		ID:        id,
 		UpdatedAt: time.Now(),
 		Status:    mgclients.DisabledStatus,
 	}
-	client, err := svc.changeClientStatus(ctx, authObject, client)
+	client, err := svc.changeClientStatus(ctx, session, client)
 	if err != nil {
 		return mgclients.Client{}, err
 	}
@@ -372,9 +372,9 @@ func (svc service) DisableClient(ctx context.Context, authObject auth.AuthObject
 	return client, nil
 }
 
-func (svc service) changeClientStatus(ctx context.Context, authObject auth.AuthObject, client mgclients.Client) (mgclients.Client, error) {
-	if authObject.UserID != client.ID {
-		if err := svc.checkSuperAdmin(ctx, authObject); err != nil {
+func (svc service) changeClientStatus(ctx context.Context, session auth.Session, client mgclients.Client) (mgclients.Client, error) {
+	if session.UserID != client.ID {
+		if err := svc.checkSuperAdmin(ctx, session); err != nil {
 			return mgclients.Client{}, err
 		}
 	}
@@ -385,7 +385,7 @@ func (svc service) changeClientStatus(ctx context.Context, authObject auth.AuthO
 	if dbClient.Status == client.Status {
 		return mgclients.Client{}, errors.ErrStatusAlreadyAssigned
 	}
-	client.UpdatedBy = authObject.UserID
+	client.UpdatedBy = session.UserID
 
 	client, err = svc.clients.ChangeStatus(ctx, client)
 	if err != nil {
@@ -394,21 +394,21 @@ func (svc service) changeClientStatus(ctx context.Context, authObject auth.AuthO
 	return client, nil
 }
 
-func (svc service) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
+func (svc service) DeleteClient(ctx context.Context, session auth.Session, id string) error {
 	client := mgclients.Client{
 		ID:        id,
 		UpdatedAt: time.Now(),
 		Status:    mgclients.DeletedStatus,
 	}
 
-	if _, err := svc.changeClientStatus(ctx, authObject, client); err != nil {
+	if _, err := svc.changeClientStatus(ctx, session, client); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (svc service) ListMembers(ctx context.Context, authObject auth.AuthObject, objectKind, objectID string, pm mgclients.Page) (mgclients.MembersPage, error) {
+func (svc service) ListMembers(ctx context.Context, session auth.Session, objectKind, objectID string, pm mgclients.Page) (mgclients.MembersPage, error) {
 	var objectType string
 	switch objectKind {
 	case policy.ThingsKind:
@@ -466,7 +466,7 @@ func (svc service) ListMembers(ctx context.Context, authObject auth.AuthObject, 
 			// Copying loop variable "i" to avoid "loop variable captured by func literal"
 			iter := i
 			g.Go(func() error {
-				return svc.retrieveObjectUsersPermissions(ctx, authObject.DomainID, objectType, objectID, &cp.Clients[iter])
+				return svc.retrieveObjectUsersPermissions(ctx, session.DomainID, objectType, objectID, &cp.Clients[iter])
 			})
 		}
 
@@ -504,9 +504,9 @@ func (svc service) listObjectUserPermission(ctx context.Context, userID, objectT
 	return permissions, nil
 }
 
-func (svc *service) checkSuperAdmin(ctx context.Context, authObject auth.AuthObject) error {
-	if !authObject.SuperAdmin {
-		if err := svc.clients.CheckSuperAdmin(ctx, authObject.UserID); err != nil {
+func (svc *service) checkSuperAdmin(ctx context.Context, session auth.Session) error {
+	if !session.SuperAdmin {
+		if err := svc.clients.CheckSuperAdmin(ctx, session.UserID); err != nil {
 			return errors.Wrap(svcerr.ErrAuthorization, err)
 		}
 	}
@@ -519,7 +519,7 @@ func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (
 	if err != nil {
 		switch errors.Contains(err, repoerr.ErrNotFound) {
 		case true:
-			rclient, err = svc.RegisterClient(ctx, auth.AuthObject{}, client, true)
+			rclient, err = svc.RegisterClient(ctx, auth.Session{}, client, true)
 			if err != nil {
 				return auth.Token{}, err
 			}
@@ -538,8 +538,8 @@ func (svc service) AddClientPolicy(ctx context.Context, client mgclients.Client)
 	return svc.addClientPolicy(ctx, client.ID, client.Role)
 }
 
-func (svc service) Identify(ctx context.Context, authObject auth.AuthObject) (string, error) {
-	return authObject.UserID, nil
+func (svc service) Identify(ctx context.Context, session auth.Session) (string, error) {
+	return session.UserID, nil
 }
 
 func (svc service) addClientPolicy(ctx context.Context, userID string, role mgclients.Role) error {

@@ -252,7 +252,6 @@ func newService(ctx context.Context, authClient authclient.AuthClient, authPolic
 	csvc := users.NewService(cRepo, policyClient, emailerClient, hsr, idp)
 	gsvc := mggroups.NewService(gRepo, idp, authClient, policyClient)
 
-	csvc = cmiddleware.AuthMiddleware(csvc, authClient)
 	csvc, err = uevents.NewEventStoreMiddleware(ctx, csvc, c.ESURL)
 	if err != nil {
 		return nil, nil, err
@@ -264,6 +263,7 @@ func newService(ctx context.Context, authClient authclient.AuthClient, authPolic
 
 	csvc = ctracing.New(csvc, tracer)
 	csvc = cmiddleware.LoggingMiddleware(csvc, logger)
+	csvc = cmiddleware.AuthMiddleware(csvc, authClient)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	csvc = cmiddleware.MetricsMiddleware(csvc, counter, latency)
 

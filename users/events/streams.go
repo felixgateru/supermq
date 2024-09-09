@@ -36,8 +36,8 @@ func NewEventStoreMiddleware(ctx context.Context, svc users.Service, url string)
 	}, nil
 }
 
-func (es *eventStore) RegisterClient(ctx context.Context, authObject auth.AuthObject, user mgclients.Client, selfRegister bool) (mgclients.Client, error) {
-	user, err := es.svc.RegisterClient(ctx, authObject, user, selfRegister)
+func (es *eventStore) RegisterClient(ctx context.Context, session auth.Session, user mgclients.Client, selfRegister bool) (mgclients.Client, error) {
+	user, err := es.svc.RegisterClient(ctx, session, user, selfRegister)
 	if err != nil {
 		return user, err
 	}
@@ -53,8 +53,8 @@ func (es *eventStore) RegisterClient(ctx context.Context, authObject auth.AuthOb
 	return user, nil
 }
 
-func (es *eventStore) UpdateClient(ctx context.Context, authObject auth.AuthObject, user mgclients.Client) (mgclients.Client, error) {
-	user, err := es.svc.UpdateClient(ctx, authObject, user)
+func (es *eventStore) UpdateClient(ctx context.Context, session auth.Session, user mgclients.Client) (mgclients.Client, error) {
+	user, err := es.svc.UpdateClient(ctx, session, user)
 	if err != nil {
 		return user, err
 	}
@@ -62,8 +62,8 @@ func (es *eventStore) UpdateClient(ctx context.Context, authObject auth.AuthObje
 	return es.update(ctx, "", user)
 }
 
-func (es *eventStore) UpdateClientRole(ctx context.Context, authObject auth.AuthObject, user mgclients.Client) (mgclients.Client, error) {
-	user, err := es.svc.UpdateClientRole(ctx, authObject, user)
+func (es *eventStore) UpdateClientRole(ctx context.Context, session auth.Session, user mgclients.Client) (mgclients.Client, error) {
+	user, err := es.svc.UpdateClientRole(ctx, session, user)
 	if err != nil {
 		return user, err
 	}
@@ -71,8 +71,8 @@ func (es *eventStore) UpdateClientRole(ctx context.Context, authObject auth.Auth
 	return es.update(ctx, "role", user)
 }
 
-func (es *eventStore) UpdateClientTags(ctx context.Context, authObject auth.AuthObject, user mgclients.Client) (mgclients.Client, error) {
-	user, err := es.svc.UpdateClientTags(ctx, authObject, user)
+func (es *eventStore) UpdateClientTags(ctx context.Context, session auth.Session, user mgclients.Client) (mgclients.Client, error) {
+	user, err := es.svc.UpdateClientTags(ctx, session, user)
 	if err != nil {
 		return user, err
 	}
@@ -80,8 +80,8 @@ func (es *eventStore) UpdateClientTags(ctx context.Context, authObject auth.Auth
 	return es.update(ctx, "tags", user)
 }
 
-func (es *eventStore) UpdateClientSecret(ctx context.Context, authObject auth.AuthObject, oldSecret, newSecret string) (mgclients.Client, error) {
-	user, err := es.svc.UpdateClientSecret(ctx, authObject, oldSecret, newSecret)
+func (es *eventStore) UpdateClientSecret(ctx context.Context, session auth.Session, oldSecret, newSecret string) (mgclients.Client, error) {
+	user, err := es.svc.UpdateClientSecret(ctx, session, oldSecret, newSecret)
 	if err != nil {
 		return user, err
 	}
@@ -89,8 +89,8 @@ func (es *eventStore) UpdateClientSecret(ctx context.Context, authObject auth.Au
 	return es.update(ctx, "secret", user)
 }
 
-func (es *eventStore) UpdateClientIdentity(ctx context.Context, authObject auth.AuthObject, id, identity string) (mgclients.Client, error) {
-	user, err := es.svc.UpdateClientIdentity(ctx, authObject, id, identity)
+func (es *eventStore) UpdateClientIdentity(ctx context.Context, session auth.Session, id, identity string) (mgclients.Client, error) {
+	user, err := es.svc.UpdateClientIdentity(ctx, session, id, identity)
 	if err != nil {
 		return user, err
 	}
@@ -110,8 +110,8 @@ func (es *eventStore) update(ctx context.Context, operation string, user mgclien
 	return user, nil
 }
 
-func (es *eventStore) ViewClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
-	user, err := es.svc.ViewClient(ctx, authObject, id)
+func (es *eventStore) ViewClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
+	user, err := es.svc.ViewClient(ctx, session, id)
 	if err != nil {
 		return user, err
 	}
@@ -127,8 +127,8 @@ func (es *eventStore) ViewClient(ctx context.Context, authObject auth.AuthObject
 	return user, nil
 }
 
-func (es *eventStore) ViewProfile(ctx context.Context, authObject auth.AuthObject) (mgclients.Client, error) {
-	user, err := es.svc.ViewProfile(ctx, authObject)
+func (es *eventStore) ViewProfile(ctx context.Context, session auth.Session) (mgclients.Client, error) {
+	user, err := es.svc.ViewProfile(ctx, session)
 	if err != nil {
 		return user, err
 	}
@@ -144,8 +144,8 @@ func (es *eventStore) ViewProfile(ctx context.Context, authObject auth.AuthObjec
 	return user, nil
 }
 
-func (es *eventStore) ListClients(ctx context.Context, authObject auth.AuthObject, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	cp, err := es.svc.ListClients(ctx, authObject, pm)
+func (es *eventStore) ListClients(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
+	cp, err := es.svc.ListClients(ctx, session, pm)
 	if err != nil {
 		return cp, err
 	}
@@ -160,8 +160,8 @@ func (es *eventStore) ListClients(ctx context.Context, authObject auth.AuthObjec
 	return cp, nil
 }
 
-func (es *eventStore) SearchUsers(ctx context.Context, authObject auth.AuthObject, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	cp, err := es.svc.SearchUsers(ctx, authObject, pm)
+func (es *eventStore) SearchUsers(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
+	cp, err := es.svc.SearchUsers(ctx, session, pm)
 	if err != nil {
 		return cp, err
 	}
@@ -176,8 +176,8 @@ func (es *eventStore) SearchUsers(ctx context.Context, authObject auth.AuthObjec
 	return cp, nil
 }
 
-func (es *eventStore) ListMembers(ctx context.Context, authObject auth.AuthObject, objectKind, objectID string, pm mgclients.Page) (mgclients.MembersPage, error) {
-	mp, err := es.svc.ListMembers(ctx, authObject, objectKind, objectID, pm)
+func (es *eventStore) ListMembers(ctx context.Context, session auth.Session, objectKind, objectID string, pm mgclients.Page) (mgclients.MembersPage, error) {
+	mp, err := es.svc.ListMembers(ctx, session, objectKind, objectID, pm)
 	if err != nil {
 		return mp, err
 	}
@@ -192,8 +192,8 @@ func (es *eventStore) ListMembers(ctx context.Context, authObject auth.AuthObjec
 	return mp, nil
 }
 
-func (es *eventStore) EnableClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
-	user, err := es.svc.EnableClient(ctx, authObject, id)
+func (es *eventStore) EnableClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
+	user, err := es.svc.EnableClient(ctx, session, id)
 	if err != nil {
 		return user, err
 	}
@@ -201,8 +201,8 @@ func (es *eventStore) EnableClient(ctx context.Context, authObject auth.AuthObje
 	return es.delete(ctx, user)
 }
 
-func (es *eventStore) DisableClient(ctx context.Context, authObject auth.AuthObject, id string) (mgclients.Client, error) {
-	user, err := es.svc.DisableClient(ctx, authObject, id)
+func (es *eventStore) DisableClient(ctx context.Context, session auth.Session, id string) (mgclients.Client, error) {
+	user, err := es.svc.DisableClient(ctx, session, id)
 	if err != nil {
 		return user, err
 	}
@@ -225,8 +225,8 @@ func (es *eventStore) delete(ctx context.Context, user mgclients.Client) (mgclie
 	return user, nil
 }
 
-func (es *eventStore) Identify(ctx context.Context, authObject auth.AuthObject) (string, error) {
-	userID, err := es.svc.Identify(ctx, authObject)
+func (es *eventStore) Identify(ctx context.Context, session auth.Session) (string, error) {
+	userID, err := es.svc.Identify(ctx, session)
 	if err != nil {
 		return userID, err
 	}
@@ -274,8 +274,8 @@ func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID
 	return token, nil
 }
 
-func (es *eventStore) RefreshToken(ctx context.Context, authObject auth.AuthObject, domainID string) (auth.Token, error) {
-	token, err := es.svc.RefreshToken(ctx, authObject, domainID)
+func (es *eventStore) RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error) {
+	token, err := es.svc.RefreshToken(ctx, session, domainID)
 	if err != nil {
 		return token, err
 	}
@@ -289,8 +289,8 @@ func (es *eventStore) RefreshToken(ctx context.Context, authObject auth.AuthObje
 	return token, nil
 }
 
-func (es *eventStore) ResetSecret(ctx context.Context, authObject auth.AuthObject, secret string) error {
-	if err := es.svc.ResetSecret(ctx, authObject, secret); err != nil {
+func (es *eventStore) ResetSecret(ctx context.Context, session auth.Session, secret string) error {
+	if err := es.svc.ResetSecret(ctx, session, secret); err != nil {
 		return err
 	}
 
@@ -330,8 +330,8 @@ func (es *eventStore) OAuthCallback(ctx context.Context, client mgclients.Client
 	return token, nil
 }
 
-func (es *eventStore) DeleteClient(ctx context.Context, authObject auth.AuthObject, id string) error {
-	if err := es.svc.DeleteClient(ctx, authObject, id); err != nil {
+func (es *eventStore) DeleteClient(ctx context.Context, session auth.Session, id string) error {
+	if err := es.svc.DeleteClient(ctx, session, id); err != nil {
 		return err
 	}
 
