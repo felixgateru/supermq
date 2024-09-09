@@ -362,6 +362,22 @@ func (am authMiddleware) OAuthCallback(ctx context.Context, client clients.Clien
 		ID:   svcResp.UserID,
 		Role: svcResp.Role,
 	}
+
+	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.UsersKind,
+		Subject:     client.ID,
+		Permission:  policy.MembershipPermission,
+		ObjectType:  policy.PlatformType,
+		Object:      policy.MagistralaObject,
+	})
+	if err != nil {
+		return auth.Token{}, errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if !res.Authorized {
+		return auth.Token{}, svcerr.ErrAuthorization
+	}
+
 	err = am.AddClientPolicy(ctx, cli)
 	if err != nil {
 		return auth.Token{}, err
@@ -382,21 +398,6 @@ func (am authMiddleware) OAuthCallback(ctx context.Context, client clients.Clien
 }
 
 func (am authMiddleware) AddClientPolicy(ctx context.Context, client clients.Client) error {
-	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.UsersKind,
-		Subject:     client.ID,
-		Permission:  policy.MembershipPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
-	})
-	if err != nil {
-		return errors.Wrap(svcerr.ErrAuthorization, err)
-	}
-	if !res.Authorized {
-		return svcerr.ErrAuthorization
-	}
-
 	return am.svc.AddClientPolicy(ctx, client)
 }
 

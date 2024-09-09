@@ -29,6 +29,8 @@ type Session struct {
 }
 
 // AuthClient specifies a gRPC client for  authentication and authorization for magistrala services.
+//
+//go:generate mockery --name AuthClient --output=./mocks --filename client.go --quiet --note "Copyright (c) Abstract Machines"
 type AuthClient interface {
 	// Issue issues a new Key, returning its token value alongside.
 	Issue(ctx context.Context, in *magistrala.IssueReq, opts ...grpc.CallOption) (*magistrala.Token, error)

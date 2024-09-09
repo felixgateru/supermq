@@ -216,7 +216,7 @@ func main() {
 	oauthProvider := googleoauth.NewProvider(oauthConfig, cfg.OAuthUIRedirectURL, cfg.OAuthUIErrorURL)
 
 	mux := chi.NewRouter()
-	httpSrv := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, capi.MakeHandler(csvc, cfg.SelfRegister, gsvc, mux, logger, cfg.InstanceID, cfg.PassRegex, oauthProvider), logger)
+	httpSrv := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, capi.MakeHandler(csvc, authClient, cfg.SelfRegister, gsvc, mux, logger, cfg.InstanceID, cfg.PassRegex, oauthProvider), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, magistrala.Version, logger, cancel)
@@ -263,7 +263,6 @@ func newService(ctx context.Context, authClient authclient.AuthClient, authPolic
 
 	csvc = ctracing.New(csvc, tracer)
 	csvc = cmiddleware.LoggingMiddleware(csvc, logger)
-	csvc = cmiddleware.AuthMiddleware(csvc, authClient)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	csvc = cmiddleware.MetricsMiddleware(csvc, counter, latency)
 
