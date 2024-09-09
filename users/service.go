@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/auth"
-	authclient "github.com/absmach/magistrala/pkg/auth"
+	mgauth "github.com/absmach/magistrala/auth"
+	"github.com/absmach/magistrala/pkg/auth"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
@@ -28,7 +28,7 @@ var (
 type service struct {
 	clients      postgres.Repository
 	idProvider   magistrala.IDProvider
-	auth         authclient.AuthClient
+	auth         auth.AuthClient
 	policy       policy.PolicyClient
 	hasher       Hasher
 	email        Emailer
@@ -36,15 +36,13 @@ type service struct {
 }
 
 // NewService returns a new Users service implementation.
-func NewService(crepo postgres.Repository, authClient authclient.AuthClient, policyClient policy.PolicyClient, emailer Emailer, hasher Hasher, idp magistrala.IDProvider, selfRegister bool) Service {
+func NewService(crepo postgres.Repository, policyClient policy.PolicyClient, emailer Emailer, hasher Hasher, idp magistrala.IDProvider) Service {
 	return service{
 		clients:      crepo,
-		auth:         authClient,
 		policy:       policyClient,
 		hasher:       hasher,
 		email:        emailer,
 		idProvider:   idp,
-		selfRegister: selfRegister,
 	}
 }
 

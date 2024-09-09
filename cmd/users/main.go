@@ -249,9 +249,10 @@ func newService(ctx context.Context, authClient authclient.AuthClient, authPolic
 		logger.Error(fmt.Sprintf("failed to configure e-mailing util: %s", err.Error()))
 	}
 
-	csvc := users.NewService(cRepo, authClient, policyClient, emailerClient, hsr, idp, c.SelfRegister)
+	csvc := users.NewService(cRepo, policyClient, emailerClient, hsr, idp)
 	gsvc := mggroups.NewService(gRepo, idp, authClient, policyClient)
 
+	csvc = cmiddleware.AuthMiddleware(csvc, authClient)
 	csvc, err = uevents.NewEventStoreMiddleware(ctx, csvc, c.ESURL)
 	if err != nil {
 		return nil, nil, err
@@ -262,9 +263,9 @@ func newService(ctx context.Context, authClient authclient.AuthClient, authPolic
 	}
 
 	csvc = ctracing.New(csvc, tracer)
-	csvc = capi.LoggingMiddleware(csvc, logger)
+	csvc = cmiddleware.LoggingMiddleware(csvc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
-	csvc = capi.MetricsMiddleware(csvc, counter, latency)
+	csvc = cmiddleware.MetricsMiddleware(csvc, counter, latency)
 
 	gsvc = gtracing.New(gsvc, tracer)
 	gsvc = gapi.LoggingMiddleware(gsvc, logger)

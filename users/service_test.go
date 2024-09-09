@@ -51,9 +51,8 @@ var (
 	errHashPassword = errors.New("generate hash from password failed")
 )
 
-func newService(selfRegister bool) (users.Service, *mocks.Repository, *authmocks.AuthServiceClient, *policymocks.PolicyClient, *mocks.Emailer) {
+func newService() (users.Service, *mocks.Repository, *policymocks.PolicyClient, *mocks.Emailer) {
 	cRepo := new(mocks.Repository)
-	auth := new(authmocks.AuthServiceClient)
 	policy := new(policymocks.PolicyClient)
 	e := new(mocks.Emailer)
 	return users.NewService(cRepo, policy, e, phasher, idProvider), cRepo, policy, e
@@ -65,9 +64,6 @@ func TestRegisterClient(t *testing.T) {
 	cases := []struct {
 		desc                      string
 		client                    mgclients.Client
-		identifyResponse          *magistrala.IdentityRes
-		token                     string
-		identifyErr               error
 		addPoliciesResponseErr    error
 		deletePoliciesResponseErr error
 		saveErr                   error
@@ -76,13 +72,11 @@ func TestRegisterClient(t *testing.T) {
 		{
 			desc:   "register new client successfully",
 			client: client,
-			token:  validToken,
 			err:    nil,
 		},
 		{
 			desc:    "register existing client",
 			client:  client,
-			token:   validToken,
 			saveErr: repoerr.ErrConflict,
 			err:     repoerr.ErrConflict,
 		},
@@ -96,8 +90,7 @@ func TestRegisterClient(t *testing.T) {
 				},
 				Status: mgclients.EnabledStatus,
 			},
-			err:   nil,
-			token: validToken,
+			err: nil,
 		},
 		{
 			desc: "register a new disabled client with name",
@@ -108,8 +101,7 @@ func TestRegisterClient(t *testing.T) {
 					Secret:   secret,
 				},
 			},
-			err:   nil,
-			token: validToken,
+			err: nil,
 		},
 		{
 			desc: "register a new client with all fields",
@@ -125,8 +117,7 @@ func TestRegisterClient(t *testing.T) {
 				},
 				Status: mgclients.EnabledStatus,
 			},
-			err:   nil,
-			token: validToken,
+			err: nil,
 		},
 		{
 			desc: "register a new client with missing identity",
@@ -138,7 +129,6 @@ func TestRegisterClient(t *testing.T) {
 			},
 			saveErr: errors.ErrMalformedEntity,
 			err:     errors.ErrMalformedEntity,
-			token:   validToken,
 		},
 		{
 			desc: "register a new client with missing secret",
@@ -216,8 +206,8 @@ func TestRegisterClient(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		authCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
-		authCall1 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
+		policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
+		policyCall1 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
 		repoCall := cRepo.On("Save", context.Background(), mock.Anything).Return(tc.client, tc.saveErr)
 		expected, err := svc.RegisterClient(context.Background(), auth.AuthObject{}, tc.client, true)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -232,8 +222,8 @@ func TestRegisterClient(t *testing.T) {
 			assert.True(t, ok, fmt.Sprintf("Save was not called on %s", tc.desc))
 		}
 		repoCall.Unset()
-		authCall1.Unset()
-		authCall.Unset()
+		policyCall.Unset()
+		policyCall1.Unset()
 	}
 
 	svc, cRepo, policy, _ = newService()
@@ -241,11 +231,7 @@ func TestRegisterClient(t *testing.T) {
 	cases2 := []struct {
 		desc                      string
 		client                    mgclients.Client
-		identifyResponse          *magistrala.IdentityRes
-		authorizeResponse         *magistrala.AuthorizeRes
-		token                     string
-		identifyErr               error
-		authorizeErr              error
+		authObject                auth.AuthObject
 		addPoliciesResponseErr    error
 		deletePoliciesResponseErr error
 		saveErr                   error
@@ -253,28 +239,23 @@ func TestRegisterClient(t *testing.T) {
 		err                       error
 	}{
 		{
-			desc:              "register new client successfully as admin",
-			client:            client,
-			identifyResponse:  &magistrala.IdentityRes{UserId: validID},
-			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-			token:             validToken,
-			err:               nil,
+			desc:       "register new client successfully as admin",
+			client:     client,
+			authObject: auth.AuthObject{UserID: validID, SuperAdmin: true},
+			err:        nil,
 		},
 		{
 			desc:               "register a new client as admin with failed check on super admin",
 			client:             client,
-			identifyResponse:   &magistrala.IdentityRes{UserId: validID},
-			authorizeResponse:  &magistrala.AuthorizeRes{Authorized: false},
-			token:              validToken,
+			authObject:         auth.AuthObject{UserID: validID, SuperAdmin: false},
 			checkSuperAdminErr: svcerr.ErrAuthorization,
 			err:                svcerr.ErrAuthorization,
 		},
 	}
 	for _, tc := range cases2 {
-
 		repoCall := cRepo.On("CheckSuperAdmin", context.Background(), mock.Anything).Return(tc.checkSuperAdminErr)
-		authCall2 := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
-		authCall3 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
+		policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesResponseErr)
+		policyCall1 := policy.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesResponseErr)
 		repoCall1 := cRepo.On("Save", context.Background(), mock.Anything).Return(tc.client, tc.saveErr)
 		expected, err := svc.RegisterClient(context.Background(), auth.AuthObject{UserID: validID}, tc.client, false)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -289,8 +270,8 @@ func TestRegisterClient(t *testing.T) {
 			assert.True(t, ok, fmt.Sprintf("Save was not called on %s", tc.desc))
 		}
 		repoCall1.Unset()
-		authCall3.Unset()
-		authCall2.Unset()
+		policyCall.Unset()
+		policyCall1.Unset()
 		repoCall.Unset()
 
 	}

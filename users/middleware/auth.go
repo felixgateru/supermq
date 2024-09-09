@@ -21,13 +21,13 @@ var _ users.Service = (*authMiddleware)(nil)
 var errIssueToken = errors.New("failed to issue token")
 
 type authMiddleware struct {
-	auth auth.AuthWrapper
+	auth auth.AuthClient
 	svc  users.Service
 }
 
 // AuthMiddleware adds authorization and authentication facilities to the clients service.
-func AuthMiddleware(svc users.Service, authWrapper auth.AuthWrapper) users.Service {
-	return &authMiddleware{authWrapper, svc}
+func AuthMiddleware(svc users.Service, authClient auth.AuthClient) users.Service {
+	return &authMiddleware{authClient, svc}
 }
 
 func (am authMiddleware) RegisterClient(ctx context.Context, authObject auth.AuthObject, client clients.Client, selfRegister bool) (clients.Client, error) {
@@ -36,11 +36,12 @@ func (am authMiddleware) RegisterClient(ctx context.Context, authObject auth.Aut
 		if err != nil {
 			return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 		}
-		if err := am.checkSuperAdmin(ctx, resp.UserID); err != nil {
+		if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err != nil {
 			return clients.Client{}, err
 		}
-		authObject.UserID = resp.UserID
+		authObject.UserID = resp.GetUserId()
 	}
+	authObject.Token = ""
 
 	return am.svc.RegisterClient(ctx, authObject, client, selfRegister)
 }
@@ -50,10 +51,11 @@ func (am authMiddleware) ViewClient(ctx context.Context, authObject auth.AuthObj
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.ViewClient(ctx, authObject, id)
 }
@@ -63,7 +65,8 @@ func (am authMiddleware) ViewProfile(ctx context.Context, authObject auth.AuthOb
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.ViewProfile(ctx, authObject)
 }
@@ -73,10 +76,11 @@ func (am authMiddleware) ListClients(ctx context.Context, authObject auth.AuthOb
 	if err != nil {
 		return clients.ClientsPage{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.ListClients(ctx, authObject, pm)
 }
@@ -86,7 +90,8 @@ func (am authMiddleware) ListMembers(ctx context.Context, authObject auth.AuthOb
 	if err != nil {
 		return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.DomainID = resp.DomainID
+	authObject.DomainID = resp.GetDomainId()
+	authObject.Token = ""
 
 	var objectType string
 	var authzPerm string
@@ -136,10 +141,11 @@ func (am authMiddleware) UpdateClient(ctx context.Context, authObject auth.AuthO
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.UpdateClient(ctx, authObject, client)
 }
@@ -149,10 +155,11 @@ func (am authMiddleware) UpdateClientTags(ctx context.Context, authObject auth.A
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.UpdateClientTags(ctx, authObject, client)
 }
@@ -162,10 +169,11 @@ func (am authMiddleware) UpdateClientIdentity(ctx context.Context, authObject au
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.UpdateClientIdentity(ctx, authObject, id, identity)
 }
@@ -195,7 +203,8 @@ func (am authMiddleware) UpdateClientSecret(ctx context.Context, authObject auth
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.UpdateClientSecret(ctx, authObject, oldSecret, newSecret)
 }
@@ -205,7 +214,8 @@ func (am authMiddleware) ResetSecret(ctx context.Context, authObject auth.AuthOb
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.ResetSecret(ctx, authObject, secret)
 }
@@ -219,10 +229,11 @@ func (am authMiddleware) UpdateClientRole(ctx context.Context, authObject auth.A
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	// check if client is a member of the platform
 	res, err := am.auth.Authorize(ctx, &magistrala.AuthorizeReq{
@@ -248,10 +259,11 @@ func (am authMiddleware) EnableClient(ctx context.Context, authObject auth.AuthO
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.EnableClient(ctx, authObject, id)
 }
@@ -261,10 +273,11 @@ func (am authMiddleware) DisableClient(ctx context.Context, authObject auth.Auth
 	if err != nil {
 		return clients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.DisableClient(ctx, authObject, id)
 }
@@ -274,10 +287,11 @@ func (am authMiddleware) DeleteClient(ctx context.Context, authObject auth.AuthO
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	if err := am.checkSuperAdmin(ctx, resp.UserID); err == nil {
+	if err := am.checkSuperAdmin(ctx, resp.GetUserId()); err == nil {
 		authObject.SuperAdmin = true
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.DeleteClient(ctx, authObject, id)
 }
@@ -287,7 +301,8 @@ func (am authMiddleware) Identify(ctx context.Context, authObject auth.AuthObjec
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
+	authObject.Token = ""
 
 	return am.svc.Identify(ctx, authObject)
 }
@@ -306,9 +321,9 @@ func (am authMiddleware) IssueToken(ctx context.Context, identity, secret, domai
 		return auth.Token{}, errors.Wrap(errIssueToken, err)
 	}
 	return auth.Token{
-		AccessToken:  tkn.AccessToken,
-		RefreshToken: tkn.RefreshToken,
-		AccessType:   tkn.AccessType,
+		AccessToken:  tkn.GetAccessToken(),
+		RefreshToken: tkn.GetRefreshToken(),
+		AccessType:   tkn.GetAccessType(),
 	}, nil
 }
 
@@ -317,7 +332,7 @@ func (am authMiddleware) RefreshToken(ctx context.Context, authObject auth.AuthO
 	if err != nil {
 		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
-	authObject.UserID = resp.UserID
+	authObject.UserID = resp.GetUserId()
 	svcResp, err := am.svc.RefreshToken(ctx, authObject, domainID)
 	if err != nil {
 		return auth.Token{}, err
@@ -331,9 +346,9 @@ func (am authMiddleware) RefreshToken(ctx context.Context, authObject auth.AuthO
 		return auth.Token{}, errors.Wrap(errIssueToken, err)
 	}
 	return auth.Token{
-		AccessToken:  tkn.AccessToken,
-		RefreshToken: tkn.RefreshToken,
-		AccessType:   tkn.AccessType,
+		AccessToken:  tkn.GetAccessToken(),
+		RefreshToken: tkn.GetRefreshToken(),
+		AccessType:   tkn.GetAccessType(),
 	}, nil
 }
 
@@ -360,9 +375,9 @@ func (am authMiddleware) OAuthCallback(ctx context.Context, client clients.Clien
 		return auth.Token{}, errors.Wrap(errIssueToken, err)
 	}
 	return auth.Token{
-		AccessToken:  tkn.AccessToken,
-		RefreshToken: tkn.RefreshToken,
-		AccessType:   tkn.AccessType,
+		AccessToken:  tkn.GetAccessToken(),
+		RefreshToken: tkn.GetRefreshToken(),
+		AccessType:   tkn.GetAccessType(),
 	}, nil
 }
 
