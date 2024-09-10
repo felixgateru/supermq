@@ -26,6 +26,7 @@ import (
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	gmocks "github.com/absmach/magistrala/pkg/groups/mocks"
 	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
+	"github.com/absmach/magistrala/pkg/policy"
 	httpapi "github.com/absmach/magistrala/users/api"
 	"github.com/absmach/magistrala/users/mocks"
 	"github.com/go-chi/chi/v5"
@@ -873,6 +874,10 @@ func TestUpdateClient(t *testing.T) {
 		authnErr       error
 		contentType    string
 		status         int
+		identifyRes    *magistrala.IdentityRes
+		authorizeRes   *magistrala.AuthorizeRes
+		identifyErr    error
+		authorizeErr   error
 		err            error
 	}{
 		{
@@ -906,6 +911,39 @@ func TestUpdateClient(t *testing.T) {
 			err:    nil,
 		},
 		{
+			desc:        "update as normal user with valid token",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
+			token:       validToken,
+			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
+			contentType: contentType,
+			clientResponse: mgclients.Client{
+				ID:       client.ID,
+				Name:     newName,
+				Metadata: newMetadata,
+			},
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			status:       http.StatusOK,
+			err:          nil,
+		},
+		{
+			desc:        "update as normal user with valid token",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
+			token:       validToken,
+			contentType: contentType,
+			clientResponse: mgclients.Client{
+				ID:       client.ID,
+				Name:     newName,
+				Metadata: newMetadata,
+			},
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			status:       http.StatusOK,
+			err:          nil,
+		},
+		{
 			desc:        "update user with invalid token",
 			id:          client.ID,
 			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
@@ -933,6 +971,7 @@ func TestUpdateClient(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthorization,
 		},
 		{
@@ -953,6 +992,7 @@ func TestUpdateClient(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -963,6 +1003,7 @@ func TestUpdateClient(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -1012,6 +1053,10 @@ func TestUpdateClientTags(t *testing.T) {
 		authnRes       mgauthn.Session
 		authnErr       error
 		status         int
+		identifyRes    *magistrala.IdentityRes
+		authorizeRes   *magistrala.AuthorizeRes
+		identifyErr    error
+		authorizeErr   error
 		err            error
 	}{
 		{
@@ -1070,6 +1115,7 @@ func TestUpdateClientTags(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthorization,
 		},
 		{
@@ -1229,6 +1275,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrMissingID,
 		},
 		{
@@ -1414,6 +1461,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1431,6 +1479,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrPasswordFormat,
 		},
 		{
@@ -1448,6 +1497,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1633,6 +1683,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1681,6 +1732,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrMissingPass,
 		},
 		{
@@ -1858,6 +1910,7 @@ func TestRefreshToken(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1884,6 +1937,7 @@ func TestRefreshToken(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnauthorized,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -2811,6 +2865,15 @@ func TestListUsersByChannelID(t *testing.T) {
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
 		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			channelID:    validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
+		},
 	}
 
 	for _, tc := range cases {
@@ -3155,6 +3218,15 @@ func TestListUsersByDomainID(t *testing.T) {
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
 		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			domainID:     validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
+		},
 	}
 
 	for _, tc := range cases {
@@ -3468,6 +3540,15 @@ func TestListUsersByThingID(t *testing.T) {
 			query:  "identity=1&identity=2",
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			thingID:      validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
 		},
 	}
 

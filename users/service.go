@@ -20,7 +20,6 @@ import (
 )
 
 var (
-	errIssueToken            = errors.New("failed to issue token")
 	errFailedPermissionsList = errors.New("failed to list permissions")
 	errRecoveryToken         = errors.New("failed to generate password recovery token")
 	errLoginDisableUser      = errors.New("failed to login in disabled user")
@@ -93,13 +92,13 @@ func (svc service) RegisterClient(ctx context.Context, session authn.Session, cl
 	return client, nil
 }
 
-func (svc service) IssueToken(ctx context.Context, identity, secret, domainID string) (*magistrala.Token, error) {
+func (svc service) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
 	dbUser, err := svc.clients.RetrieveByIdentity(ctx, identity)
 	if err != nil {
-		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := svc.hasher.Compare(secret, dbUser.Credentials.Secret); err != nil {
-		return &magistrala.Token{}, errors.Wrap(svcerr.ErrLogin, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrLogin, err)
 	}
 
 	var d string
@@ -126,7 +125,7 @@ func (svc service) RefreshToken(ctx context.Context, session authn.Session, refr
 		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if dbUser.Status == mgclients.DisabledStatus {
-		return &magistrala.Token{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
 	}
 
 	return svc.token.Refresh(ctx, &magistrala.RefreshReq{RefreshToken: refreshToken, DomainId: &d})
@@ -254,10 +253,10 @@ func (svc service) UpdateClientIdentity(ctx context.Context, session authn.Sessi
 	return cli, nil
 }
 
-func (svc service) GenerateResetToken(ctx context.Context, email, host string) error {
+func (svc service) GenerateResetToken(ctx context.Context, email, host string) (mgclients.Client, error) {
 	client, err := svc.clients.RetrieveByIdentity(ctx, email)
 	if err != nil {
-		return errors.Wrap(svcerr.ErrViewEntity, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	issueReq := &magistrala.IssueReq{
 		UserId: client.ID,
