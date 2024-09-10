@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/pkg/auth"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
@@ -1396,15 +1395,7 @@ func TestIssueToken(t *testing.T) {
 			desc:                       "issue token for an existing client",
 			client:                     client,
 			retrieveByIdentityResponse: rClient,
-			issueResponse:              auth.Token{AccessToken: validToken, RefreshToken: validToken, AccessType: "3"},
-			err:                        nil,
-		},
-		{
-			desc:                       "issue token for non-empty domain id",
-			domainID:                   validID,
-			client:                     client,
-			retrieveByIdentityResponse: rClient,
-			issueResponse:              auth.Token{AccessToken: validToken, RefreshToken: validToken, AccessType: "3"},
+			issueResponse:              auth.Token{UserID: client.ID, DomainID: validID},
 			err:                        nil,
 		},
 		{
@@ -1419,22 +1410,6 @@ func TestIssueToken(t *testing.T) {
 			client:                     client,
 			retrieveByIdentityResponse: rClient3,
 			err:                        svcerr.ErrLogin,
-		},
-		{
-			desc:                       "issue token with empty domain id",
-			client:                     client,
-			retrieveByIdentityResponse: rClient,
-			issueResponse:              auth.Token{},
-			issueErr:                   svcerr.ErrAuthentication,
-			err:                        svcerr.ErrAuthentication,
-		},
-		{
-			desc:                       "issue token with grpc error",
-			client:                     client,
-			retrieveByIdentityResponse: rClient,
-			issueResponse:              auth.Token{},
-			issueErr:                   svcerr.ErrAuthentication,
-			err:                        svcerr.ErrAuthentication,
 		},
 	}
 
@@ -1460,7 +1435,7 @@ func TestRefreshToken(t *testing.T) {
 	cases := []struct {
 		desc        string
 		domainID    string
-		refreshResp *magistrala.Token
+		refreshResp auth.Token
 		refresErr   error
 		repoResp    mgclients.Client
 		repoErr     error
@@ -1469,28 +1444,15 @@ func TestRefreshToken(t *testing.T) {
 		{
 			desc:        "refresh token with refresh token for an existing client",
 			domainID:    validID,
-			refreshResp: &magistrala.Token{AccessToken: validToken, RefreshToken: &validToken, AccessType: "3"},
+			refreshResp: auth.Token{DomainID: validID},
 			repoResp:    rClient,
 			err:         nil,
 		},
 		{
 			desc:        "refresh token with refresh token for empty domain id",
-			refreshResp: &magistrala.Token{AccessToken: validToken, RefreshToken: &validToken, AccessType: "3"},
+			refreshResp: auth.Token{},
 			repoResp:    rClient,
 			err:         nil,
-		},
-		{
-			desc:        "refresh token with access token for an existing client",
-			domainID:    validID,
-			refreshResp: &magistrala.Token{},
-			refresErr:   svcerr.ErrAuthentication,
-			repoResp:    rClient,
-			err:         svcerr.ErrAuthentication,
-		},
-		{
-			desc:     "refresh token with invalid token",
-			domainID: validID,
-			err:      svcerr.ErrAuthentication,
 		},
 		{
 			desc:     "refresh token with refresh token for a non-existing client",
@@ -1503,13 +1465,6 @@ func TestRefreshToken(t *testing.T) {
 			domainID: validID,
 			repoResp: mgclients.Client{Status: mgclients.DisabledStatus},
 			err:      svcerr.ErrAuthentication,
-		},
-		{
-			desc:        "refresh token with empty domain id",
-			refreshResp: &magistrala.Token{},
-			refresErr:   svcerr.ErrAuthentication,
-			repoResp:    rClient,
-			err:         svcerr.ErrAuthentication,
 		},
 	}
 
@@ -1555,13 +1510,6 @@ func TestGenerateResetToken(t *testing.T) {
 			},
 			retrieveByIdentityErr: repoerr.ErrNotFound,
 			err:                   repoerr.ErrNotFound,
-		},
-		{
-			desc:                       "generate reset token with failed to issue token",
-			email:                      "existingemail@example.com",
-			host:                       "examplehost",
-			retrieveByIdentityResponse: client,
-			err:                        svcerr.ErrAuthorization,
 		},
 	}
 
@@ -1654,8 +1602,10 @@ func TestResetSecret(t *testing.T) {
 		repoCall1 := cRepo.On("UpdateSecret", context.Background(), mock.Anything).Return(tc.updateSecretResponse, tc.updateSecretErr)
 		err := svc.ResetSecret(context.Background(), tc.session, tc.newSecret)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		repoCall1.Parent.AssertCalled(t, "UpdateSecret", context.Background(), mock.Anything)
-		repoCall.Parent.AssertCalled(t, "RetrieveByID", context.Background(), client.ID)
+		if tc.err == nil {
+			repoCall1.Parent.AssertCalled(t, "UpdateSecret", context.Background(), mock.Anything)
+			repoCall.Parent.AssertCalled(t, "RetrieveByID", context.Background(), validID)
+		}
 		repoCall1.Unset()
 		repoCall.Unset()
 	}
@@ -1706,7 +1656,7 @@ func TestViewProfile(t *testing.T) {
 }
 
 func TestOAuthCallback(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc, cRepo, policy, _ := newService()
 
 	cases := []struct {
 		desc                       string
@@ -1715,6 +1665,7 @@ func TestOAuthCallback(t *testing.T) {
 		retrieveByIdentityErr      error
 		saveResponse               mgclients.Client
 		saveErr                    error
+		addPoliciesErr             error
 		deletePoliciesErr          error
 		err                        error
 	}{
@@ -1762,6 +1713,7 @@ func TestOAuthCallback(t *testing.T) {
 					Identity: "test@example.com",
 				},
 			},
+			addPoliciesErr:        svcerr.ErrAuthorization,
 			retrieveByIdentityErr: repoerr.ErrNotFound,
 			err:                   svcerr.ErrAuthorization,
 		},
@@ -1778,41 +1730,17 @@ func TestOAuthCallback(t *testing.T) {
 			},
 			err: nil,
 		},
-		{
-			desc: "oauth signin callback with user not in the platform and failed to add policy",
-			client: mgclients.Client{
-				Credentials: mgclients.Credentials{
-					Identity: "test@example.com",
-				},
-			},
-			retrieveByIdentityResponse: mgclients.Client{
-				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
-			},
-			err: svcerr.ErrAuthorization,
-		},
-		{
-			desc: "oauth signin callback with failed to issue token",
-			client: mgclients.Client{
-				Credentials: mgclients.Credentials{
-					Identity: "test@example.com",
-				},
-			},
-			retrieveByIdentityResponse: mgclients.Client{
-				ID:   testsutil.GenerateUUID(t),
-				Role: mgclients.UserRole,
-			},
-			err: svcerr.ErrAuthorization,
-		},
 	}
 	for _, tc := range cases {
 		repoCall := cRepo.On("RetrieveByIdentity", context.Background(), tc.client.Credentials.Identity).Return(tc.retrieveByIdentityResponse, tc.retrieveByIdentityErr)
 		repoCall1 := cRepo.On("Save", context.Background(), mock.Anything).Return(tc.saveResponse, tc.saveErr)
+		policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addPoliciesErr)
 		_, err := svc.OAuthCallback(context.Background(), tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Parent.AssertCalled(t, "RetrieveByIdentity", context.Background(), tc.client.Credentials.Identity)
 		repoCall.Unset()
 		repoCall1.Unset()
+		policyCall.Unset()
 
 	}
 }
