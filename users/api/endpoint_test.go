@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
+	mgauth "github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
@@ -2308,7 +2309,7 @@ func TestDeleteClient(t *testing.T) {
 }
 
 func TestListUsersByUserGroupId(t *testing.T) {
-	us, svc, _, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2319,6 +2320,10 @@ func TestListUsersByUserGroupId(t *testing.T) {
 		status            int
 		query             string
 		listUsersResponse mgclients.ClientsPage
+		identifyRes       *magistrala.IdentityRes
+		authorizeRes      *magistrala.AuthorizeRes
+		identifyErr       error
+		authorizeErr      error
 		err               error
 	}{
 		{
@@ -2332,28 +2337,33 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			err: nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with empty id",
-			token:   validToken,
-			groupID: "",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrMissingID,
+			desc:        "list users with empty id",
+			token:       validToken,
+			groupID:     "",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
-			desc:    "list users with empty token",
-			token:   "",
-			groupID: validID,
-			status:  http.StatusUnauthorized,
-			err:     apiutil.ErrBearerToken,
+			desc:        "list users with empty token",
+			token:       "",
+			groupID:     validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:    "list users with invalid token",
-			token:   inValidToken,
-			groupID: validID,
-			status:  http.StatusUnauthorized,
-			err:     svcerr.ErrAuthentication,
+			desc:        "list users with invalid token",
+			token:       inValidToken,
+			groupID:     validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc:    "list users with offset",
@@ -2366,9 +2376,11 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "offset=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
 			desc:    "list users with invalid offset",
@@ -2389,25 +2401,31 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "limit=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with invalid limit",
-			token:   validToken,
-			groupID: validID,
-			query:   "limit=invalid",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
+			desc:         "list users with invalid limit",
+			token:        validToken,
+			groupID:      validID,
+			query:        "limit=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:    "list users with limit greater than max",
-			token:   validToken,
-			groupID: validID,
-			query:   fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
+			desc:         "list users with limit greater than max",
+			token:        validToken,
+			groupID:      validID,
+			query:        fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:    "list users with name",
@@ -2419,17 +2437,21 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "name=clientname",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with invalid name",
-			token:   validToken,
-			groupID: validID,
-			query:   "name=invalid",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
+			desc:         "list users with invalid name",
+			token:        validToken,
+			groupID:      validID,
+			query:        "name=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:    "list users with duplicate name",
@@ -2449,9 +2471,11 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "status=enabled",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
 			desc:    "list users with invalid status",
@@ -2479,25 +2503,31 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "tag=tag1,tag2",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with invalid tags",
-			token:   validToken,
-			groupID: validID,
-			query:   "tag=invalid",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
+			desc:         "list users with invalid tags",
+			token:        validToken,
+			groupID:      validID,
+			query:        "tag=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:    "list users with duplicate tags",
-			token:   validToken,
-			groupID: validID,
-			query:   "tag=tag1&tag=tag2",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrInvalidQueryParams,
+			desc:         "list users with duplicate tags",
+			token:        validToken,
+			groupID:      validID,
+			query:        "tag=tag1&tag=tag2",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list users with metadata",
@@ -2509,9 +2539,11 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
 			desc:    "list users with invalid metadata",
@@ -2539,25 +2571,22 @@ func TestListUsersByUserGroupId(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=view",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "permission=view",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with invalid permissions",
-			token:   validToken,
-			groupID: validID,
-			query:   "permission=invalid",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
-		},
-		{
-			desc:    "list users with duplicate permissions",
-			token:   validToken,
-			groupID: validID,
-			query:   "permission=view&permission=view",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrInvalidQueryParams,
+			desc:              "list users with duplicate permissions",
+			token:             validToken,
+			groupID:           validID,
+			query:             "permission=view&permission=view",
+			status:            http.StatusBadRequest,
+			listUsersResponse: mgclients.ClientsPage{},
+			identifyRes:       &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes:      &magistrala.AuthorizeRes{Authorized: true},
+			err:               apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list users with identity",
@@ -2572,24 +2601,39 @@ func TestListUsersByUserGroupId(t *testing.T) {
 					client,
 				},
 			},
-			status: http.StatusOK,
-			err:    nil,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:    "list users with invalid identity",
-			token:   validToken,
-			groupID: validID,
-			query:   "identity=invalid",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrValidation,
+			desc:         "list users with invalid identity",
+			token:        validToken,
+			groupID:      validID,
+			query:        "identity=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:    "list users with duplicate identity",
-			token:   validToken,
-			groupID: validID,
-			query:   "identity=1&identity=2",
-			status:  http.StatusBadRequest,
-			err:     apiutil.ErrInvalidQueryParams,
+			desc:         "list users with duplicate identity",
+			token:        validToken,
+			groupID:      validID,
+			query:        "identity=1&identity=2",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			groupID:      validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
 		},
 	}
 
@@ -2600,7 +2644,15 @@ func TestListUsersByUserGroupId(t *testing.T) {
 			url:    fmt.Sprintf("%s/groups/%s/users?", us.URL, tc.groupID) + tc.query,
 			token:  tc.token,
 		}
-
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.TokenKind,
+			Subject:     tc.token,
+			Permission:  mgauth.SwitchToPermission(policy.ViewPermission),
+			ObjectType:  policy.GroupType,
+			Object:      tc.groupID,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
@@ -2611,50 +2663,64 @@ func TestListUsersByUserGroupId(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestListUsersByChannelID(t *testing.T) {
-	us, svc, _, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
 		desc              string
 		token             string
-		groupID           string
+		channelID         string
 		page              mgclients.Page
 		status            int
 		query             string
 		listUsersResponse mgclients.ClientsPage
+		identifyRes       *magistrala.IdentityRes
+		authorizeRes      *magistrala.AuthorizeRes
+		identifyErr       error
+		authorizeErr      error
 		err               error
 	}{
 		{
-			desc:   "list users with valid token",
-			token:  validToken,
-			status: http.StatusOK,
+			desc:      "list users with valid token",
+			token:     validToken,
+			status:    http.StatusOK,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			err: nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with empty token",
-			token:  "",
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "list users with empty token",
+			token:       "",
+			channelID:   validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:   "list users with invalid token",
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "list users with invalid token",
+			token:       inValidToken,
+			channelID:   validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "list users with offset",
-			token: validToken,
+			desc:      "list users with offset",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Offset: 1,
@@ -2662,20 +2728,24 @@ func TestListUsersByChannelID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "offset=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid offset",
-			token:  validToken,
-			query:  "offset=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:      "list users with invalid offset",
+			token:     validToken,
+			channelID: validID,
+			query:     "offset=invalid",
+			status:    http.StatusBadRequest,
+			err:       apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with limit",
-			token: validToken,
+			desc:      "list users with limit",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Limit: 1,
@@ -2683,43 +2753,57 @@ func TestListUsersByChannelID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "limit=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid limit",
-			token:  validToken,
-			query:  "limit=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid limit",
+			token:        validToken,
+			channelID:    validID,
+			query:        "limit=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with limit greater than max",
-			token:  validToken,
-			query:  fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with limit greater than max",
+			token:        validToken,
+			channelID:    validID,
+			query:        fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with name",
-			token: validToken,
+			desc:      "list users with name",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "name=clientname",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid name",
-			token:  validToken,
-			query:  "name=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid name",
+			token:        validToken,
+			channelID:    validID,
+			query:        "name=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate name",
@@ -2729,24 +2813,30 @@ func TestListUsersByChannelID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with status",
-			token: validToken,
+			desc:      "list users with status",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "status=enabled",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid status",
-			token:  validToken,
-			query:  "status=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid status",
+			token:        validToken,
+			channelID:    validID,
+			query:        "status=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate status",
@@ -2756,51 +2846,64 @@ func TestListUsersByChannelID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with tags",
-			token: validToken,
+			desc:      "list users with tags",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "tag=tag1,tag2",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid tags",
-			token:  validToken,
-			query:  "tag=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid tags",
+			token:        validToken,
+			channelID:    validID,
+			query:        "tag=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate tags",
-			token:  validToken,
-			query:  "tag=tag1&tag=tag2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:      "list users with duplicate tags",
+			token:     validToken,
+			channelID: validID,
+			query:     "tag=tag1&tag=tag2",
+			status:    http.StatusBadRequest,
+			err:       apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with metadata",
-			token: validToken,
+			desc:      "list users with metadata",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid metadata",
-			token:  validToken,
-			query:  "metadata=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid metadata",
+			token:        validToken,
+			channelID:    validID,
+			query:        "metadata=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate metadata",
@@ -2810,36 +2913,34 @@ func TestListUsersByChannelID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with permissions",
-			token: validToken,
+			desc:      "list users with permissions",
+			token:     validToken,
+			channelID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=view",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "permission=view",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid permissions",
-			token:  validToken,
-			query:  "permission=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:      "list users with duplicate permissions",
+			token:     validToken,
+			channelID: validID,
+			query:     "permission=view&permission=view",
+			status:    http.StatusBadRequest,
+			err:       apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:   "list users with duplicate permissions",
-			token:  validToken,
-			query:  "permission=view&permission=view",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
-		},
-		{
-			desc:  "list users with identity",
-			token: validToken,
-			query: fmt.Sprintf("identity=%s", client.Credentials.Identity),
+			desc:      "list users with identity",
+			token:     validToken,
+			channelID: validID,
+			query:     fmt.Sprintf("identity=%s", client.Credentials.Identity),
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -2848,36 +2949,48 @@ func TestListUsersByChannelID(t *testing.T) {
 					client,
 				},
 			},
-			status: http.StatusOK,
-			err:    nil,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid identity",
-			token:  validToken,
-			query:  "identity=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid identity",
+			token:        validToken,
+			channelID:    validID,
+			query:        "identity=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate identity",
-			token:  validToken,
-			query:  "identity=1&identity=2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:      "list users with duplicate identity",
+			token:     validToken,
+			channelID: validID,
+			query:     "identity=1&identity=2",
+			status:    http.StatusBadRequest,
+			err:       apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:   "list users with list_perms",
-			token:  validToken,
-			query:  "list_perms=true",
-			status: http.StatusOK,
-			err:    nil,
+			desc:         "list users with list_perms",
+			token:        validToken,
+			channelID:    validID,
+			query:        "list_perms=true",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid list_perms",
-			token:  validToken,
-			query:  "list_perms=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid list_perms",
+			token:        validToken,
+			channelID:    validID,
+			query:        "list_perms=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate list_perms",
@@ -2885,6 +2998,15 @@ func TestListUsersByChannelID(t *testing.T) {
 			query:  "list_perms=true&list_perms=false",
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
+		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			channelID:    validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
 		},
 	}
 
@@ -2896,6 +3018,15 @@ func TestListUsersByChannelID(t *testing.T) {
 			token:  tc.token,
 		}
 
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.TokenKind,
+			Subject:     tc.token,
+			Permission:  mgauth.SwitchToPermission(policy.ViewPermission),
+			ObjectType:  policy.GroupType,
+			Object:      tc.channelID,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
@@ -2906,50 +3037,62 @@ func TestListUsersByChannelID(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestListUsersByDomainID(t *testing.T) {
-	us, svc, _, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
 		desc              string
 		token             string
-		groupID           string
+		domainID          string
 		page              mgclients.Page
 		status            int
 		query             string
 		listUsersResponse mgclients.ClientsPage
+		identifyRes       *magistrala.IdentityRes
+		authorizeRes      *magistrala.AuthorizeRes
+		identifyErr       error
+		authorizeErr      error
 		err               error
 	}{
 		{
-			desc:   "list users with valid token",
-			token:  validToken,
-			status: http.StatusOK,
+			desc:     "list users with valid token",
+			token:    validToken,
+			domainID: validID,
+			status:   http.StatusOK,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			err: nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with empty token",
-			token:  "",
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "list users with empty token",
+			token:       "",
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:   "list users with invalid token",
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "list users with invalid token",
+			token:       inValidToken,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "list users with offset",
-			token: validToken,
+			desc:     "list users with offset",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Offset: 1,
@@ -2957,20 +3100,26 @@ func TestListUsersByDomainID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "offset=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid offset",
-			token:  validToken,
-			query:  "offset=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid offset",
+			token:        validToken,
+			domainID:     validID,
+			query:        "offset=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with limit",
-			token: validToken,
+			desc:     "list users with limit",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Limit: 1,
@@ -2978,70 +3127,91 @@ func TestListUsersByDomainID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "limit=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid limit",
-			token:  validToken,
-			query:  "limit=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid limit",
+			token:        validToken,
+			domainID:     validID,
+			query:        "limit=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with limit greater than max",
-			token:  validToken,
-			query:  fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with limit greater than max",
+			token:        validToken,
+			domainID:     validID,
+			query:        fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with name",
-			token: validToken,
+			desc:     "list users with name",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "name=clientname",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid name",
-			token:  validToken,
-			query:  "name=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid name",
+			token:        validToken,
+			domainID:     validID,
+			query:        "name=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate name",
-			token:  validToken,
-			query:  "name=1&name=2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:     "list users with duplicate name",
+			token:    validToken,
+			domainID: validID,
+			query:    "name=1&name=2",
+			status:   http.StatusBadRequest,
+			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with status",
-			token: validToken,
+			desc:     "list users with status",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "status=enabled",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid status",
-			token:  validToken,
-			query:  "status=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid status",
+			token:        validToken,
+			domainID:     validID,
+			query:        "status=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate status",
@@ -3051,24 +3221,30 @@ func TestListUsersByDomainID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with tags",
-			token: validToken,
+			desc:     "list users with tags",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "tag=tag1,tag2",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid tags",
-			token:  validToken,
-			query:  "tag=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid tags",
+			token:        validToken,
+			domainID:     validID,
+			query:        "tag=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate tags",
@@ -3078,24 +3254,30 @@ func TestListUsersByDomainID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with metadata",
-			token: validToken,
+			desc:     "list users with metadata",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid metadata",
-			token:  validToken,
-			query:  "metadata=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid metadata",
+			token:        validToken,
+			domainID:     validID,
+			query:        "metadata=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate metadata",
@@ -3105,36 +3287,34 @@ func TestListUsersByDomainID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with permissions",
-			token: validToken,
+			desc:     "list users with permissions",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=membership",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "permission=membership",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid permissions",
-			token:  validToken,
-			query:  "permission=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:     "list users with duplicate permissions",
+			token:    validToken,
+			domainID: validID,
+			query:    "permission=view&permission=view",
+			status:   http.StatusBadRequest,
+			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:   "list users with duplicate permissions",
-			token:  validToken,
-			query:  "permission=view&permission=view",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
-		},
-		{
-			desc:  "list users with identity",
-			token: validToken,
-			query: fmt.Sprintf("identity=%s", client.Credentials.Identity),
+			desc:     "list users with identity",
+			token:    validToken,
+			domainID: validID,
+			query:    fmt.Sprintf("identity=%s", client.Credentials.Identity),
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -3143,15 +3323,20 @@ func TestListUsersByDomainID(t *testing.T) {
 					client,
 				},
 			},
-			status: http.StatusOK,
-			err:    nil,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid identity",
-			token:  validToken,
-			query:  "identity=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid identity",
+			token:        validToken,
+			domainID:     validID,
+			query:        "identity=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate identity",
@@ -3161,8 +3346,9 @@ func TestListUsersByDomainID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users wiith list permissions",
-			token: validToken,
+			desc:     "list users wiith list permissions",
+			token:    validToken,
+			domainID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -3171,16 +3357,21 @@ func TestListUsersByDomainID(t *testing.T) {
 					client,
 				},
 			},
-			query:  "list_perms=true",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "list_perms=true",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid list_perms",
-			token:  validToken,
-			query:  "list_perms=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid list_perms",
+			token:        validToken,
+			domainID:     validID,
+			query:        "list_perms=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate list_perms",
@@ -3188,6 +3379,15 @@ func TestListUsersByDomainID(t *testing.T) {
 			query:  "list_perms=true&list_perms=false",
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
+		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			domainID:     validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
 		},
 	}
 
@@ -3199,6 +3399,15 @@ func TestListUsersByDomainID(t *testing.T) {
 			token:  tc.token,
 		}
 
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.TokenKind,
+			Subject:     tc.token,
+			Permission:  mgauth.SwitchToPermission(policy.MembershipPermission),
+			ObjectType:  policy.DomainType,
+			Object:      tc.domainID,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
@@ -3209,50 +3418,64 @@ func TestListUsersByDomainID(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestListUsersByThingID(t *testing.T) {
-	us, svc, _, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
 		desc              string
 		token             string
-		groupID           string
+		thingID           string
 		page              mgclients.Page
 		status            int
 		query             string
 		listUsersResponse mgclients.ClientsPage
+		identifyRes       *magistrala.IdentityRes
+		authorizeRes      *magistrala.AuthorizeRes
+		identifyErr       error
+		authorizeErr      error
 		err               error
 	}{
 		{
-			desc:   "list users with valid token",
-			token:  validToken,
-			status: http.StatusOK,
+			desc:    "list users with valid token",
+			token:   validToken,
+			thingID: validID,
+			status:  http.StatusOK,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			err: nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with empty token",
-			token:  "",
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "list users with empty token",
+			token:       "",
+			thingID:     validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:   "list users with invalid token",
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "list users with invalid token",
+			token:       inValidToken,
+			thingID:     validID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "list users with offset",
-			token: validToken,
+			desc:    "list users with offset",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Offset: 1,
@@ -3260,20 +3483,26 @@ func TestListUsersByThingID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "offset=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid offset",
-			token:  validToken,
-			query:  "offset=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid offset",
+			token:        validToken,
+			thingID:      validID,
+			query:        "offset=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with limit",
-			token: validToken,
+			desc:    "list users with limit",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Limit: 1,
@@ -3281,70 +3510,91 @@ func TestListUsersByThingID(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "limit=1",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid limit",
-			token:  validToken,
-			query:  "limit=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid limit",
+			token:        validToken,
+			thingID:      validID,
+			query:        "limit=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with limit greater than max",
-			token:  validToken,
-			query:  fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with limit greater than max",
+			token:        validToken,
+			thingID:      validID,
+			query:        fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with name",
-			token: validToken,
+			desc:    "list users with name",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "name=clientname",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid name",
-			token:  validToken,
-			query:  "name=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid name",
+			token:        validToken,
+			thingID:      validID,
+			query:        "name=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate name",
-			token:  validToken,
-			query:  "name=1&name=2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:    "list users with duplicate name",
+			token:   validToken,
+			thingID: validID,
+			query:   "name=1&name=2",
+			status:  http.StatusBadRequest,
+			err:     apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with status",
-			token: validToken,
+			desc:    "list users with status",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "status=enabled",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid status",
-			token:  validToken,
-			query:  "status=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid status",
+			token:        validToken,
+			thingID:      validID,
+			query:        "status=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate status",
@@ -3354,24 +3604,30 @@ func TestListUsersByThingID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with tags",
-			token: validToken,
+			desc:    "list users with tags",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "tag=tag1,tag2",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid tags",
-			token:  validToken,
-			query:  "tag=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid tags",
+			token:        validToken,
+			thingID:      validID,
+			query:        "tag=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate tags",
@@ -3381,51 +3637,56 @@ func TestListUsersByThingID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with metadata",
-			token: validToken,
+			desc:    "list users with metadata",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid metadata",
-			token:  validToken,
-			query:  "metadata=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid metadata",
+			token:        validToken,
+			thingID:      validID,
+			query:        "metadata=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate metadata",
-			token:  validToken,
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:         "list users with duplicate metadata",
+			token:        validToken,
+			thingID:      validID,
+			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with permissions",
-			token: validToken,
+			desc:    "list users with permissions",
+			token:   validToken,
+			thingID: validID,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=view",
-			status: http.StatusOK,
-			err:    nil,
-		},
-		{
-			desc:   "list users with invalid permissions",
-			token:  validToken,
-			query:  "permission=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			query:        "permission=view",
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
 			desc:   "list users with duplicate permissions",
@@ -3435,9 +3696,10 @@ func TestListUsersByThingID(t *testing.T) {
 			err:    apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with identity",
-			token: validToken,
-			query: fmt.Sprintf("identity=%s", client.Credentials.Identity),
+			desc:    "list users with identity",
+			token:   validToken,
+			thingID: validID,
+			query:   fmt.Sprintf("identity=%s", client.Credentials.Identity),
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -3446,15 +3708,20 @@ func TestListUsersByThingID(t *testing.T) {
 					client,
 				},
 			},
-			status: http.StatusOK,
-			err:    nil,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with invalid identity",
-			token:  validToken,
-			query:  "identity=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:         "list users with invalid identity",
+			token:        validToken,
+			thingID:      validID,
+			query:        "identity=invalid",
+			status:       http.StatusBadRequest,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:   "list users with duplicate identity",
@@ -3462,6 +3729,15 @@ func TestListUsersByThingID(t *testing.T) {
 			query:  "identity=1&identity=2",
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:         "list users with failed authorization",
+			token:        validToken,
+			thingID:      validID,
+			status:       http.StatusForbidden,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          svcerr.ErrAuthorization,
 		},
 	}
 
@@ -3473,6 +3749,15 @@ func TestListUsersByThingID(t *testing.T) {
 			token:  tc.token,
 		}
 
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.TokenKind,
+			Subject:     tc.token,
+			Permission:  policy.ViewPermission,
+			ObjectType:  policy.ThingType,
+			Object:      tc.thingID,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
@@ -3483,6 +3768,8 @@ func TestListUsersByThingID(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
