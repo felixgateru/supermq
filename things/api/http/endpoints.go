@@ -337,7 +337,7 @@ func assignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Assign(ctx, req.token, req.groupID, req.Relation, auth.UsersKind, req.UserIDs...); err != nil {
+		if err := svc.Assign(ctx, req.token, req.groupID, req.Relation, policy.UsersKind, req.UserIDs...); err != nil {
 			return nil, err
 		}
 
@@ -352,7 +352,7 @@ func unassignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Unassign(ctx, req.token, req.groupID, req.Relation, auth.UsersKind, req.UserIDs...); err != nil {
+		if err := svc.Unassign(ctx, req.token, req.groupID, req.Relation, policy.UsersKind, req.UserIDs...); err != nil {
 			return nil, err
 		}
 
@@ -367,7 +367,7 @@ func assignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Assign(ctx, req.token, req.groupID, auth.ParentGroupRelation, auth.ChannelsKind, req.UserGroupIDs...); err != nil {
+		if err := svc.Assign(ctx, req.token, req.groupID, policy.ParentGroupRelation, policy.ChannelsKind, req.UserGroupIDs...); err != nil {
 			return nil, err
 		}
 
@@ -382,7 +382,7 @@ func unassignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Unassign(ctx, req.token, req.groupID, auth.ParentGroupRelation, auth.ChannelsKind, req.UserGroupIDs...); err != nil {
+		if err := svc.Unassign(ctx, req.token, req.groupID, policy.ParentGroupRelation, policy.ChannelsKind, req.UserGroupIDs...); err != nil {
 			return nil, err
 		}
 
@@ -397,7 +397,7 @@ func connectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Assign(ctx, req.token, req.ChannelID, auth.GroupRelation, auth.ThingsKind, req.ThingID); err != nil {
+		if err := svc.Assign(ctx, req.token, req.ChannelID, policy.GroupRelation, policy.ThingsKind, req.ThingID); err != nil {
 			return nil, err
 		}
 
@@ -412,7 +412,7 @@ func disconnectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Unassign(ctx, req.token, req.ChannelID, auth.GroupRelation, auth.ThingsKind, req.ThingID); err != nil {
+		if err := svc.Unassign(ctx, req.token, req.ChannelID, policy.GroupRelation, policy.ThingsKind, req.ThingID); err != nil {
 			return nil, err
 		}
 
@@ -427,7 +427,7 @@ func connectEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Assign(ctx, req.token, req.ChannelID, auth.GroupRelation, auth.ThingsKind, req.ThingID); err != nil {
+		if err := svc.Assign(ctx, req.token, req.ChannelID, policy.GroupRelation, policy.ThingsKind, req.ThingID); err != nil {
 			return nil, err
 		}
 
@@ -442,7 +442,7 @@ func disconnectEndpoint(svc groups.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		if err := svc.Unassign(ctx, req.token, req.ChannelID, auth.GroupRelation, auth.ThingsKind, req.ThingID); err != nil {
+		if err := svc.Unassign(ctx, req.token, req.ChannelID, policy.GroupRelation, policy.ThingsKind, req.ThingID); err != nil {
 			return nil, err
 		}
 
