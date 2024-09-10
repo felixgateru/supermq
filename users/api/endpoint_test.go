@@ -13,17 +13,19 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	"github.com/absmach/magistrala/pkg/auth"
+	pauth "github.com/absmach/magistrala/pkg/auth"
 	authmocks "github.com/absmach/magistrala/pkg/auth/mocks"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	gmocks "github.com/absmach/magistrala/pkg/groups/mocks"
 	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
+	"github.com/absmach/magistrala/pkg/policy"
 	httpapi "github.com/absmach/magistrala/users/api"
 	"github.com/absmach/magistrala/users/mocks"
 	"github.com/go-chi/chi/v5"
@@ -81,7 +83,7 @@ func (tr testRequest) make() (*http.Response, error) {
 	return tr.client.Do(req)
 }
 
-func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service) {
+func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service, *authmocks.AuthClient) {
 	svc := new(mocks.Service)
 	gsvc := new(gmocks.Service)
 
@@ -92,7 +94,7 @@ func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service) {
 	auth := new(authmocks.AuthClient)
 	httpapi.MakeHandler(svc, auth, true, gsvc, mux, logger, "", passRegex, provider)
 
-	return httptest.NewServer(mux), svc, gsvc
+	return httptest.NewServer(mux), svc, gsvc, auth
 }
 
 func toJSON(data interface{}) string {
@@ -104,7 +106,7 @@ func toJSON(data interface{}) string {
 }
 
 func TestRegisterClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -226,7 +228,7 @@ func TestRegisterClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("RegisterClient", mock.Anything, auth.Session{Token: tc.token}, tc.client, true).Return(tc.client, tc.err)
+		svcCall := svc.On("RegisterClient", mock.Anything, pauth.Session{}, tc.client, true).Return(tc.client, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -242,36 +244,54 @@ func TestRegisterClient(t *testing.T) {
 }
 
 func TestViewClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc   string
-		token  string
-		id     string
-		status int
-		err    error
+		desc         string
+		token        string
+		id           string
+		status       int
+		identifyRes  *magistrala.IdentityRes
+		authorizeRes *magistrala.AuthorizeRes
+		identifyErr  error
+		authorizeErr error
+		err          error
 	}{
 		{
-			desc:   "view user with valid token",
-			token:  validToken,
-			id:     client.ID,
-			status: http.StatusOK,
-			err:    nil,
+			desc:         "view user as admin with valid token",
+			token:        validToken,
+			id:           client.ID,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "view user with invalid token",
-			token:  inValidToken,
-			id:     client.ID,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "view user with invalid token",
+			token:       inValidToken,
+			id:          client.ID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:   "view user with empty token",
-			token:  "",
-			id:     client.ID,
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "view user with empty token",
+			token:       "",
+			id:          client.ID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
+		},
+		{
+			desc:         "view user as normal user successfully",
+			token:        validToken,
+			id:           client.ID,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			authorizeErr: svcerr.ErrAuthorization,
+			err:          nil,
 		},
 	}
 
@@ -283,7 +303,16 @@ func TestViewClient(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ViewClient", mock.Anything, auth.Session{Token: tc.token}, tc.id).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("ViewClient", mock.Anything, mock.Anything, tc.id).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -295,40 +324,51 @@ func TestViewClient(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestViewProfile(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc   string
-		token  string
-		id     string
-		status int
-		err    error
+		desc        string
+		token       string
+		session     pauth.Session
+		id          string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:   "view profile with valid token",
-			token:  validToken,
-			id:     client.ID,
-			status: http.StatusOK,
-			err:    nil,
+			desc:        "view profile with valid token",
+			token:       validToken,
+			id:          client.ID,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			session:     pauth.Session{UserID: validID, DomainID: validID},
+			err:         nil,
 		},
 		{
-			desc:   "view profile with invalid token",
-			token:  inValidToken,
-			id:     client.ID,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "view profile with invalid token",
+			token:       inValidToken,
+			id:          client.ID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			session:     pauth.Session{},
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:   "view profile with empty token",
-			token:  "",
-			id:     client.ID,
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "view profile with empty token",
+			token:       "",
+			id:          client.ID,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			session:     pauth.Session{},
+			err:         apiutil.ErrBearerToken,
 		},
 	}
 
@@ -340,7 +380,8 @@ func TestViewProfile(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ViewProfile", mock.Anything, auth.Session{Token: tc.token}).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		svcCall := svc.On("ViewProfile", mock.Anything, tc.session).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -352,11 +393,12 @@ func TestViewProfile(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
 	}
 }
 
 func TestListClients(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -365,10 +407,14 @@ func TestListClients(t *testing.T) {
 		token             string
 		listUsersResponse mgclients.ClientsPage
 		status            int
+		identifyRes       *magistrala.IdentityRes
+		authorizeRes      *magistrala.AuthorizeRes
+		identifyErr       error
+		authorizeErr      error
 		err               error
 	}{
 		{
-			desc:   "list users with valid token",
+			desc:   "list users as admin with valid token",
 			token:  validToken,
 			status: http.StatusOK,
 			listUsersResponse: mgclients.ClientsPage{
@@ -377,19 +423,23 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			err: nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "list users with empty token",
-			token:  "",
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "list users with empty token",
+			token:       "",
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:   "list users with invalid token",
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "list users with invalid token",
+			token:       inValidToken,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc:  "list users with offset",
@@ -401,16 +451,18 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "offset=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with invalid offset",
-			token:  validToken,
-			query:  "offset=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with invalid offset",
+			token:       validToken,
+			query:       "offset=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:  "list users with limit",
@@ -422,23 +474,26 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "limit=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with invalid limit",
-			token:  validToken,
-			query:  "limit=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with invalid limit",
+			token:       validToken,
+			query:       "limit=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with limit greater than max",
-			token:  validToken,
-			query:  fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with limit greater than max",
+			token:       validToken,
+			query:       fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:  "list users with name",
@@ -449,16 +504,18 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "name=clientname",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate name",
-			token:  validToken,
-			query:  "name=1&name=2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate name",
+			token:       validToken,
+			query:       "name=1&name=2",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with status",
@@ -469,23 +526,26 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "status=enabled",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with invalid status",
-			token:  validToken,
-			query:  "status=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with invalid status",
+			token:       validToken,
+			query:       "status=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate status",
-			token:  validToken,
-			query:  "status=enabled&status=disabled",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate status",
+			token:       validToken,
+			query:       "status=enabled&status=disabled",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with tags",
@@ -496,16 +556,18 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "tag=tag1,tag2",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate tags",
-			token:  validToken,
-			query:  "tag=tag1&tag=tag2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate tags",
+			token:       validToken,
+			query:       "tag=tag1&tag=tag2",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with metadata",
@@ -516,23 +578,26 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with invalid metadata",
-			token:  validToken,
-			query:  "metadata=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with invalid metadata",
+			token:       validToken,
+			query:       "metadata=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate metadata",
-			token:  validToken,
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate metadata",
+			token:       validToken,
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with permissions",
@@ -543,16 +608,18 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=view",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "permission=view",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate permissions",
-			token:  validToken,
-			query:  "permission=view&permission=view",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate permissions",
+			token:       validToken,
+			query:       "permission=view&permission=view",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with list perms",
@@ -563,16 +630,18 @@ func TestListClients(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "list_perms=true",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "list_perms=true",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate list perms",
-			token:  validToken,
-			query:  "list_perms=true&list_perms=true",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate list perms",
+			token:       validToken,
+			query:       "list_perms=true&list_perms=true",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list users with identity",
@@ -586,15 +655,17 @@ func TestListClients(t *testing.T) {
 					client,
 				},
 			},
-			status: http.StatusOK,
-			err:    nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate identity",
-			token:  validToken,
-			query:  "identity=1&identity=2",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate identity",
+			token:       validToken,
+			query:       "identity=1&identity=2",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc: "list users with order",
@@ -606,31 +677,35 @@ func TestListClients(t *testing.T) {
 					client,
 				},
 			},
-			token:  validToken,
-			query:  "order=name",
-			status: http.StatusOK,
-			err:    nil,
+			token:       validToken,
+			query:       "order=name",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:   "list users with duplicate order",
-			token:  validToken,
-			query:  "order=name&order=name",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate order",
+			token:       validToken,
+			query:       "order=name&order=name",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:   "list users with invalid order direction",
-			token:  validToken,
-			query:  "dir=invalid",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			desc:        "list users with invalid order direction",
+			token:       validToken,
+			query:       "dir=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:   "list users with duplicate order direction",
-			token:  validToken,
-			query:  "dir=asc&dir=asc",
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrInvalidQueryParams,
+			desc:        "list users with duplicate order direction",
+			token:       validToken,
+			query:       "dir=asc&dir=asc",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 	}
 
@@ -643,7 +718,16 @@ func TestListClients(t *testing.T) {
 			token:       tc.token,
 		}
 
-		svcCall := svc.On("ListClients", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(tc.listUsersResponse, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{UserId: validID, DomainId: validID}, nil)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("ListClients", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tc.listUsersResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var bodyRes respBody
@@ -655,11 +739,13 @@ func TestListClients(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestSearchUsers(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -669,6 +755,7 @@ func TestSearchUsers(t *testing.T) {
 		status            int
 		query             string
 		listUsersResponse mgclients.ClientsPage
+		identifyErr       error
 		err               error
 	}{
 		{
@@ -685,18 +772,20 @@ func TestSearchUsers(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:   "search users with empty token",
-			token:  "",
-			query:  "name=clientname",
-			status: http.StatusUnauthorized,
-			err:    apiutil.ErrBearerToken,
+			desc:        "search users with empty token",
+			token:       "",
+			query:       "name=clientname",
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:   "search users with invalid token",
-			token:  inValidToken,
-			query:  "name=clientname",
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "search users with invalid token",
+			token:       inValidToken,
+			query:       "name=clientname",
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc:  "search users with offset",
@@ -764,7 +853,8 @@ func TestSearchUsers(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("SearchUsers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{UserId: validID, DomainId: validID}, tc.identifyErr)
+		svcCall := svc.On("SearchUsers", mock.Anything, mock.Anything).Return(
 			mgclients.ClientsPage{
 				Page:    tc.listUsersResponse.Page,
 				Clients: tc.listUsersResponse.Clients,
@@ -774,11 +864,12 @@ func TestSearchUsers(t *testing.T) {
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
 	}
 }
 
 func TestUpdateClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	newName := "newname"
@@ -792,10 +883,14 @@ func TestUpdateClient(t *testing.T) {
 		token          string
 		contentType    string
 		status         int
+		identifyRes    *magistrala.IdentityRes
+		authorizeRes   *magistrala.AuthorizeRes
+		identifyErr    error
+		authorizeErr   error
 		err            error
 	}{
 		{
-			desc:        "update user with valid token",
+			desc:        "update as admin user with valid token",
 			id:          client.ID,
 			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
 			token:       validToken,
@@ -805,8 +900,26 @@ func TestUpdateClient(t *testing.T) {
 				Name:     newName,
 				Metadata: newMetadata,
 			},
-			status: http.StatusOK,
-			err:    nil,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			status:       http.StatusOK,
+			err:          nil,
+		},
+		{
+			desc:        "update as normal user with valid token",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
+			token:       validToken,
+			contentType: contentType,
+			clientResponse: mgclients.Client{
+				ID:       client.ID,
+				Name:     newName,
+				Metadata: newMetadata,
+			},
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			status:       http.StatusOK,
+			err:          nil,
 		},
 		{
 			desc:        "update user with invalid token",
@@ -815,6 +928,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       inValidToken,
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -824,6 +938,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       "",
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
@@ -833,6 +948,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthorization,
 		},
 		{
@@ -851,6 +967,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -860,6 +977,7 @@ func TestUpdateClient(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -873,7 +991,16 @@ func TestUpdateClient(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
 		}
-		svcCall := svc.On("UpdateClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.clientResponse, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("UpdateClient", mock.Anything, mock.Anything, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -885,11 +1012,13 @@ func TestUpdateClient(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestUpdateClientTags(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	defer us.Close()
@@ -903,10 +1032,14 @@ func TestUpdateClientTags(t *testing.T) {
 		clientResponse mgclients.Client
 		token          string
 		status         int
+		identifyRes    *magistrala.IdentityRes
+		authorizeRes   *magistrala.AuthorizeRes
+		identifyErr    error
+		authorizeErr   error
 		err            error
 	}{
 		{
-			desc:        "update user tags with valid token",
+			desc:        "updateuser tags as admin with valid token",
 			id:          client.ID,
 			data:        fmt.Sprintf(`{"tags":["%s"]}`, newTag),
 			contentType: contentType,
@@ -914,9 +1047,26 @@ func TestUpdateClientTags(t *testing.T) {
 				ID:   client.ID,
 				Tags: []string{newTag},
 			},
-			token:  validToken,
-			status: http.StatusOK,
-			err:    nil,
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
+		},
+		{
+			desc:        "updateuser tags as normal user with valid token",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"tags":["%s"]}`, newTag),
+			contentType: contentType,
+			clientResponse: mgclients.Client{
+				ID:   client.ID,
+				Tags: []string{newTag},
+			},
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          nil,
 		},
 		{
 			desc:        "update user tags with empty token",
@@ -925,6 +1075,7 @@ func TestUpdateClientTags(t *testing.T) {
 			contentType: contentType,
 			token:       "",
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
@@ -934,6 +1085,7 @@ func TestUpdateClientTags(t *testing.T) {
 			contentType: contentType,
 			token:       inValidToken,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -943,6 +1095,7 @@ func TestUpdateClientTags(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthorization,
 		},
 		{
@@ -984,7 +1137,16 @@ func TestUpdateClientTags(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientTags", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.clientResponse, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("UpdateClientTags", mock.Anything, mock.Anything, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -999,24 +1161,30 @@ func TestUpdateClientTags(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestUpdateClientIdentity(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc        string
-		data        string
-		client      mgclients.Client
-		contentType string
-		token       string
-		status      int
-		err         error
+		desc         string
+		data         string
+		client       mgclients.Client
+		contentType  string
+		token        string
+		status       int
+		identifyRes  *magistrala.IdentityRes
+		authorizeRes *magistrala.AuthorizeRes
+		identifyErr  error
+		authorizeErr error
+		err          error
 	}{
 		{
-			desc: "update user identity with valid token",
+			desc: "update user identityas admin with valid token",
 			data: fmt.Sprintf(`{"identity": "%s"}`, "newclientidentity@example.com"),
 			client: mgclients.Client{
 				ID: client.ID,
@@ -1025,10 +1193,29 @@ func TestUpdateClientIdentity(t *testing.T) {
 					Secret:   "secret",
 				},
 			},
-			contentType: contentType,
-			token:       validToken,
-			status:      http.StatusOK,
-			err:         nil,
+			contentType:  contentType,
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
+		},
+		{
+			desc: "update user identity as normal user with valid token",
+			data: fmt.Sprintf(`{"identity": "%s"}`, "newclientidentity@example.com"),
+			client: mgclients.Client{
+				ID: client.ID,
+				Credentials: mgclients.Credentials{
+					Identity: "newclientidentity@example.com",
+					Secret:   "secret",
+				},
+			},
+			contentType:  contentType,
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          nil,
 		},
 		{
 			desc: "update user identity with empty token",
@@ -1043,6 +1230,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			contentType: contentType,
 			token:       "",
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
@@ -1058,6 +1246,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			contentType: contentType,
 			token:       inValid,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -1073,6 +1262,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrMissingID,
 		},
 		{
@@ -1117,7 +1307,16 @@ func TestUpdateClientIdentity(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientIdentity", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("UpdateClientIdentity", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1129,11 +1328,13 @@ func TestUpdateClientIdentity(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestPasswordResetRequest(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	testemail := "test@example.com"
@@ -1145,6 +1346,9 @@ func TestPasswordResetRequest(t *testing.T) {
 		contentType string
 		referer     string
 		status      int
+		generateErr error
+		issueErr    error
+		sendErr     error
 		err         error
 	}{
 		{
@@ -1177,6 +1381,7 @@ func TestPasswordResetRequest(t *testing.T) {
 			contentType: contentType,
 			referer:     testReferer,
 			status:      http.StatusNotFound,
+			generateErr: svcerr.ErrNotFound,
 			err:         svcerr.ErrNotFound,
 		},
 		{
@@ -1195,6 +1400,15 @@ func TestPasswordResetRequest(t *testing.T) {
 			status:      http.StatusUnsupportedMediaType,
 			err:         apiutil.ErrValidation,
 		},
+		{
+			desc:        "password reset with failed to issue token",
+			data:        fmt.Sprintf(`{"email": "%s", "host": "%s"}`, testemail, testhost),
+			contentType: contentType,
+			referer:     testReferer,
+			status:      http.StatusUnauthorized,
+			issueErr:    svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
+		},
 	}
 
 	for _, tc := range cases {
@@ -1206,16 +1420,20 @@ func TestPasswordResetRequest(t *testing.T) {
 			referer:     tc.referer,
 			body:        strings.NewReader(tc.data),
 		}
-		svcCall := svc.On("GenerateResetToken", mock.Anything, mock.Anything, mock.Anything).Return(auth.Token{}, tc.err)
+		authCall := auth.On("Issue", mock.Anything, mock.Anything).Return(&magistrala.Token{AccessToken: validToken}, nil)
+		svcCall := svc.On("GenerateResetToken", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.generateErr)
+		svcCall1 := svc.On("SendPasswordReset", mock.Anything, mock.Anything, mock.Anything, mock.Anything, validToken).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		svcCall1.Unset()
 	}
 }
 
 func TestPasswordReset(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	strongPass := "StrongPassword"
@@ -1226,6 +1444,8 @@ func TestPasswordReset(t *testing.T) {
 		token       string
 		contentType string
 		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
 		err         error
 	}{
 		{
@@ -1234,6 +1454,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1242,6 +1463,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       inValidToken,
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -1250,6 +1472,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrPasswordFormat,
 		},
 		{
@@ -1258,6 +1481,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       "",
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
@@ -1266,6 +1490,7 @@ func TestPasswordReset(t *testing.T) {
 			token:       validToken,
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1295,35 +1520,58 @@ func TestPasswordReset(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
 		}
-		svcCall := svc.On("ResetSecret", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		svcCall := svc.On("ResetSecret", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
 	}
 }
 
 func TestUpdateClientRole(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc        string
-		data        string
-		clientID    string
-		token       string
-		contentType string
-		status      int
-		err         error
+		desc          string
+		data          string
+		clientID      string
+		token         string
+		contentType   string
+		status        int
+		identifyRes   *magistrala.IdentityRes
+		superAdminRes *magistrala.AuthorizeRes
+		memberAuthRes *magistrala.AuthorizeRes
+		identifyErr   error
+		superAdminErr error
+		memberAuthErr error
+		err           error
 	}{
 		{
-			desc:        "update client role with valid token",
-			data:        fmt.Sprintf(`{"role": "%s"}`, "admin"),
-			clientID:    client.ID,
-			token:       validToken,
-			contentType: contentType,
-			status:      http.StatusOK,
-			err:         nil,
+			desc:          "update client role as admin with valid token",
+			data:          fmt.Sprintf(`{"role": "%s"}`, "admin"),
+			clientID:      client.ID,
+			token:         validToken,
+			contentType:   contentType,
+			status:        http.StatusOK,
+			identifyRes:   &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			superAdminRes: &magistrala.AuthorizeRes{Authorized: true},
+			memberAuthRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:           nil,
+		},
+		{
+			desc:          "update client role as normal user with valid token",
+			data:          fmt.Sprintf(`{"role": "%s"}`, "admin"),
+			clientID:      client.ID,
+			token:         validToken,
+			contentType:   contentType,
+			status:        http.StatusOK,
+			identifyRes:   &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
+			memberAuthRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:           nil,
 		},
 		{
 			desc:        "update client role with invalid token",
@@ -1332,16 +1580,19 @@ func TestUpdateClientRole(t *testing.T) {
 			token:       inValidToken,
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:        "update client role with invalid id",
-			data:        fmt.Sprintf(`{"role": "%s"}`, "admin"),
-			clientID:    inValid,
-			token:       validToken,
-			contentType: contentType,
-			status:      http.StatusForbidden,
-			err:         svcerr.ErrAuthorization,
+			desc:          "update client role with invalid id",
+			data:          fmt.Sprintf(`{"role": "%s"}`, "admin"),
+			clientID:      inValid,
+			token:         validToken,
+			contentType:   contentType,
+			status:        http.StatusForbidden,
+			identifyRes:   &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			memberAuthRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:           svcerr.ErrAuthorization,
 		},
 		{
 			desc:        "update client role with empty token",
@@ -1350,16 +1601,19 @@ func TestUpdateClientRole(t *testing.T) {
 			token:       "",
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:        "update client with invalid role",
-			data:        fmt.Sprintf(`{"role": "%s"}`, "invalid"),
-			clientID:    client.ID,
-			token:       validToken,
-			contentType: contentType,
-			status:      http.StatusBadRequest,
-			err:         svcerr.ErrInvalidRole,
+			desc:          "update client with invalid role",
+			data:          fmt.Sprintf(`{"role": "%s"}`, "invalid"),
+			clientID:      client.ID,
+			token:         validToken,
+			contentType:   contentType,
+			status:        http.StatusBadRequest,
+			identifyRes:   &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			memberAuthRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:           svcerr.ErrInvalidRole,
 		},
 		{
 			desc:        "update client with invalid contentype",
@@ -1391,7 +1645,24 @@ func TestUpdateClientRole(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientRole", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.superAdminRes, tc.superAdminErr)
+		authCall2 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     tc.clientID,
+			Permission:  policy.MembershipPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.memberAuthRes, tc.memberAuthErr)
+		svcCall := svc.On("UpdateClientRole", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1403,11 +1674,14 @@ func TestUpdateClientRole(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
+		authCall2.Unset()
 	}
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1417,6 +1691,8 @@ func TestUpdateClientSecret(t *testing.T) {
 		contentType string
 		token       string
 		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
 		err         error
 	}{
 		{
@@ -1432,6 +1708,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1447,6 +1724,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       "",
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrBearerToken,
 		},
 		{
@@ -1462,6 +1740,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       inValid,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 
@@ -1478,6 +1757,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			token:       validToken,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrMissingPass,
 		},
 		{
@@ -1522,7 +1802,8 @@ func TestUpdateClientSecret(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("UpdateClientSecret", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything).Return(tc.client, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		svcCall := svc.On("UpdateClientSecret", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything).Return(tc.client, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var resBody respBody
@@ -1534,11 +1815,12 @@ func TestUpdateClientSecret(t *testing.T) {
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
 	}
 }
 
 func TestIssueToken(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	validIdentity := "valid"
@@ -1610,7 +1892,8 @@ func TestIssueToken(t *testing.T) {
 			body:        strings.NewReader(tc.data),
 		}
 
-		svcCall := svc.On("IssueToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(auth.Token{}, tc.err)
+		authCall := auth.On("Issue", mock.Anything, mock.Anything).Return(&magistrala.Token{AccessToken: validToken}, tc.err)
+		svcCall := svc.On("IssueToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		if tc.err != nil {
@@ -1624,32 +1907,41 @@ func TestIssueToken(t *testing.T) {
 		}
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
 	}
 }
 
 func TestRefreshToken(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
 		desc        string
 		data        string
 		contentType string
+		token       string
 		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		refreshErr  error
 		err         error
 	}{
 		{
 			desc:        "refresh token with valid token",
 			data:        fmt.Sprintf(`{"refresh_token": "%s", "domain_id": "%s"}`, validToken, validID),
 			contentType: contentType,
+			token:       validToken,
 			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
 			desc:        "refresh token with invalid token",
 			data:        fmt.Sprintf(`{"refresh_token": "%s", "domain_id": "%s"}`, inValidToken, validID),
 			contentType: contentType,
+			token:       inValidToken,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         svcerr.ErrAuthentication,
 		},
 		{
@@ -1657,19 +1949,23 @@ func TestRefreshToken(t *testing.T) {
 			data:        fmt.Sprintf(`{"refresh_token": "%s", "domain_id": "%s"}`, "", validID),
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
 			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:        "refresh token with invalid domain",
 			data:        fmt.Sprintf(`{"refresh_token": "%s", "domain_id": "%s"}`, validToken, "invalid"),
 			contentType: contentType,
+			token:       validToken,
 			status:      http.StatusUnauthorized,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc:        "refresh token with malformed data",
 			data:        fmt.Sprintf(`{"refresh_token": %s, "domain_id": %s}`, validToken, validID),
 			contentType: contentType,
+			token:       validToken,
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
@@ -1677,6 +1973,7 @@ func TestRefreshToken(t *testing.T) {
 			desc:        "refresh token with invalid contentype",
 			data:        fmt.Sprintf(`{"refresh_token": "%s", "domain_id": "%s"}`, validToken, validID),
 			contentType: "application/xml",
+			token:       validToken,
 			status:      http.StatusUnsupportedMediaType,
 			err:         apiutil.ErrValidation,
 		},
@@ -1690,8 +1987,9 @@ func TestRefreshToken(t *testing.T) {
 			contentType: tc.contentType,
 			body:        strings.NewReader(tc.data),
 		}
-
-		svcCall := svc.On("RefreshToken", mock.Anything, mock.Anything, mock.Anything).Return(auth.Token{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Refresh", mock.Anything, mock.Anything, mock.Anything).Return(&magistrala.Token{}, tc.refreshErr)
+		svcCall := svc.On("RefreshToken", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		if tc.err != nil {
@@ -1705,55 +2003,79 @@ func TestRefreshToken(t *testing.T) {
 		}
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestEnableClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 	cases := []struct {
-		desc     string
-		client   mgclients.Client
-		response mgclients.Client
-		token    string
-		status   int
-		err      error
+		desc         string
+		client       mgclients.Client
+		response     mgclients.Client
+		token        string
+		status       int
+		identifyRes  *magistrala.IdentityRes
+		authorizeRes *magistrala.AuthorizeRes
+		identifyErr  error
+		authorizeErr error
+		err          error
 	}{
 		{
-			desc:   "enable client with valid token",
+			desc:   "enable client as admin with valid token",
 			client: client,
 			response: mgclients.Client{
 				ID:     client.ID,
 				Status: mgclients.EnabledStatus,
 			},
-			token:  validToken,
-			status: http.StatusOK,
-			err:    nil,
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "enable client with invalid token",
+			desc:   "enable client as normal user with valid token",
 			client: client,
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			response: mgclients.Client{
+				ID:     client.ID,
+				Status: mgclients.EnabledStatus,
+			},
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          nil,
+		},
+		{
+			desc:        "enable client with invalid token",
+			client:      client,
+			token:       inValidToken,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc: "enable client with empty id",
 			client: mgclients.Client{
 				ID: "",
 			},
-			token:  validToken,
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrMissingID,
+			token:       validToken,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
 			desc: "enable client with invalid id",
 			client: mgclients.Client{
 				ID: "invalid",
 			},
-			token:  validToken,
-			status: http.StatusForbidden,
-			err:    svcerr.ErrAuthorization,
+			token:       validToken,
+			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         svcerr.ErrAuthorization,
 		},
 	}
 
@@ -1768,7 +2090,16 @@ func TestEnableClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("EnableClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("EnableClient", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		if tc.err != nil {
@@ -1782,56 +2113,80 @@ func TestEnableClient(t *testing.T) {
 		}
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestDisableClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc     string
-		client   mgclients.Client
-		response mgclients.Client
-		token    string
-		status   int
-		err      error
+		desc         string
+		client       mgclients.Client
+		response     mgclients.Client
+		token        string
+		status       int
+		identifyRes  *magistrala.IdentityRes
+		authorizeRes *magistrala.AuthorizeRes
+		identifyErr  error
+		authorizeErr error
+		err          error
 	}{
 		{
-			desc:   "disable user with valid token",
+			desc:   "disable user as admin with valid token",
 			client: client,
 			response: mgclients.Client{
 				ID:     client.ID,
 				Status: mgclients.DisabledStatus,
 			},
-			token:  validToken,
-			status: http.StatusOK,
-			err:    nil,
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "disable user with invalid token",
+			desc:   "disable user as normal user with valid token",
 			client: client,
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			response: mgclients.Client{
+				ID:     client.ID,
+				Status: mgclients.DisabledStatus,
+			},
+			token:        validToken,
+			status:       http.StatusOK,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
+			err:          nil,
+		},
+		{
+			desc:        "disable user with invalid token",
+			client:      client,
+			token:       inValidToken,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc: "disable user with empty id",
 			client: mgclients.Client{
 				ID: "",
 			},
-			token:  validToken,
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrMissingID,
+			token:       validToken,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
 			desc: "disable user with invalid id",
 			client: mgclients.Client{
 				ID: "invalid",
 			},
-			token:  validToken,
-			status: http.StatusForbidden,
-			err:    svcerr.ErrAuthorization,
+			token:       validToken,
+			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         svcerr.ErrAuthorization,
 		},
 	}
 
@@ -1846,60 +2201,80 @@ func TestDisableClient(t *testing.T) {
 			body:        strings.NewReader(data),
 		}
 
-		svcCall := svc.On("DisableClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(mgclients.Client{}, tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		svcCall := svc.On("DisableClient", mock.Anything, mock.Anything, mock.Anything).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestDeleteClient(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, auth := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
-		desc     string
-		client   mgclients.Client
-		response mgclients.Client
-		token    string
-		status   int
-		err      error
+		desc         string
+		client       mgclients.Client
+		response     mgclients.Client
+		token        string
+		status       int
+		identifyRes  *magistrala.IdentityRes
+		authorizeRes *magistrala.AuthorizeRes
+		identifyErr  error
+		authorizeErr error
+		err          error
 	}{
 		{
-			desc:   "delete user with valid token",
+			desc:   "delete user as admin with valid token",
 			client: client,
 			response: mgclients.Client{
 				ID: client.ID,
 			},
-			token:  validToken,
-			status: http.StatusNoContent,
-			err:    nil,
+			token:        validToken,
+			status:       http.StatusNoContent,
+			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
+			err:          nil,
 		},
 		{
-			desc:   "delete user with invalid token",
-			client: client,
-			token:  inValidToken,
-			status: http.StatusUnauthorized,
-			err:    svcerr.ErrAuthentication,
+			desc:        "delete user with invalid token",
+			client:      client,
+			token:       inValidToken,
+			status:      http.StatusUnauthorized,
+			identifyErr: svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
 			desc: "delete user with empty id",
 			client: mgclients.Client{
 				ID: "",
 			},
-			token:  validToken,
-			status: http.StatusMethodNotAllowed,
-			err:    apiutil.ErrMissingID,
+			token:       validToken,
+			status:      http.StatusMethodNotAllowed,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
 			desc: "delete user with invalid id",
 			client: mgclients.Client{
 				ID: "invalid",
 			},
-			token:  validToken,
-			status: http.StatusForbidden,
-			err:    svcerr.ErrAuthorization,
+			token:       validToken,
+			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			err:         svcerr.ErrAuthorization,
 		},
 	}
 
@@ -1913,17 +2288,27 @@ func TestDeleteClient(t *testing.T) {
 			token:       tc.token,
 			body:        strings.NewReader(data),
 		}
-
-		repoCall := svc.On("DeleteClient", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.err)
+		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
+			SubjectType: policy.UserType,
+			SubjectKind: policy.UsersKind,
+			Subject:     validID,
+			Permission:  policy.AdminPermission,
+			ObjectType:  policy.PlatformType,
+			Object:      policy.MagistralaObject,
+		}).Return(tc.authorizeRes, tc.authorizeErr)
+		repoCall := svc.On("DeleteClient", mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		repoCall.Unset()
+		authCall.Unset()
+		authCall1.Unset()
 	}
 }
 
 func TestListUsersByUserGroupId(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2216,7 +2601,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2230,7 +2615,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 }
 
 func TestListUsersByChannelID(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2511,7 +2896,7 @@ func TestListUsersByChannelID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2525,7 +2910,7 @@ func TestListUsersByChannelID(t *testing.T) {
 }
 
 func TestListUsersByDomainID(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2814,7 +3199,7 @@ func TestListUsersByDomainID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2828,7 +3213,7 @@ func TestListUsersByDomainID(t *testing.T) {
 }
 
 func TestListUsersByThingID(t *testing.T) {
-	us, svc, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3088,7 +3473,7 @@ func TestListUsersByThingID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -3102,7 +3487,7 @@ func TestListUsersByThingID(t *testing.T) {
 }
 
 func TestAssignUsers(t *testing.T) {
-	us, _, gsvc := newUsersServer()
+	us, _, gsvc, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3210,7 +3595,7 @@ func TestAssignUsers(t *testing.T) {
 }
 
 func TestUnassignUsers(t *testing.T) {
-	us, _, gsvc := newUsersServer()
+	us, _, gsvc, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3317,7 +3702,7 @@ func TestUnassignUsers(t *testing.T) {
 }
 
 func TestAssignGroups(t *testing.T) {
-	us, _, gsvc := newUsersServer()
+	us, _, gsvc, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3408,7 +3793,7 @@ func TestAssignGroups(t *testing.T) {
 }
 
 func TestUnassignGroups(t *testing.T) {
-	us, _, gsvc := newUsersServer()
+	us, _, gsvc, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {

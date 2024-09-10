@@ -40,7 +40,7 @@ func (ms *metricsMiddleware) RegisterClient(ctx context.Context, session auth.Se
 }
 
 // IssueToken instruments IssueToken method with metrics.
-func (ms *metricsMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error) {
+func (ms *metricsMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "issue_token").Add(1)
 		ms.latency.With("method", "issue_token").Observe(time.Since(begin).Seconds())
@@ -49,7 +49,7 @@ func (ms *metricsMiddleware) IssueToken(ctx context.Context, identity, secret, d
 }
 
 // RefreshToken instruments RefreshToken method with metrics.
-func (ms *metricsMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (token auth.Token, err error) {
+func (ms *metricsMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (mgclients.Client, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "refresh_token").Add(1)
 		ms.latency.With("method", "refresh_token").Observe(time.Since(begin).Seconds())
@@ -85,12 +85,12 @@ func (ms *metricsMiddleware) ListClients(ctx context.Context, session auth.Sessi
 }
 
 // SearchUsers instruments SearchClients method with metrics.
-func (ms *metricsMiddleware) SearchUsers(ctx context.Context, session auth.Session, pm mgclients.Page) (mp mgclients.ClientsPage, err error) {
+func (ms *metricsMiddleware) SearchUsers(ctx context.Context, pm mgclients.Page) (mp mgclients.ClientsPage, err error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "search_users").Add(1)
 		ms.latency.With("method", "search_users").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return ms.svc.SearchUsers(ctx, session, pm)
+	return ms.svc.SearchUsers(ctx, pm)
 }
 
 // UpdateClient instruments UpdateClient method with metrics.
@@ -130,7 +130,7 @@ func (ms *metricsMiddleware) UpdateClientSecret(ctx context.Context, session aut
 }
 
 // GenerateResetToken instruments GenerateResetToken method with metrics.
-func (ms *metricsMiddleware) GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error) {
+func (ms *metricsMiddleware) GenerateResetToken(ctx context.Context, email, host string) (mgclients.Client, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "generate_reset_token").Add(1)
 		ms.latency.With("method", "generate_reset_token").Observe(time.Since(begin).Seconds())
@@ -202,7 +202,7 @@ func (ms *metricsMiddleware) Identify(ctx context.Context, session auth.Session)
 }
 
 // OAuthCallback instruments OAuthCallback method with metrics.
-func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+func (ms *metricsMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (mgclients.Client, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "oauth_callback").Add(1)
 		ms.latency.With("method", "oauth_callback").Observe(time.Since(begin).Seconds())

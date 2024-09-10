@@ -160,8 +160,8 @@ func (es *eventStore) ListClients(ctx context.Context, session auth.Session, pm 
 	return cp, nil
 }
 
-func (es *eventStore) SearchUsers(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
-	cp, err := es.svc.SearchUsers(ctx, session, pm)
+func (es *eventStore) SearchUsers(ctx context.Context, pm mgclients.Page) (mgclients.ClientsPage, error) {
+	cp, err := es.svc.SearchUsers(ctx, pm)
 	if err != nil {
 		return cp, err
 	}
@@ -242,10 +242,10 @@ func (es *eventStore) Identify(ctx context.Context, session auth.Session) (strin
 	return userID, nil
 }
 
-func (es *eventStore) GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error) {
+func (es *eventStore) GenerateResetToken(ctx context.Context, email, host string) (mgclients.Client, error) {
 	token, err := es.svc.GenerateResetToken(ctx, email, host)
 	if err != nil {
-		return auth.Token{}, err
+		return mgclients.Client{}, err
 	}
 
 	event := generateResetTokenEvent{
@@ -256,7 +256,7 @@ func (es *eventStore) GenerateResetToken(ctx context.Context, email, host string
 	return token, es.Publish(ctx, event)
 }
 
-func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error) {
+func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
 	token, err := es.svc.IssueToken(ctx, identity, secret, domainID)
 	if err != nil {
 		return token, err
@@ -274,7 +274,7 @@ func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID
 	return token, nil
 }
 
-func (es *eventStore) RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error) {
+func (es *eventStore) RefreshToken(ctx context.Context, session auth.Session, domainID string) (mgclients.Client, error) {
 	token, err := es.svc.RefreshToken(ctx, session, domainID)
 	if err != nil {
 		return token, err
@@ -313,7 +313,7 @@ func (es *eventStore) SendPasswordReset(ctx context.Context, host, email, user, 
 	return es.Publish(ctx, event)
 }
 
-func (es *eventStore) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+func (es *eventStore) OAuthCallback(ctx context.Context, client mgclients.Client) (mgclients.Client, error) {
 	token, err := es.svc.OAuthCallback(ctx, client)
 	if err != nil {
 		return token, err

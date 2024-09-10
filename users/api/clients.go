@@ -625,7 +625,7 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service, authClient 
 				return
 			}
 
-			svcResp, err := svc.OAuthCallback(r.Context(), client)
+			client, err = svc.OAuthCallback(r.Context(), client)
 			if err != nil {
 				http.Redirect(w, r, oauth.ErrorURL()+"?error="+err.Error(), http.StatusSeeOther)
 				return
@@ -634,19 +634,19 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service, authClient 
 			if _, err = authClient.Authorize(r.Context(), &magistrala.AuthorizeReq{
 				SubjectType: policy.UserType,
 				SubjectKind: policy.UsersKind,
-				Subject:     svcResp.UserID,
+				Subject:     client.ID,
 				Permission:  policy.MembershipPermission,
 				ObjectType:  policy.PlatformType,
 				Object:      policy.MagistralaObject,
 			}); err != nil {
-				if err := svc.AddClientPolicy(r.Context(), mgclients.Client{ID: svcResp.UserID, Role: svcResp.Role}); err != nil {
+				if err := svc.AddClientPolicy(r.Context(), client); err != nil {
 					http.Redirect(w, r, oauth.ErrorURL()+"?error="+err.Error(), http.StatusSeeOther)
 					return
 				}
 			}
 
 			jwt, err := authClient.Issue(r.Context(), &magistrala.IssueReq{
-				UserId: svcResp.UserID,
+				UserId: client.ID,
 				Type:   uint32(mgauth.AccessKey),
 			})
 			if err != nil {

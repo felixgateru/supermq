@@ -92,26 +92,26 @@ func (svc service) RegisterClient(ctx context.Context, session auth.Session, cli
 	return client, nil
 }
 
-func (svc service) IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error) {
+func (svc service) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
 	dbUser, err := svc.clients.RetrieveByIdentity(ctx, identity)
 	if err != nil {
-		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if err := svc.hasher.Compare(secret, dbUser.Credentials.Secret); err != nil {
-		return auth.Token{}, errors.Wrap(svcerr.ErrLogin, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrLogin, err)
 	}
 
 	var d string
 	if domainID != "" {
 		d = domainID
 	}
-	return auth.Token{
-		UserID:   dbUser.ID,
-		DomainID: d,
+	return mgclients.Client{
+		ID:     dbUser.ID,
+		Domain: d,
 	}, nil
 }
 
-func (svc service) RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error) {
+func (svc service) RefreshToken(ctx context.Context, session auth.Session, domainID string) (mgclients.Client, error) {
 	var d string
 	if domainID != "" {
 		d = domainID
@@ -119,14 +119,14 @@ func (svc service) RefreshToken(ctx context.Context, session auth.Session, domai
 
 	dbUser, err := svc.clients.RetrieveByID(ctx, session.UserID)
 	if err != nil {
-		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if dbUser.Status == mgclients.DisabledStatus {
-		return auth.Token{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrAuthentication, errLoginDisableUser)
 	}
 
-	return auth.Token{
-		DomainID: d,
+	return mgclients.Client{
+		Domain: d,
 	}, nil
 }
 
@@ -170,7 +170,7 @@ func (svc service) ListClients(ctx context.Context, session auth.Session, pm mgc
 	return pg, err
 }
 
-func (svc service) SearchUsers(ctx context.Context, session auth.Session, pm mgclients.Page) (mgclients.ClientsPage, error) {
+func (svc service) SearchUsers(ctx context.Context, pm mgclients.Page) (mgclients.ClientsPage, error) {
 	page := mgclients.Page{
 		Offset: pm.Offset,
 		Limit:  pm.Limit,
@@ -252,15 +252,15 @@ func (svc service) UpdateClientIdentity(ctx context.Context, session auth.Sessio
 	return cli, nil
 }
 
-func (svc service) GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error) {
+func (svc service) GenerateResetToken(ctx context.Context, email, host string) (mgclients.Client, error) {
 	client, err := svc.clients.RetrieveByIdentity(ctx, email)
 	if err != nil {
-		return auth.Token{}, errors.Wrap(svcerr.ErrViewEntity, err)
+		return mgclients.Client{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 
-	return auth.Token{
-		UserID: client.ID,
-		Name:   client.Name,
+	return mgclients.Client{
+		ID:   client.ID,
+		Name: client.Name,
 	}, nil
 }
 
@@ -514,23 +514,23 @@ func (svc *service) checkSuperAdmin(ctx context.Context, session auth.Session) e
 	return nil
 }
 
-func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (auth.Token, error) {
+func (svc service) OAuthCallback(ctx context.Context, client mgclients.Client) (mgclients.Client, error) {
 	rclient, err := svc.clients.RetrieveByIdentity(ctx, client.Credentials.Identity)
 	if err != nil {
 		switch errors.Contains(err, repoerr.ErrNotFound) {
 		case true:
 			rclient, err = svc.RegisterClient(ctx, auth.Session{}, client, true)
 			if err != nil {
-				return auth.Token{}, err
+				return mgclients.Client{}, err
 			}
 		default:
-			return auth.Token{}, err
+			return mgclients.Client{}, err
 		}
 	}
 
-	return auth.Token{
-		UserID: rclient.ID,
-		Role:   rclient.Role,
+	return mgclients.Client{
+		ID:   rclient.ID,
+		Role: rclient.Role,
 	}, nil
 }
 

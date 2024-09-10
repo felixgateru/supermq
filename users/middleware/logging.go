@@ -48,14 +48,11 @@ func (lm *loggingMiddleware) RegisterClient(ctx context.Context, session auth.Se
 
 // IssueToken logs the issue_token request. It logs the client identity type and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (t auth.Token, err error) {
+func (lm *loggingMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (c mgclients.Client, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 			slog.String("domain_id", domainID),
-		}
-		if t.AccessType != "" {
-			args = append(args, slog.String("access_type", t.AccessType))
 		}
 		if err != nil {
 			args = append(args, slog.Any("error", err))
@@ -69,14 +66,11 @@ func (lm *loggingMiddleware) IssueToken(ctx context.Context, identity, secret, d
 
 // RefreshToken logs the refresh_token request. It logs the refreshtoken, token type and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (t auth.Token, err error) {
+func (lm *loggingMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (c mgclients.Client, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 			slog.String("domain_id", domainID),
-		}
-		if t.AccessType != "" {
-			args = append(args, slog.String("access_type", t.AccessType))
 		}
 		if err != nil {
 			args = append(args, slog.Any("error", err))
@@ -153,7 +147,7 @@ func (lm *loggingMiddleware) ListClients(ctx context.Context, session auth.Sessi
 }
 
 // SearchUsers logs the search_users request. It logs the page metadata and the time it took to complete the request.
-func (lm *loggingMiddleware) SearchUsers(ctx context.Context, session auth.Session, cp mgclients.Page) (mp mgclients.ClientsPage, err error) {
+func (lm *loggingMiddleware) SearchUsers(ctx context.Context, cp mgclients.Page) (mp mgclients.ClientsPage, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -170,7 +164,7 @@ func (lm *loggingMiddleware) SearchUsers(ctx context.Context, session auth.Sessi
 		}
 		lm.logger.Info("Search clients completed successfully", args...)
 	}(time.Now())
-	return lm.svc.SearchUsers(ctx, session, cp)
+	return lm.svc.SearchUsers(ctx, cp)
 }
 
 // UpdateClient logs the update_client request. It logs the client id and the time it took to complete the request.
@@ -261,7 +255,7 @@ func (lm *loggingMiddleware) UpdateClientSecret(ctx context.Context, session aut
 
 // GenerateResetToken logs the generate_reset_token request. It logs the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) GenerateResetToken(ctx context.Context, email, host string) (t auth.Token, err error) {
+func (lm *loggingMiddleware) GenerateResetToken(ctx context.Context, email, host string) (c mgclients.Client, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -419,7 +413,7 @@ func (lm *loggingMiddleware) Identify(ctx context.Context, session auth.Session)
 	return lm.svc.Identify(ctx, session)
 }
 
-func (lm *loggingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (token auth.Token, err error) {
+func (lm *loggingMiddleware) OAuthCallback(ctx context.Context, client mgclients.Client) (c mgclients.Client, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),

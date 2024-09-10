@@ -32,7 +32,7 @@ type Service interface {
 	ListMembers(ctx context.Context, session auth.Session, objectKind, objectID string, pm clients.Page) (clients.MembersPage, error)
 
 	// SearchClients searches for users with provided filters for a valid auth token.
-	SearchUsers(ctx context.Context, session auth.Session, pm clients.Page) (clients.ClientsPage, error)
+	SearchUsers(ctx context.Context, pm clients.Page) (clients.ClientsPage, error)
 
 	// UpdateClient updates the client's name and metadata.
 	UpdateClient(ctx context.Context, session auth.Session, client clients.Client) (clients.Client, error)
@@ -45,7 +45,7 @@ type Service interface {
 
 	// GenerateResetToken email where mail will be sent.
 	// host is used for generating reset link.
-	GenerateResetToken(ctx context.Context, email, host string) (auth.Token, error)
+	GenerateResetToken(ctx context.Context, email, host string) (clients.Client, error)
 
 	// UpdateClientSecret updates the client's secret.
 	UpdateClientSecret(ctx context.Context, session auth.Session, oldSecret, newSecret string) (clients.Client, error)
@@ -73,16 +73,16 @@ type Service interface {
 	Identify(ctx context.Context, session auth.Session) (string, error)
 
 	// IssueToken issues a new access and refresh token.
-	IssueToken(ctx context.Context, identity, secret, domainID string) (auth.Token, error)
+	IssueToken(ctx context.Context, identity, secret, domainID string) (clients.Client, error)
 
 	// RefreshToken refreshes expired access tokens.
 	// After an access token expires, the refresh token is used to get
 	// a new pair of access and refresh tokens.
-	RefreshToken(ctx context.Context, session auth.Session, domainID string) (auth.Token, error)
+	RefreshToken(ctx context.Context, session auth.Session, domainID string) (clients.Client, error)
 
 	// OAuthCallback handles the callback from any supported OAuth provider.
 	// It processes the OAuth tokens and either signs in or signs up the user based on the provided state.
-	OAuthCallback(ctx context.Context, client clients.Client) (auth.Token, error)
+	OAuthCallback(ctx context.Context, client clients.Client) (clients.Client, error)
 
 	// AddClientPolicy adds a policy to the client.
 	AddClientPolicy(ctx context.Context, client clients.Client) error

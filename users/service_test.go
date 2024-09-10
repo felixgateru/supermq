@@ -465,7 +465,7 @@ func TestSearchUsers(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cRepo.On("SearchClients", context.Background(), mock.Anything).Return(tc.response, tc.responseErr)
-		page, err := svc.SearchUsers(context.Background(), auth.Session{}, tc.page)
+		page, err := svc.SearchUsers(context.Background(), tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
 		repoCall.Unset()
@@ -1386,7 +1386,7 @@ func TestIssueToken(t *testing.T) {
 		domainID                   string
 		client                     mgclients.Client
 		retrieveByIdentityResponse mgclients.Client
-		issueResponse              auth.Token
+		issueResponse              mgclients.Client
 		retrieveByIdentityErr      error
 		issueErr                   error
 		err                        error
@@ -1395,7 +1395,7 @@ func TestIssueToken(t *testing.T) {
 			desc:                       "issue token for an existing client",
 			client:                     client,
 			retrieveByIdentityResponse: rClient,
-			issueResponse:              auth.Token{UserID: client.ID, DomainID: validID},
+			issueResponse:              mgclients.Client{ID: client.ID, Domain: validID},
 			err:                        nil,
 		},
 		{
@@ -1435,7 +1435,7 @@ func TestRefreshToken(t *testing.T) {
 	cases := []struct {
 		desc        string
 		domainID    string
-		refreshResp auth.Token
+		refreshResp mgclients.Client
 		refresErr   error
 		repoResp    mgclients.Client
 		repoErr     error
@@ -1444,13 +1444,13 @@ func TestRefreshToken(t *testing.T) {
 		{
 			desc:        "refresh token with refresh token for an existing client",
 			domainID:    validID,
-			refreshResp: auth.Token{DomainID: validID},
+			refreshResp: mgclients.Client{Domain: validID},
 			repoResp:    rClient,
 			err:         nil,
 		},
 		{
 			desc:        "refresh token with refresh token for empty domain id",
-			refreshResp: auth.Token{},
+			refreshResp: mgclients.Client{},
 			repoResp:    rClient,
 			err:         nil,
 		},

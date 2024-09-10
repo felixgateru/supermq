@@ -7,19 +7,8 @@ import (
 	"context"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/pkg/clients"
 	"google.golang.org/grpc"
 )
-
-type Token struct {
-	AccessToken  string // AccessToken contains the security credentials for a login session and identifies the client.
-	RefreshToken string // RefreshToken is a credential artifact that OAuth can use to get a new access token without client interaction.
-	AccessType   string // AccessType is the specific type of access token issued. It can be Bearer, Client or Basic.
-	UserID       string
-	DomainID     string
-	Name         string
-	Role         clients.Role
-}
 
 type Session struct {
 	UserID     string

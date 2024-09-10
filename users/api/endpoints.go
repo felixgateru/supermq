@@ -10,7 +10,6 @@ import (
 	mgauth "github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/auth"
-	"github.com/absmach/magistrala/pkg/clients"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -155,7 +154,6 @@ func searchClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 		if err != nil {
 			return nil, err
 		}
-		session := auth.Session{}
 
 		pm := mgclients.Page{
 			Offset: req.Offset,
@@ -165,7 +163,7 @@ func searchClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 			Order:  req.Order,
 			Dir:    req.Dir,
 		}
-		page, err := svc.SearchUsers(ctx, session, pm)
+		page, err := svc.SearchUsers(ctx, pm)
 		if err != nil {
 			return nil, err
 		}
@@ -198,20 +196,8 @@ func listMembersByGroupEndpoint(svc users.Service, authClient auth.AuthClient) e
 		if err != nil {
 			return nil, err
 		}
-
-		res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-			SubjectType: policy.UserType,
-			SubjectKind: policy.TokenKind,
-			Subject:     req.token,
-			Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-			ObjectType:  policy.GroupType,
-			Object:      req.objectID,
-		})
-		if err != nil {
-			return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthorization, err)
-		}
-		if !res.Authorized {
-			return clients.MembersPage{}, svcerr.ErrAuthorization
+		if err = authorize(ctx, authClient, policy.UserType, policy.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policy.GroupType, req.objectID); err != nil {
+			return nil, err
 		}
 
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
@@ -236,21 +222,10 @@ func listMembersByChannelEndpoint(svc users.Service, authClient auth.AuthClient)
 		if err != nil {
 			return nil, err
 		}
+		if err := authorize(ctx, authClient, policy.UserType, policy.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policy.GroupType, req.objectID); err != nil {
+			return nil, err
+		}
 
-		res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-			SubjectType: policy.UserType,
-			SubjectKind: policy.TokenKind,
-			Subject:     req.token,
-			Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-			ObjectType:  policy.GroupType,
-			Object:      req.objectID,
-		})
-		if err != nil {
-			return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthorization, err)
-		}
-		if !res.Authorized {
-			return clients.MembersPage{}, svcerr.ErrAuthorization
-		}
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
@@ -272,20 +247,10 @@ func listMembersByThingEndpoint(svc users.Service, authClient auth.AuthClient) e
 		if err != nil {
 			return nil, err
 		}
-		res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-			SubjectType: policy.UserType,
-			SubjectKind: policy.TokenKind,
-			Subject:     req.token,
-			Permission:  req.Page.Permission,
-			ObjectType:  policy.ThingType,
-			Object:      req.objectID,
-		})
-		if err != nil {
-			return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthorization, err)
+		if err := authorize(ctx, authClient, policy.UserType, policy.TokenKind, req.token, req.Page.Permission, policy.ThingType, req.objectID); err != nil {
+			return nil, err
 		}
-		if !res.Authorized {
-			return clients.MembersPage{}, svcerr.ErrAuthorization
-		}
+
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
@@ -307,21 +272,10 @@ func listMembersByDomainEndpoint(svc users.Service, authClient auth.AuthClient) 
 		if err != nil {
 			return nil, err
 		}
+		if err := authorize(ctx, authClient, policy.UserType, policy.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policy.DomainType, req.objectID); err != nil {
+			return nil, err
+		}
 
-		res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-			SubjectType: policy.UserType,
-			SubjectKind: policy.TokenKind,
-			Subject:     req.token,
-			Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-			ObjectType:  policy.DomainType,
-			Object:      req.objectID,
-		})
-		if err != nil {
-			return clients.MembersPage{}, errors.Wrap(svcerr.ErrAuthorization, err)
-		}
-		if !res.Authorized {
-			return clients.MembersPage{}, svcerr.ErrAuthorization
-		}
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
 			return nil, err
@@ -431,20 +385,20 @@ func passwordResetRequestEndpoint(svc users.Service, authClient auth.AuthClient)
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		svcResp, err := svc.GenerateResetToken(ctx, req.Email, req.Host)
+		client, err := svc.GenerateResetToken(ctx, req.Email, req.Host)
 		if err != nil {
 			return nil, err
 		}
 		token, err := authClient.Issue(ctx, &magistrala.IssueReq{
-			UserId: svcResp.UserID,
+			UserId: client.ID,
 			Type:   uint32(mgauth.RecoveryKey),
 		})
 		if err != nil {
-			return auth.Token{}, errors.Wrap(errIssueToken, err)
+			return nil, errors.Wrap(errIssueToken, err)
 		}
-		err = svc.SendPasswordReset(ctx, req.Host, req.Email, svcResp.Name, token.AccessToken)
+		err = svc.SendPasswordReset(ctx, req.Host, req.Email, client.Name, token.AccessToken)
 		if err != nil {
-			return auth.Token{}, err
+			return nil, err
 		}
 
 		return passwResetReqRes{Msg: MailSent}, nil
@@ -513,22 +467,10 @@ func updateClientRoleEndpoint(svc users.Service, authClient auth.AuthClient) end
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
 		}
+		if err := authorize(ctx, authClient, policy.UserType, policy.UsersKind, client.ID, policy.MembershipPermission, policy.PlatformType, policy.MagistralaObject); err != nil {
+			return nil, err
+		}
 
-		// check if client is a member of the platform
-		res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-			SubjectType: policy.UserType,
-			SubjectKind: policy.UsersKind,
-			Subject:     client.ID,
-			Permission:  policy.MembershipPermission,
-			ObjectType:  policy.PlatformType,
-			Object:      policy.MagistralaObject,
-		})
-		if err != nil {
-			return clients.Client{}, errors.Wrap(svcerr.ErrAuthorization, err)
-		}
-		if !res.Authorized {
-			return clients.Client{}, svcerr.ErrAuthorization
-		}
 		client, err = svc.UpdateClientRole(ctx, session, client)
 		if err != nil {
 			return nil, err
@@ -545,18 +487,18 @@ func issueTokenEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		svcResp, err := svc.IssueToken(ctx, req.Identity, req.Secret, req.DomainID)
+		client, err := svc.IssueToken(ctx, req.Identity, req.Secret, req.DomainID)
 		if err != nil {
 			return nil, err
 		}
 
 		token, err := authClient.Issue(ctx, &magistrala.IssueReq{
-			UserId:   svcResp.UserID,
-			DomainId: &svcResp.DomainID,
+			UserId:   client.ID,
+			DomainId: &client.Domain,
 			Type:     uint32(mgauth.AccessKey),
 		})
 		if err != nil {
-			return auth.Token{}, errors.Wrap(errIssueToken, err)
+			return nil, errors.Wrap(errIssueToken, err)
 		}
 
 		return tokenRes{
@@ -578,18 +520,17 @@ func refreshTokenEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 		if err != nil {
 			return nil, err
 		}
-
-		svcResp, err := svc.RefreshToken(ctx, session, req.DomainID)
+		client, err := svc.RefreshToken(ctx, session, req.DomainID)
 		if err != nil {
 			return nil, err
 		}
 
 		token, err := authClient.Refresh(ctx, &magistrala.RefreshReq{
 			RefreshToken: req.RefreshToken,
-			DomainId:     &svcResp.DomainID,
+			DomainId:     &client.Domain,
 		})
 		if err != nil {
-			return auth.Token{}, errors.Wrap(errIssueToken, err)
+			return nil, errors.Wrap(errIssueToken, err)
 		}
 
 		return tokenRes{
@@ -694,6 +635,24 @@ func identify(ctx context.Context, authClient auth.AuthClient, token string) (au
 		UserID:   resp.GetUserId(),
 		DomainID: resp.GetDomainId(),
 	}, nil
+}
+
+func authorize(ctx context.Context, authClient auth.AuthClient, subjectType, subjectKind, subject, permission, objectType, objectID string) error {
+	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+		SubjectType: subjectType,
+		SubjectKind: subjectKind,
+		Subject:     subject,
+		Permission:  permission,
+		ObjectType:  objectType,
+		Object:      objectID,
+	})
+	if err != nil {
+		return errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if !res.Authorized {
+		return svcerr.ErrAuthorization
+	}
+	return nil
 }
 
 func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
