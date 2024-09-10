@@ -2601,7 +2601,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -2896,7 +2896,7 @@ func TestListUsersByChannelID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -3199,7 +3199,7 @@ func TestListUsersByDomainID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,
@@ -3473,7 +3473,7 @@ func TestListUsersByThingID(t *testing.T) {
 			token:  tc.token,
 		}
 
-		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{Token: tc.token}, mock.Anything, mock.Anything, mock.Anything).Return(
+		svcCall := svc.On("ListMembers", mock.Anything, pauth.Session{UserID: validID, DomainID: validID}, mock.Anything, mock.Anything, mock.Anything).Return(
 			mgclients.MembersPage{
 				Page:    tc.listUsersResponse.Page,
 				Members: tc.listUsersResponse.Clients,

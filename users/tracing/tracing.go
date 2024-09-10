@@ -43,7 +43,7 @@ func (tm *tracingMiddleware) IssueToken(ctx context.Context, identity, secret, d
 
 // RefreshToken traces the "RefreshToken" operation of the wrapped clients.Service.
 func (tm *tracingMiddleware) RefreshToken(ctx context.Context, session auth.Session, domainID string) (mgclients.Client, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_refresh_token", trace.WithAttributes(attribute.String("access_token", session.Token)))
+	ctx, span := tm.tracer.Start(ctx, "svc_refresh_token", trace.WithAttributes(attribute.String("user_id", session.UserID)))
 	defer span.End()
 
 	return tm.svc.RefreshToken(ctx, session, domainID)
@@ -200,7 +200,7 @@ func (tm *tracingMiddleware) ListMembers(ctx context.Context, session auth.Sessi
 
 // Identify traces the "Identify" operation of the wrapped clients.Service.
 func (tm *tracingMiddleware) Identify(ctx context.Context, session auth.Session) (string, error) {
-	ctx, span := tm.tracer.Start(ctx, "svc_identify", trace.WithAttributes(attribute.String("token", session.Token)))
+	ctx, span := tm.tracer.Start(ctx, "svc_identify", trace.WithAttributes(attribute.String("user_id", session.UserID)))
 	defer span.End()
 
 	return tm.svc.Identify(ctx, session)

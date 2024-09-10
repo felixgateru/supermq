@@ -13,7 +13,6 @@ import (
 type Session struct {
 	UserID     string
 	DomainID   string
-	Token      string
 	SuperAdmin bool
 }
 

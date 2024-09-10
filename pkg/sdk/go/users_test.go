@@ -238,12 +238,12 @@ func TestCreateUser(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("RegisterClient", mock.Anything, auth.Session{Token: tc.token}, tc.svcReq, true).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("RegisterClient", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.svcReq, true).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.CreateUser(tc.createSdkUserReq, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "RegisterClient", mock.Anything, auth.Session{Token: tc.token}, tc.svcReq, true)
+				ok := svcCall.Parent.AssertCalled(t, "RegisterClient", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.svcReq, true)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
@@ -532,12 +532,12 @@ func TestListUsers(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("ListClients", mock.Anything, auth.Session{Token: tc.token}, tc.svcReq).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("ListClients", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.Users(tc.pageMeta, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "ListClients", mock.Anything, auth.Session{Token: tc.token}, tc.svcReq)
+				ok := svcCall.Parent.AssertCalled(t, "ListClients", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.svcReq)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
@@ -658,7 +658,7 @@ func TestSearchClients(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := svc.On("SearchUsers", mock.Anything, auth.Session{Token: tc.token}, mock.Anything).Return(tc.searchreturn, tc.err)
+		repoCall := svc.On("SearchUsers", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, mock.Anything).Return(tc.searchreturn, tc.err)
 		page, err := mgsdk.SearchUsers(tc.page, tc.token)
 		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page.Users, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -747,12 +747,12 @@ func TestViewUser(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("ViewClient", mock.Anything, auth.Session{Token: tc.token}, tc.userID).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("ViewClient", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.userID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.User(tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "ViewClient", mock.Anything, auth.Session{Token: tc.token}, tc.userID)
+				ok := svcCall.Parent.AssertCalled(t, "ViewClient", mock.Anything, auth.Session{UserID: validID, DomainID: validID}, tc.userID)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
@@ -818,12 +818,12 @@ func TestUserProfile(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("ViewProfile", mock.Anything, auth.Session{Token: tc.token}).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("ViewProfile", mock.Anything, auth.Session{UserID: validID, DomainID: validID}).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UserProfile(tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "ViewProfile", mock.Anything, auth.Session{Token: tc.token})
+				ok := svcCall.Parent.AssertCalled(t, "ViewProfile", mock.Anything, auth.Session{UserID: validID, DomainID: validID})
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
