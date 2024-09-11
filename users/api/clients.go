@@ -6,6 +6,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -36,167 +37,175 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
-	r.Route("/users", func(r chi.Router) {
-		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-			registrationEndpoint(svc, authClient, selfRegister),
-			decodeCreateClientReq,
+	fmt.Println("Got herer")
+	r.Group(func(r chi.Router) {
+		r.Use(IdentifyMiddleware(authClient))
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
+				registrationEndpoint(svc, authClient, selfRegister),
+				decodeCreateClientReq,
+				api.EncodeResponse,
+				opts...,
+			), "register_client").ServeHTTP)
+
+			r.Get("/profile", otelhttp.NewHandler(kithttp.NewServer(
+				viewProfileEndpoint(svc, authClient),
+				decodeViewProfile,
+				api.EncodeResponse,
+				opts...,
+			), "view_profile").ServeHTTP)
+
+			r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
+				viewClientEndpoint(svc),
+				decodeViewClient,
+				api.EncodeResponse,
+				opts...,
+			), "view_client").ServeHTTP)
+
+			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
+				listClientsEndpoint(svc, authClient),
+				decodeListClients,
+				api.EncodeResponse,
+				opts...,
+			), "list_clients").ServeHTTP)
+
+			r.Get("/search", otelhttp.NewHandler(kithttp.NewServer(
+				searchClientsEndpoint(svc, authClient),
+				decodeSearchClients,
+				api.EncodeResponse,
+				opts...,
+			), "search_clients").ServeHTTP)
+
+			r.Patch("/secret", otelhttp.NewHandler(kithttp.NewServer(
+				updateClientSecretEndpoint(svc, authClient),
+				decodeUpdateClientSecret,
+				api.EncodeResponse,
+				opts...,
+			), "update_client_secret").ServeHTTP)
+
+			r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
+				updateClientEndpoint(svc, authClient),
+				decodeUpdateClient,
+				api.EncodeResponse,
+				opts...,
+			), "update_client").ServeHTTP)
+
+			r.Patch("/{id}/tags", otelhttp.NewHandler(kithttp.NewServer(
+				updateClientTagsEndpoint(svc, authClient),
+				decodeUpdateClientTags,
+				api.EncodeResponse,
+				opts...,
+			), "update_client_tags").ServeHTTP)
+
+			r.Patch("/{id}/identity", otelhttp.NewHandler(kithttp.NewServer(
+				updateClientIdentityEndpoint(svc, authClient),
+				decodeUpdateClientIdentity,
+				api.EncodeResponse,
+				opts...,
+			), "update_client_identity").ServeHTTP)
+
+			r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
+				updateClientRoleEndpoint(svc, authClient),
+				decodeUpdateClientRole,
+				api.EncodeResponse,
+				opts...,
+			), "update_client_role").ServeHTTP)
+
+			r.Post("/{id}/enable", otelhttp.NewHandler(kithttp.NewServer(
+				enableClientEndpoint(svc, authClient),
+				decodeChangeClientStatus,
+				api.EncodeResponse,
+				opts...,
+			), "enable_client").ServeHTTP)
+
+			r.Post("/{id}/disable", otelhttp.NewHandler(kithttp.NewServer(
+				disableClientEndpoint(svc, authClient),
+				decodeChangeClientStatus,
+				api.EncodeResponse,
+				opts...,
+			), "disable_client").ServeHTTP)
+
+			r.Delete("/{id}", otelhttp.NewHandler(kithttp.NewServer(
+				deleteClientEndpoint(svc, authClient),
+				decodeChangeClientStatus,
+				api.EncodeResponse,
+				opts...,
+			), "delete_client").ServeHTTP)
+		})
+
+		r.Route("/password", func(r chi.Router) {
+			r.Post("/reset-request", otelhttp.NewHandler(kithttp.NewServer(
+				passwordResetRequestEndpoint(svc, authClient),
+				decodePasswordResetRequest,
+				api.EncodeResponse,
+				opts...,
+			), "password_reset_req").ServeHTTP)
+
+			r.Put("/reset", otelhttp.NewHandler(kithttp.NewServer(
+				passwordResetEndpoint(svc, authClient),
+				decodePasswordReset,
+				api.EncodeResponse,
+				opts...,
+			), "password_reset").ServeHTTP)
+		})
+
+		// Ideal location: users service, groups endpoint.
+		// Reason for placing here :
+		// SpiceDB provides list of user ids in given user_group_id
+		// and users service can access spiceDB and get the user list with user_group_id.
+		// Request to get list of users present in the user_group_id {groupID}
+		r.Get("/groups/{groupID}/users", otelhttp.NewHandler(kithttp.NewServer(
+			listMembersByGroupEndpoint(svc, authClient),
+			decodeListMembersByGroup,
 			api.EncodeResponse,
 			opts...,
-		), "register_client").ServeHTTP)
+		), "list_users_by_user_group_id").ServeHTTP)
 
-		r.Get("/profile", otelhttp.NewHandler(kithttp.NewServer(
-			viewProfileEndpoint(svc, authClient),
-			decodeViewProfile,
+		// Ideal location: things service, channels endpoint.
+		// Reason for placing here :
+		// SpiceDB provides list of user ids in given channel_id
+		// and users service can access spiceDB and get the user list with channel_id.
+		// Request to get list of users present in the user_group_id {channelID}
+		r.Get("/channels/{channelID}/users", otelhttp.NewHandler(kithttp.NewServer(
+			listMembersByChannelEndpoint(svc, authClient),
+			decodeListMembersByChannel,
 			api.EncodeResponse,
 			opts...,
-		), "view_profile").ServeHTTP)
+		), "list_users_by_channel_id").ServeHTTP)
 
-		r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			viewClientEndpoint(svc, authClient),
-			decodeViewClient,
+		r.Get("/things/{thingID}/users", otelhttp.NewHandler(kithttp.NewServer(
+			listMembersByThingEndpoint(svc, authClient),
+			decodeListMembersByThing,
 			api.EncodeResponse,
 			opts...,
-		), "view_client").ServeHTTP)
+		), "list_users_by_thing_id").ServeHTTP)
 
-		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-			listClientsEndpoint(svc, authClient),
-			decodeListClients,
+		r.Get("/domains/{domainID}/users", otelhttp.NewHandler(kithttp.NewServer(
+			listMembersByDomainEndpoint(svc, authClient),
+			decodeListMembersByDomain,
 			api.EncodeResponse,
 			opts...,
-		), "list_clients").ServeHTTP)
+		), "list_users_by_domain_id").ServeHTTP)
+	})
 
-		r.Get("/search", otelhttp.NewHandler(kithttp.NewServer(
-			searchClientsEndpoint(svc, authClient),
-			decodeSearchClients,
-			api.EncodeResponse,
-			opts...,
-		), "search_clients").ServeHTTP)
-
-		r.Patch("/secret", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientSecretEndpoint(svc, authClient),
-			decodeUpdateClientSecret,
-			api.EncodeResponse,
-			opts...,
-		), "update_client_secret").ServeHTTP)
-
-		r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientEndpoint(svc, authClient),
-			decodeUpdateClient,
-			api.EncodeResponse,
-			opts...,
-		), "update_client").ServeHTTP)
-
-		r.Patch("/{id}/tags", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientTagsEndpoint(svc, authClient),
-			decodeUpdateClientTags,
-			api.EncodeResponse,
-			opts...,
-		), "update_client_tags").ServeHTTP)
-
-		r.Patch("/{id}/identity", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientIdentityEndpoint(svc, authClient),
-			decodeUpdateClientIdentity,
-			api.EncodeResponse,
-			opts...,
-		), "update_client_identity").ServeHTTP)
-
-		r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
-			updateClientRoleEndpoint(svc, authClient),
-			decodeUpdateClientRole,
-			api.EncodeResponse,
-			opts...,
-		), "update_client_role").ServeHTTP)
-
-		r.Post("/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
+	fmt.Println("Got herer 2")
+	r.Group(func(r chi.Router) {
+		r.Post("/users/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
 			issueTokenEndpoint(svc, authClient),
 			decodeCredentials,
 			api.EncodeResponse,
 			opts...,
 		), "issue_token").ServeHTTP)
 
-		r.Post("/tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
+		r.Post("/users//tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
 			refreshTokenEndpoint(svc, authClient),
 			decodeRefreshToken,
 			api.EncodeResponse,
 			opts...,
 		), "refresh_token").ServeHTTP)
-
-		r.Post("/{id}/enable", otelhttp.NewHandler(kithttp.NewServer(
-			enableClientEndpoint(svc, authClient),
-			decodeChangeClientStatus,
-			api.EncodeResponse,
-			opts...,
-		), "enable_client").ServeHTTP)
-
-		r.Post("/{id}/disable", otelhttp.NewHandler(kithttp.NewServer(
-			disableClientEndpoint(svc, authClient),
-			decodeChangeClientStatus,
-			api.EncodeResponse,
-			opts...,
-		), "disable_client").ServeHTTP)
-
-		r.Delete("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-			deleteClientEndpoint(svc, authClient),
-			decodeChangeClientStatus,
-			api.EncodeResponse,
-			opts...,
-		), "delete_client").ServeHTTP)
 	})
 
-	r.Route("/password", func(r chi.Router) {
-		r.Post("/reset-request", otelhttp.NewHandler(kithttp.NewServer(
-			passwordResetRequestEndpoint(svc, authClient),
-			decodePasswordResetRequest,
-			api.EncodeResponse,
-			opts...,
-		), "password_reset_req").ServeHTTP)
-
-		r.Put("/reset", otelhttp.NewHandler(kithttp.NewServer(
-			passwordResetEndpoint(svc, authClient),
-			decodePasswordReset,
-			api.EncodeResponse,
-			opts...,
-		), "password_reset").ServeHTTP)
-	})
-
-	// Ideal location: users service, groups endpoint.
-	// Reason for placing here :
-	// SpiceDB provides list of user ids in given user_group_id
-	// and users service can access spiceDB and get the user list with user_group_id.
-	// Request to get list of users present in the user_group_id {groupID}
-	r.Get("/groups/{groupID}/users", otelhttp.NewHandler(kithttp.NewServer(
-		listMembersByGroupEndpoint(svc, authClient),
-		decodeListMembersByGroup,
-		api.EncodeResponse,
-		opts...,
-	), "list_users_by_user_group_id").ServeHTTP)
-
-	// Ideal location: things service, channels endpoint.
-	// Reason for placing here :
-	// SpiceDB provides list of user ids in given channel_id
-	// and users service can access spiceDB and get the user list with channel_id.
-	// Request to get list of users present in the user_group_id {channelID}
-	r.Get("/channels/{channelID}/users", otelhttp.NewHandler(kithttp.NewServer(
-		listMembersByChannelEndpoint(svc, authClient),
-		decodeListMembersByChannel,
-		api.EncodeResponse,
-		opts...,
-	), "list_users_by_channel_id").ServeHTTP)
-
-	r.Get("/things/{thingID}/users", otelhttp.NewHandler(kithttp.NewServer(
-		listMembersByThingEndpoint(svc, authClient),
-		decodeListMembersByThing,
-		api.EncodeResponse,
-		opts...,
-	), "list_users_by_thing_id").ServeHTTP)
-
-	r.Get("/domains/{domainID}/users", otelhttp.NewHandler(kithttp.NewServer(
-		listMembersByDomainEndpoint(svc, authClient),
-		decodeListMembersByDomain,
-		api.EncodeResponse,
-		opts...,
-	), "list_users_by_domain_id").ServeHTTP)
-
+	fmt.Println("Got herer 3")
 	for _, provider := range providers {
 		r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc, authClient))
 	}

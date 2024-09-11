@@ -50,21 +50,17 @@ func registrationEndpoint(svc users.Service, authClient auth.AuthClient, selfReg
 	}
 }
 
-func viewClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func viewClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(viewClientReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
-		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
-			session.SuperAdmin = true
-		}
-
 		client, err := svc.ViewClient(ctx, session, req.id)
 		if err != nil {
 			return nil, err
@@ -81,9 +77,9 @@ func viewProfileEndpoint(svc users.Service, authClient auth.AuthClient) endpoint
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		client, err := svc.ViewProfile(ctx, session)
 		if err != nil {
@@ -101,9 +97,9 @@ func listClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoint
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -150,11 +146,6 @@ func searchClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		_, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
-		}
-
 		pm := mgclients.Page{
 			Offset: req.Offset,
 			Limit:  req.Limit,
@@ -192,9 +183,9 @@ func listMembersByGroupEndpoint(svc users.Service, authClient auth.AuthClient) e
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err = authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.GroupType, req.objectID); err != nil {
 			return nil, err
@@ -218,9 +209,9 @@ func listMembersByChannelEndpoint(svc users.Service, authClient auth.AuthClient)
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.GroupType, req.objectID); err != nil {
 			return nil, err
@@ -243,9 +234,9 @@ func listMembersByThingEndpoint(svc users.Service, authClient auth.AuthClient) e
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, req.Page.Permission, policies.ThingType, req.objectID); err != nil {
 			return nil, err
@@ -268,9 +259,9 @@ func listMembersByDomainEndpoint(svc users.Service, authClient auth.AuthClient) 
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.DomainType, req.objectID); err != nil {
 			return nil, err
@@ -292,9 +283,9 @@ func updateClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -306,7 +297,7 @@ func updateClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 			Metadata: req.Metadata,
 		}
 
-		client, err = svc.UpdateClient(ctx, session, client)
+		client, err := svc.UpdateClient(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -322,9 +313,9 @@ func updateClientTagsEndpoint(svc users.Service, authClient auth.AuthClient) end
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -335,7 +326,7 @@ func updateClientTagsEndpoint(svc users.Service, authClient auth.AuthClient) end
 			Tags: req.Tags,
 		}
 
-		client, err = svc.UpdateClientTags(ctx, session, client)
+		client, err := svc.UpdateClientTags(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -351,9 +342,9 @@ func updateClientIdentityEndpoint(svc users.Service, authClient auth.AuthClient)
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -415,9 +406,9 @@ func passwordResetEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.Token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := svc.ResetSecret(ctx, session, req.Password); err != nil {
 			return nil, err
@@ -434,11 +425,10 @@ func updateClientSecretEndpoint(svc users.Service, authClient auth.AuthClient) e
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
-
 		client, err := svc.UpdateClientSecret(ctx, session, req.OldSecret, req.NewSecret)
 		if err != nil {
 			return nil, err
@@ -460,9 +450,9 @@ func updateClientRoleEndpoint(svc users.Service, authClient auth.AuthClient) end
 			Role: req.role,
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -471,7 +461,7 @@ func updateClientRoleEndpoint(svc users.Service, authClient auth.AuthClient) end
 			return nil, err
 		}
 
-		client, err = svc.UpdateClientRole(ctx, session, client)
+		client, err := svc.UpdateClientRole(ctx, session, client)
 		if err != nil {
 			return nil, err
 		}
@@ -516,9 +506,9 @@ func refreshTokenEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.RefreshToken)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		client, err := svc.RefreshToken(ctx, session, req.DomainID)
 		if err != nil {
@@ -548,9 +538,9 @@ func enableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -571,9 +561,9 @@ func disableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
@@ -594,9 +584,9 @@ func deleteClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
+		session, ok := ctx.Value("session").(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
 		}
 		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
 			session.SuperAdmin = true
