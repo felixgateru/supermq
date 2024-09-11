@@ -108,11 +108,11 @@ type Service interface {
 	// ViewGroupPerms retrieves permissions on the group id for the given authorized token.
 	ViewGroupPerms(ctx context.Context, session auth.Session, id string) ([]string, error)
 
-	// ListGroups retrieves
-	ListGroups(ctx context.Context, token, memberKind, memberID string, gm Page) (Page, error)
+	// ListGroups retrieves a list of groups basesd on entity type and entity id.
+	ListGroups(ctx context.Context, session auth.Session, memberKind, memberID string, gm Page) (Page, error)
 
 	// ListMembers retrieves everything that is assigned to a group identified by groupID.
-	ListMembers(ctx context.Context, token, groupID, permission, memberKind string) (MembersPage, error)
+	ListMembers(ctx context.Context, groupID, permission, memberKind string) (MembersPage, error)
 
 	// EnableGroup logically enables the group identified with the provided ID.
 	EnableGroup(ctx context.Context, session auth.Session, id string) (Group, error)
@@ -121,11 +121,11 @@ type Service interface {
 	DisableGroup(ctx context.Context, session auth.Session, id string) (Group, error)
 
 	// DeleteGroup delete the given group id
-	DeleteGroup(ctx context.Context, token, id string) error
+	DeleteGroup(ctx context.Context, id string) error
 
 	// Assign member to group
-	Assign(ctx context.Context, token, groupID, relation, memberKind string, memberIDs ...string) (err error)
+	Assign(ctx context.Context, session auth.Session, groupID, relation, memberKind string, memberIDs ...string) (err error)
 
 	// Unassign member from group
-	Unassign(ctx context.Context, token, groupID, relation, memberKind string, memberIDs ...string) (err error)
+	Unassign(ctx context.Context, session auth.Session, groupID, relation, memberKind string, memberIDs ...string) (err error)
 }

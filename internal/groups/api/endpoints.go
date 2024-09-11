@@ -213,8 +213,8 @@ func ListGroupsEndpoint(svc groups.Service, authClient auth.AuthClient, groupTyp
 				}
 			}
 		}
-		
-		page, err := svc.ListGroups(ctx, req.token, req.memberKind, req.memberID, req.Page)
+
+		page, err := svc.ListGroups(ctx, session, req.memberKind, req.memberID, req.Page)
 		if err != nil {
 			if groupType == groupTypeChannels {
 				return channelPageRes{}, err
@@ -234,7 +234,7 @@ func ListGroupsEndpoint(svc groups.Service, authClient auth.AuthClient, groupTyp
 	}
 }
 
-func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoint {
+func ListMembersEndpoint(svc groups.Service, authClient auth.AuthClient, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersReq)
 		if memberKind != "" {
@@ -244,7 +244,11 @@ func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoin
 			return listMembersRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.token, req.groupID, req.permission, req.memberKind)
+		if _, err := authorize(ctx, authClient, "", policy.UserType, policy.TokenKind, req.token, policy.ViewPermission, policy.GroupType, req.groupID); err != nil {
+			return listMembersRes{}, err
+		}
+
+		page, err := svc.ListMembers(ctx, req.groupID, req.permission, req.memberKind)
 		if err != nil {
 			return listMembersRes{}, err
 		}
@@ -260,7 +264,7 @@ func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoin
 	}
 }
 
-func AssignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
+func AssignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignReq)
 		if relation != "" {
@@ -272,14 +276,21 @@ func AssignMembersEndpoint(svc groups.Service, relation, memberKind string) endp
 		if err := req.validate(); err != nil {
 			return assignRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
-		if err := svc.Assign(ctx, req.token, req.groupID, req.Relation, req.MemberKind, req.Members...); err != nil {
+		session, err := identify(ctx, authClient, req.token)
+		if err != nil {
+			return assignRes{}, err
+		}
+		if _, err := authorize(ctx, authClient, session.DomainID, policy.UserType, policy.UsersKind, session.DomainUserID, policy.EditPermission, policy.GroupType, req.groupID); err != nil {
+			return assignRes{}, err
+		}
+		if err := svc.Assign(ctx, session, req.groupID, req.Relation, req.MemberKind, req.Members...); err != nil {
 			return assignRes{}, err
 		}
 		return assignRes{assigned: true}, nil
 	}
 }
 
-func UnassignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
+func UnassignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unassignReq)
 		if relation != "" {
@@ -291,21 +302,36 @@ func UnassignMembersEndpoint(svc groups.Service, relation, memberKind string) en
 		if err := req.validate(); err != nil {
 			return unassignRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
+		session, err := identify(ctx, authClient, req.token)
+		if err != nil {
+			return unassignRes{}, err
+		}
+		if _, err := authorize(ctx, authClient, session.DomainID, policy.UserType, policy.UsersKind, session.DomainUserID, policy.EditPermission, policy.GroupType, req.groupID); err != nil {
+			return unassignRes{}, err
+		}
 
-		if err := svc.Unassign(ctx, req.token, req.groupID, req.Relation, req.MemberKind, req.Members...); err != nil {
+		if err := svc.Unassign(ctx, session, req.groupID, req.Relation, req.MemberKind, req.Members...); err != nil {
 			return unassignRes{}, err
 		}
 		return unassignRes{unassigned: true}, nil
 	}
 }
 
-func DeleteGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func DeleteGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 		if err := req.validate(); err != nil {
 			return deleteGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
-		if err := svc.DeleteGroup(ctx, req.token, req.id); err != nil {
+
+		session, err := identify(ctx, authClient, req.token)
+		if err != nil {
+			return deleteGroupRes{}, err
+		}
+		if _, err := authorize(ctx, authClient, session.DomainID, policy.UserType, policy.UsersKind, session.DomainUserID, policy.DeletePermission, policy.GroupType, req.id); err != nil {
+			return deleteGroupRes{}, err
+		}
+		if err := svc.DeleteGroup(ctx, req.id); err != nil {
 			return deleteGroupRes{}, err
 		}
 		return deleteGroupRes{deleted: true}, nil
