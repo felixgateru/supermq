@@ -1054,354 +1054,236 @@ func TestListMembers(t *testing.T) {
 	}
 }
 
-// func TestDeleteClient(t *testing.T) {
-// 	svc, cRepo, auth, policy, cache := newService()
+func TestDeleteClient(t *testing.T) {
+	svc, cRepo, policy, cache := newService()
 
-// 	client := mgclients.Client{
-// 		ID: testsutil.GenerateUUID(t),
-// 	}
+	client := mgclients.Client{
+		ID: testsutil.GenerateUUID(t),
+	}
 
-// 	cases := []struct {
-// 		desc              string
-// 		token             string
-// 		identifyResponse  *magistrala.IdentityRes
-// 		authorizeResponse *magistrala.AuthorizeRes
-// 		clientID          string
-// 		identifyErr       error
-// 		authorizeErr      error
-// 		removeErr         error
-// 		deleteErr         error
-// 		deletePolicyErr   error
-// 		err               error
-// 	}{
-// 		{
-// 			desc:              "Delete client with authorized token",
-// 			token:             validToken,
-// 			clientID:          client.ID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			err:               nil,
-// 		},
-// 		{
-// 			desc:             "Delete client with unauthorized token",
-// 			token:            inValidToken,
-// 			clientID:         client.ID,
-// 			identifyResponse: &magistrala.IdentityRes{},
-// 			identifyErr:      svcerr.ErrAuthentication,
-// 			err:              svcerr.ErrAuthentication,
-// 		},
-// 		{
-// 			desc:              "Delete invalid client",
-// 			token:             validToken,
-// 			clientID:          wrongID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: false},
-// 			authorizeErr:      svcerr.ErrAuthorization,
-// 			err:               svcerr.ErrAuthorization,
-// 		},
-// 		{
-// 			desc:              "Delete client with repo error ",
-// 			token:             validToken,
-// 			clientID:          client.ID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			deleteErr:         repoerr.ErrRemoveEntity,
-// 			err:               repoerr.ErrRemoveEntity,
-// 		},
-// 		{
-// 			desc:              "Delete client with cache error ",
-// 			token:             validToken,
-// 			clientID:          client.ID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			removeErr:         svcerr.ErrRemoveEntity,
-// 			err:               repoerr.ErrRemoveEntity,
-// 		},
-// 		{
-// 			desc:              "Delete client with failed to delete policy",
-// 			token:             validToken,
-// 			clientID:          client.ID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			deletePolicyErr:   errRemovePolicies,
-// 			err:               errRemovePolicies,
-// 		},
-// 	}
+	cases := []struct {
+		desc            string
+		clientID        string
+		removeErr       error
+		deleteErr       error
+		deletePolicyErr error
+		err             error
+	}{
+		{
+			desc:     "Delete client successfully",
+			clientID: client.ID,
+			err:      nil,
+		},
+		{
+			desc:      "Delete non-existing client",
+			clientID:  wrongID,
+			deleteErr: repoerr.ErrNotFound,
+			err:       svcerr.ErrRemoveEntity,
+		},
+		{
+			desc:      "Delete client with repo error ",
+			clientID:  client.ID,
+			deleteErr: repoerr.ErrRemoveEntity,
+			err:       repoerr.ErrRemoveEntity,
+		},
+		{
+			desc:      "Delete client with cache error ",
+			clientID:  client.ID,
+			removeErr: svcerr.ErrRemoveEntity,
+			err:       repoerr.ErrRemoveEntity,
+		},
+		{
+			desc:            "Delete client with failed to delete policy",
+			clientID:        client.ID,
+			deletePolicyErr: errRemovePolicies,
+			err:             errRemovePolicies,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-// 		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
-// 		repoCall2 := cache.On("Remove", mock.Anything, tc.clientID).Return(tc.removeErr)
-// 		repoCall3 := policy.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
-// 		repoCall4 := cRepo.On("Delete", context.Background(), tc.clientID).Return(tc.deleteErr)
-// 		err := svc.DeleteClient(context.Background(), tc.token, tc.clientID)
-// 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-// 		repoCall.Unset()
-// 		repoCall1.Unset()
-// 		repoCall2.Unset()
-// 		repoCall3.Unset()
-// 		repoCall4.Unset()
-// 	}
-// }
+	for _, tc := range cases {
+		repoCall := cache.On("Remove", mock.Anything, tc.clientID).Return(tc.removeErr)
+		policyCall := policy.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
+		repoCall1 := cRepo.On("Delete", context.Background(), tc.clientID).Return(tc.deleteErr)
+		err := svc.DeleteClient(context.Background(), tc.clientID)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		repoCall.Unset()
+		policyCall.Unset()
+		repoCall1.Unset()
+	}
+}
 
-// func TestShare(t *testing.T) {
-// 	svc, _, auth, policy, _ := newService()
+func TestShare(t *testing.T) {
+	svc, _, policy, _ := newService()
 
-// 	clientID := "clientID"
+	clientID := "clientID"
 
-// 	cases := []struct {
-// 		desc              string
-// 		token             string
-// 		clientID          string
-// 		relation          string
-// 		userID            string
-// 		identifyResponse  *magistrala.IdentityRes
-// 		authorizeResponse *magistrala.AuthorizeRes
-// 		identifyErr       error
-// 		authorizeErr      error
-// 		addPoliciesErr    error
-// 		err               error
-// 	}{
-// 		{
-// 			desc:              "share thing successfully",
-// 			token:             validToken,
-// 			clientID:          clientID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			err:               nil,
-// 		},
-// 		{
-// 			desc:             "share thing with invalid token",
-// 			token:            inValidToken,
-// 			clientID:         clientID,
-// 			identifyResponse: &magistrala.IdentityRes{},
-// 			identifyErr:      svcerr.ErrAuthentication,
-// 			err:              svcerr.ErrAuthentication,
-// 		},
-// 		{
-// 			desc:              "share thing with invalid ID",
-// 			token:             validToken,
-// 			clientID:          invalid,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: false},
-// 			authorizeErr:      svcerr.ErrAuthorization,
-// 			err:               svcerr.ErrAuthorization,
-// 		},
-// 		{
-// 			desc:              "share thing with failed to add policies",
-// 			token:             validToken,
-// 			clientID:          clientID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			addPoliciesErr:    svcerr.ErrInvalidPolicy,
-// 			err:               svcerr.ErrInvalidPolicy,
-// 		},
-// 	}
+	cases := []struct {
+		desc           string
+		session        pauth.Session
+		clientID       string
+		relation       string
+		userID         string
+		addPoliciesErr error
+		err            error
+	}{
+		{
+			desc:     "share thing successfully",
+			session:  pauth.Session{UserID: validID, DomainID: validID},
+			clientID: clientID,
+			err:      nil,
+		},
+		{
+			desc:           "share thing with failed to add policies",
+			session:        pauth.Session{UserID: validID, DomainID: validID},
+			clientID:       clientID,
+			addPoliciesErr: svcerr.ErrInvalidPolicy,
+			err:            svcerr.ErrInvalidPolicy,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-// 		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
-// 		repoCall2 := policy.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
-// 		err := svc.Share(context.Background(), tc.token, tc.clientID, tc.relation, tc.userID)
-// 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-// 		repoCall.Unset()
-// 		repoCall1.Unset()
-// 		repoCall2.Unset()
-// 	}
-// }
+	for _, tc := range cases {
+		policyCall := policy.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
+		err := svc.Share(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		policyCall.Unset()
+	}
+}
 
-// func TestUnShare(t *testing.T) {
-// 	svc, _, auth, policy, _ := newService()
+func TestUnShare(t *testing.T) {
+	svc, _, policy, _ := newService()
 
-// 	clientID := "clientID"
+	clientID := "clientID"
 
-// 	cases := []struct {
-// 		desc              string
-// 		token             string
-// 		clientID          string
-// 		relation          string
-// 		userID            string
-// 		identifyResponse  *magistrala.IdentityRes
-// 		authorizeResponse *magistrala.AuthorizeRes
-// 		identifyErr       error
-// 		authorizeErr      error
-// 		deletePoliciesErr error
-// 		err               error
-// 	}{
-// 		{
-// 			desc:              "unshare thing successfully",
-// 			token:             validToken,
-// 			clientID:          clientID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			err:               nil,
-// 		},
-// 		{
-// 			desc:             "unshare thing with invalid token",
-// 			token:            inValidToken,
-// 			clientID:         clientID,
-// 			identifyResponse: &magistrala.IdentityRes{},
-// 			identifyErr:      svcerr.ErrAuthentication,
-// 			err:              svcerr.ErrAuthentication,
-// 		},
-// 		{
-// 			desc:              "unshare thing with invalid ID",
-// 			token:             validToken,
-// 			clientID:          invalid,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: false},
-// 			authorizeErr:      svcerr.ErrAuthorization,
-// 			err:               svcerr.ErrAuthorization,
-// 		},
-// 		{
-// 			desc:              "share thing with failed to delete policies",
-// 			token:             validToken,
-// 			clientID:          clientID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			deletePoliciesErr: svcerr.ErrInvalidPolicy,
-// 			err:               svcerr.ErrInvalidPolicy,
-// 		},
-// 	}
+	cases := []struct {
+		desc              string
+		session           pauth.Session
+		clientID          string
+		relation          string
+		userID            string
+		deletePoliciesErr error
+		err               error
+	}{
+		{
+			desc:     "unshare thing successfully",
+			session:  pauth.Session{UserID: validID, DomainID: validID},
+			clientID: clientID,
+			err:      nil,
+		},
+		{
+			desc:              "share thing with failed to delete policies",
+			session:           pauth.Session{UserID: validID, DomainID: validID},
+			clientID:          clientID,
+			deletePoliciesErr: svcerr.ErrInvalidPolicy,
+			err:               svcerr.ErrInvalidPolicy,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-// 		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
-// 		repoCall2 := policy.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
-// 		err := svc.Unshare(context.Background(), tc.token, tc.clientID, tc.relation, tc.userID)
-// 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-// 		repoCall.Unset()
-// 		repoCall1.Unset()
-// 		repoCall2.Unset()
-// 	}
-// }
+	for _, tc := range cases {
+		policyCall := policy.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
+		err := svc.Unshare(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		policyCall.Unset()
+	}
+}
 
-// func TestViewClientPerms(t *testing.T) {
-// 	svc, _, auth, policy, _ := newService()
+func TestViewClientPerms(t *testing.T) {
+	svc, _, policy, _ := newService()
 
-// 	validID := valid
+	validID := valid
 
-// 	cases := []struct {
-// 		desc              string
-// 		token             string
-// 		thingID           string
-// 		identifyResponse  *magistrala.IdentityRes
-// 		authorizeResponse *magistrala.AuthorizeRes
-// 		listPermResponse  policysvc.Permissions
-// 		identifyErr       error
-// 		authorizeErr      error
-// 		listPermErr       error
-// 		err               error
-// 	}{
-// 		{
-// 			desc:              "view client permissions successfully",
-// 			token:             validToken,
-// 			thingID:           validID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			listPermResponse:  policysvc.Permissions{"admin"},
-// 			err:               nil,
-// 		},
-// 		{
-// 			desc:             "view client permissions with invalid token",
-// 			token:            inValidToken,
-// 			thingID:          validID,
-// 			identifyResponse: &magistrala.IdentityRes{},
-// 			identifyErr:      svcerr.ErrAuthentication,
-// 			err:              svcerr.ErrAuthentication,
-// 		},
-// 		{
-// 			desc:              "view client permissions with invalid ID",
-// 			token:             validToken,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: false},
-// 			authorizeErr:      svcerr.ErrAuthorization,
-// 			err:               svcerr.ErrAuthorization,
-// 		},
-// 		{
-// 			desc:              "view permissions with failed retrieve list permissions response",
-// 			token:             validToken,
-// 			thingID:           validID,
-// 			identifyResponse:  &magistrala.IdentityRes{Id: validID, DomainId: testsutil.GenerateUUID(t)},
-// 			authorizeResponse: &magistrala.AuthorizeRes{Authorized: true},
-// 			listPermResponse:  []string{},
-// 			listPermErr:       svcerr.ErrAuthorization,
-// 			err:               svcerr.ErrAuthorization,
-// 		},
-// 	}
+	cases := []struct {
+		desc             string
+		session          pauth.Session
+		thingID          string
+		listPermResponse policysvc.Permissions
+		listPermErr      error
+		err              error
+	}{
+		{
+			desc:             "view client permissions successfully",
+			session:          pauth.Session{UserID: validID, DomainID: validID},
+			thingID:          validID,
+			listPermResponse: policysvc.Permissions{"admin"},
+			err:              nil,
+		},
+		{
+			desc:             "view permissions with failed retrieve list permissions response",
+			session:          pauth.Session{UserID: validID, DomainID: validID},
+			thingID:          validID,
+			listPermResponse: []string{},
+			listPermErr:      svcerr.ErrAuthorization,
+			err:              svcerr.ErrAuthorization,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		repoCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyResponse, tc.identifyErr)
-// 		repoCall1 := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authorizeResponse, tc.authorizeErr)
-// 		repoCall2 := policy.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
-// 		res, err := svc.ViewClientPerms(context.Background(), tc.token, tc.thingID)
-// 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-// 		if tc.err == nil {
-// 			assert.ElementsMatch(t, tc.listPermResponse, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.listPermResponse, res))
-// 		}
-// 		repoCall.Unset()
-// 		repoCall1.Unset()
-// 		repoCall2.Unset()
-// 	}
-// }
+	for _, tc := range cases {
+		policyCall := policy.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
+		res, err := svc.ViewClientPerms(context.Background(), tc.session, tc.thingID)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		if tc.err == nil {
+			assert.ElementsMatch(t, tc.listPermResponse, res, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.listPermResponse, res))
+		}
+		policyCall.Unset()
+	}
+}
 
-// func TestIdentify(t *testing.T) {
-// 	svc, cRepo, _, _, cache := newService()
+func TestIdentify(t *testing.T) {
+	svc, cRepo, _, cache := newService()
 
-// 	valid := valid
+	valid := valid
 
-// 	cases := []struct {
-// 		desc                string
-// 		key                 string
-// 		cacheIDResponse     string
-// 		cacheIDErr          error
-// 		repoIDResponse      mgclients.Client
-// 		retrieveBySecretErr error
-// 		saveErr             error
-// 		err                 error
-// 	}{
-// 		{
-// 			desc:            "identify client with valid key from cache",
-// 			key:             valid,
-// 			cacheIDResponse: client.ID,
-// 			err:             nil,
-// 		},
-// 		{
-// 			desc:            "identify client with valid key from repo",
-// 			key:             valid,
-// 			cacheIDResponse: "",
-// 			cacheIDErr:      repoerr.ErrNotFound,
-// 			repoIDResponse:  client,
-// 			err:             nil,
-// 		},
-// 		{
-// 			desc:                "identify client with invalid key",
-// 			key:                 invalid,
-// 			cacheIDResponse:     "",
-// 			cacheIDErr:          repoerr.ErrNotFound,
-// 			repoIDResponse:      mgclients.Client{},
-// 			retrieveBySecretErr: repoerr.ErrNotFound,
-// 			err:                 repoerr.ErrNotFound,
-// 		},
-// 		{
-// 			desc:            "identify client with failed to save to cache",
-// 			key:             valid,
-// 			cacheIDResponse: "",
-// 			cacheIDErr:      repoerr.ErrNotFound,
-// 			repoIDResponse:  client,
-// 			saveErr:         errors.ErrMalformedEntity,
-// 			err:             svcerr.ErrAuthorization,
-// 		},
-// 	}
+	cases := []struct {
+		desc                string
+		key                 string
+		cacheIDResponse     string
+		cacheIDErr          error
+		repoIDResponse      mgclients.Client
+		retrieveBySecretErr error
+		saveErr             error
+		err                 error
+	}{
+		{
+			desc:            "identify client with valid key from cache",
+			key:             valid,
+			cacheIDResponse: client.ID,
+			err:             nil,
+		},
+		{
+			desc:            "identify client with valid key from repo",
+			key:             valid,
+			cacheIDResponse: "",
+			cacheIDErr:      repoerr.ErrNotFound,
+			repoIDResponse:  client,
+			err:             nil,
+		},
+		{
+			desc:                "identify client with invalid key",
+			key:                 invalid,
+			cacheIDResponse:     "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			repoIDResponse:      mgclients.Client{},
+			retrieveBySecretErr: repoerr.ErrNotFound,
+			err:                 repoerr.ErrNotFound,
+		},
+		{
+			desc:            "identify client with failed to save to cache",
+			key:             valid,
+			cacheIDResponse: "",
+			cacheIDErr:      repoerr.ErrNotFound,
+			repoIDResponse:  client,
+			saveErr:         errors.ErrMalformedEntity,
+			err:             svcerr.ErrAuthorization,
+		},
+	}
 
-// 	for _, tc := range cases {
-// 		repoCall := cache.On("ID", mock.Anything, tc.key).Return(tc.cacheIDResponse, tc.cacheIDErr)
-// 		repoCall1 := cRepo.On("RetrieveBySecret", mock.Anything, mock.Anything).Return(tc.repoIDResponse, tc.retrieveBySecretErr)
-// 		repoCall2 := cache.On("Save", mock.Anything, mock.Anything, mock.Anything).Return(tc.saveErr)
-// 		_, err := svc.Identify(context.Background(), tc.key)
-// 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-// 		repoCall.Unset()
-// 		repoCall1.Unset()
-// 		repoCall2.Unset()
-// 	}
-// }
+	for _, tc := range cases {
+		repoCall := cache.On("ID", mock.Anything, tc.key).Return(tc.cacheIDResponse, tc.cacheIDErr)
+		repoCall1 := cRepo.On("RetrieveBySecret", mock.Anything, mock.Anything).Return(tc.repoIDResponse, tc.retrieveBySecretErr)
+		repoCall2 := cache.On("Save", mock.Anything, mock.Anything, mock.Anything).Return(tc.saveErr)
+		_, err := svc.Identify(context.Background(), tc.key)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		repoCall.Unset()
+		repoCall1.Unset()
+		repoCall2.Unset()
+	}
+}
