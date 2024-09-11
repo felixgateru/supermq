@@ -7,6 +7,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/clients"
 )
 
@@ -96,16 +97,16 @@ type Repository interface {
 //go:generate mockery --name Service --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines" --unroll-variadic=false
 type Service interface {
 	// CreateGroup creates new  group.
-	CreateGroup(ctx context.Context, token, kind string, g Group) (Group, error)
+	CreateGroup(ctx context.Context, session auth.Session, kind string, g Group) (Group, error)
 
 	// UpdateGroup updates the group identified by the provided ID.
-	UpdateGroup(ctx context.Context, token string, g Group) (Group, error)
+	UpdateGroup(ctx context.Context, session auth.Session, g Group) (Group, error)
 
 	// ViewGroup retrieves data about the group identified by ID.
-	ViewGroup(ctx context.Context, token, id string) (Group, error)
+	ViewGroup(ctx context.Context, id string) (Group, error)
 
 	// ViewGroupPerms retrieves permissions on the group id for the given authorized token.
-	ViewGroupPerms(ctx context.Context, token, id string) ([]string, error)
+	ViewGroupPerms(ctx context.Context, session auth.Session, id string) ([]string, error)
 
 	// ListGroups retrieves
 	ListGroups(ctx context.Context, token, memberKind, memberID string, gm Page) (Page, error)
@@ -114,10 +115,10 @@ type Service interface {
 	ListMembers(ctx context.Context, token, groupID, permission, memberKind string) (MembersPage, error)
 
 	// EnableGroup logically enables the group identified with the provided ID.
-	EnableGroup(ctx context.Context, token, id string) (Group, error)
+	EnableGroup(ctx context.Context, session auth.Session, id string) (Group, error)
 
 	// DisableGroup logically disables the group identified with the provided ID.
-	DisableGroup(ctx context.Context, token, id string) (Group, error)
+	DisableGroup(ctx context.Context, session auth.Session, id string) (Group, error)
 
 	// DeleteGroup delete the given group id
 	DeleteGroup(ctx context.Context, token, id string) error
