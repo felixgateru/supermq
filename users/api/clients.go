@@ -6,7 +6,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -37,7 +36,6 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
-	fmt.Println("Got herer")
 	r.Group(func(r chi.Router) {
 		r.Use(IdentifyMiddleware(authClient))
 		r.Route("/users", func(r chi.Router) {
@@ -188,7 +186,6 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		), "list_users_by_domain_id").ServeHTTP)
 	})
 
-	fmt.Println("Got herer 2")
 	r.Group(func(r chi.Router) {
 		r.Post("/users/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
 			issueTokenEndpoint(svc, authClient),
@@ -205,7 +202,6 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		), "refresh_token").ServeHTTP)
 	})
 
-	fmt.Println("Got herer 3")
 	for _, provider := range providers {
 		r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc, authClient))
 	}
