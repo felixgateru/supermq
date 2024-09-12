@@ -35,128 +35,133 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
-
 	checkSuperAdminMiddleware := checkSuperAdminMiddleware(authClient)
 
-	r.Group(func(r chi.Router) {
-		r.Use(IdentifyMiddleware(authClient))
-		r.Route("/users", func(r chi.Router) {
+	r.Route("/users", func(r chi.Router) {
+		switch selfRegister {
+		case true:
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-				registrationEndpoint(svc, authClient, selfRegister),
+				registrationEndpoint(svc, selfRegister),
 				decodeCreateClientReq,
 				api.EncodeResponse,
 				opts...,
 			), "register_client").ServeHTTP)
+		default:
+			r.With(identifyMiddleware(authClient)).Post("/", otelhttp.NewHandler(kithttp.NewServer(
+				checkSuperAdminMiddleware(registrationEndpoint(svc, selfRegister)),
+				decodeCreateClientReq,
+				api.EncodeResponse,
+				opts...,
+			), "register_client").ServeHTTP)
+		}
+
+		r.Group(func(r chi.Router) {
+			r.Use(identifyMiddleware(authClient))
 
 			r.Get("/profile", otelhttp.NewHandler(kithttp.NewServer(
-				viewProfileEndpoint(svc, authClient),
+				viewProfileEndpoint(svc),
 				decodeViewProfile,
 				api.EncodeResponse,
 				opts...,
 			), "view_profile").ServeHTTP)
 
 			r.Get("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-				viewClientEndpoint(svc),
+				checkSuperAdminMiddleware(viewClientEndpoint(svc)),
 				decodeViewClient,
 				api.EncodeResponse,
 				opts...,
 			), "view_client").ServeHTTP)
 
 			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-				listClientsEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(listClientsEndpoint(svc)),
 				decodeListClients,
 				api.EncodeResponse,
 				opts...,
 			), "list_clients").ServeHTTP)
 
 			r.Get("/search", otelhttp.NewHandler(kithttp.NewServer(
-				searchClientsEndpoint(svc, authClient),
+				searchClientsEndpoint(svc),
 				decodeSearchClients,
 				api.EncodeResponse,
 				opts...,
 			), "search_clients").ServeHTTP)
 
 			r.Patch("/secret", otelhttp.NewHandler(kithttp.NewServer(
-				updateClientSecretEndpoint(svc, authClient),
+				updateClientSecretEndpoint(svc),
 				decodeUpdateClientSecret,
 				api.EncodeResponse,
 				opts...,
 			), "update_client_secret").ServeHTTP)
 
 			r.Patch("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-				updateClientEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(updateClientEndpoint(svc)),
 				decodeUpdateClient,
 				api.EncodeResponse,
 				opts...,
 			), "update_client").ServeHTTP)
 
 			r.Patch("/{id}/tags", otelhttp.NewHandler(kithttp.NewServer(
-				updateClientTagsEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(updateClientTagsEndpoint(svc)),
 				decodeUpdateClientTags,
 				api.EncodeResponse,
 				opts...,
 			), "update_client_tags").ServeHTTP)
 
 			r.Patch("/{id}/identity", otelhttp.NewHandler(kithttp.NewServer(
-				updateClientIdentityEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(updateClientIdentityEndpoint(svc)),
 				decodeUpdateClientIdentity,
 				api.EncodeResponse,
 				opts...,
 			), "update_client_identity").ServeHTTP)
 
-			authMiddleware := authorizeMiddleware(authClient, updateClientRoleAuthreq)
+			authzMiddleware := authorizeMiddleware(authClient, updateClientRoleAuthReq)
 			r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
-				checkSuperAdminMiddleware(authMiddleware(updateClientRoleEndpoint(svc, authClient))),
+				checkSuperAdminMiddleware(authzMiddleware(updateClientRoleEndpoint(svc))),
 				decodeUpdateClientRole,
 				api.EncodeResponse,
 				opts...,
 			), "update_client_role").ServeHTTP)
 
 			r.Post("/{id}/enable", otelhttp.NewHandler(kithttp.NewServer(
-				enableClientEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(enableClientEndpoint(svc)),
 				decodeChangeClientStatus,
 				api.EncodeResponse,
 				opts...,
 			), "enable_client").ServeHTTP)
 
 			r.Post("/{id}/disable", otelhttp.NewHandler(kithttp.NewServer(
-				disableClientEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(disableClientEndpoint(svc)),
 				decodeChangeClientStatus,
 				api.EncodeResponse,
 				opts...,
 			), "disable_client").ServeHTTP)
 
 			r.Delete("/{id}", otelhttp.NewHandler(kithttp.NewServer(
-				deleteClientEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(deleteClientEndpoint(svc)),
 				decodeChangeClientStatus,
 				api.EncodeResponse,
 				opts...,
 			), "delete_client").ServeHTTP)
 		})
+	})
 
-		r.Route("/password", func(r chi.Router) {
-			r.Post("/reset-request", otelhttp.NewHandler(kithttp.NewServer(
-				passwordResetRequestEndpoint(svc, authClient),
-				decodePasswordResetRequest,
-				api.EncodeResponse,
-				opts...,
-			), "password_reset_req").ServeHTTP)
-
-			r.Put("/reset", otelhttp.NewHandler(kithttp.NewServer(
-				passwordResetEndpoint(svc, authClient),
-				decodePasswordReset,
-				api.EncodeResponse,
-				opts...,
-			), "password_reset").ServeHTTP)
-		})
+	r.Group(func(r chi.Router) {
+		r.Use(identifyMiddleware(authClient))
+		r.Put("/password/reset", otelhttp.NewHandler(kithttp.NewServer(
+			passwordResetEndpoint(svc),
+			decodePasswordReset,
+			api.EncodeResponse,
+			opts...,
+		), "password_reset").ServeHTTP)
 
 		// Ideal location: users service, groups endpoint.
 		// Reason for placing here :
 		// SpiceDB provides list of user ids in given user_group_id
 		// and users service can access spiceDB and get the user list with user_group_id.
 		// Request to get list of users present in the user_group_id {groupID}
+		authzMiddleware := authorizeMiddleware(authClient, listMembersByGroupAuthReq)
 		r.Get("/groups/{groupID}/users", otelhttp.NewHandler(kithttp.NewServer(
-			listMembersByGroupEndpoint(svc, authClient),
+			authzMiddleware(listMembersByGroupEndpoint(svc)),
 			decodeListMembersByGroup,
 			api.EncodeResponse,
 			opts...,
@@ -167,43 +172,51 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		// SpiceDB provides list of user ids in given channel_id
 		// and users service can access spiceDB and get the user list with channel_id.
 		// Request to get list of users present in the user_group_id {channelID}
+		authzMiddleware = authorizeMiddleware(authClient, listMembersByGroupAuthReq)
 		r.Get("/channels/{channelID}/users", otelhttp.NewHandler(kithttp.NewServer(
-			listMembersByChannelEndpoint(svc, authClient),
+			authzMiddleware(listMembersByChannelEndpoint(svc)),
 			decodeListMembersByChannel,
 			api.EncodeResponse,
 			opts...,
 		), "list_users_by_channel_id").ServeHTTP)
 
+		authzMiddleware = authorizeMiddleware(authClient, listMembersByThingAuthReq)
 		r.Get("/things/{thingID}/users", otelhttp.NewHandler(kithttp.NewServer(
-			listMembersByThingEndpoint(svc, authClient),
+			authzMiddleware(listMembersByThingEndpoint(svc)),
 			decodeListMembersByThing,
 			api.EncodeResponse,
 			opts...,
 		), "list_users_by_thing_id").ServeHTTP)
 
+		authzMiddleware = authorizeMiddleware(authClient, listMembersByDomianAuthReq)
 		r.Get("/domains/{domainID}/users", otelhttp.NewHandler(kithttp.NewServer(
-			listMembersByDomainEndpoint(svc, authClient),
+			authzMiddleware(listMembersByDomainEndpoint(svc)),
 			decodeListMembersByDomain,
 			api.EncodeResponse,
 			opts...,
 		), "list_users_by_domain_id").ServeHTTP)
 	})
 
-	r.Group(func(r chi.Router) {
-		r.Post("/users/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
-			issueTokenEndpoint(svc, authClient),
-			decodeCredentials,
-			api.EncodeResponse,
-			opts...,
-		), "issue_token").ServeHTTP)
+	r.Post("/users/tokens/issue", otelhttp.NewHandler(kithttp.NewServer(
+		issueTokenEndpoint(svc, authClient),
+		decodeCredentials,
+		api.EncodeResponse,
+		opts...,
+	), "issue_token").ServeHTTP)
 
-		r.Post("/users//tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
-			refreshTokenEndpoint(svc, authClient),
-			decodeRefreshToken,
-			api.EncodeResponse,
-			opts...,
-		), "refresh_token").ServeHTTP)
-	})
+	r.Post("/users/tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
+		refreshTokenEndpoint(svc, authClient),
+		decodeRefreshToken,
+		api.EncodeResponse,
+		opts...,
+	), "refresh_token").ServeHTTP)
+
+	r.Post("/password/reset-request", otelhttp.NewHandler(kithttp.NewServer(
+		passwordResetRequestEndpoint(svc, authClient),
+		decodePasswordResetRequest,
+		api.EncodeResponse,
+		opts...,
+	), "password_reset_req").ServeHTTP)
 
 	for _, provider := range providers {
 		r.HandleFunc("/oauth/callback/"+provider.Name(), oauth2CallbackHandler(provider, svc, authClient))
@@ -683,4 +696,68 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service, authClient 
 
 		http.Redirect(w, r, oauth.ErrorURL()+"?error=empty%20code", http.StatusSeeOther)
 	}
+}
+
+func updateClientRoleAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(updateClientRoleReq)
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.UsersKind,
+		Subject:     req.id,
+		Permission:  policy.MembershipPermission,
+		ObjectType:  policy.PlatformType,
+		Object:      policy.MagistralaObject,
+	}, nil
+}
+
+func listMembersByGroupAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policy.GroupType,
+		Object:      req.objectID,
+	}, nil
+}
+
+func listMembersByThingAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policy.ThingType,
+		Object:      req.objectID,
+	}, nil
+}
+
+func listMembersByDomianAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		SubjectKind: policy.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policy.DomainType,
+		Object:      req.objectID,
+	}, nil
 }

@@ -5,11 +5,10 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/absmach/magistrala"
-	mgauth "github.com/absmach/magistrala/auth"
+	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
@@ -18,33 +17,20 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-var (
-	listMembersByGroupAuthReq = policy.PolicyReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.TokenKind,
-		ObjectType:  policy.GroupType,
-	}
-	updateClientRoleAuthreq = policy.PolicyReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.UsersKind,
-		Permission:  policy.MembershipPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
-	}
-)
+type authEndpointFunc func(interface{}) (*magistrala.AuthorizeReq, error)
 
-func IdentifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
+func identifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := apiutil.ExtractBearerToken(r)
 			if token == "" {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				api.EncodeError(r.Context(), apiutil.ErrBearerToken, w)
 				return
 			}
 
 			resp, err := authClient.Identify(r.Context(), &magistrala.IdentityReq{Token: token})
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				api.EncodeError(r.Context(), err, w)
 				return
 			}
 
@@ -57,44 +43,18 @@ func IdentifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Hand
 	}
 }
 
-func authorizeMiddleware(authClient auth.AuthClient, authReq policy.PolicyReq) endpoint.Middleware {
+func authorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			req := request.(authorizeReq)
-			if err := req.validate(); err != nil {
+			pr, err := getAuthReq(request)
+			if err != nil {
 				return nil, errors.Wrap(apiutil.ErrValidation, err)
 			}
-			var subject string
-			switch {
-			case authReq.Subject != "":
-				subject = authReq.Subject
-			case authReq.SubjectKind == policy.TokenKind:
-				subject = req.token
-			case authReq.SubjectKind == policy.UsersKind:
-				subject = req.id
-			}
 
-			permission := authReq.Permission
-			if permission == "" {
-				permission = mgauth.SwitchToPermission(req.Page.Permission)
-			}
-			object := authReq.Object
-			if object == "" {
-				object = req.objectID
-			}
-
-			res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-				SubjectType: authReq.SubjectType,
-				SubjectKind: authReq.SubjectKind,
-				Subject:     subject,
-				Permission:  permission,
-				ObjectType:  authReq.ObjectType,
-				Object:      object,
-			})
+			res, err := authClient.Authorize(ctx, pr)
 			if err != nil || !res.Authorized {
 				return nil, errors.Wrap(svcerr.ErrAuthorization, err)
 			}
-			fmt.Println("This authorization was successful")
 			return next(ctx, request)
 		}
 	}
@@ -125,7 +85,6 @@ func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 				DomainID:   session.DomainID,
 				SuperAdmin: superAdmin,
 			})
-			fmt.Println("This authorization was successful")
 			return next(ctx, request)
 		}
 	}
