@@ -632,8 +632,9 @@ func identify(ctx context.Context, authClient auth.AuthClient, token string) (au
 		return auth.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	return auth.Session{
-		UserID:   resp.GetUserId(),
-		DomainID: resp.GetDomainId(),
+		DomainUserID: resp.GetId(),
+		UserID:       resp.GetUserId(),
+		DomainID:     resp.GetDomainId(),
 	}, nil
 }
 
