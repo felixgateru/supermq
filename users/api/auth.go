@@ -5,6 +5,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/absmach/magistrala"
@@ -53,6 +54,24 @@ func authorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc
 			pr, err := getAuthReq(request)
 			if err != nil {
 				return nil, errors.Wrap(apiutil.ErrValidation, err)
+			}
+			var subject string
+			switch {
+			case authReq.Subject != "":
+				subject = authReq.Subject
+			case authReq.SubjectKind == policy.TokenKind:
+				subject = req.token
+			case authReq.SubjectKind == policy.UsersKind:
+				subject = req.id
+			}
+
+			permission := authReq.Permission
+			if permission == "" {
+				permission = mgauth.SwitchToPermission(req.Page.Permission)
+			}
+			object := authReq.Object
+			if object == "" {
+				object = req.objectID
 			}
 
 			res, err := authClient.Authorize(ctx, pr)
