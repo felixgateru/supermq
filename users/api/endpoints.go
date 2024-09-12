@@ -70,11 +70,6 @@ func viewClientEndpoint(svc users.Service) endpoint.Endpoint {
 
 func viewProfileEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(viewProfileReq)
-		if err := req.validate(); err != nil {
-			return nil, errors.Wrap(apiutil.ErrValidation, err)
-		}
-
 		session, ok := ctx.Value("session").(auth.Session)
 		if !ok {
 			return nil, svcerr.ErrAuthorization

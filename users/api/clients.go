@@ -235,9 +235,7 @@ func decodeViewClient(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func decodeViewProfile(_ context.Context, r *http.Request) (interface{}, error) {
-	req := viewProfileReq{token: apiutil.ExtractBearerToken(r)}
-
-	return req, nil
+	return nil, nil
 }
 
 func decodeListClients(_ context.Context, r *http.Request) (interface{}, error) {
@@ -287,7 +285,6 @@ func decodeListClients(_ context.Context, r *http.Request) (interface{}, error) 
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 	req := listClientsReq{
-		token:    apiutil.ExtractBearerToken(r),
 		status:   st,
 		offset:   o,
 		limit:    l,
@@ -330,7 +327,6 @@ func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error
 	}
 
 	req := searchClientsReq{
-		token:  apiutil.ExtractBearerToken(r),
 		Offset: o,
 		Limit:  l,
 		Name:   n,
@@ -341,9 +337,7 @@ func decodeSearchClients(_ context.Context, r *http.Request) (interface{}, error
 
 	for _, field := range []string{req.Name, req.Id} {
 		if field != "" && len(field) < 3 {
-			req = searchClientsReq{
-				token: apiutil.ExtractBearerToken(r),
-			}
+			req = searchClientsReq{}
 			return req, errors.Wrap(apiutil.ErrLenSearchQuery, apiutil.ErrValidation)
 		}
 	}
@@ -357,8 +351,7 @@ func decodeUpdateClient(_ context.Context, r *http.Request) (interface{}, error)
 	}
 
 	req := updateClientReq{
-		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		id: chi.URLParam(r, "id"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
@@ -373,8 +366,7 @@ func decodeUpdateClientTags(_ context.Context, r *http.Request) (interface{}, er
 	}
 
 	req := updateClientTagsReq{
-		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		id: chi.URLParam(r, "id"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
@@ -389,8 +381,7 @@ func decodeUpdateClientIdentity(_ context.Context, r *http.Request) (interface{}
 	}
 
 	req := updateClientIdentityReq{
-		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		id: chi.URLParam(r, "id"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
@@ -404,9 +395,7 @@ func decodeUpdateClientSecret(_ context.Context, r *http.Request) (interface{}, 
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
 	}
 
-	req := updateClientSecretReq{
-		token: apiutil.ExtractBearerToken(r),
-	}
+	req := updateClientSecretReq{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
 	}
@@ -447,8 +436,7 @@ func decodeUpdateClientRole(_ context.Context, r *http.Request) (interface{}, er
 	}
 
 	req := updateClientRoleReq{
-		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		id: chi.URLParam(r, "id"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))
@@ -494,7 +482,6 @@ func decodeCreateClientReq(_ context.Context, r *http.Request) (interface{}, err
 	}
 	req := createClientReq{
 		client: c,
-		token:  apiutil.ExtractBearerToken(r),
 	}
 
 	return req, nil
@@ -502,8 +489,7 @@ func decodeCreateClientReq(_ context.Context, r *http.Request) (interface{}, err
 
 func decodeChangeClientStatus(_ context.Context, r *http.Request) (interface{}, error) {
 	req := changeClientStatusReq{
-		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "id"),
+		id: chi.URLParam(r, "id"),
 	}
 
 	return req, nil
