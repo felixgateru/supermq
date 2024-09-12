@@ -36,6 +36,8 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
+	checkSuperAdminMiddleware := checkSuperAdminMiddleware(authClient)
+
 	r.Group(func(r chi.Router) {
 		r.Use(IdentifyMiddleware(authClient))
 		r.Route("/users", func(r chi.Router) {
@@ -102,8 +104,9 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 				opts...,
 			), "update_client_identity").ServeHTTP)
 
+			authMiddleware := authorizeMiddleware(authClient, updateClientRoleAuthreq)
 			r.Patch("/{id}/role", otelhttp.NewHandler(kithttp.NewServer(
-				updateClientRoleEndpoint(svc, authClient),
+				checkSuperAdminMiddleware(authMiddleware(updateClientRoleEndpoint(svc, authClient))),
 				decodeUpdateClientRole,
 				api.EncodeResponse,
 				opts...,
