@@ -193,13 +193,6 @@ func TestSearchClientsReqValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: searchClientsReq{
-				Name:  name,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty query",
 			req: searchClientsReq{
 			},
@@ -434,13 +427,6 @@ func TestChangeClientStatusReqValidate(t *testing.T) {
 				id:    validID,
 			},
 			err: nil,
-		},
-		{
-			desc: "empty token",
-			req: changeClientStatusReq{
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
 		},
 		{
 			desc: "empty id",

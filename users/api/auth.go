@@ -13,7 +13,7 @@ import (
 	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/pkg/policy"
+	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -69,12 +69,12 @@ func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 			}
 			var superAdmin bool
 			_, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-				SubjectType: policy.UserType,
-				SubjectKind: policy.UsersKind,
+				SubjectType: policies.UserType,
+				SubjectKind: policies.UsersKind,
 				Subject:     session.UserID,
-				Permission:  policy.AdminPermission,
-				ObjectType:  policy.PlatformType,
-				Object:      policy.MagistralaObject,
+				Permission:  policies.AdminPermission,
+				ObjectType:  policies.PlatformType,
+				Object:      policies.MagistralaObject,
 			})
 			if err == nil {
 				superAdmin = true

@@ -142,6 +142,13 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 				api.EncodeResponse,
 				opts...,
 			), "delete_client").ServeHTTP)
+
+			r.Post("/tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
+				refreshTokenEndpoint(svc, authClient),
+				decodeRefreshToken,
+				api.EncodeResponse,
+				opts...,
+			), "refresh_token").ServeHTTP)
 		})
 	})
 
@@ -203,13 +210,6 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		api.EncodeResponse,
 		opts...,
 	), "issue_token").ServeHTTP)
-
-	r.Post("/users/tokens/refresh", otelhttp.NewHandler(kithttp.NewServer(
-		refreshTokenEndpoint(svc, authClient),
-		decodeRefreshToken,
-		api.EncodeResponse,
-		opts...,
-	), "refresh_token").ServeHTTP)
 
 	r.Post("/password/reset-request", otelhttp.NewHandler(kithttp.NewServer(
 		passwordResetRequestEndpoint(svc, authClient),
@@ -691,59 +691,62 @@ func updateClientRoleAuthReq(request interface{}) (*magistrala.AuthorizeReq, err
 	}
 
 	return &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.UsersKind,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
 		Subject:     req.id,
-		Permission:  policy.MembershipPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
+		Permission:  policies.MembershipPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
 	}, nil
 }
 
 func listMembersByGroupAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
 	req := request.(listMembersByObjectReq)
+	req.objectKind = "groups"
 	if err := req.validate(); err != nil {
 		return nil, err
 	}
 
 	return &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.TokenKind,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
 		Subject:     req.token,
 		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-		ObjectType:  policy.GroupType,
+		ObjectType:  policies.GroupType,
 		Object:      req.objectID,
 	}, nil
 }
 
 func listMembersByThingAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
 	req := request.(listMembersByObjectReq)
+	req.objectKind = "things"
 	if err := req.validate(); err != nil {
 		return nil, err
 	}
 
 	return &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.TokenKind,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
 		Subject:     req.token,
 		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-		ObjectType:  policy.ThingType,
+		ObjectType:  policies.ThingType,
 		Object:      req.objectID,
 	}, nil
 }
 
 func listMembersByDomianAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
 	req := request.(listMembersByObjectReq)
+	req.objectKind = "domains"
 	if err := req.validate(); err != nil {
 		return nil, err
 	}
 
 	return &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.TokenKind,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
 		Subject:     req.token,
 		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
-		ObjectType:  policy.DomainType,
+		ObjectType:  policies.DomainType,
 		Object:      req.objectID,
 	}, nil
 }

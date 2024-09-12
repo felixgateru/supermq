@@ -1952,7 +1952,7 @@ func TestRefreshToken(t *testing.T) {
 			contentType: contentType,
 			status:      http.StatusUnauthorized,
 			identifyErr: svcerr.ErrAuthentication,
-			err:         apiutil.ErrValidation,
+			err:         apiutil.ErrBearerToken,
 		},
 		{
 			desc:        "refresh token with invalid domain",
@@ -1988,6 +1988,7 @@ func TestRefreshToken(t *testing.T) {
 			url:         fmt.Sprintf("%s/users/tokens/refresh", us.URL),
 			contentType: tc.contentType,
 			body:        strings.NewReader(tc.data),
+			token:       tc.token,
 		}
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
 		authCall1 := auth.On("Refresh", mock.Anything, mock.Anything, mock.Anything).Return(&magistrala.Token{}, tc.refreshErr)

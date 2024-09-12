@@ -177,9 +177,6 @@ func listMembersByGroupEndpoint(svc users.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, svcerr.ErrAuthorization
 		}
-		if err = authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.GroupType, req.objectID); err != nil {
-			return nil, err
-		}
 
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
@@ -203,9 +200,6 @@ func listMembersByChannelEndpoint(svc users.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, svcerr.ErrAuthorization
 		}
-		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.GroupType, req.objectID); err != nil {
-			return nil, err
-		}
 
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
@@ -228,9 +222,6 @@ func listMembersByThingEndpoint(svc users.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, svcerr.ErrAuthorization
 		}
-		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, req.Page.Permission, policies.ThingType, req.objectID); err != nil {
-			return nil, err
-		}
 
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
 		if err != nil {
@@ -252,9 +243,6 @@ func listMembersByDomainEndpoint(svc users.Service) endpoint.Endpoint {
 		session, ok := ctx.Value("session").(auth.Session)
 		if !ok {
 			return nil, svcerr.ErrAuthorization
-		}
-		if err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, mgauth.SwitchToPermission(req.Page.Permission), policies.DomainType, req.objectID); err != nil {
-			return nil, err
 		}
 
 		page, err := svc.ListMembers(ctx, session, req.objectKind, req.objectID, req.Page)
@@ -434,12 +422,6 @@ func updateClientRoleEndpoint(svc users.Service) endpoint.Endpoint {
 		session, ok := ctx.Value("session").(auth.Session)
 		if !ok {
 			return nil, svcerr.ErrAuthorization
-		}
-		if err := checkSuperAdmin(ctx, authClient, session.UserID); err == nil {
-			session.SuperAdmin = true
-		}
-		if err := authorize(ctx, authClient, "", policies.UserType, policies.UsersKind, client.ID, policies.MembershipPermission, policies.PlatformType, policies.MagistralaObject); err != nil {
-			return nil, err
 		}
 
 		client, err := svc.UpdateClientRole(ctx, session, client)
