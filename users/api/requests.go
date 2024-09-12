@@ -357,18 +357,3 @@ func (req unassignGroupsReq) validate() error {
 
 	return nil
 }
-
-type authorizeReq struct {
-	token    string
-	objectID string
-	id       string
-	mgclients.ClientsPage
-}
-
-func (req authorizeReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
-
-	return nil
-}
