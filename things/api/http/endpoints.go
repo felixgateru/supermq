@@ -312,7 +312,7 @@ func buildClientsResponse(cp mgclients.MembersPage) clientsPageRes {
 	return res
 }
 
-func assignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
+func assignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignUsersRequest)
 		if err := req.validate(); err != nil {
@@ -332,7 +332,7 @@ func assignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func unassignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
+func unassignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignUsersRequest)
 		if err := req.validate(); err != nil {
@@ -352,7 +352,7 @@ func unassignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func assignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
+func assignUserGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignUserGroupsRequest)
 		if err := req.validate(); err != nil {
@@ -372,7 +372,7 @@ func assignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func unassignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
+func unassignUserGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignUserGroupsRequest)
 		if err := req.validate(); err != nil {
@@ -392,7 +392,7 @@ func unassignUserGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func connectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
+func connectChannelThingEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {
@@ -412,7 +412,7 @@ func connectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func disconnectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
+func disconnectChannelThingEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {
@@ -432,7 +432,7 @@ func disconnectChannelThingEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func connectEndpoint(svc groups.Service) endpoint.Endpoint {
+func connectEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {
@@ -452,7 +452,7 @@ func connectEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func disconnectEndpoint(svc groups.Service) endpoint.Endpoint {
+func disconnectEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {

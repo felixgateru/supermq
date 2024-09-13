@@ -173,7 +173,7 @@ func decodeUnassignUsersRequest(_ context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
-func assignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
+func assignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignUsersReq)
 		if err := req.validate(); err != nil {
@@ -191,7 +191,7 @@ func assignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func unassignUsersEndpoint(svc groups.Service) endpoint.Endpoint {
+func unassignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unassignUsersReq)
 		if err := req.validate(); err != nil {
@@ -232,7 +232,7 @@ func decodeUnassignGroupsRequest(_ context.Context, r *http.Request) (interface{
 	return req, nil
 }
 
-func assignGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
+func assignGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignGroupsReq)
 		if err := req.validate(); err != nil {
@@ -250,7 +250,7 @@ func assignGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func unassignGroupsEndpoint(svc groups.Service) endpoint.Endpoint {
+func unassignGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unassignGroupsReq)
 		if err := req.validate(); err != nil {

@@ -581,13 +581,15 @@ func identify(ctx context.Context, authClient auth.AuthClient, token string) (au
 		return auth.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	return auth.Session{
-		UserID:   resp.GetUserId(),
-		DomainID: resp.GetDomainId(),
+		DomainUserID: resp.GetId(),
+		UserID:       resp.GetUserId(),
+		DomainID:     resp.GetDomainId(),
 	}, nil
 }
 
-func authorize(ctx context.Context, authClient auth.AuthClient, subjectType, subjectKind, subject, permission, objectType, objectID string) error {
+func authorize(ctx context.Context, authClient auth.AuthClient, domainID string, subjectType, subjectKind, subject, permission, objectType, objectID string) error {
 	res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+		Domain:      domainID,
 		SubjectType: subjectType,
 		SubjectKind: subjectKind,
 		Subject:     subject,

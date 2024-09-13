@@ -12,12 +12,13 @@ import (
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/groups"
+	"github.com/absmach/magistrala/pkg/policy"
 	"github.com/go-kit/kit/endpoint"
 )
 
 const groupTypeChannels = "channels"
 
-func CreateGroupEndpoint(svc groups.Service, kind string) endpoint.Endpoint {
+func CreateGroupEndpoint(svc groups.Service, authClient auth.AuthClient, kind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createGroupReq)
 		if err := req.validate(); err != nil {
@@ -38,11 +39,14 @@ func CreateGroupEndpoint(svc groups.Service, kind string) endpoint.Endpoint {
 	}
 }
 
-func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func ViewGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 		if err := req.validate(); err != nil {
 			return viewGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
+		}
+		if _, err := authorize(ctx, authClient, "", policy.UserType, policy.TokenKind, req.token, policy.ViewPermission, policy.GroupType, req.id); err != nil {
+			return viewGroupRes{}, err
 		}
 
 		session, ok := ctx.Value(api.SessionKey).(authn.Session)
@@ -58,11 +62,15 @@ func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func ViewGroupPermsEndpoint(svc groups.Service) endpoint.Endpoint {
+func ViewGroupPermsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupPermsReq)
 		if err := req.validate(); err != nil {
 			return viewGroupPermsRes{}, errors.Wrap(apiutil.ErrValidation, err)
+		}
+		session, err := identify(ctx, authClient, req.token)
+		if err != nil {
+			return viewGroupPermsRes{}, err
 		}
 
 		session, ok := ctx.Value(api.SessionKey).(authn.Session)
@@ -79,7 +87,7 @@ func ViewGroupPermsEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func UpdateGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func UpdateGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateGroupReq)
 		if err := req.validate(); err != nil {
@@ -107,7 +115,7 @@ func UpdateGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func EnableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func EnableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeGroupStatusReq)
 		if err := req.validate(); err != nil {
@@ -127,7 +135,7 @@ func EnableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func DisableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func DisableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeGroupStatusReq)
 		if err := req.validate(); err != nil {
@@ -147,7 +155,7 @@ func DisableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func ListGroupsEndpoint(svc groups.Service, groupType, memberKind string) endpoint.Endpoint {
+func ListGroupsEndpoint(svc groups.Service, authClient auth.AuthClient, groupType, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listGroupsReq)
 		if memberKind != "" {
@@ -188,7 +196,7 @@ func ListGroupsEndpoint(svc groups.Service, groupType, memberKind string) endpoi
 	}
 }
 
-func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoint {
+func ListMembersEndpoint(svc groups.Service, authClient auth.AuthClient, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersReq)
 		if memberKind != "" {
@@ -219,7 +227,7 @@ func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoin
 	}
 }
 
-func AssignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
+func AssignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignReq)
 		if relation != "" {
@@ -243,7 +251,7 @@ func AssignMembersEndpoint(svc groups.Service, relation, memberKind string) endp
 	}
 }
 
-func UnassignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
+func UnassignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unassignReq)
 		if relation != "" {
@@ -267,7 +275,7 @@ func UnassignMembersEndpoint(svc groups.Service, relation, memberKind string) en
 	}
 }
 
-func DeleteGroupEndpoint(svc groups.Service) endpoint.Endpoint {
+func DeleteGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 		if err := req.validate(); err != nil {
@@ -378,4 +386,55 @@ func buildChannelsResponse(cp groups.Page, filterByID bool) channelPageRes {
 	}
 
 	return res
+}
+
+func identify(ctx context.Context, authClient auth.AuthClient, token string) (auth.Session, error) {
+	resp, err := authClient.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	if err != nil {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
+	}
+	if resp.GetId() == "" || resp.GetDomainId() == "" {
+		return auth.Session{}, svcerr.ErrDomainAuthorization
+	}
+	return auth.Session{
+		DomainUserID: resp.GetId(),
+		UserID:       resp.GetUserId(),
+		DomainID:     resp.GetDomainId(),
+	}, nil
+}
+
+func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
+	if _, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		Subject:     adminID,
+		Permission:  policy.AdminPermission,
+		ObjectType:  policy.PlatformType,
+		Object:      policy.MagistralaObject,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func authorize(ctx context.Context, authClient auth.AuthClient, domainID, subjType, subjKind, subj, perm, objType, obj string) (auth.Session, error) {
+	req := &magistrala.AuthorizeReq{
+		Domain:      domainID,
+		SubjectType: subjType,
+		SubjectKind: subjKind,
+		Subject:     subj,
+		Permission:  perm,
+		ObjectType:  objType,
+		Object:      obj,
+	}
+	res, err := authClient.Authorize(ctx, req)
+	if err != nil {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if !res.GetAuthorized() {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+
+	return auth.Session{
+		UserID: res.GetId(),
+	}, nil
 }
