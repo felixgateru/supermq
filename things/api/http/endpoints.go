@@ -548,11 +548,11 @@ func identify(ctx context.Context, authClient auth.AuthClient, token string) (au
 
 func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
 	if _, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
+		SubjectType: policies.UserType,
 		Subject:     adminID,
-		Permission:  policy.AdminPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
+		Permission:  policies.AdminPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
 	}); err != nil {
 		return err
 	}

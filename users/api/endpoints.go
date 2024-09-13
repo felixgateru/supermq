@@ -608,12 +608,12 @@ func authorize(ctx context.Context, authClient auth.AuthClient, domainID string,
 
 func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
 	if _, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
-		SubjectKind: policy.UsersKind,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
 		Subject:     adminID,
-		Permission:  policy.AdminPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
+		Permission:  policies.AdminPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
 	}); err != nil {
 		return err
 	}

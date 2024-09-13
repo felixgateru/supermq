@@ -24,9 +24,9 @@ func authorizeEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.
 			return authorizeRes{}, err
 		}
 		r := &magistrala.AuthorizeReq{
-			SubjectType: policy.GroupType,
+			SubjectType: policies.GroupType,
 			Subject:     req.GetObject(),
-			ObjectType:  policy.ThingType,
+			ObjectType:  policies.ThingType,
 			Object:      thingID,
 			Permission:  req.GetPermission(),
 		}

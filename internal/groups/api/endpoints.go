@@ -12,7 +12,7 @@ import (
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/groups"
-	"github.com/absmach/magistrala/pkg/policy"
+	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/go-kit/kit/endpoint"
 )
 
@@ -45,7 +45,7 @@ func ViewGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.
 		if err := req.validate(); err != nil {
 			return viewGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
-		if _, err := authorize(ctx, authClient, "", policy.UserType, policy.TokenKind, req.token, policy.ViewPermission, policy.GroupType, req.id); err != nil {
+		if _, err := authorize(ctx, authClient, "", policies.UserType, policies.TokenKind, req.token, policies.ViewPermission, policies.GroupType, req.id); err != nil {
 			return viewGroupRes{}, err
 		}
 
@@ -405,11 +405,11 @@ func identify(ctx context.Context, authClient auth.AuthClient, token string) (au
 
 func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
 	if _, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
-		SubjectType: policy.UserType,
+		SubjectType: policies.UserType,
 		Subject:     adminID,
-		Permission:  policy.AdminPermission,
-		ObjectType:  policy.PlatformType,
-		Object:      policy.MagistralaObject,
+		Permission:  policies.AdminPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
 	}); err != nil {
 		return err
 	}
