@@ -21,13 +21,13 @@ import (
 	"github.com/absmach/magistrala/bootstrap/events/producer"
 	bootstrappg "github.com/absmach/magistrala/bootstrap/postgres"
 	"github.com/absmach/magistrala/bootstrap/tracing"
-	mgpolicy "github.com/absmach/magistrala/internal/policy"
+	mgpolicies "github.com/absmach/magistrala/internal/policies"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/events"
 	"github.com/absmach/magistrala/pkg/events/store"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	"github.com/absmach/magistrala/pkg/jaeger"
-	"github.com/absmach/magistrala/pkg/policy"
+	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/absmach/magistrala/pkg/postgres"
 	pgclient "github.com/absmach/magistrala/pkg/postgres"
 	"github.com/absmach/magistrala/pkg/prometheus"
@@ -190,7 +190,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authClient authclient.AuthClient, policyClient policy.PolicyClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authClient authclient.AuthClient, policyClient policies.PolicyClient, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)
@@ -232,7 +232,7 @@ func subscribeToThingsES(ctx context.Context, svc bootstrap.Service, cfg config,
 	return subscriber.Subscribe(ctx, subConfig)
 }
 
-func newPolicyClient(cfg config, logger *slog.Logger) (policy.PolicyClient, error) {
+func newPolicyClient(cfg config, logger *slog.Logger) (policies.PolicyClient, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -241,7 +241,7 @@ func newPolicyClient(cfg config, logger *slog.Logger) (policy.PolicyClient, erro
 	if err != nil {
 		return nil, err
 	}
-	policyClient := mgpolicy.NewPolicyClient(client, logger)
+	policyClient := mgpolicies.NewPolicyClient(client, logger)
 
 	return policyClient, nil
 }
