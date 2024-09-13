@@ -18,7 +18,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-func createClientEndpoint(svc things.Service) endpoint.Endpoint {
+func createClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClientReq)
 		if err := req.validate(); err != nil {
@@ -42,7 +42,7 @@ func createClientEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func createClientsEndpoint(svc things.Service) endpoint.Endpoint {
+func createClientsEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClientsReq)
 		if err := req.validate(); err != nil {
@@ -73,7 +73,7 @@ func createClientsEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func viewClientEndpoint(svc things.Service) endpoint.Endpoint {
+func viewClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(viewClientReq)
 		if err := req.validate(); err != nil {
@@ -94,7 +94,7 @@ func viewClientEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func viewClientPermsEndpoint(svc things.Service) endpoint.Endpoint {
+func viewClientPermsEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(viewClientPermsReq)
 		if err := req.validate(); err != nil {
@@ -115,7 +115,7 @@ func viewClientPermsEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func listClientsEndpoint(svc things.Service) endpoint.Endpoint {
+func listClientsEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listClientsReq)
 		if err := req.validate(); err != nil {
@@ -160,7 +160,7 @@ func listClientsEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func listMembersEndpoint(svc things.Service) endpoint.Endpoint {
+func listMembersEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersReq)
 		if err := req.validate(); err != nil {
@@ -182,7 +182,7 @@ func listMembersEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func updateClientEndpoint(svc things.Service) endpoint.Endpoint {
+func updateClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientReq)
 		if err := req.validate(); err != nil {
@@ -208,7 +208,7 @@ func updateClientEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func updateClientTagsEndpoint(svc things.Service) endpoint.Endpoint {
+func updateClientTagsEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientTagsReq)
 		if err := req.validate(); err != nil {
@@ -233,7 +233,7 @@ func updateClientTagsEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func updateClientSecretEndpoint(svc things.Service) endpoint.Endpoint {
+func updateClientSecretEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientCredentialsReq)
 		if err := req.validate(); err != nil {
@@ -254,7 +254,7 @@ func updateClientSecretEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func enableClientEndpoint(svc things.Service) endpoint.Endpoint {
+func enableClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeClientStatusReq)
 		if err := req.validate(); err != nil {
@@ -275,7 +275,7 @@ func enableClientEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func disableClientEndpoint(svc things.Service) endpoint.Endpoint {
+func disableClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeClientStatusReq)
 		if err := req.validate(); err != nil {
@@ -472,7 +472,7 @@ func disconnectEndpoint(svc groups.Service) endpoint.Endpoint {
 	}
 }
 
-func thingShareEndpoint(svc things.Service) endpoint.Endpoint {
+func thingShareEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(thingShareRequest)
 		if err := req.validate(); err != nil {
@@ -492,7 +492,7 @@ func thingShareEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func thingUnshareEndpoint(svc things.Service) endpoint.Endpoint {
+func thingUnshareEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(thingShareRequest)
 		if err := req.validate(); err != nil {
@@ -512,7 +512,7 @@ func thingUnshareEndpoint(svc things.Service) endpoint.Endpoint {
 	}
 }
 
-func deleteClientEndpoint(svc things.Service) endpoint.Endpoint {
+func deleteClientEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteClientReq)
 		if err := req.validate(); err != nil {
@@ -529,4 +529,55 @@ func deleteClientEndpoint(svc things.Service) endpoint.Endpoint {
 
 		return deleteClientRes{}, nil
 	}
+}
+
+func identify(ctx context.Context, authClient auth.AuthClient, token string) (auth.Session, error) {
+	resp, err := authClient.Identify(ctx, &magistrala.IdentityReq{Token: token})
+	if err != nil {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
+	}
+	if resp.GetId() == "" || resp.GetDomainId() == "" {
+		return auth.Session{}, svcerr.ErrDomainAuthorization
+	}
+	return auth.Session{
+		DomainUserID: resp.GetId(),
+		UserID:       resp.GetUserId(),
+		DomainID:     resp.GetDomainId(),
+	}, nil
+}
+
+func checkSuperAdmin(ctx context.Context, authClient auth.AuthClient, adminID string) error {
+	if _, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+		SubjectType: policy.UserType,
+		Subject:     adminID,
+		Permission:  policy.AdminPermission,
+		ObjectType:  policy.PlatformType,
+		Object:      policy.MagistralaObject,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func authorize(ctx context.Context, authClient auth.AuthClient, domainID, subjType, subjKind, subj, perm, objType, obj string) (auth.Session, error) {
+	req := &magistrala.AuthorizeReq{
+		Domain:      domainID,
+		SubjectType: subjType,
+		SubjectKind: subjKind,
+		Subject:     subj,
+		Permission:  perm,
+		ObjectType:  objType,
+		Object:      obj,
+	}
+	res, err := authClient.Authorize(ctx, req)
+	if err != nil {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if !res.GetAuthorized() {
+		return auth.Session{}, errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+
+	return auth.Session{
+		UserID: res.GetId(),
+	}, nil
 }

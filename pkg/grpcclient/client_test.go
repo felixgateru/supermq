@@ -14,6 +14,7 @@ import (
 	tokengrpcapi "github.com/absmach/magistrala/auth/api/grpc/token"
 	"github.com/absmach/magistrala/auth/mocks"
 	mglog "github.com/absmach/magistrala/logger"
+	authmocks "github.com/absmach/magistrala/pkg/auth/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	"github.com/absmach/magistrala/pkg/server"
