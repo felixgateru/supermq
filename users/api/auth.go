@@ -17,7 +17,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-const sessionKey = "session"
+type sessionKeyType string
+
+const sessionKey = sessionKeyType("session")
 
 type authEndpointFunc func(interface{}) (*magistrala.AuthorizeReq, error)
 
