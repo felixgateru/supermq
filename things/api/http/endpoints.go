@@ -107,6 +107,7 @@ func viewClientPermsEndpoint(svc things.Service, authClient auth.AuthClient) end
 
 		session, err := identify(ctx, authClient, req.token)
 		if err != nil {
+
 			return nil, err
 		}
 
@@ -353,7 +354,7 @@ func assignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoin
 
 func unassignUsersEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(unassignUsersRequest)
+		req := request.(assignUsersRequest)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -397,7 +398,7 @@ func assignUserGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) en
 
 func unassignUserGroupsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(unassignUserGroupsRequest)
+		req := request.(assignUserGroupsRequest)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -441,7 +442,7 @@ func connectChannelThingEndpoint(svc groups.Service, authClient auth.AuthClient)
 
 func disconnectChannelThingEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(disconnectChannelThingRequest)
+		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -485,7 +486,7 @@ func connectEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.En
 
 func disconnectEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(disconnectChannelThingRequest)
+		req := request.(connectChannelThingRequest)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -528,7 +529,7 @@ func thingShareEndpoint(svc things.Service, authClient auth.AuthClient) endpoint
 
 func thingUnshareEndpoint(svc things.Service, authClient auth.AuthClient) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(thingUnshareRequest)
+		req := request.(thingShareRequest)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
