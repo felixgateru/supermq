@@ -17,6 +17,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
+const sessionKey = "session"
+
 type authEndpointFunc func(interface{}) (*magistrala.AuthorizeReq, error)
 
 func identifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
@@ -34,7 +36,7 @@ func identifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Hand
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), "session", auth.Session{
+			ctx := context.WithValue(r.Context(), sessionKey, auth.Session{
 				UserID:   resp.GetUserId(),
 				DomainID: resp.GetDomainId(),
 			})
@@ -63,7 +65,7 @@ func authorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc
 func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			session, ok := ctx.Value("session").(auth.Session)
+			session, ok := ctx.Value(sessionKey).(auth.Session)
 			if !ok {
 				return nil, svcerr.ErrAuthorization
 			}
@@ -80,7 +82,7 @@ func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 				superAdmin = true
 			}
 
-			ctx = context.WithValue(ctx, "session", auth.Session{
+			ctx = context.WithValue(ctx, sessionKey, auth.Session{
 				UserID:     session.UserID,
 				DomainID:   session.DomainID,
 				SuperAdmin: superAdmin,
