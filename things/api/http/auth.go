@@ -17,7 +17,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-const sessionKey = "session"
+type sessionKeyType string
+
+const sessionKey = sessionKeyType("session")
 
 type authEndpointFunc func(context.Context, interface{}) (*magistrala.AuthorizeReq, error)
 
@@ -41,6 +43,7 @@ func identifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Hand
 				UserID:       resp.GetUserId(),
 				DomainID:     resp.GetDomainId(),
 			})
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -84,10 +87,12 @@ func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 			}
 
 			ctx = context.WithValue(ctx, sessionKey, auth.Session{
-				UserID:     session.UserID,
-				DomainID:   session.DomainID,
-				SuperAdmin: superAdmin,
+				DomainUserID: session.DomainUserID,
+				UserID:       session.UserID,
+				DomainID:     session.DomainID,
+				SuperAdmin:   superAdmin,
 			})
+
 			return next(ctx, request)
 		}
 	}

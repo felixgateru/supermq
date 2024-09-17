@@ -31,7 +31,6 @@ func TestCreateThingReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   validID,
 					Name: valid,
@@ -40,20 +39,8 @@ func TestCreateThingReqValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: createClientReq{
-				token: "",
-				client: mgclients.Client{
-					ID:   validID,
-					Name: valid,
-				},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "name too long",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   validID,
 					Name: strings.Repeat("a", api.MaxNameSize+1),
@@ -64,7 +51,6 @@ func TestCreateThingReqValidate(t *testing.T) {
 		{
 			desc: "invalid id",
 			req: createClientReq{
-				token: valid,
 				client: mgclients.Client{
 					ID:   invalid,
 					Name: valid,
@@ -88,7 +74,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   validID,
@@ -99,22 +84,8 @@ func TestCreateThingsReqValidate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: createClientsReq{
-				token: "",
-				Clients: []mgclients.Client{
-					{
-						ID:   validID,
-						Name: valid,
-					},
-				},
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty list",
 			req: createClientsReq{
-				token:   valid,
 				Clients: []mgclients.Client{},
 			},
 			err: apiutil.ErrEmptyList,
@@ -122,7 +93,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "name too long",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   validID,
@@ -135,7 +105,6 @@ func TestCreateThingsReqValidate(t *testing.T) {
 		{
 			desc: "invalid id",
 			req: createClientsReq{
-				token: valid,
 				Clients: []mgclients.Client{
 					{
 						ID:   invalid,
@@ -198,24 +167,14 @@ func TestViewClientPermsReq(t *testing.T) {
 		{
 			desc: "valid request",
 			req: viewClientPermsReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: viewClientPermsReq{
-				token: "",
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: viewClientPermsReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},
@@ -235,7 +194,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: listClientsReq{
-				token: valid,
 				limit: 10,
 			},
 			err: nil,
@@ -243,7 +201,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "limit too big",
 			req: listClientsReq{
-				token: valid,
 				limit: api.MaxLimitSize + 1,
 			},
 			err: apiutil.ErrLimitSize,
@@ -251,7 +208,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "limit too small",
 			req: listClientsReq{
-				token: valid,
 				limit: 0,
 			},
 			err: apiutil.ErrLimitSize,
@@ -259,7 +215,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "invalid visibility",
 			req: listClientsReq{
-				token:      valid,
 				limit:      10,
 				visibility: "invalid",
 			},
@@ -268,7 +223,6 @@ func TestListClientsReqValidate(t *testing.T) {
 		{
 			desc: "name too long",
 			req: listClientsReq{
-				token: valid,
 				limit: 10,
 				name:  strings.Repeat("a", api.MaxNameSize+1),
 			},
@@ -646,7 +600,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -656,7 +609,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty thing id",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  "",
 				UserIDs:  []string{validID},
 				Relation: valid,
@@ -666,7 +618,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty user ids",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{},
 				Relation: valid,
@@ -676,7 +627,6 @@ func TestThingShareRequestValidate(t *testing.T) {
 		{
 			desc: "empty relation",
 			req: thingShareRequest{
-				token:    valid,
 				thingID:  validID,
 				UserIDs:  []string{validID},
 				Relation: "",
@@ -699,24 +649,14 @@ func TestDeleteClientReqValidate(t *testing.T) {
 		{
 			desc: "valid request",
 			req: deleteClientReq{
-				token: valid,
-				id:    validID,
+				id: validID,
 			},
 			err: nil,
 		},
 		{
-			desc: "empty token",
-			req: deleteClientReq{
-				token: "",
-				id:    validID,
-			},
-			err: apiutil.ErrBearerToken,
-		},
-		{
 			desc: "empty id",
 			req: deleteClientReq{
-				token: valid,
-				id:    "",
+				id: "",
 			},
 			err: apiutil.ErrMissingID,
 		},

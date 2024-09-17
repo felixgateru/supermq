@@ -11,13 +11,9 @@ import (
 
 type createClientReq struct {
 	client mgclients.Client
-	token  string
 }
 
 func (req createClientReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
 	if len(req.client.Name) > api.MaxNameSize {
 		return apiutil.ErrNameSize
 	}
@@ -29,14 +25,10 @@ func (req createClientReq) validate() error {
 }
 
 type createClientsReq struct {
-	token   string
 	Clients []mgclients.Client
 }
 
 func (req createClientsReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
 	if len(req.Clients) == 0 {
 		return apiutil.ErrEmptyList
 	}
@@ -70,14 +62,10 @@ func (req viewClientReq) validate() error {
 }
 
 type viewClientPermsReq struct {
-	token string
-	id    string
+	id string
 }
 
 func (req viewClientPermsReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
 	if req.id == "" {
 		return apiutil.ErrMissingID
 	}
@@ -85,7 +73,6 @@ func (req viewClientPermsReq) validate() error {
 }
 
 type listClientsReq struct {
-	token      string
 	status     mgclients.Status
 	offset     uint64
 	limit      uint64
@@ -268,7 +255,6 @@ func (req *connectChannelThingRequest) validate() error {
 }
 
 type thingShareRequest struct {
-	token    string
 	thingID  string
 	Relation string   `json:"relation,omitempty"`
 	UserIDs  []string `json:"user_ids,omitempty"`
@@ -284,16 +270,11 @@ func (req *thingShareRequest) validate() error {
 	return nil
 }
 
-
 type deleteClientReq struct {
-	token string
 	id    string
 }
 
 func (req deleteClientReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
 	if req.id == "" {
 		return apiutil.ErrMissingID
 	}
