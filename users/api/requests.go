@@ -291,29 +291,6 @@ func (req assignUsersReq) validate() error {
 	return nil
 }
 
-type unassignUsersReq struct {
-	token    string
-	groupID  string
-	Relation string   `json:"relation"`
-	UserIDs  []string `json:"user_ids"`
-}
-
-func (req unassignUsersReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
-
-	if req.groupID == "" {
-		return apiutil.ErrMissingID
-	}
-
-	if len(req.UserIDs) == 0 {
-		return apiutil.ErrEmptyList
-	}
-
-	return nil
-}
-
 type assignGroupsReq struct {
 	token    string
 	groupID  string
@@ -321,28 +298,6 @@ type assignGroupsReq struct {
 }
 
 func (req assignGroupsReq) validate() error {
-	if req.token == "" {
-		return apiutil.ErrBearerToken
-	}
-
-	if req.groupID == "" {
-		return apiutil.ErrMissingID
-	}
-
-	if len(req.GroupIDs) == 0 {
-		return apiutil.ErrEmptyList
-	}
-
-	return nil
-}
-
-type unassignGroupsReq struct {
-	token    string
-	groupID  string
-	GroupIDs []string `json:"group_ids"`
-}
-
-func (req unassignGroupsReq) validate() error {
 	if req.token == "" {
 		return apiutil.ErrBearerToken
 	}

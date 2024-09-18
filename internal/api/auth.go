@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/absmach/magistrala"
-	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
@@ -19,38 +18,40 @@ import (
 
 type sessionKeyType string
 
-const sessionKey = sessionKeyType("session")
+const SessionKey = sessionKeyType("session")
 
-type authEndpointFunc func(interface{}) (*magistrala.AuthorizeReq, error)
+type authEndpointFunc func(context.Context, interface{}) ([]*magistrala.AuthorizeReq, error)
 
-func identifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
+func IdentifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := apiutil.ExtractBearerToken(r)
 			if token == "" {
-				api.EncodeError(r.Context(), apiutil.ErrBearerToken, w)
+				EncodeError(r.Context(), apiutil.ErrBearerToken, w)
 				return
 			}
 
 			resp, err := authClient.Identify(r.Context(), &magistrala.IdentityReq{Token: token})
 			if err != nil {
-				api.EncodeError(r.Context(), err, w)
+				EncodeError(r.Context(), err, w)
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), sessionKey, auth.Session{
-				UserID:   resp.GetUserId(),
-				DomainID: resp.GetDomainId(),
+			ctx := context.WithValue(r.Context(), SessionKey, auth.Session{
+				DomainUserID: resp.GetId(),
+				UserID:       resp.GetUserId(),
+				DomainID:     resp.GetDomainId(),
 			})
+
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func authorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc) endpoint.Middleware {
+func AuthorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			pr, err := getAuthReq(request)
+			prs, err := getAuthReq(ctx, request)
 			if err != nil {
 				return nil, errors.Wrap(apiutil.ErrValidation, err)
 			}
@@ -73,19 +74,21 @@ func authorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc
 				object = req.objectID
 			}
 
-			res, err := authClient.Authorize(ctx, pr)
-			if err != nil || !res.Authorized {
-				return nil, errors.Wrap(svcerr.ErrAuthorization, err)
+			for _, pr := range prs {
+				res, err := authClient.Authorize(ctx, pr)
+				if err != nil || !res.Authorized {
+					return nil, errors.Wrap(svcerr.ErrAuthorization, err)
+				}
 			}
 			return next(ctx, request)
 		}
 	}
 }
 
-func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
+func CheckSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			session, ok := ctx.Value(sessionKey).(auth.Session)
+			session, ok := ctx.Value(SessionKey).(auth.Session)
 			if !ok {
 				return nil, svcerr.ErrAuthorization
 			}
@@ -102,11 +105,13 @@ func checkSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 				superAdmin = true
 			}
 
-			ctx = context.WithValue(ctx, sessionKey, auth.Session{
-				UserID:     session.UserID,
-				DomainID:   session.DomainID,
-				SuperAdmin: superAdmin,
+			ctx = context.WithValue(ctx, SessionKey, auth.Session{
+				DomainUserID: session.DomainUserID,
+				UserID:       session.UserID,
+				DomainID:     session.DomainID,
+				SuperAdmin:   superAdmin,
 			})
+
 			return next(ctx, request)
 		}
 	}

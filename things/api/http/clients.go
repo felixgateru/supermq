@@ -29,13 +29,13 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
-	checkSuperAdminMiddleware := checkSuperAdminMiddleware(authClient)
+	checkSuperAdminMiddleware := api.CheckSuperAdminMiddleware(authClient)
 
 	r.Group(func(r chi.Router) {
-		r.Use(identifyMiddleware(authClient))
+		r.Use(api.IdentifyMiddleware(authClient))
 
 		r.Route("/things", func(r chi.Router) {
-			authzMiddleware := authorizeMiddleware(authClient, createClientAuthReq)
+			authzMiddleware := api.AuthorizeMiddleware(authClient, createClientAuthReq)
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(createClientEndpoint(svc)),
 				decodeCreateClientReq,
@@ -43,7 +43,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "create_thing").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, listClientsAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, listClientsAuthReq)
 			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
 				checkSuperAdminMiddleware(authzMiddleware(listClientsEndpoint(svc))),
 				decodeListClients,
@@ -51,7 +51,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "list_things").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, createClientsAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, createClientsAuthReq)
 			r.Post("/bulk", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(createClientsEndpoint(svc)),
 				decodeCreateClientsReq,
@@ -59,7 +59,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "create_things").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, viewClientAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, viewClientAuthReq)
 			r.Get("/{thingID}", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(viewClientEndpoint(svc)),
 				decodeViewClient,
@@ -74,7 +74,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "view_thing_permissions").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, updateClientAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, updateClientAuthReq)
 			r.Patch("/{thingID}", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(updateClientEndpoint(svc)),
 				decodeUpdateClient,
@@ -82,7 +82,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "update_thing").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, updateClientTagsAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, updateClientTagsAuthReq)
 			r.Patch("/{thingID}/tags", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(updateClientTagsEndpoint(svc)),
 				decodeUpdateClientTags,
@@ -90,7 +90,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "update_thing_tags").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, updateClientCredentialsAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, updateClientCredentialsAuthReq)
 			r.Patch("/{thingID}/secret", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(updateClientSecretEndpoint(svc)),
 				decodeUpdateClientCredentials,
@@ -98,7 +98,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "update_thing_credentials").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, changeClientStatusAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, changeClientStatusAuthReq)
 			r.Post("/{thingID}/enable", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(enableClientEndpoint(svc)),
 				decodeChangeClientStatus,
@@ -113,7 +113,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "disable_thing").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, thingShareAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, thingShareAuthReq)
 			r.Post("/{thingID}/share", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(thingShareEndpoint(svc)),
 				decodeThingShareRequest,
@@ -128,7 +128,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 				opts...,
 			), "unshare_thing").ServeHTTP)
 
-			authzMiddleware = authorizeMiddleware(authClient, deleteClientAuthReq)
+			authzMiddleware = api.AuthorizeMiddleware(authClient, deleteClientAuthReq)
 			r.Delete("/{thingID}", otelhttp.NewHandler(kithttp.NewServer(
 				authzMiddleware(deleteClientEndpoint(svc)),
 				decodeDeleteClientReq,
@@ -142,7 +142,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 		// SpiceDB provides list of thing ids present in given channel id
 		// and things service can access spiceDB and get the list of thing ids present in given channel id.
 		// Request to get list of things present in channelID ({groupID}) .
-		authzMiddleware := authorizeMiddleware(authClient, listMembersAuthReq)
+		authzMiddleware := api.AuthorizeMiddleware(authClient, listMembersAuthReq)
 		r.Get("/channels/{groupID}/things", otelhttp.NewHandler(kithttp.NewServer(
 			authzMiddleware(listMembersEndpoint(svc)),
 			decodeListMembersRequest,
@@ -150,7 +150,7 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 			opts...,
 		), "list_things_by_channel_id").ServeHTTP)
 
-		authzMiddleware = authorizeMiddleware(authClient, listClientsAuthReq)
+		authzMiddleware = api.AuthorizeMiddleware(authClient, listClientsAuthReq)
 		r.Get("/users/{userID}/things", otelhttp.NewHandler(kithttp.NewServer(
 			authzMiddleware(listClientsEndpoint(svc)),
 			decodeListClients,
@@ -404,297 +404,319 @@ func decodeDeleteClientReq(_ context.Context, r *http.Request) (interface{}, err
 	return req, nil
 }
 
-func createClientAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func createClientAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(createClientReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.CreatePermission,
-		ObjectType:  policies.DomainType,
-		Object:      session.DomainID,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.CreatePermission,
+			ObjectType:  policies.DomainType,
+			Object:      session.DomainID,
+		},
 	}, nil
 }
 
-func createClientsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func createClientsAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(createClientsReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.CreatePermission,
-		ObjectType:  policies.DomainType,
-		Object:      session.DomainID,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.CreatePermission,
+			ObjectType:  policies.DomainType,
+			Object:      session.DomainID,
+		},
 	}, nil
 }
 
-func viewClientAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func viewClientAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(viewClientReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.TokenKind,
-		Subject:     req.token,
-		Permission:  policies.ViewPermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.TokenKind,
+			Subject:     req.token,
+			Permission:  policies.ViewPermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
 
-func listClientsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func listClientsAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(listClientsReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
+	prs := []*magistrala.AuthorizeReq{}
 	if req.userID != "" && req.userID != session.UserID {
-		return &magistrala.AuthorizeReq{
+		prs = append(prs, &magistrala.AuthorizeReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
 			Subject:     session.DomainUserID,
 			Permission:  policies.AdminPermission,
 			ObjectType:  policies.DomainType,
 			Object:      session.DomainID,
-		}, nil
+		})
+		return prs, nil
 	}
 	if !session.SuperAdmin {
-		return &magistrala.AuthorizeReq{
+		prs = append(prs, &magistrala.AuthorizeReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
 			Subject:     session.DomainUserID,
 			Permission:  policies.MembershipPermission,
 			ObjectType:  policies.DomainType,
 			Object:      session.DomainID,
-		}, nil
+		})
+		return prs, nil
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.UserID,
-		Permission:  policies.AdminPermission,
-		ObjectType:  policies.PlatformType,
-		Object:      policies.MagistralaObject,
-	}, nil
+	return prs, nil
 }
 
-func listMembersAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func listMembersAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(listMembersReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  req.Page.Permission,
-		ObjectType:  policies.GroupType,
-		Object:      req.groupID,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  req.Page.Permission,
+			ObjectType:  policies.GroupType,
+			Object:      req.groupID,
+		},
 	}, nil
 }
 
-func updateClientAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func updateClientAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(updateClientReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.TokenKind,
-		Subject:     req.token,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.TokenKind,
+			Subject:     req.token,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
 
-func updateClientTagsAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func updateClientTagsAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(updateClientTagsReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.TokenKind,
-		Subject:     req.token,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.TokenKind,
+			Subject:     req.token,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
 
-func updateClientCredentialsAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func updateClientCredentialsAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(updateClientCredentialsReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.TokenKind,
-		Subject:     req.token,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.TokenKind,
+			Subject:     req.token,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
 
-func changeClientStatusAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func changeClientStatusAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(changeClientStatusReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	return &magistrala.AuthorizeReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.TokenKind,
-		Subject:     req.token,
-		Permission:  policies.DeletePermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.TokenKind,
+			Subject:     req.token,
+			Permission:  policies.DeletePermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
 
-func assignUsersAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func assignUsersAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(assignUsersRequest)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.GroupType,
-		Object:      req.groupID,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.GroupType,
+			Object:      req.groupID,
+		},
 	}, nil
 }
 
-func assignUserGroupsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func assignUserGroupsAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(assignUserGroupsRequest)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.GroupType,
-		Object:      req.groupID,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.GroupType,
+			Object:      req.groupID,
+		},
 	}, nil
 }
 
-func connectAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func connectAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(connectChannelThingRequest)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.EditPermission,
-		ObjectType:  policies.GroupType,
-		Object:      req.ChannelID,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.EditPermission,
+			ObjectType:  policies.GroupType,
+			Object:      req.ChannelID,
+		},
 	}, nil
 }
 
-func thingShareAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func thingShareAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(thingShareRequest)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.DeletePermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.thingID,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.DeletePermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.thingID,
+		},
 	}, nil
 }
 
-func deleteClientAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+func deleteClientAuthReq(ctx context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(deleteClientReq)
 	if err := req.validate(); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	session, ok := ctx.Value(sessionKey).(auth.Session)
+	session, ok := ctx.Value(api.SessionKey).(auth.Session)
 	if !ok {
 		return nil, svcerr.ErrAuthorization
 	}
 
-	return &magistrala.AuthorizeReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     session.DomainUserID,
-		Permission:  policies.DeletePermission,
-		ObjectType:  policies.ThingType,
-		Object:      req.id,
+	return []*magistrala.AuthorizeReq{
+		{
+			Domain:      session.DomainID,
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.DeletePermission,
+			ObjectType:  policies.ThingType,
+			Object:      req.id,
+		},
 	}, nil
 }
