@@ -30,7 +30,6 @@ import (
 
 var (
 	idProvider = uuid.New()
-	token      = "token"
 	namegen    = namegenerator.NewGenerator()
 	validGroup = mggroups.Group{
 		Name:        namegen.Generate(),

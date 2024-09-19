@@ -17,7 +17,7 @@ import (
 
 const groupTypeChannels = "channels"
 
-func CreateGroupEndpoint(svc groups.Service, authClient auth.AuthClient, kind string) endpoint.Endpoint {
+func CreateGroupEndpoint(svc groups.Service, kind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createGroupReq)
 
@@ -35,7 +35,7 @@ func CreateGroupEndpoint(svc groups.Service, authClient auth.AuthClient, kind st
 	}
 }
 
-func ViewGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 
@@ -48,7 +48,7 @@ func ViewGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.
 	}
 }
 
-func ViewGroupPermsEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func ViewGroupPermsEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupPermsReq)
 		if err := req.validate(); err != nil {
@@ -69,7 +69,7 @@ func ViewGroupPermsEndpoint(svc groups.Service, authClient auth.AuthClient) endp
 	}
 }
 
-func UpdateGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func UpdateGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateGroupReq)
 
@@ -94,7 +94,7 @@ func UpdateGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoin
 	}
 }
 
-func EnableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func EnableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeGroupStatusReq)
 
@@ -111,7 +111,7 @@ func EnableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoin
 	}
 }
 
-func DisableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func DisableGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeGroupStatusReq)
 
@@ -128,7 +128,7 @@ func DisableGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoi
 	}
 }
 
-func ListGroupsEndpoint(svc groups.Service, authClient auth.AuthClient, groupType, memberKind string) endpoint.Endpoint {
+func ListGroupsEndpoint(svc groups.Service, groupType, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listGroupsReq)
 		if memberKind != "" {
@@ -169,7 +169,7 @@ func ListGroupsEndpoint(svc groups.Service, authClient auth.AuthClient, groupTyp
 	}
 }
 
-func ListMembersEndpoint(svc groups.Service, authClient auth.AuthClient, memberKind string) endpoint.Endpoint {
+func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersReq)
 		if memberKind != "" {
@@ -195,7 +195,7 @@ func ListMembersEndpoint(svc groups.Service, authClient auth.AuthClient, memberK
 	}
 }
 
-func AssignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
+func AssignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignReq)
 		if relation != "" {
@@ -219,7 +219,7 @@ func AssignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relat
 	}
 }
 
-func UnassignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, relation, memberKind string) endpoint.Endpoint {
+func UnassignMembersEndpoint(svc groups.Service, relation, memberKind string) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unassignReq)
 		if relation != "" {
@@ -233,7 +233,7 @@ func UnassignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, rel
 		}
 		session, ok := ctx.Value(api.SessionKey).(auth.Session)
 		if !ok {
-			return assignRes{}, svcerr.ErrAuthorization
+			return unassignRes{}, svcerr.ErrAuthorization
 		}
 
 		if err := svc.Unassign(ctx, session, req.groupID, req.Relation, req.MemberKind, req.Members...); err != nil {
@@ -243,7 +243,7 @@ func UnassignMembersEndpoint(svc groups.Service, authClient auth.AuthClient, rel
 	}
 }
 
-func DeleteGroupEndpoint(svc groups.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func DeleteGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 

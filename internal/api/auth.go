@@ -93,7 +93,7 @@ func CheckSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 				return nil, svcerr.ErrAuthorization
 			}
 			var superAdmin bool
-			_, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
+			res, err := authClient.Authorize(ctx, &magistrala.AuthorizeReq{
 				SubjectType: policies.UserType,
 				SubjectKind: policies.UsersKind,
 				Subject:     session.UserID,
@@ -101,7 +101,7 @@ func CheckSuperAdminMiddleware(authClient auth.AuthClient) endpoint.Middleware {
 				ObjectType:  policies.PlatformType,
 				Object:      policies.MagistralaObject,
 			})
-			if err == nil {
+			if err == nil && res.Authorized {
 				superAdmin = true
 			}
 

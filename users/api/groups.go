@@ -37,7 +37,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 		r.Route("/groups", func(r chi.Router) {
 			authzMiddleware := api.AuthorizeMiddleware(authClient, gapi.CreateGroupAuthReq)
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.CreateGroupEndpoint(svc, authClient, policies.NewGroupKind)),
+				authzMiddleware(gapi.CreateGroupEndpoint(svc, policies.NewGroupKind)),
 				gapi.DecodeGroupCreate,
 				api.EncodeResponse,
 				opts...,
@@ -45,7 +45,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ViewGroupAuthReq)
 			r.Get("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.ViewGroupEndpoint(svc, authClient)),
+				authzMiddleware(gapi.ViewGroupEndpoint(svc)),
 				gapi.DecodeGroupRequest,
 				api.EncodeResponse,
 				opts...,
@@ -53,14 +53,14 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.DeleteGroupAuthReq)
 			r.Delete("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.DeleteGroupEndpoint(svc, authClient)),
+				authzMiddleware(gapi.DeleteGroupEndpoint(svc)),
 				gapi.DecodeGroupRequest,
 				api.EncodeResponse,
 				opts...,
 			), "delete_group").ServeHTTP)
 
 			r.Get("/{groupID}/permissions", otelhttp.NewHandler(kithttp.NewServer(
-				gapi.ViewGroupPermsEndpoint(svc, authClient),
+				gapi.ViewGroupPermsEndpoint(svc),
 				gapi.DecodeGroupPermsRequest,
 				api.EncodeResponse,
 				opts...,
@@ -68,7 +68,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.UpdateGroupAuthReq)
 			r.Put("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.UpdateGroupEndpoint(svc, authClient)),
+				authzMiddleware(gapi.UpdateGroupEndpoint(svc)),
 				gapi.DecodeGroupUpdate,
 				api.EncodeResponse,
 				opts...,
@@ -76,21 +76,21 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ListGroupsByUserAuthReq)
 			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, authClient, "groups", "users"))),
+				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, "groups", "users"))),
 				gapi.DecodeListGroupsRequest,
 				api.EncodeResponse,
 				opts...,
 			), "list_groups").ServeHTTP)
 
 			r.Get("/{groupID}/children", otelhttp.NewHandler(kithttp.NewServer(
-				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, authClient, "groups", "users"))),
+				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, "groups", "users"))),
 				gapi.DecodeListChildrenRequest,
 				api.EncodeResponse,
 				opts...,
 			), "list_children").ServeHTTP)
 
 			r.Get("/{groupID}/parents", otelhttp.NewHandler(kithttp.NewServer(
-				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, authClient, "groups", "users"))),
+				checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, "groups", "users"))),
 				gapi.DecodeListParentsRequest,
 				api.EncodeResponse,
 				opts...,
@@ -98,14 +98,14 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ChangeGroupStatusAuthReq)
 			r.Post("/{groupID}/enable", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.EnableGroupEndpoint(svc, authClient)),
+				authzMiddleware(gapi.EnableGroupEndpoint(svc)),
 				gapi.DecodeChangeGroupStatus,
 				api.EncodeResponse,
 				opts...,
 			), "enable_group").ServeHTTP)
 
 			r.Post("/{groupID}/disable", otelhttp.NewHandler(kithttp.NewServer(
-				authzMiddleware(gapi.DisableGroupEndpoint(svc, authClient)),
+				authzMiddleware(gapi.DisableGroupEndpoint(svc)),
 				gapi.DecodeChangeGroupStatus,
 				api.EncodeResponse,
 				opts...,
@@ -146,7 +146,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 		// So here, we are using {memberID} as the placeholder.
 		authzMiddleware := api.AuthorizeMiddleware(authClient, gapi.ListGroupsByChannelAuthReq)
 		r.Get("/channels/{memberID}/groups", otelhttp.NewHandler(kithttp.NewServer(
-			authzMiddleware(gapi.ListGroupsEndpoint(svc, authClient, "groups", "channels")),
+			authzMiddleware(gapi.ListGroupsEndpoint(svc, "groups", "channels")),
 			gapi.DecodeListGroupsRequest,
 			api.EncodeResponse,
 			opts...,
@@ -154,7 +154,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 
 		authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ListGroupsByUserAuthReq)
 		r.Get("/users/{memberID}/groups", otelhttp.NewHandler(kithttp.NewServer(
-			checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, authClient, "groups", "users"))),
+			checkSuperAdminMiddleware(authzMiddleware(gapi.ListGroupsEndpoint(svc, "groups", "users"))),
 			gapi.DecodeListGroupsRequest,
 			api.EncodeResponse,
 			opts...,

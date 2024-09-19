@@ -164,7 +164,8 @@ func clientsHandler(svc things.Service, r *chi.Mux, authClient auth.AuthClient, 
 
 func decodeViewClient(_ context.Context, r *http.Request) (interface{}, error) {
 	req := viewClientReq{
-		id: chi.URLParam(r, "thingID"),
+		id:    chi.URLParam(r, "thingID"),
+		token: apiutil.ExtractBearerToken(r),
 	}
 
 	return req, nil
