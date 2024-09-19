@@ -10,11 +10,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
+	svcerr "github.com/absmach/magistrala/pkg/errors/service"
+	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/absmach/magistrala/things"
 	"github.com/go-chi/chi/v5"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -378,4 +381,299 @@ func decodeDeleteClientReq(_ context.Context, r *http.Request) (interface{}, err
 	}
 
 	return req, nil
+}
+
+func createClientAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(createClientReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.CreatePermission,
+		ObjectType:  policies.DomainType,
+		Object:      session.DomainID,
+	}, nil
+}
+
+func createClientsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(createClientsReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.CreatePermission,
+		ObjectType:  policies.DomainType,
+		Object:      session.DomainID,
+	}, nil
+}
+
+func viewClientAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(viewClientReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  policies.ViewPermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
+}
+
+func listClientsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listClientsReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	if req.userID != "" && req.userID != session.UserID {
+		return &magistrala.AuthorizeReq{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.AdminPermission,
+			ObjectType:  policies.DomainType,
+			Object:      session.DomainID,
+		}, nil
+	}
+	if !session.SuperAdmin {
+		return &magistrala.AuthorizeReq{
+			SubjectType: policies.UserType,
+			SubjectKind: policies.UsersKind,
+			Subject:     session.DomainUserID,
+			Permission:  policies.MembershipPermission,
+			ObjectType:  policies.DomainType,
+			Object:      session.DomainID,
+		}, nil
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.UserID,
+		Permission:  policies.AdminPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
+	}, nil
+}
+
+func listMembersAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  req.Page.Permission,
+		ObjectType:  policies.GroupType,
+		Object:      req.groupID,
+	}, nil
+}
+
+func updateClientAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(updateClientReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
+}
+
+func updateClientTagsAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(updateClientTagsReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
+}
+
+func updateClientCredentialsAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(updateClientCredentialsReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
+}
+
+func changeClientStatusAuthReq(_ context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(changeClientStatusReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  policies.DeletePermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
+}
+
+func assignUsersAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(assignUsersRequest)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.GroupType,
+		Object:      req.groupID,
+	}, nil
+}
+
+func assignUserGroupsAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(assignUserGroupsRequest)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.GroupType,
+		Object:      req.groupID,
+	}, nil
+}
+
+func connectAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(connectChannelThingRequest)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.EditPermission,
+		ObjectType:  policies.GroupType,
+		Object:      req.ChannelID,
+	}, nil
+}
+
+func thingShareAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(thingShareRequest)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.DeletePermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.thingID,
+	}, nil
+}
+
+func deleteClientAuthReq(ctx context.Context, request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(deleteClientReq)
+	if err := req.validate(); err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+
+	session, ok := ctx.Value(sessionKey).(auth.Session)
+	if !ok {
+		return nil, svcerr.ErrAuthorization
+	}
+
+	return &magistrala.AuthorizeReq{
+		Domain:      session.DomainID,
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     session.DomainUserID,
+		Permission:  policies.DeletePermission,
+		ObjectType:  policies.ThingType,
+		Object:      req.id,
+	}, nil
 }
