@@ -763,7 +763,6 @@ func TestListThings(t *testing.T) {
 			authCall.Unset()
 		})
 	}
-
 }
 
 func TestViewThing(t *testing.T) {
