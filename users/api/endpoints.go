@@ -44,7 +44,7 @@ func registrationEndpoint(svc users.Service, selfRegister bool) endpoint.Endpoin
 	}
 }
 
-func viewClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func viewClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(viewClientReq)
 		if err := req.validate(); err != nil {
@@ -64,7 +64,7 @@ func viewClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.
 	}
 }
 
-func viewProfileEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func viewProfileEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		session, ok := ctx.Value(api.SessionKey).(authn.Session)
 		if !ok {
@@ -79,7 +79,7 @@ func viewProfileEndpoint(svc users.Service, authClient auth.AuthClient) endpoint
 	}
 }
 
-func listClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func listClientsEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listClientsReq)
 		if err := req.validate(); err != nil {
@@ -125,16 +125,11 @@ func listClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoint
 	}
 }
 
-func searchClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func searchClientsEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(searchClientsReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
-		}
-
-		_, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return nil, err
 		}
 
 		pm := mgclients.Page{
@@ -166,7 +161,7 @@ func searchClientsEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 	}
 }
 
-func listMembersByGroupEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func listMembersByGroupEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersByObjectReq)
 		req.objectKind = "groups"
@@ -188,7 +183,7 @@ func listMembersByGroupEndpoint(svc users.Service, authClient auth.AuthClient) e
 	}
 }
 
-func listMembersByChannelEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func listMembersByChannelEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersByObjectReq)
 		// In spiceDB schema, using the same 'group' type for both channels and groups, rather than having a separate type for channels.
@@ -211,7 +206,7 @@ func listMembersByChannelEndpoint(svc users.Service, authClient auth.AuthClient)
 	}
 }
 
-func listMembersByThingEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func listMembersByThingEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersByObjectReq)
 		req.objectKind = "things"
@@ -233,7 +228,7 @@ func listMembersByThingEndpoint(svc users.Service, authClient auth.AuthClient) e
 	}
 }
 
-func listMembersByDomainEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func listMembersByDomainEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMembersByObjectReq)
 		req.objectKind = "domains"
@@ -255,7 +250,7 @@ func listMembersByDomainEndpoint(svc users.Service, authClient auth.AuthClient) 
 	}
 }
 
-func updateClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func updateClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientReq)
 		if err := req.validate(); err != nil {
@@ -282,7 +277,7 @@ func updateClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 	}
 }
 
-func updateClientTagsEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func updateClientTagsEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientTagsReq)
 		if err := req.validate(); err != nil {
@@ -308,7 +303,7 @@ func updateClientTagsEndpoint(svc users.Service, authClient auth.AuthClient) end
 	}
 }
 
-func updateClientIdentityEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func updateClientIdentityEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientIdentityReq)
 		if err := req.validate(); err != nil {
@@ -369,7 +364,7 @@ func passwordResetRequestEndpoint(svc users.Service, authClient auth.AuthClient)
 // This is endpoint that actually sets new password in password reset flow.
 // When user clicks on a link in email finally ends on this endpoint as explained in
 // the comment above.
-func passwordResetEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func passwordResetEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(resetTokenReq)
 		if err := req.validate(); err != nil {
@@ -388,7 +383,7 @@ func passwordResetEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 	}
 }
 
-func updateClientSecretEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func updateClientSecretEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientSecretReq)
 		if err := req.validate(); err != nil {
@@ -408,7 +403,7 @@ func updateClientSecretEndpoint(svc users.Service, authClient auth.AuthClient) e
 	}
 }
 
-func updateClientRoleEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func updateClientRoleEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateClientRoleReq)
 		if err := req.validate(); err != nil {
@@ -496,7 +491,7 @@ func refreshTokenEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 	}
 }
 
-func enableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func enableClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeClientStatusReq)
 		if err := req.validate(); err != nil {
@@ -517,7 +512,7 @@ func enableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoin
 	}
 }
 
-func disableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func disableClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeClientStatusReq)
 		if err := req.validate(); err != nil {
@@ -538,7 +533,7 @@ func disableClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoi
 	}
 }
 
-func deleteClientEndpoint(svc users.Service, authClient auth.AuthClient) endpoint.Endpoint {
+func deleteClientEndpoint(svc users.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(changeClientStatusReq)
 		if err := req.validate(); err != nil {

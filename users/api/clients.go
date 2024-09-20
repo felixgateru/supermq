@@ -35,6 +35,7 @@ func clientsHandler(svc users.Service, authn mgauthn.Authentication, tokenClient
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
+	checkSuperAdminMiddleware := checkSuperAdminMiddleware(authClient)
 
 	r.Route("/users", func(r chi.Router) {
 		switch selfRegister {
@@ -668,4 +669,71 @@ func oauth2CallbackHandler(oauth oauth2.Provider, svc users.Service, tokenClient
 
 		http.Redirect(w, r, oauth.ErrorURL()+"?error=empty%20code", http.StatusSeeOther)
 	}
+}
+
+func updateClientRoleAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(updateClientRoleReq)
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.UsersKind,
+		Subject:     req.id,
+		Permission:  policies.MembershipPermission,
+		ObjectType:  policies.PlatformType,
+		Object:      policies.MagistralaObject,
+	}, nil
+}
+
+func listMembersByGroupAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	req.objectKind = "groups"
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policies.GroupType,
+		Object:      req.objectID,
+	}, nil
+}
+
+func listMembersByThingAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	req.objectKind = "things"
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policies.ThingType,
+		Object:      req.objectID,
+	}, nil
+}
+
+func listMembersByDomianAuthReq(request interface{}) (*magistrala.AuthorizeReq, error) {
+	req := request.(listMembersByObjectReq)
+	req.objectKind = "domains"
+	if err := req.validate(); err != nil {
+		return nil, err
+	}
+
+	return &magistrala.AuthorizeReq{
+		SubjectType: policies.UserType,
+		SubjectKind: policies.TokenKind,
+		Subject:     req.token,
+		Permission:  mgauth.SwitchToPermission(req.Page.Permission),
+		ObjectType:  policies.DomainType,
+		Object:      req.objectID,
+	}, nil
 }

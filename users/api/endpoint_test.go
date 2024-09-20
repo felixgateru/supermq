@@ -1135,6 +1135,7 @@ func TestUpdateClientTags(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
