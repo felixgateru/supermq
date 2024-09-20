@@ -21,9 +21,8 @@ import (
 )
 
 var (
-	errParentUnAuthz = errors.New("failed to authorize parent group")
-	errMemberKind    = errors.New("invalid member kind")
-	errGroupIDs      = errors.New("invalid group ids")
+	errMemberKind = errors.New("invalid member kind")
+	errGroupIDs   = errors.New("invalid group ids")
 )
 
 type service struct {
@@ -54,14 +53,14 @@ func (svc service) CreateGroup(ctx context.Context, session auth.Session, kind s
 	g.CreatedAt = time.Now()
 	g.Domain = session.DomainID
 
-	policies, err := svc.addGroupPolicy(ctx, session.DomainUserID, session.DomainID, g.ID, g.Parent, kind)
+	policyList, err := svc.addGroupPolicy(ctx, session.DomainUserID, session.DomainID, g.ID, g.Parent, kind)
 	if err != nil {
 		return groups.Group{}, err
 	}
 
 	defer func() {
 		if err != nil {
-			if errRollback := svc.policies.DeletePolicies(ctx, policies); errRollback != nil {
+			if errRollback := svc.policies.DeletePolicies(ctx, policyList); errRollback != nil {
 				err = errors.Wrap(errors.Wrap(errors.ErrRollbackTx, errRollback), err)
 			}
 		}

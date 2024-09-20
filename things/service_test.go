@@ -37,7 +37,6 @@ var (
 		Status:      mgclients.EnabledStatus,
 	}
 	validToken        = "token"
-	inValidToken      = invalid
 	valid             = "valid"
 	invalid           = "invalid"
 	validID           = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"

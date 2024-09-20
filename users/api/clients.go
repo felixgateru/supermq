@@ -704,7 +704,7 @@ func updateClientRoleAuthReq(_ context.Context, request interface{}) ([]*magistr
 
 func listMembersByGroupAuthReq(_ context.Context, request interface{}) ([]*magistrala.AuthorizeReq, error) {
 	req := request.(listMembersByObjectReq)
-	req.objectKind = "groups"
+	req.objectKind = policies.GroupsKind
 	if err := req.validate(); err != nil {
 		return nil, err
 	}

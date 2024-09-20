@@ -209,3 +209,14 @@ func decodeError(err error) error {
 	}
 	return err
 }
+
+type identityRes struct {
+	id       string
+	userID   string
+	domainID string
+}
+
+type authorizeRes struct {
+	id         string
+	authorized bool
+}

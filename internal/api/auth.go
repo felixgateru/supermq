@@ -55,24 +55,6 @@ func AuthorizeMiddleware(authClient auth.AuthClient, getAuthReq authEndpointFunc
 			if err != nil {
 				return nil, errors.Wrap(apiutil.ErrValidation, err)
 			}
-			var subject string
-			switch {
-			case authReq.Subject != "":
-				subject = authReq.Subject
-			case authReq.SubjectKind == policy.TokenKind:
-				subject = req.token
-			case authReq.SubjectKind == policy.UsersKind:
-				subject = req.id
-			}
-
-			permission := authReq.Permission
-			if permission == "" {
-				permission = mgauth.SwitchToPermission(req.Page.Permission)
-			}
-			object := authReq.Object
-			if object == "" {
-				object = req.objectID
-			}
 
 			for _, pr := range prs {
 				res, err := authClient.Authorize(ctx, pr)

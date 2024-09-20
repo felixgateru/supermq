@@ -861,7 +861,6 @@ func TestListThings(t *testing.T) {
 		authCall1.Unset()
 		authCall2.Unset()
 	}
-
 }
 
 func TestViewThing(t *testing.T) {
@@ -3688,18 +3687,18 @@ func TestDisconnect(t *testing.T) {
 			err:          apiutil.ErrValidation,
 		},
 		{
-			desc:  "Disconnect thing from a channel with invalid content type",
-			token: validToken,
+			desc:    "Disconnect thing from a channel with invalid content type",
+			token:   validToken,
 			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 			reqBody: groupReqBody{
 				ChannelID: validID,
 				ThingID:   validID,
 			},
-			contentType: "application/xml",
-			status:      http.StatusUnsupportedMediaType,
+			contentType:  "application/xml",
+			status:       http.StatusUnsupportedMediaType,
 			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:         apiutil.ErrValidation,
+			err:          apiutil.ErrValidation,
 		},
 		{
 			desc:    "Disconnect thing from a channel with authorization error",
