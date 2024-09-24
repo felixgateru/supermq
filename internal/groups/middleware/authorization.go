@@ -29,8 +29,6 @@ func AuthorizationMiddleware(svc groups.Service, authClient auth.AuthClient) gro
 	}
 }
 
-// CreateGroup creates new  group.
-
 func (am *authorizationMiddleware) CreateGroup(ctx context.Context, session auth.Session, kind string, g groups.Group) (groups.Group, error) {
 	if err := am.authorize(ctx, "", policies.UserType, policies.UsersKind, session.DomainUserID, policies.CreatePermission, policies.DomainType, session.DomainID); err != nil {
 		return groups.Group{}, err
