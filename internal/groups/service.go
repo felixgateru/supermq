@@ -74,7 +74,7 @@ func (svc service) CreateGroup(ctx context.Context, session auth.Session, kind s
 	return saved, nil
 }
 
-func (svc service) ViewGroup(ctx context.Context, id string) (groups.Group, error) {
+func (svc service) ViewGroup(ctx context.Context, session auth.Session, id string) (groups.Group, error) {
 	group, err := svc.groups.RetrieveByID(ctx, id)
 	if err != nil {
 		return groups.Group{}, errors.Wrap(svcerr.ErrViewEntity, err)
@@ -215,7 +215,7 @@ func (svc service) listUserGroupPermission(ctx context.Context, userID, groupID 
 }
 
 // IMPROVEMENT NOTE: remove this function and all its related auxiliary function, ListMembers are moved to respective service.
-func (svc service) ListMembers(ctx context.Context, groupID, permission, memberKind string) (groups.MembersPage, error) {
+func (svc service) ListMembers(ctx context.Context, session auth.Session, groupID, permission, memberKind string) (groups.MembersPage, error) {
 	switch memberKind {
 	case policies.ThingsKind:
 		tids, err := svc.policies.ListAllObjects(ctx, policies.PolicyReq{
@@ -481,7 +481,7 @@ func (svc service) Unassign(ctx context.Context, session auth.Session, groupID, 
 	return nil
 }
 
-func (svc service) DeleteGroup(ctx context.Context, id string) error {
+func (svc service) DeleteGroup(ctx context.Context, session auth.Session, id string) error {
 	req := policies.PolicyReq{
 		SubjectType: policies.GroupType,
 		Subject:     id,

@@ -39,7 +39,11 @@ func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 
-		group, err := svc.ViewGroup(ctx, req.id)
+		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		if !ok {
+			return createGroupRes{created: false}, svcerr.ErrAuthorization
+		}
+		group, err := svc.ViewGroup(ctx, session, req.id)
 		if err != nil {
 			return viewGroupRes{}, err
 		}
@@ -179,7 +183,12 @@ func ListMembersEndpoint(svc groups.Service, memberKind string) endpoint.Endpoin
 			return listMembersRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		page, err := svc.ListMembers(ctx, req.groupID, req.permission, req.memberKind)
+		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		if !ok {
+			return createGroupRes{created: false}, svcerr.ErrAuthorization
+		}
+
+		page, err := svc.ListMembers(ctx, session, req.groupID, req.permission, req.memberKind)
 		if err != nil {
 			return listMembersRes{}, err
 		}
@@ -247,7 +256,11 @@ func DeleteGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
 
-		if err := svc.DeleteGroup(ctx, req.id); err != nil {
+		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		if !ok {
+			return createGroupRes{created: false}, svcerr.ErrAuthorization
+		}
+		if err := svc.DeleteGroup(ctx, session, req.id); err != nil {
 			return deleteGroupRes{}, err
 		}
 		return deleteGroupRes{deleted: true}, nil

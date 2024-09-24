@@ -22,7 +22,7 @@ const SessionKey = sessionKeyType("session")
 
 type authEndpointFunc func(context.Context, interface{}) ([]*magistrala.AuthorizeReq, error)
 
-func IdentifyMiddleware(authClient auth.AuthClient) func(http.Handler) http.Handler {
+func IdentifyMiddleware(authClient auth.AuthClient, ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := apiutil.ExtractBearerToken(r)

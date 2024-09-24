@@ -71,7 +71,12 @@ func viewClientEndpoint(svc things.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(viewClientReq)
 
-		c, err := svc.ViewClient(ctx, req.id)
+		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+
+		c, err := svc.ViewClient(ctx, session, req.id)
 		if err != nil {
 			return nil, err
 		}
@@ -451,7 +456,11 @@ func deleteClientEndpoint(svc things.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteClientReq)
 
-		if err := svc.DeleteClient(ctx, req.id); err != nil {
+		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+		if err := svc.DeleteClient(ctx,session, req.id); err != nil {
 			return nil, err
 		}
 
