@@ -663,6 +663,69 @@ func TestAssignUsersRequestValidate(t *testing.T) {
 	}
 }
 
+func TestUnassignUsersRequestValidate(t *testing.T) {
+	cases := []struct {
+		desc string
+		req  unassignUsersReq
+		err  error
+	}{
+		{
+			desc: "valid request",
+			req: unassignUsersReq{
+				token:    valid,
+				groupID:  validID,
+				UserIDs:  []string{validID},
+				Relation: valid,
+			},
+			err: nil,
+		},
+		{
+			desc: "empty token",
+			req: unassignUsersReq{
+				token:    "",
+				groupID:  validID,
+				UserIDs:  []string{validID},
+				Relation: valid,
+			},
+			err: apiutil.ErrBearerToken,
+		},
+		{
+			desc: "empty id",
+			req: unassignUsersReq{
+				token:    valid,
+				groupID:  "",
+				UserIDs:  []string{validID},
+				Relation: valid,
+			},
+			err: apiutil.ErrMissingID,
+		},
+		{
+			desc: "empty users",
+			req: unassignUsersReq{
+				token:    valid,
+				groupID:  validID,
+				UserIDs:  []string{},
+				Relation: valid,
+			},
+			err: apiutil.ErrEmptyList,
+		},
+		{
+			desc: "empty relation",
+			req: unassignUsersReq{
+				token:    valid,
+				groupID:  validID,
+				UserIDs:  []string{validID},
+				Relation: "",
+			},
+			err: nil,
+		},
+	}
+	for _, c := range cases {
+		err := c.req.validate()
+		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	}
+}
+
 func TestAssignGroupsRequestValidate(t *testing.T) {
 	cases := []struct {
 		desc string
@@ -699,6 +762,55 @@ func TestAssignGroupsRequestValidate(t *testing.T) {
 		{
 			desc: "empty user group ids",
 			req: assignGroupsReq{
+				token:    valid,
+				groupID:  validID,
+				GroupIDs: []string{},
+			},
+			err: apiutil.ErrEmptyList,
+		},
+	}
+	for _, c := range cases {
+		err := c.req.validate()
+		assert.Equal(t, c.err, err, "%s: expected %s got %s\n", c.desc, c.err, err)
+	}
+}
+
+func TestUnassignGroupsRequestValidate(t *testing.T) {
+	cases := []struct {
+		desc string
+		req  unassignGroupsReq
+		err  error
+	}{
+		{
+			desc: "valid request",
+			req: unassignGroupsReq{
+				token:    valid,
+				groupID:  validID,
+				GroupIDs: []string{validID},
+			},
+			err: nil,
+		},
+		{
+			desc: "empty token",
+			req: unassignGroupsReq{
+				token:    "",
+				groupID:  validID,
+				GroupIDs: []string{validID},
+			},
+			err: apiutil.ErrBearerToken,
+		},
+		{
+			desc: "empty group id",
+			req: unassignGroupsReq{
+				token:    valid,
+				groupID:  "",
+				GroupIDs: []string{validID},
+			},
+			err: apiutil.ErrMissingID,
+		},
+		{
+			desc: "empty user group ids",
+			req: unassignGroupsReq{
 				token:    valid,
 				groupID:  validID,
 				GroupIDs: []string{},

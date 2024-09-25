@@ -41,7 +41,7 @@ func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 
 		session, ok := ctx.Value(api.SessionKey).(auth.Session)
 		if !ok {
-			return createGroupRes{created: false}, svcerr.ErrAuthorization
+			return viewGroupRes{}, svcerr.ErrAuthorization
 		}
 		group, err := svc.ViewGroup(ctx, session, req.id)
 		if err != nil {

@@ -447,17 +447,13 @@ func TestListThings(t *testing.T) {
 		listThingsResponse mgclients.ClientsPage
 		status             int
 		identifyRes        *magistrala.IdentityRes
-		authorizeRes       *magistrala.AuthorizeRes
-		superAdminRes      *magistrala.AuthorizeRes
 		identifyErr        error
-		authorizeErr       error
-		superAdminErr      error
 		err                error
 	}{
 		{
 			desc:    "list things as admin with valid token",
 			token:   validToken,
-			session: pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: true},
+			session: pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
 			status:  http.StatusOK,
 			listThingsResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
@@ -465,10 +461,8 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:           nil,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "list things as non admin with valid token",
@@ -481,27 +475,8 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
-		},
-		{
-			desc:    "list things as non admin with authorization error",
-			token:   validToken,
-			session: pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			status:  http.StatusForbidden,
-			listThingsResponse: mgclients.ClientsPage{
-				Page: mgclients.Page{
-					Total: 1,
-				},
-				Clients: []mgclients.Client{client},
-			},
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: false},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr:  svcerr.ErrAuthorization,
-			err:           svcerr.ErrAuthorization,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:   "list things with empty token",
@@ -527,22 +502,19 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "offset=1",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "offset=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid offset",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "offset=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid offset",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "offset=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list things with limit",
@@ -555,34 +527,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "limit=1",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "limit=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid limit",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "limit=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid limit",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "limit=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with limit greater than max",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with limit greater than max",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list things with name",
@@ -594,34 +560,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "name=clientname",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "name=clientname",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid name",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "name=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid name",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "name=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate name",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "name=1&name=2",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate name",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "name=1&name=2",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list things with status",
@@ -633,32 +593,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "status=enabled",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "status=enabled",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid status",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "status=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid status",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "status=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate status",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "status=enabled&status=disabled",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate status",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "status=enabled&status=disabled",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list things with tags",
@@ -670,34 +626,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "tag=tag1,tag2",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "tag=tag1,tag2",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid tags",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "tag=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid tags",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "tag=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate tags",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "tag=tag1&tag=tag2",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate tags",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "tag=tag1&tag=tag2",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list things with metadata",
@@ -709,34 +659,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid metadata",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "metadata=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid metadata",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "metadata=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate metadata",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate metadata",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list things with permissions",
@@ -748,34 +692,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "permission=view",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "permission=view",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid permissions",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "permission=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid permissions",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "permission=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate permissions",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "permission=view&permission=view",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate permissions",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "permission=view&permission=view",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:    "list things with list perms",
@@ -787,34 +725,28 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:         "list_perms=true",
-			status:        http.StatusOK,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           nil,
+			query:       "list_perms=true",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:          "list things with invalid list perms",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "list_perms=invalid",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrValidation,
+			desc:        "list things with invalid list perms",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "list_perms=invalid",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:          "list things with duplicate list perms",
-			token:         validToken,
-			session:       pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
-			query:         "list_perms=true&listPerms=true",
-			status:        http.StatusBadRequest,
-			identifyRes:   &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes:  &magistrala.AuthorizeRes{Authorized: true},
-			superAdminRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:           apiutil.ErrInvalidQueryParams,
+			desc:        "list things with duplicate list perms",
+			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: false},
+			query:       "list_perms=true&listPerms=true",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 	}
 
@@ -828,22 +760,6 @@ func TestListThings(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectKind: policies.UsersKind,
-			SubjectType: policies.UserType,
-			Subject:     validID,
-			Permission:  policies.AdminPermission,
-			ObjectType:  policies.PlatformType,
-			Object:      policies.MagistralaObject,
-		}).Return(tc.superAdminRes, tc.superAdminErr)
-		authCall2 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.MembershipPermission,
-			ObjectType:  policies.DomainType,
-			Object:      tc.session.DomainID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListClients", mock.Anything, tc.session, "", mock.Anything).Return(tc.listThingsResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -858,8 +774,6 @@ func TestListThings(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
-		authCall2.Unset()
 	}
 }
 
@@ -868,26 +782,23 @@ func TestViewThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		id           string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		id          string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "view client with valid token",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			id:           client.ID,
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "view client with valid token",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			id:          client.ID,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "view client with invalid token",
@@ -904,17 +815,6 @@ func TestViewThing(t *testing.T) {
 			status: http.StatusUnauthorized,
 			err:    apiutil.ErrBearerToken,
 		},
-		{
-			desc:         "view client with invalid id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			id:           inValid,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -926,15 +826,7 @@ func TestViewThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.ViewPermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.id,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
-		svcCall := svc.On("ViewClient", mock.Anything, tc.id).Return(mgclients.Client{}, tc.err)
+		svcCall := svc.On("ViewClient", mock.Anything, tc.session, tc.id).Return(mgclients.Client{}, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		var errRes respBody
@@ -947,7 +839,6 @@ func TestViewThing(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1049,9 +940,7 @@ func TestUpdateThing(t *testing.T) {
 		contentType    string
 		status         int
 		identifyRes    *magistrala.IdentityRes
-		authorizeRes   *magistrala.AuthorizeRes
 		identifyErr    error
-		authorizeErr   error
 		err            error
 	}{
 		{
@@ -1067,10 +956,9 @@ func TestUpdateThing(t *testing.T) {
 				Tags:     []string{newTag},
 				Metadata: newMetadata,
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "update thing with invalid token",
@@ -1092,53 +980,37 @@ func TestUpdateThing(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:         "update thing with invalid id",
-			id:           inValid,
-			data:         fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			desc:        "update thing with invalid contentype",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "update thing with invalid contentype",
-			id:           client.ID,
-			data:         fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "update thing with malformed data",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"name":%s}`, "invalid"),
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "update thing with malformed data",
-			id:           client.ID,
-			data:         fmt.Sprintf(`{"name":%s}`, "invalid"),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:         "update thing with empty id",
-			id:           " ",
-			data:         fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingID,
+			desc:        "update thing with empty id",
+			id:          " ",
+			data:        fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 	}
 
@@ -1153,14 +1025,6 @@ func TestUpdateThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.id,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("UpdateClient", mock.Anything, tc.session, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -1179,7 +1043,6 @@ func TestUpdateThing(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1199,9 +1062,7 @@ func TestUpdateThingsTags(t *testing.T) {
 		session        pauth.Session
 		status         int
 		identifyRes    *magistrala.IdentityRes
-		authorizeRes   *magistrala.AuthorizeRes
 		identifyErr    error
-		authorizeErr   error
 		err            error
 	}{
 		{
@@ -1213,12 +1074,11 @@ func TestUpdateThingsTags(t *testing.T) {
 				ID:   client.ID,
 				Tags: []string{newTag},
 			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "update thing tags with empty token",
@@ -1240,16 +1100,15 @@ func TestUpdateThingsTags(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:         "update thing tags with invalid id",
-			id:           client.ID,
-			data:         fmt.Sprintf(`{"tags":["%s"]}`, newTag),
-			contentType:  contentType,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:          svcerr.ErrAuthorization,
+			desc:        "update thing tags with invalid id",
+			id:          client.ID,
+			data:        fmt.Sprintf(`{"tags":["%s"]}`, newTag),
+			contentType: contentType,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusForbidden,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         svcerr.ErrAuthorization,
 		},
 		{
 			desc:        "update thing tags with invalid contentype",
@@ -1296,14 +1155,6 @@ func TestUpdateThingsTags(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.id,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("UpdateClientTags", mock.Anything, tc.session, mock.Anything).Return(tc.clientResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -1317,7 +1168,6 @@ func TestUpdateThingsTags(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1326,18 +1176,16 @@ func TestUpdateClientSecret(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		data         string
-		client       mgclients.Client
-		contentType  string
-		token        string
-		session      pauth.Session
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		data        string
+		client      mgclients.Client
+		contentType string
+		token       string
+		session     pauth.Session
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc: "update thing secret with valid token",
@@ -1349,13 +1197,12 @@ func TestUpdateClientSecret(t *testing.T) {
 					Secret:   "strongersecret",
 				},
 			},
-			contentType:  contentType,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc: "update thing secret with empty token",
@@ -1456,25 +1303,6 @@ func TestUpdateClientSecret(t *testing.T) {
 			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
-		{
-			desc: "update thing secret with invalid id",
-			data: fmt.Sprintf(`{"secret": "%s"}`, "strongersecret"),
-			client: mgclients.Client{
-				ID: inValid,
-				Credentials: mgclients.Credentials{
-					Identity: "clientname",
-					Secret:   "strongersecret",
-				},
-			},
-			contentType:  contentType,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -1488,14 +1316,6 @@ func TestUpdateClientSecret(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.client.ID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("UpdateClientSecret", mock.Anything, tc.session, tc.client.ID, mock.Anything).Return(tc.client, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -1509,7 +1329,6 @@ func TestUpdateClientSecret(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1518,17 +1337,15 @@ func TestEnableThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		client       mgclients.Client
-		response     mgclients.Client
-		token        string
-		session      pauth.Session
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		client      mgclients.Client
+		response    mgclients.Client
+		token       string
+		session     pauth.Session
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:   "enable thing with valid token",
@@ -1537,12 +1354,11 @@ func TestEnableThing(t *testing.T) {
 				ID:     client.ID,
 				Status: mgclients.EnabledStatus,
 			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "enable thing with invalid token",
@@ -1563,19 +1379,6 @@ func TestEnableThing(t *testing.T) {
 			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
-		{
-			desc: "enable thing with invalid id",
-			client: mgclients.Client{
-				ID: "invalid",
-			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -1590,14 +1393,6 @@ func TestEnableThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.DeletePermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.client.ID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("EnableClient", mock.Anything, tc.session, tc.client.ID).Return(tc.response, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -1614,7 +1409,6 @@ func TestEnableThing(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1623,17 +1417,15 @@ func TestDisableThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		client       mgclients.Client
-		response     mgclients.Client
-		token        string
-		session      pauth.Session
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		client      mgclients.Client
+		response    mgclients.Client
+		token       string
+		session     pauth.Session
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:   "disable thing with valid token",
@@ -1642,12 +1434,11 @@ func TestDisableThing(t *testing.T) {
 				ID:     client.ID,
 				Status: mgclients.DisabledStatus,
 			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "disable thing with invalid token",
@@ -1668,19 +1459,6 @@ func TestDisableThing(t *testing.T) {
 			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
-		{
-			desc: "disable thing with invalid id",
-			client: mgclients.Client{
-				ID: "invalid",
-			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -1695,14 +1473,6 @@ func TestDisableThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			SubjectType: policies.UserType,
-			SubjectKind: policies.TokenKind,
-			Subject:     tc.token,
-			Permission:  policies.DeletePermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.client.ID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("DisableClient", mock.Anything, tc.session, tc.client.ID).Return(tc.response, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -1719,7 +1489,6 @@ func TestDisableThing(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1728,30 +1497,27 @@ func TestShareThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		data         string
-		thingID      string
-		token        string
-		session      pauth.Session
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		data        string
+		thingID     string
+		token       string
+		session     pauth.Session
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "share thing with valid token",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusCreated,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "share thing with valid token",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "share thing with invalid token",
@@ -1773,16 +1539,15 @@ func TestShareThing(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:         "share thing with empty id",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      " ",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingID,
+			desc:        "share thing with empty id",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     " ",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
 			desc:        "share thing with missing relation",
@@ -1807,52 +1572,48 @@ func TestShareThing(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "share thing with empty thing id",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      "",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "share thing with empty thing id",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     "",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "share thing with empty relation",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, " ", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingRelation,
+			desc:        "share thing with empty relation",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, " ", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingRelation,
 		},
 		{
-			desc:         "share thing with empty user ids",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : [" ", " "]}`, "editor"),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "share thing with empty user ids",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : [" ", " "]}`, "editor"),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "share thing with invalid content type",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "share thing with invalid content type",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -1867,22 +1628,12 @@ func TestShareThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.DeletePermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.thingID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("Share", mock.Anything, tc.session, tc.thingID, mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -1891,30 +1642,27 @@ func TestUnShareThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		data         string
-		thingID      string
-		token        string
-		session      pauth.Session
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		data        string
+		thingID     string
+		token       string
+		session     pauth.Session
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "unshare thing with valid token",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "unshare thing with valid token",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "unshare thing with invalid token",
@@ -1936,40 +1684,37 @@ func TestUnShareThing(t *testing.T) {
 			err:         apiutil.ErrBearerToken,
 		},
 		{
-			desc:         "unshare thing with empty id",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
-			thingID:      " ",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingID,
+			desc:        "unshare thing with empty id",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, "editor", validID, validID),
+			thingID:     " ",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 		{
-			desc:         "unshare thing with missing relation",
-			data:         fmt.Sprintf(`{"relation": "%s", user_ids" : ["%s", "%s"]}`, " ", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingRelation,
+			desc:        "unshare thing with missing relation",
+			data:        fmt.Sprintf(`{"relation": "%s", user_ids" : ["%s", "%s"]}`, " ", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingRelation,
 		},
 		{
-			desc:         "unshare thing with malformed data",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : [%s, "%s"]}`, "editor", "invalid", validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "unshare thing with malformed data",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : [%s, "%s"]}`, "editor", "invalid", validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:        "unshare thing with empty thing id",
@@ -1983,28 +1728,26 @@ func TestUnShareThing(t *testing.T) {
 			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "unshare thing with empty relation",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, " ", validID, validID),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingRelation,
+			desc:        "unshare thing with empty relation",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : ["%s", "%s"]}`, " ", validID, validID),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingRelation,
 		},
 		{
-			desc:         "unshare thing with empty user ids",
-			data:         fmt.Sprintf(`{"relation": "%s", "user_ids" : [" ", " "]}`, "editor"),
-			thingID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "unshare thing with empty user ids",
+			data:        fmt.Sprintf(`{"relation": "%s", "user_ids" : [" ", " "]}`, "editor"),
+			thingID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:        "unshare thing with invalid content type",
@@ -2030,22 +1773,12 @@ func TestUnShareThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.DeletePermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.thingID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("Unshare", mock.Anything, tc.session, tc.thingID, mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -2054,26 +1787,23 @@ func TestDeleteThing(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		id           string
-		token        string
-		session      pauth.Session
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		id          string
+		token       string
+		session     pauth.Session
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "delete thing with valid token",
-			id:           client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "delete thing with valid token",
+			id:          client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "delete thing with invalid token",
@@ -2092,25 +1822,13 @@ func TestDeleteThing(t *testing.T) {
 			err:    apiutil.ErrBearerToken,
 		},
 		{
-			desc:         "delete thing with empty id",
-			id:           " ",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrMissingID,
-		},
-		{
-			desc:         "delete thing with invalid id",
-			id:           "invalid",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			desc:        "delete thing with empty id",
+			id:          " ",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrMissingID,
 		},
 	}
 
@@ -2123,22 +1841,12 @@ func TestDeleteThing(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.DeletePermission,
-			ObjectType:  policies.ThingType,
-			Object:      tc.id,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
-		svcCall := svc.On("DeleteClient", mock.Anything, tc.id).Return(tc.err)
+		svcCall := svc.On("DeleteClient", mock.Anything, tc.session, tc.id).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -2155,9 +1863,7 @@ func TestListMembers(t *testing.T) {
 		listMembersResponse mgclients.MembersPage
 		status              int
 		identifyRes         *magistrala.IdentityRes
-		authorizeRes        *magistrala.AuthorizeRes
 		identifyErr         error
-		authorizeErr        error
 		err                 error
 	}{
 		{
@@ -2171,10 +1877,9 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "list members with empty token",
@@ -2204,21 +1909,19 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid offset",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "offset=invalid",
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid offset",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "offset=invalid",
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with limit",
@@ -2233,32 +1936,29 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid limit",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "limit=invalid",
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid limit",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "limit=invalid",
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with limit greater than 100",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with limit greater than 100",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with channel_id",
@@ -2272,32 +1972,29 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid channel_id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "channel_id=invalid",
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid channel_id",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "channel_id=invalid",
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with duplicate channel_id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        fmt.Sprintf("channel_id=%s&channel_id=%s", validID, validID),
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with duplicate channel_id",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       fmt.Sprintf("channel_id=%s&channel_id=%s", validID, validID),
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with connected set",
@@ -2311,54 +2008,38 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid connected set",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "connected=invalid",
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid connected set",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "connected=invalid",
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with duplicate connected set",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "connected=true&connected=false",
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with duplicate connected set",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "connected=true&connected=false",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with invalid group id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "",
-			groupID:      "invalid",
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-		},
-		{
-			desc:         "list members with empty group id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			query:        "",
-			groupID:      "",
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with empty group id",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			query:       "",
+			groupID:     "",
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:  "list members with status",
@@ -2369,35 +2050,32 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid status",
-			query:        "status=invalid",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid status",
+			query:       "status=invalid",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with duplicate status",
-			query:        fmt.Sprintf("status=%s&status=%s", mgclients.EnabledStatus, mgclients.DisabledStatus),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with duplicate status",
+			query:       fmt.Sprintf("status=%s&status=%s", mgclients.EnabledStatus, mgclients.DisabledStatus),
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with metadata",
@@ -2409,34 +2087,31 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			groupID:      client.ID,
-			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			groupID:     client.ID,
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid metadata",
-			query:        "metadata=invalid",
-			groupID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid metadata",
+			query:       "metadata=invalid",
+			groupID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with duplicate metadata",
-			query:        "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
-			groupID:      client.ID,
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrInvalidQueryParams,
+			desc:        "list members with duplicate metadata",
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
+			groupID:     client.ID,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:  "list members with permission",
@@ -2447,24 +2122,22 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with duplicate permission",
-			query:        fmt.Sprintf("permission=%s&permission=%s", "view", "edit"),
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with duplicate permission",
+			query:       fmt.Sprintf("permission=%s&permission=%s", "view", "edit"),
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with list permission",
@@ -2477,33 +2150,30 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			groupID:      client.ID,
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			groupID:     client.ID,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
-			desc:         "list members with invalid list permission",
-			query:        "list_perms=invalid",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with invalid list permission",
+			query:       "list_perms=invalid",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "list members with duplicate list permission",
-			query:        "list_perms=true&list_perms=false",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID:      client.ID,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "list members with duplicate list permission",
+			query:       "list_perms=true&list_perms=false",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			groupID:     client.ID,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "list members with all query params",
@@ -2519,10 +2189,9 @@ func TestListMembers(t *testing.T) {
 				},
 				Members: []mgclients.Client{client},
 			},
-			status:       http.StatusOK,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 	}
 
@@ -2536,15 +2205,6 @@ func TestListMembers(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.ViewPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.groupID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := svc.On("ListClientsByGroup", mock.Anything, tc.session, mock.Anything, mock.Anything).Return(tc.listMembersResponse, tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
@@ -2559,7 +2219,6 @@ func TestListMembers(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -2568,18 +2227,16 @@ func TestAssignUsers(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		groupID      string
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		groupID     string
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "assign users to a group successfully",
@@ -2590,11 +2247,10 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusCreated,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "assign users to a group with invalid token",
@@ -2631,11 +2287,10 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign users to a group with empty relation",
@@ -2646,11 +2301,10 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign users to a group with empty user ids",
@@ -2661,11 +2315,10 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign users to a group with invalid request body",
@@ -2675,11 +2328,10 @@ func TestAssignUsers(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"relation": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "assign users to a group with invalid content type",
@@ -2690,27 +2342,10 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "assign users to a group with invalid group id",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID: inValid,
-			reqBody: groupReqBody{
-				Relation: "member",
-				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -2726,22 +2361,12 @@ func TestAssignUsers(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.groupID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Assign", mock.Anything, tc.session, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -2750,18 +2375,16 @@ func TestUnassignUsers(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		groupID      string
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		groupID     string
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "unassign users from a group successfully",
@@ -2772,11 +2395,10 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "unassign users from a group with invalid token",
@@ -2812,11 +2434,10 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign users from a group with empty relation",
@@ -2827,11 +2448,10 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign users from a group with empty user ids",
@@ -2842,11 +2462,10 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign users from a group with invalid request body",
@@ -2856,11 +2475,10 @@ func TestUnassignUsers(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"relation": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "unassign users from a group with invalid content type",
@@ -2871,27 +2489,10 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "unassign users from a group with invalid group id",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID: inValid,
-			reqBody: groupReqBody{
-				Relation: "member",
-				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -2907,22 +2508,12 @@ func TestUnassignUsers(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.groupID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Unassign", mock.Anything, tc.session, tc.groupID, mock.Anything, "users", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -2931,18 +2522,16 @@ func TestAssignGroupsToChannel(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		groupID      string
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		groupID     string
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "assign groups to a channel successfully",
@@ -2952,11 +2541,10 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusCreated,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "assign groups to a channel with invalid token",
@@ -2989,11 +2577,10 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign groups to a channel with empty group ids",
@@ -3003,11 +2590,10 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign groups to a channel with invalid request body",
@@ -3017,11 +2603,10 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"group_ids": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "assign groups to a channel with invalid content type",
@@ -3031,26 +2616,10 @@ func TestAssignGroupsToChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "assign groups to a channel with invalid group id",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID: inValid,
-			reqBody: groupReqBody{
-				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -3066,22 +2635,12 @@ func TestAssignGroupsToChannel(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.groupID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Assign", mock.Anything, tc.session, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -3090,18 +2649,16 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		groupID      string
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		groupID     string
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "unassign groups from a channel successfully",
@@ -3111,11 +2668,10 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "unassign groups from a channel with invalid token",
@@ -3149,11 +2705,10 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign groups from a channel with empty group ids",
@@ -3163,11 +2718,10 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{},
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign groups from a channel with invalid request body",
@@ -3177,11 +2731,10 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"group_ids": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign groups from a channel with invalid content type",
@@ -3191,26 +2744,10 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "unassign groups from a channel with invalid group id",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			groupID: inValid,
-			reqBody: groupReqBody{
-				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 	for _, tc := range cases {
@@ -3225,22 +2762,12 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.groupID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Unassign", mock.Anything, tc.session, tc.groupID, mock.Anything, "channels", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -3249,30 +2776,27 @@ func TestConnectThingToChannel(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		channelID    string
-		thingID      string
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		channelID   string
+		thingID     string
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "connect thing to a channel successfully",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    validID,
-			thingID:      validID,
-			contentType:  contentType,
-			status:       http.StatusCreated,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "connect thing to a channel successfully",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			channelID:   validID,
+			thingID:     validID,
+			contentType: contentType,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "connect thing to a channel with invalid token",
@@ -3304,19 +2828,6 @@ func TestConnectThingToChannel(t *testing.T) {
 			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
-		{
-			desc:         "connect thing to a channel with authorization error",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    inValid,
-			thingID:      validID,
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          nil,
-		},
 	}
 	for _, tc := range cases {
 		req := testRequest{
@@ -3328,22 +2839,12 @@ func TestConnectThingToChannel(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.channelID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Assign", mock.Anything, tc.session, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -3352,30 +2853,27 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		channelID    string
-		thingID      string
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		channelID   string
+		thingID     string
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
-			desc:         "disconnect thing from a channel successfully",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    validID,
-			thingID:      validID,
-			contentType:  contentType,
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			desc:        "disconnect thing from a channel successfully",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			channelID:   validID,
+			thingID:     validID,
+			contentType: contentType,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:        "disconnect thing from a channel with invalid token",
@@ -3388,41 +2886,26 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:         "disconnect thing from a channel with empty channel id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    "",
-			thingID:      validID,
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			desc:        "disconnect thing from a channel with empty channel id",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			channelID:   "",
+			thingID:     validID,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
-			desc:         "disconnect thing from a channel with empty thing id",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    validID,
-			thingID:      "",
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:         "disconnect thing from a channel with authorization error",
-			token:        validToken,
-			session:      pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			channelID:    inValid,
-			thingID:      validID,
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          nil,
+			desc:        "disconnect thing from a channel with empty thing id",
+			token:       validToken,
+			session:     pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
+			channelID:   validID,
+			thingID:     "",
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -3436,22 +2919,12 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      tc.channelID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Unassign", mock.Anything, tc.session, tc.channelID, "group", "things", []string{tc.thingID}).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -3460,17 +2933,15 @@ func TestConnect(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "connect thing to a channel successfully",
@@ -3480,11 +2951,10 @@ func TestConnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   validID,
 			},
-			contentType:  contentType,
-			status:       http.StatusCreated,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:  "connect thing to a channel with invalid token",
@@ -3506,11 +2976,10 @@ func TestConnect(t *testing.T) {
 				ChannelID: "",
 				ThingID:   validID,
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "connect thing to a channel with empty thing id",
@@ -3520,11 +2989,10 @@ func TestConnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   "",
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "connect thing to a channel with invalid request body",
@@ -3533,11 +3001,10 @@ func TestConnect(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"channel_id": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "connect thing to a channel with invalid content type",
@@ -3547,26 +3014,10 @@ func TestConnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   validID,
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "connect thing to a channel with authorization error",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			reqBody: groupReqBody{
-				ChannelID: validID,
-				ThingID:   validID,
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          nil,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 
@@ -3582,22 +3033,12 @@ func TestConnect(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      validID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Assign", mock.Anything, tc.session, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 
@@ -3606,17 +3047,15 @@ func TestDisconnect(t *testing.T) {
 	defer ts.Close()
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		reqBody      interface{}
-		contentType  string
-		status       int
-		identifyRes  *magistrala.IdentityRes
-		authorizeRes *magistrala.AuthorizeRes
-		identifyErr  error
-		authorizeErr error
-		err          error
+		desc        string
+		token       string
+		session     pauth.Session
+		reqBody     interface{}
+		contentType string
+		status      int
+		identifyRes *magistrala.IdentityRes
+		identifyErr error
+		err         error
 	}{
 		{
 			desc:    "Disconnect thing from a channel successfully",
@@ -3626,11 +3065,10 @@ func TestDisconnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   validID,
 			},
-			contentType:  contentType,
-			status:       http.StatusNoContent,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          nil,
+			contentType: contentType,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:    "Disconnect thing from a channel with invalid token",
@@ -3653,11 +3091,10 @@ func TestDisconnect(t *testing.T) {
 				ChannelID: "",
 				ThingID:   validID,
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "Disconnect thing from a channel with empty thing id",
@@ -3667,11 +3104,10 @@ func TestDisconnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   "",
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "Disconnect thing from a channel with invalid request body",
@@ -3680,11 +3116,10 @@ func TestDisconnect(t *testing.T) {
 			reqBody: map[string]interface{}{
 				"channel_id": make(chan int),
 			},
-			contentType:  contentType,
-			status:       http.StatusBadRequest,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "Disconnect thing from a channel with invalid content type",
@@ -3694,26 +3129,10 @@ func TestDisconnect(t *testing.T) {
 				ChannelID: validID,
 				ThingID:   validID,
 			},
-			contentType:  "application/xml",
-			status:       http.StatusUnsupportedMediaType,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			err:          apiutil.ErrValidation,
-		},
-		{
-			desc:    "Disconnect thing from a channel with authorization error",
-			token:   validToken,
-			session: pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
-			reqBody: groupReqBody{
-				ChannelID: validID,
-				ThingID:   validID,
-			},
-			contentType:  contentType,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          nil,
+			contentType: "application/xml",
+			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 	}
 	for _, tc := range cases {
@@ -3728,22 +3147,12 @@ func TestDisconnect(t *testing.T) {
 		}
 
 		authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
-		authCall1 := auth.On("Authorize", mock.Anything, &magistrala.AuthorizeReq{
-			Domain:      tc.session.DomainID,
-			SubjectType: policies.UserType,
-			SubjectKind: policies.UsersKind,
-			Subject:     tc.session.DomainUserID,
-			Permission:  policies.EditPermission,
-			ObjectType:  policies.GroupType,
-			Object:      validID,
-		}).Return(tc.authorizeRes, tc.authorizeErr)
 		svcCall := gsvc.On("Unassign", mock.Anything, tc.session, mock.Anything, "group", "things", mock.Anything).Return(tc.err)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
 		svcCall.Unset()
 		authCall.Unset()
-		authCall1.Unset()
 	}
 }
 

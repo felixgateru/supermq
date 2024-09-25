@@ -158,15 +158,15 @@ func TestViewGroupEndpoint(t *testing.T) {
 			err:     nil,
 		},
 		{
-			desc: "unsuccessfully with invaalid session",
+			desc: "unsuccessfully with invalid session",
 			req: groupReq{
 				token: valid,
 				id:    testsutil.GenerateUUID(t),
 			},
 			svcResp: validGroupResp,
 			svcErr:  nil,
-			resp:    viewGroupRes{Group: validGroupResp},
-			err:     nil,
+			resp:    viewGroupRes{},
+			err:     svcerr.ErrAuthorization,
 		},
 		{
 			desc:    "unsuccessfully with repo error",
@@ -184,7 +184,7 @@ func TestViewGroupEndpoint(t *testing.T) {
 
 	for _, tc := range cases {
 		ctx := context.WithValue(context.Background(), api.SessionKey, tc.session)
-		svcCall := svc.On("ViewGroup", ctx, tc.req.id).Return(tc.svcResp, tc.svcErr)
+		svcCall := svc.On("ViewGroup", ctx, tc.session, tc.req.id).Return(tc.svcResp, tc.svcErr)
 		resp, err := ViewGroupEndpoint(svc)(ctx, tc.req)
 		assert.Equal(t, tc.resp, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.resp, resp))
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
@@ -421,7 +421,7 @@ func TestDeleteGroupEndpoint(t *testing.T) {
 
 	for _, tc := range cases {
 		ctx := context.WithValue(context.Background(), api.SessionKey, tc.session)
-		svcCall := svc.On("DeleteGroup", ctx, tc.req.id).Return(tc.svcErr)
+		svcCall := svc.On("DeleteGroup", ctx, tc.session, tc.req.id).Return(tc.svcErr)
 		resp, err := DeleteGroupEndpoint(svc)(ctx, tc.req)
 		assert.Equal(t, tc.resp, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.resp, resp))
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
@@ -852,7 +852,7 @@ func TestListMembersEndpoint(t *testing.T) {
 		if tc.memberKind != "" {
 			tc.req.memberKind = tc.memberKind
 		}
-		svcCall := svc.On("ListMembers", ctx, tc.req.groupID, tc.req.permission, tc.req.memberKind).Return(tc.svcResp, tc.svcErr)
+		svcCall := svc.On("ListMembers", ctx, tc.session, tc.req.groupID, tc.req.permission, tc.req.memberKind).Return(tc.svcResp, tc.svcErr)
 		resp, err := ListMembersEndpoint(svc, tc.memberKind)(ctx, tc.req)
 		assert.Equal(t, tc.resp, resp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.resp, resp))
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
