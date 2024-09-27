@@ -46,7 +46,7 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 				opts...,
 			), "register_client").ServeHTTP)
 		default:
-			r.With(api.IdentifyMiddleware(authClient)).Post("/", otelhttp.NewHandler(kithttp.NewServer(
+			r.With(api.AuthenticateMiddleware(authClient)).Post("/", otelhttp.NewHandler(kithttp.NewServer(
 				registrationEndpoint(svc, selfRegister),
 				decodeCreateClientReq,
 				api.EncodeResponse,
@@ -55,7 +55,7 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 		}
 
 		r.Group(func(r chi.Router) {
-			r.Use(api.IdentifyMiddleware(authClient))
+			r.Use(api.AuthenticateMiddleware(authClient))
 
 			r.Get("/profile", otelhttp.NewHandler(kithttp.NewServer(
 				viewProfileEndpoint(svc),
@@ -151,7 +151,7 @@ func clientsHandler(svc users.Service, authClient auth.AuthClient, selfRegister 
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(api.IdentifyMiddleware(authClient))
+		r.Use(api.AuthenticateMiddleware(authClient))
 		r.Put("/password/reset", otelhttp.NewHandler(kithttp.NewServer(
 			passwordResetEndpoint(svc),
 			decodePasswordReset,

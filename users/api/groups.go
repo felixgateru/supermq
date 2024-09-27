@@ -30,7 +30,7 @@ func groupsHandler(svc groups.Service, authClient auth.AuthClient, r *chi.Mux, l
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Use(api.IdentifyMiddleware(authClient))
+		r.Use(api.AuthenticateMiddleware(authClient))
 
 		r.Route("/groups", func(r chi.Router) {
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(

@@ -38,7 +38,7 @@ func (am *authorizationMiddleware) RegisterClient(ctx context.Context, session a
 		}
 	}
 
-	return am.svc.RegisterClient(ctx, session, client, selfRegister) ///// fgsf
+	return am.svc.RegisterClient(ctx, session, client, selfRegister)
 }
 
 func (am *authorizationMiddleware) ViewClient(ctx context.Context, session auth.Session, id string) (clients.Client, error) {

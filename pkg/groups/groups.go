@@ -112,7 +112,7 @@ type Service interface {
 	ListGroups(ctx context.Context, session auth.Session, memberKind, memberID string, gm Page) (Page, error)
 
 	// ListMembers retrieves everything that is assigned to a group identified by groupID.
-	ListMembers(ctx context.Context,session auth.Session, groupID, permission, memberKind string) (MembersPage, error)
+	ListMembers(ctx context.Context, session auth.Session, groupID, permission, memberKind string) (MembersPage, error)
 
 	// EnableGroup logically enables the group identified with the provided ID.
 	EnableGroup(ctx context.Context, session auth.Session, id string) (Group, error)
