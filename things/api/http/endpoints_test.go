@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/0x6flab/namegenerator"
+	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
@@ -425,6 +426,7 @@ func TestListThings(t *testing.T) {
 		query              string
 		domainID           string
 		token              string
+		session            pauth.Session
 		listThingsResponse mgclients.ClientsPage
 		status             int
 		authnRes           mgauthn.Session
@@ -486,9 +488,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "offset=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "offset=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid offset",
@@ -511,9 +514,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "limit=1",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "limit=1",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid limit",
@@ -544,9 +548,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "name=clientname",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "name=clientname",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid name",
@@ -577,9 +582,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "status=enabled",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "status=enabled",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid status",
@@ -610,9 +616,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "tag=tag1,tag2",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "tag=tag1,tag2",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid tags",
@@ -643,9 +650,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid metadata",
@@ -676,9 +684,10 @@ func TestListThings(t *testing.T) {
 				},
 				Clients: []mgclients.Client{client},
 			},
-			query:  "permission=view",
-			status: http.StatusOK,
-			err:    nil,
+			query:       "permission=view",
+			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "list things with invalid permissions",
@@ -957,6 +966,7 @@ func TestUpdateThing(t *testing.T) {
 		clientResponse mgclients.Client
 		domainID       string
 		token          string
+		session        pauth.Session
 		contentType    string
 		status         int
 		authnRes       mgauthn.Session
@@ -1100,6 +1110,7 @@ func TestUpdateThingsTags(t *testing.T) {
 		clientResponse mgclients.Client
 		domainID       string
 		token          string
+		session        pauth.Session
 		status         int
 		authnRes       mgauthn.Session
 		authnErr       error
@@ -1231,6 +1242,7 @@ func TestUpdateClientSecret(t *testing.T) {
 		contentType string
 		domainID    string
 		token       string
+		session     pauth.Session
 		status      int
 		authnRes    mgauthn.Session
 		authnErr    error
@@ -1251,6 +1263,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID},
 			status:      http.StatusOK,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -1568,6 +1581,7 @@ func TestShareThing(t *testing.T) {
 		thingID     string
 		domainID    string
 		token       string
+		session     pauth.Session
 		contentType string
 		status      int
 		authnRes    mgauthn.Session
@@ -1725,6 +1739,7 @@ func TestUnShareThing(t *testing.T) {
 		thingID     string
 		domainID    string
 		token       string
+		session     pauth.Session
 		contentType string
 		status      int
 		authnRes    mgauthn.Session
@@ -1956,6 +1971,7 @@ func TestListMembers(t *testing.T) {
 		groupID             string
 		domainID            string
 		token               string
+		session             pauth.Session
 		listMembersResponse mgclients.MembersPage
 		status              int
 		authnRes            mgauthn.Session
@@ -2355,6 +2371,7 @@ func TestAssignUsers(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		groupID     string
 		reqBody     interface{}
 		contentType string
@@ -2512,6 +2529,7 @@ func TestUnassignUsers(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		groupID     string
 		reqBody     interface{}
 		contentType string
@@ -2669,6 +2687,7 @@ func TestAssignGroupsToChannel(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		groupID     string
 		reqBody     interface{}
 		contentType string
@@ -2805,6 +2824,7 @@ func TestUnassignGroupsFromChannel(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		groupID     string
 		reqBody     interface{}
 		contentType string
@@ -2941,6 +2961,7 @@ func TestConnectThingToChannel(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		channelID   string
 		thingID     string
 		contentType string
@@ -2958,6 +2979,7 @@ func TestConnectThingToChannel(t *testing.T) {
 			thingID:     validID,
 			contentType: contentType,
 			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         nil,
 		},
 		{
@@ -2991,6 +3013,7 @@ func TestConnectThingToChannel(t *testing.T) {
 			thingID:     "",
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -3023,6 +3046,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		channelID   string
 		thingID     string
 		contentType string
@@ -3075,6 +3099,7 @@ func TestDisconnectThingFromChannel(t *testing.T) {
 			thingID:     "",
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -3108,6 +3133,7 @@ func TestConnect(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		reqBody     interface{}
 		contentType string
 		status      int
@@ -3194,6 +3220,7 @@ func TestConnect(t *testing.T) {
 			},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -3229,6 +3256,7 @@ func TestDisconnect(t *testing.T) {
 		desc        string
 		domainID    string
 		token       string
+		session     pauth.Session
 		reqBody     interface{}
 		contentType string
 		status      int
@@ -3289,6 +3317,7 @@ func TestDisconnect(t *testing.T) {
 			},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -3301,6 +3330,7 @@ func TestDisconnect(t *testing.T) {
 			},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -3314,6 +3344,7 @@ func TestDisconnect(t *testing.T) {
 			},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}

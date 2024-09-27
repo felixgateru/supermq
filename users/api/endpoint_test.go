@@ -399,6 +399,7 @@ func TestListClients(t *testing.T) {
 		desc              string
 		query             string
 		token             string
+		session           pauth.Session
 		listUsersResponse mgclients.ClientsPage
 		status            int
 		authnRes          mgauthn.Session
@@ -406,9 +407,10 @@ func TestListClients(t *testing.T) {
 		err               error
 	}{
 		{
-			desc:   "list users as admin with valid token",
-			token:  validToken,
-			status: http.StatusOK,
+			desc:    "list users as admin with valid token",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
+			status:  http.StatusOK,
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -435,8 +437,9 @@ func TestListClients(t *testing.T) {
 			err:      svcerr.ErrAuthentication,
 		},
 		{
-			desc:  "list users with offset",
-			token: validToken,
+			desc:    "list users with offset",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Offset: 1,
@@ -458,8 +461,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with limit",
-			token: validToken,
+			desc:    "list users with limit",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Limit: 1,
@@ -489,8 +493,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrValidation,
 		},
 		{
-			desc:  "list users with name",
-			token: validToken,
+			desc:    "list users with name",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -511,8 +516,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with status",
-			token: validToken,
+			desc:    "list users with status",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -541,8 +547,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with tags",
-			token: validToken,
+			desc:    "list users with tags",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -563,8 +570,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with metadata",
-			token: validToken,
+			desc:    "list users with metadata",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -593,8 +601,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with permissions",
-			token: validToken,
+			desc:    "list users with permissions",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -615,8 +624,9 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with list perms",
-			token: validToken,
+			desc:    "list users with list perms",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -637,9 +647,10 @@ func TestListClients(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with identity",
-			token: validToken,
-			query: fmt.Sprintf("identity=%s", client.Credentials.Identity),
+			desc:    "list users with identity",
+			token:   validToken,
+			session: pauth.Session{UserID: validID, DomainID: validID},
+			query:   fmt.Sprintf("identity=%s", client.Credentials.Identity),
 			listUsersResponse: mgclients.ClientsPage{
 				Page: mgclients.Page{
 					Total: 1,
@@ -874,9 +885,7 @@ func TestUpdateClient(t *testing.T) {
 		contentType    string
 		status         int
 		identifyRes    *magistrala.IdentityRes
-		authorizeRes   *magistrala.AuthorizeRes
 		identifyErr    error
-		authorizeErr   error
 		err            error
 	}{
 		{
@@ -921,26 +930,25 @@ func TestUpdateClient(t *testing.T) {
 				Name:     newName,
 				Metadata: newMetadata,
 			},
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: true},
-			status:       http.StatusOK,
-			err:          nil,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			status:      http.StatusOK,
+			err:         nil,
 		},
 		{
 			desc:        "update as normal user with valid token",
 			id:          client.ID,
 			data:        fmt.Sprintf(`{"name":"%s","metadata":%s}`, newName, toJSON(newMetadata)),
 			token:       validToken,
+			session:     pauth.Session{UserID: validID, DomainID: validID},
 			contentType: contentType,
 			clientResponse: mgclients.Client{
 				ID:       client.ID,
 				Name:     newName,
 				Metadata: newMetadata,
 			},
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			status:       http.StatusOK,
-			err:          nil,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
+			status:      http.StatusOK,
+			err:         nil,
 		},
 		{
 			desc:        "update user with invalid token",
@@ -981,6 +989,7 @@ func TestUpdateClient(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1053,9 +1062,7 @@ func TestUpdateClientTags(t *testing.T) {
 		authnErr       error
 		status         int
 		identifyRes    *magistrala.IdentityRes
-		authorizeRes   *magistrala.AuthorizeRes
 		identifyErr    error
-		authorizeErr   error
 		err            error
 	}{
 		{
@@ -1125,6 +1132,7 @@ func TestUpdateClientTags(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1146,6 +1154,7 @@ func TestUpdateClientTags(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -1292,6 +1301,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1308,6 +1318,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -1612,6 +1623,7 @@ func TestUpdateClientRole(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 		{
@@ -1622,6 +1634,7 @@ func TestUpdateClientRole(t *testing.T) {
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -1956,6 +1969,7 @@ func TestRefreshToken(t *testing.T) {
 			token:       validToken,
 			authnRes:    mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnsupportedMediaType,
+			identifyRes: &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:         apiutil.ErrValidation,
 		},
 	}
@@ -2865,15 +2879,6 @@ func TestListUsersByChannelID(t *testing.T) {
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
 		},
-		{
-			desc:         "list users with failed authorization",
-			token:        validToken,
-			channelID:    validID,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -3218,15 +3223,6 @@ func TestListUsersByDomainID(t *testing.T) {
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrValidation,
 		},
-		{
-			desc:         "list users with failed authorization",
-			token:        validToken,
-			domainID:     validID,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -3541,15 +3537,6 @@ func TestListUsersByThingID(t *testing.T) {
 			status: http.StatusBadRequest,
 			err:    apiutil.ErrInvalidQueryParams,
 		},
-		{
-			desc:         "list users with failed authorization",
-			token:        validToken,
-			thingID:      validID,
-			status:       http.StatusForbidden,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
-			authorizeRes: &magistrala.AuthorizeRes{Authorized: false},
-			err:          svcerr.ErrAuthorization,
-		},
 	}
 
 	for _, tc := range cases {
@@ -3602,8 +3589,9 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusCreated,
-			err:    nil,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "assign users to a group with invalid token",
@@ -3640,8 +3628,9 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "assign users to a group with empty user ids",
@@ -3653,8 +3642,9 @@ func TestAssignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "assign users to a group with invalid request body",
@@ -3716,8 +3706,9 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusNoContent,
-			err:    nil,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "unassign users from a group with invalid token",
@@ -3754,8 +3745,9 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "",
 				UserIDs:  []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "unassign users from a group with empty user ids",
@@ -3767,8 +3759,9 @@ func TestUnassignUsers(t *testing.T) {
 				Relation: "member",
 				UserIDs:  []string{},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "unassign users from a group with invalid request body",
@@ -3829,8 +3822,9 @@ func TestAssignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusCreated,
-			err:    nil,
+			status:      http.StatusCreated,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "assign groups to a parent group with invalid token",
@@ -3864,8 +3858,9 @@ func TestAssignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "assign groups to a parent group with empty group ids",
@@ -3876,8 +3871,9 @@ func TestAssignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "assign groups to a parent group with invalid request body",
@@ -3938,8 +3934,9 @@ func TestUnassignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusNoContent,
-			err:    nil,
+			status:      http.StatusNoContent,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         nil,
 		},
 		{
 			desc:     "unassign groups from a parent group with invalid token",
@@ -3973,8 +3970,9 @@ func TestUnassignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{testsutil.GenerateUUID(t), testsutil.GenerateUUID(t)},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:     "unassign groups from a parent group with empty group ids",
@@ -3984,8 +3982,9 @@ func TestUnassignGroups(t *testing.T) {
 			reqBody: groupReqBody{
 				GroupIDs: []string{},
 			},
-			status: http.StatusBadRequest,
-			err:    apiutil.ErrValidation,
+			status:      http.StatusBadRequest,
+			identifyRes: &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID},
+			err:         apiutil.ErrValidation,
 		},
 		{
 			desc:    "unassign groups from a parent group with invalid request body",

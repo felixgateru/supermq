@@ -21,7 +21,6 @@ import (
 
 var (
 	errFailedPermissionsList = errors.New("failed to list permissions")
-	errRecoveryToken         = errors.New("failed to generate password recovery token")
 	errLoginDisableUser      = errors.New("failed to login in disabled user")
 )
 

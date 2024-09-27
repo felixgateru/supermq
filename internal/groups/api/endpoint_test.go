@@ -45,7 +45,6 @@ var (
 
 func TestCreateGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		kind    string
@@ -144,7 +143,6 @@ func TestCreateGroupEndpoint(t *testing.T) {
 
 func TestViewGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     groupReq
@@ -168,7 +166,8 @@ func TestViewGroupEndpoint(t *testing.T) {
 		{
 			desc: "unsuccessfully with invalid session",
 			req: groupReq{
-				id: testsutil.GenerateUUID(t),
+				token: valid,
+				id:    testsutil.GenerateUUID(t),
 			},
 			svcResp: groups.Group{},
 			svcErr:  nil,
@@ -213,7 +212,6 @@ func TestViewGroupEndpoint(t *testing.T) {
 
 func TestViewGroupPermsEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     groupPermsReq
@@ -280,7 +278,6 @@ func TestViewGroupPermsEndpoint(t *testing.T) {
 
 func TestEnableGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     changeGroupStatusReq
@@ -345,7 +342,6 @@ func TestEnableGroupEndpoint(t *testing.T) {
 
 func TestDisableGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     changeGroupStatusReq
@@ -369,7 +365,8 @@ func TestDisableGroupEndpoint(t *testing.T) {
 		{
 			desc: "unsuccessfully with invalid session",
 			req: changeGroupStatusReq{
-				id: testsutil.GenerateUUID(t),
+				token: valid,
+				id:    testsutil.GenerateUUID(t),
 			},
 			resp: changeStatusRes{},
 			err:  svcerr.ErrAuthorization,
@@ -410,7 +407,6 @@ func TestDisableGroupEndpoint(t *testing.T) {
 
 func TestDeleteGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     groupReq
@@ -477,7 +473,6 @@ func TestDeleteGroupEndpoint(t *testing.T) {
 
 func TestUpdateGroupEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc    string
 		req     updateGroupReq
@@ -551,7 +546,6 @@ func TestUpdateGroupEndpoint(t *testing.T) {
 
 func TestListGroupsEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	childGroup := groups.Group{
 		ID:          testsutil.GenerateUUID(t),
 		Name:        valid,
@@ -810,7 +804,6 @@ func TestListGroupsEndpoint(t *testing.T) {
 
 func TestListMembersEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc       string
 		memberKind string
@@ -926,7 +919,6 @@ func TestListMembersEndpoint(t *testing.T) {
 
 func TestAssignMembersEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc       string
 		relation   string
@@ -1056,7 +1048,6 @@ func TestAssignMembersEndpoint(t *testing.T) {
 
 func TestUnassignMembersEndpoint(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
 	cases := []struct {
 		desc       string
 		relation   string
