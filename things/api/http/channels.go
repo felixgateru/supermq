@@ -27,7 +27,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
-	checkSuperAdminMiddleware := api.CheckSuperAdminMiddleware(authClient)
 	r.Group(func(r chi.Router) {
 		r.Use(api.AuthenticateMiddlewareDomain(authn))
 
@@ -39,7 +38,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 				opts...,
 			), "create_channel").ServeHTTP)
 
-			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ViewGroupAuthReq)
 			r.Get("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
 				gapi.ViewGroupEndpoint(svc),
 				gapi.DecodeGroupRequest,
@@ -47,7 +45,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 				opts...,
 			), "view_channel").ServeHTTP)
 
-			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.DeleteGroupAuthReq)
 			r.Delete("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
 				gapi.DeleteGroupEndpoint(svc),
 				gapi.DecodeGroupRequest,
@@ -62,7 +59,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 				opts...,
 			), "view_channel_permissions").ServeHTTP)
 
-			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.UpdateGroupAuthReq)
 			r.Put("/{groupID}", otelhttp.NewHandler(kithttp.NewServer(
 				gapi.UpdateGroupEndpoint(svc),
 				gapi.DecodeGroupUpdate,
@@ -70,7 +66,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 				opts...,
 			), "update_channel").ServeHTTP)
 
-			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ListGroupsByUserAuthReq)
 			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
 				gapi.ListGroupsEndpoint(svc, "channels", "users"),
 				gapi.DecodeListGroupsRequest,
@@ -78,7 +73,6 @@ func groupsHandler(svc groups.Service, authn mgauthn.Authentication, r *chi.Mux,
 				opts...,
 			), "list_channels").ServeHTTP)
 
-			authzMiddleware = api.AuthorizeMiddleware(authClient, gapi.ChangeGroupStatusAuthReq)
 			r.Post("/{groupID}/enable", otelhttp.NewHandler(kithttp.NewServer(
 				gapi.EnableGroupEndpoint(svc),
 				gapi.DecodeChangeGroupStatus,
