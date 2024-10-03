@@ -35,7 +35,7 @@ func (tm *tracingMiddleware) RegisterClient(ctx context.Context, session authn.S
 }
 
 // IssueToken traces the "IssueToken" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
+func (tm *tracingMiddleware) IssueToken(ctx context.Context, identity, secret, domainID string) (*magistrala.Token, error) {
 	ctx, span := tm.tracer.Start(ctx, "svc_issue_token", trace.WithAttributes(attribute.String("identity", identity)))
 	defer span.End()
 
@@ -127,7 +127,7 @@ func (tm *tracingMiddleware) UpdateClientSecret(ctx context.Context, session aut
 }
 
 // GenerateResetToken traces the "GenerateResetToken" operation of the wrapped clients.Service.
-func (tm *tracingMiddleware) GenerateResetToken(ctx context.Context, email, host string) (mgclients.Client, error) {
+func (tm *tracingMiddleware) GenerateResetToken(ctx context.Context, email, host string) error {
 	ctx, span := tm.tracer.Start(ctx, "svc_generate_reset_token", trace.WithAttributes(
 		attribute.String("email", email),
 		attribute.String("host", host),

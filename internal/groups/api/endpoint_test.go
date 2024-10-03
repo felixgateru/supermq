@@ -166,8 +166,7 @@ func TestViewGroupEndpoint(t *testing.T) {
 		{
 			desc: "unsuccessfully with invalid session",
 			req: groupReq{
-				token: valid,
-				id:    testsutil.GenerateUUID(t),
+				id: testsutil.GenerateUUID(t),
 			},
 			svcResp: groups.Group{},
 			svcErr:  nil,
@@ -365,8 +364,7 @@ func TestDisableGroupEndpoint(t *testing.T) {
 		{
 			desc: "unsuccessfully with invalid session",
 			req: changeGroupStatusReq{
-				token: valid,
-				id:    testsutil.GenerateUUID(t),
+				id: testsutil.GenerateUUID(t),
 			},
 			resp: changeStatusRes{},
 			err:  svcerr.ErrAuthorization,

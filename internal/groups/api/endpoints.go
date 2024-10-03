@@ -41,6 +41,9 @@ func CreateGroupEndpoint(svc groups.Service, kind string) endpoint.Endpoint {
 func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(groupReq)
+		if err := req.validate(); err != nil {
+			return viewGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
+		}
 
 		session, ok := ctx.Value(api.SessionKey).(auth.Session)
 		if !ok {
@@ -88,6 +91,9 @@ func ViewGroupPermsEndpoint(svc groups.Service) endpoint.Endpoint {
 func UpdateGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateGroupReq)
+		if err := req.validate(); err != nil {
+			return updateGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
+		}
 
 		session, ok := ctx.Value(api.SessionKey).(authn.Session)
 		if !ok {

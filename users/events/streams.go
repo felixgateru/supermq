@@ -254,10 +254,10 @@ func (es *eventStore) GenerateResetToken(ctx context.Context, email, host string
 		host:  host,
 	}
 
-	return token, es.Publish(ctx, event)
+	return es.Publish(ctx, event)
 }
 
-func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID string) (mgclients.Client, error) {
+func (es *eventStore) IssueToken(ctx context.Context, identity, secret, domainID string) (*magistrala.Token, error) {
 	token, err := es.svc.IssueToken(ctx, identity, secret, domainID)
 	if err != nil {
 		return token, err
