@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/certs/mocks"
 	mgcrt "github.com/absmach/magistrala/certs/pki/amcerts"
@@ -36,7 +35,7 @@ const (
 
 func newService(_ *testing.T) (certs.Service, *mocks.Agent, *authmocks.AuthServiceClient, *sdkmocks.SDK) {
 	agent := new(mocks.Agent)
-	auth := new(authmocks.AuthServiceClient)
+	auth := new(authmocks.AuthClient)
 	sdk := new(sdkmocks.SDK)
 
 	return certs.New(auth, sdk, agent), agent, auth, sdk
