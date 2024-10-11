@@ -10,7 +10,7 @@ import (
 	"github.com/absmach/magistrala"
 	mgauth "github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	pauth "github.com/absmach/magistrala/pkg/auth"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
@@ -135,7 +135,6 @@ func TestRefreshToken(t *testing.T) {
 		login       sdk.Login
 		svcRes      *magistrala.Token
 		svcErr      error
-		identifyRes *magistrala.IdentityRes
 		identifyErr error
 		response    sdk.Token
 		err         errors.SDKError
@@ -177,13 +176,13 @@ func TestRefreshToken(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Identify", mock.Anything, mock.Anything).Return(&magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}, tc.identifyErr)
-			svcCall := svc.On("RefreshToken", mock.Anything, pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.token, tc.login.DomainID).Return(tc.svcRes, tc.svcErr)
+			authCall := auth.On("Authenticate", mock.Anything, mock.Anything).Return(mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.identifyErr)
+			svcCall := svc.On("RefreshToken", mock.Anything, mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.token, tc.login.DomainID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.RefreshToken(tc.login, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "RefreshToken", mock.Anything, pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.token, tc.login.DomainID)
+				ok := svcCall.Parent.AssertCalled(t, "RefreshToken", mock.Anything, mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.token, tc.login.DomainID)
 				assert.True(t, ok)
 			}
 			svcCall.Unset()

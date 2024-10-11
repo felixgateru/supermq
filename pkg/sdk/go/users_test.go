@@ -11,13 +11,13 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
+	authmocks "github.com/absmach/magistrala/auth/mocks"
 	internalapi "github.com/absmach/magistrala/internal/api"
-	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	pauth "github.com/absmach/magistrala/pkg/auth"
-	authmocks "github.com/absmach/magistrala/pkg/auth/mocks"
 	"github.com/absmach/magistrala/pkg/authn"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
+	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -33,24 +33,20 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var (
-	id         = generateUUID(&testing.T{})
-	validToken = "token"
-	validID    = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
-	wrongID    = testsutil.GenerateUUID(&testing.T{})
-)
+var id = generateUUID(&testing.T{})
 
-func setupUsers() (*httptest.Server, *umocks.Service, *authmocks.AuthClient) {
+func setupUsers() (*httptest.Server, *umocks.Service, *authnmocks.Authentication) {
 	usvc := new(umocks.Service)
 	gsvc := new(gmocks.Service)
 	logger := mglog.NewMock()
 	mux := chi.NewRouter()
 	provider := new(oauth2mocks.Provider)
 	provider.On("Name").Return("test")
-	authClient := new(authmocks.AuthClient)
-	api.MakeHandler(usvc, authClient, true, gsvc, mux, logger, "", passRegex, provider)
+	authn := new(authnmocks.Authentication)
+	token := new(authmocks.TokenServiceClient)
+	api.MakeHandler(usvc, authn, token, true, gsvc, mux, logger, "", passRegex, provider)
 
-	return httptest.NewServer(mux), usvc, authClient
+	return httptest.NewServer(mux), usvc, authn
 }
 
 func TestCreateUser(t *testing.T) {
@@ -240,7 +236,7 @@ func TestCreateUser(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			svcCall := svc.On("RegisterClient", mock.Anything, pauth.Session{}, tc.svcReq, true).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("RegisterClient", mock.Anything, mgauthn.Session{}, tc.svcReq, true).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.CreateUser(tc.createSdkUserReq, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
@@ -282,17 +278,16 @@ func TestListUsers(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		pageMeta    sdk.PageMetadata
-		svcReq      mgclients.Page
-		svcRes      mgclients.ClientsPage
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.UsersPage
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		pageMeta        sdk.PageMetadata
+		svcReq          mgclients.Page
+		svcRes          mgclients.ClientsPage
+		svcErr          error
+		authenticateErr error
+		response        sdk.UsersPage
+		err             errors.SDKError
 	}{
 		{
 			desc:  "list users successfully",
@@ -324,7 +319,7 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:    "list users with invalid token",
 			token:   invalidToken,
-			session: pauth.Session{},
+			session: mgauthn.Session{},
 			pageMeta: sdk.PageMetadata{
 				Offset: offset,
 				Limit:  limit,
@@ -335,12 +330,11 @@ func TestListUsers(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes:      mgclients.ClientsPage{},
-			svcErr:      svcerr.ErrAuthentication,
-			identifyRes: &magistrala.IdentityRes{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.UsersPage{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcRes:          mgclients.ClientsPage{},
+			svcErr:          svcerr.ErrAuthentication,
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.UsersPage{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "list users with empty token",
@@ -349,12 +343,12 @@ func TestListUsers(t *testing.T) {
 				Offset: offset,
 				Limit:  limit,
 			},
-			svcReq:      mgclients.Page{},
-			svcRes:      mgclients.ClientsPage{},
-			svcErr:      nil,
-			identifyErr: apiutil.ErrBearerToken,
-			response:    sdk.UsersPage{},
-			err:         errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
+			svcReq:          mgclients.Page{},
+			svcRes:          mgclients.ClientsPage{},
+			svcErr:          nil,
+			authenticateErr: apiutil.ErrBearerToken,
+			response:        sdk.UsersPage{},
+			err:             errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
 		{
 			desc:  "list users with zero limit",
@@ -542,10 +536,9 @@ func TestListUsers(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ListClients", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.Users(tc.pageMeta, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -589,13 +582,13 @@ func TestSearchClients(t *testing.T) {
 	}
 
 	cases := []struct {
-		desc         string
-		token        string
-		page         sdk.PageMetadata
-		response     []sdk.User
-		searchreturn mgclients.ClientsPage
-		err          errors.SDKError
-		identifyErr  error
+		desc            string
+		token           string
+		page            sdk.PageMetadata
+		response        []sdk.User
+		searchreturn    mgclients.ClientsPage
+		err             errors.SDKError
+		authenticateErr error
 	}{
 		{
 			desc:  "search for users",
@@ -624,9 +617,9 @@ func TestSearchClients(t *testing.T) {
 				Limit:  limit,
 				Name:   "client_10",
 			},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
-			response:    nil,
-			identifyErr: svcerr.ErrAuthentication,
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			response:        nil,
+			authenticateErr: svcerr.ErrAuthentication,
 		},
 		{
 			desc:  "search for users with empty token",
@@ -636,9 +629,9 @@ func TestSearchClients(t *testing.T) {
 				Limit:  limit,
 				Name:   "client_10",
 			},
-			err:         errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
-			response:    nil,
-			identifyErr: svcerr.ErrAuthentication,
+			err:             errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
+			response:        nil,
+			authenticateErr: svcerr.ErrAuthentication,
 		},
 		{
 			desc:  "search for users with empty query",
@@ -674,7 +667,7 @@ func TestSearchClients(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(&magistrala.IdentityRes{UserId: validID, DomainId: validID}, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}, tc.authenticateErr)
 			svcCall := svc.On("SearchUsers", mock.Anything, mock.Anything).Return(tc.searchreturn, tc.err)
 			page, err := mgsdk.SearchUsers(tc.page, tc.token)
 			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %s, got %s", tc.desc, tc.err, err))
@@ -695,16 +688,15 @@ func TestViewUser(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		userID      string
-		svcRes      mgclients.Client
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.User
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		userID          string
+		svcRes          mgclients.Client
+		svcErr          error
+		authenticateErr error
+		response        sdk.User
+		err             errors.SDKError
 	}{
 		{
 			desc:     "view user successfully",
@@ -716,14 +708,14 @@ func TestViewUser(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:        "view user with invalid token",
-			token:       invalidToken,
-			userID:      user.ID,
-			svcRes:      mgclients.Client{},
-			svcErr:      svcerr.ErrAuthentication,
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "view user with invalid token",
+			token:           invalidToken,
+			userID:          user.ID,
+			svcRes:          mgclients.Client{},
+			svcErr:          svcerr.ErrAuthentication,
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "view user with empty token",
@@ -771,10 +763,9 @@ func TestViewUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ViewClient", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.User(tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -799,15 +790,14 @@ func TestUserProfile(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		svcRes      mgclients.Client
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.User
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		svcRes          mgclients.Client
+		svcErr          error
+		authenticateErr error
+		response        sdk.User
+		err             errors.SDKError
 	}{
 		{
 			desc:     "view user profile successfully",
@@ -818,13 +808,13 @@ func TestUserProfile(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:        "view user profile with invalid token",
-			token:       invalidToken,
-			svcRes:      mgclients.Client{},
-			svcErr:      nil,
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "view user profile with invalid token",
+			token:           invalidToken,
+			svcRes:          mgclients.Client{},
+			svcErr:          nil,
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "view user profile with empty token",
@@ -852,10 +842,9 @@ func TestUserProfile(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ViewProfile", mock.Anything, tc.session).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UserProfile(tc.token)
 			assert.Equal(t, tc.err, err)
@@ -886,13 +875,12 @@ func TestUpdateUser(t *testing.T) {
 	cases := []struct {
 		desc            string
 		token           string
-		session         pauth.Session
+		session         mgauthn.Session
 		updateClientReq sdk.User
 		svcReq          mgclients.Client
 		svcRes          mgclients.Client
 		svcErr          error
-		identifyRes     *magistrala.IdentityRes
-		identifyErr     error
+		authenticateErr error
 		response        sdk.User
 		err             errors.SDKError
 	}{
@@ -923,10 +911,10 @@ func TestUpdateUser(t *testing.T) {
 				ID:   user.ID,
 				Name: updatedName,
 			},
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "update client name with invalid id",
@@ -1018,10 +1006,9 @@ func TestUpdateUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateClient", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UpdateUser(tc.updateClientReq, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1053,13 +1040,12 @@ func TestUpdateUserTags(t *testing.T) {
 	cases := []struct {
 		desc            string
 		token           string
-		session         pauth.Session
+		session         mgauthn.Session
 		updateClientReq sdk.User
 		svcReq          mgclients.Client
 		svcRes          mgclients.Client
 		svcErr          error
-		identifyRes     *magistrala.IdentityRes
-		identifyErr     error
+		authenticateErr error
 		response        sdk.User
 		err             errors.SDKError
 	}{
@@ -1090,10 +1076,10 @@ func TestUpdateUserTags(t *testing.T) {
 				ID:   user.ID,
 				Tags: updatedTags,
 			},
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "update client tags with empty token",
@@ -1178,10 +1164,9 @@ func TestUpdateUserTags(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateClientTags", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UpdateUserTags(tc.updateClientReq, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1212,13 +1197,12 @@ func TestUpdateUserIdentity(t *testing.T) {
 	cases := []struct {
 		desc            string
 		token           string
-		session         pauth.Session
+		session         mgauthn.Session
 		updateClientReq sdk.User
 		svcReq          string
 		svcRes          mgclients.Client
 		svcErr          error
-		identifyRes     *magistrala.IdentityRes
-		identifyErr     error
+		authenticateErr error
 		response        sdk.User
 		err             errors.SDKError
 	}{
@@ -1248,11 +1232,11 @@ func TestUpdateUserIdentity(t *testing.T) {
 					Secret:   user.Credentials.Secret,
 				},
 			},
-			svcReq:      updatedIdentity,
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcReq:          updatedIdentity,
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "update client identity with empty token",
@@ -1328,10 +1312,9 @@ func TestUpdateUserIdentity(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateClientIdentity", mock.Anything, tc.session, tc.updateClientReq.ID, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UpdateUserIdentity(tc.updateClientReq, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1422,33 +1405,31 @@ func TestResetPassword(t *testing.T) {
 	newPassword := "newPassword"
 
 	cases := []struct {
-		desc         string
-		token        string
-		session      pauth.Session
-		newPassword  string
-		confPassword string
-		svcErr       error
-		identifyRes  *magistrala.IdentityRes
-		identifyErr  error
-		err          errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		newPassword     string
+		confPassword    string
+		svcErr          error
+		authenticateErr error
+		err             errors.SDKError
 	}{
 		{
 			desc:         "reset password successfully",
 			token:        validToken,
-			session:      pauth.Session{UserID: validID, DomainID: validID},
+			session:      mgauthn.Session{UserID: validID, DomainID: validID},
 			newPassword:  newPassword,
 			confPassword: newPassword,
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          nil,
 		},
 		{
-			desc:         "reset password with invalid token",
-			token:        invalidToken,
-			newPassword:  newPassword,
-			confPassword: newPassword,
-			identifyErr:  svcerr.ErrAuthentication,
-			err:          errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "reset password with invalid token",
+			token:           invalidToken,
+			newPassword:     newPassword,
+			confPassword:    newPassword,
+			authenticateErr: svcerr.ErrAuthentication,
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:         "reset password with empty token",
@@ -1461,47 +1442,46 @@ func TestResetPassword(t *testing.T) {
 		{
 			desc:         "reset password with empty new password",
 			token:        validToken,
-			session:      pauth.Session{UserID: validID, DomainID: validID},
+			session:      mgauthn.Session{UserID: validID, DomainID: validID},
 			newPassword:  "",
 			confPassword: newPassword,
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingPass), http.StatusBadRequest),
 		},
 		{
 			desc:         "reset password with empty confirm password",
 			token:        validToken,
-			session:      pauth.Session{UserID: validID, DomainID: validID},
+			session:      mgauthn.Session{UserID: validID, DomainID: validID},
 			newPassword:  newPassword,
 			confPassword: "",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingConfPass), http.StatusBadRequest),
 		},
 		{
 			desc:         "reset password with new password not matching confirm password",
 			token:        validToken,
-			session:      pauth.Session{UserID: validID, DomainID: validID},
+			session:      mgauthn.Session{UserID: validID, DomainID: validID},
 			newPassword:  newPassword,
 			confPassword: "wrongPassword",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrInvalidResetPass), http.StatusBadRequest),
 		},
 		{
 			desc:         "reset password with weak password",
 			token:        validToken,
-			session:      pauth.Session{UserID: validID, DomainID: validID},
+			session:      mgauthn.Session{UserID: validID, DomainID: validID},
 			newPassword:  "weak",
 			confPassword: "weak",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrPasswordFormat), http.StatusBadRequest),
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			if tc.token == validToken {
+				tc.session = mgauthn.Session{UserID: validID, DomainID: validID}
+			}
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ResetSecret", mock.Anything, tc.session, tc.newPassword).Return(tc.svcErr)
 			err := mgsdk.ResetPassword(tc.newPassword, tc.confPassword, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1529,17 +1509,16 @@ func TestUpdatePassword(t *testing.T) {
 	updatedUser.Credentials.Secret = newPassword
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		oldPassword string
-		newPassword string
-		svcRes      mgclients.Client
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.User
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		oldPassword     string
+		newPassword     string
+		svcRes          mgclients.Client
+		svcErr          error
+		authenticateErr error
+		response        sdk.User
+		err             errors.SDKError
 	}{
 		{
 			desc:        "update password successfully",
@@ -1552,14 +1531,14 @@ func TestUpdatePassword(t *testing.T) {
 			err:         nil,
 		},
 		{
-			desc:        "update password with invalid token",
-			token:       invalidToken,
-			oldPassword: secret,
-			newPassword: newPassword,
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "update password with invalid token",
+			token:           invalidToken,
+			oldPassword:     secret,
+			newPassword:     newPassword,
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:        "update password with empty token",
@@ -1631,10 +1610,9 @@ func TestUpdatePassword(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateClientSecret", mock.Anything, tc.session, tc.oldPassword, tc.newPassword).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UpdatePassword(tc.oldPassword, tc.newPassword, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1665,13 +1643,12 @@ func TestUpdateUserRole(t *testing.T) {
 	cases := []struct {
 		desc            string
 		token           string
-		session         pauth.Session
+		session         mgauthn.Session
 		updateClientReq sdk.User
 		svcReq          mgclients.Client
 		svcRes          mgclients.Client
 		svcErr          error
-		identifyRes     *magistrala.IdentityRes
-		identifyErr     error
+		authenticateErr error
 		response        sdk.User
 		err             errors.SDKError
 	}{
@@ -1702,10 +1679,10 @@ func TestUpdateUserRole(t *testing.T) {
 				ID:   user.ID,
 				Role: mgclients.AdminRole,
 			},
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:  "update client role with empty token",
@@ -1790,10 +1767,9 @@ func TestUpdateUserRole(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateClientRole", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.UpdateUserRole(tc.updateClientReq, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1821,16 +1797,15 @@ func TestEnableUser(t *testing.T) {
 	enabledUser.Status = mgclients.EnabledStatus.String()
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		userID      string
-		svcRes      mgclients.Client
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.User
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		userID          string
+		svcRes          mgclients.Client
+		svcErr          error
+		authenticateErr error
+		response        sdk.User
+		err             errors.SDKError
 	}{
 		{
 			desc:     "enable user with valid token",
@@ -1842,13 +1817,13 @@ func TestEnableUser(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:        "enable user with invalid token",
-			token:       invalidToken,
-			userID:      user.ID,
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "enable user with invalid token",
+			token:           invalidToken,
+			userID:          user.ID,
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "enable user with empty token",
@@ -1864,10 +1839,9 @@ func TestEnableUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("EnableClient", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.EnableUser(tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -1895,16 +1869,15 @@ func TestDisableUser(t *testing.T) {
 	disabledUser.Status = mgclients.DisabledStatus.String()
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		userID      string
-		svcRes      mgclients.Client
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.User
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		userID          string
+		svcRes          mgclients.Client
+		svcErr          error
+		authenticateErr error
+		response        sdk.User
+		err             errors.SDKError
 	}{
 		{
 			desc:   "disable user with valid token",
@@ -1917,13 +1890,13 @@ func TestDisableUser(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:        "disable user with invalid token",
-			token:       invalidToken,
-			userID:      user.ID,
-			svcRes:      mgclients.Client{},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.User{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "disable user with invalid token",
+			token:           invalidToken,
+			userID:          user.ID,
+			svcRes:          mgclients.Client{},
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.User{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "disable user with empty token",
@@ -1971,10 +1944,9 @@ func TestDisableUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("DisableClient", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.DisableUser(tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -2000,18 +1972,17 @@ func TestListMembers(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		groupID     string
-		pageMeta    sdk.PageMetadata
-		svcReq      mgclients.Page
-		svcRes      mgclients.MembersPage
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.UsersPage
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		groupID         string
+		pageMeta        sdk.PageMetadata
+		svcReq          mgclients.Page
+		svcRes          mgclients.MembersPage
+		svcErr          error
+		authenticateErr error
+		response        sdk.UsersPage
+		err             errors.SDKError
 	}{
 		{
 			desc:    "list members successfully",
@@ -2053,9 +2024,9 @@ func TestListMembers(t *testing.T) {
 				Limit:      10,
 				Permission: policies.ViewPermission,
 			},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.UsersPage{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.UsersPage{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:    "list members with empty token",
@@ -2149,7 +2120,10 @@ func TestListMembers(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			if tc.token == validToken {
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
+			}
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ListMembers", mock.Anything, tc.session, "groups", tc.groupID, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.Members(tc.groupID, tc.pageMeta, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -2174,14 +2148,13 @@ func TestDeleteUser(t *testing.T) {
 	mgsdk := sdk.NewSDK(conf)
 
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		userID      string
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		userID          string
+		svcErr          error
+		authenticateErr error
+		err             errors.SDKError
 	}{
 		{
 			desc:   "delete user successfully",
@@ -2191,11 +2164,11 @@ func TestDeleteUser(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:        "delete user with invalid token",
-			token:       invalidToken,
-			userID:      validID,
-			identifyErr: svcerr.ErrAuthentication,
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			desc:            "delete user with invalid token",
+			token:           invalidToken,
+			userID:          validID,
+			authenticateErr: svcerr.ErrAuthentication,
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:   "delete user with empty token",
@@ -2222,10 +2195,9 @@ func TestDeleteUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("DeleteClient", mock.Anything, tc.session, tc.userID).Return(tc.svcErr)
 			err := mgsdk.DeleteUser(tc.userID, tc.token)
 			assert.Equal(t, tc.err, err)
@@ -2250,18 +2222,17 @@ func TestListUserGroups(t *testing.T) {
 
 	group := generateTestGroup(t)
 	cases := []struct {
-		desc        string
-		token       string
-		session     pauth.Session
-		userID      string
-		pageMeta    sdk.PageMetadata
-		svcReq      groups.Page
-		svcRes      groups.Page
-		svcErr      error
-		identifyRes *magistrala.IdentityRes
-		identifyErr error
-		response    sdk.GroupsPage
-		err         errors.SDKError
+		desc            string
+		token           string
+		session         mgauthn.Session
+		userID          string
+		pageMeta        sdk.PageMetadata
+		svcReq          groups.Page
+		svcRes          groups.Page
+		svcErr          error
+		authenticateErr error
+		response        sdk.GroupsPage
+		err             errors.SDKError
 	}{
 		{
 			desc:   "list user groups successfully",
@@ -2316,9 +2287,9 @@ func TestListUserGroups(t *testing.T) {
 				},
 				Groups: []groups.Group{convertGroup(group)},
 			},
-			identifyErr: svcerr.ErrAuthentication,
-			response:    sdk.GroupsPage{},
-			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+			authenticateErr: svcerr.ErrAuthentication,
+			response:        sdk.GroupsPage{},
+			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:   "list user groups with empty token",
@@ -2407,10 +2378,9 @@ func TestListUserGroups(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = pauth.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
-				tc.identifyRes = &magistrala.IdentityRes{Id: validID, UserId: validID, DomainId: validID}
+				tc.session = mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
 			}
-			authCall := auth.On("Identify", mock.Anything, &magistrala.IdentityReq{Token: tc.token}).Return(tc.identifyRes, tc.identifyErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ListGroups", mock.Anything, tc.session, "users", tc.userID, tc.svcReq).Return(tc.svcRes, tc.svcErr)
 			resp, err := mgsdk.ListUserGroups(tc.userID, tc.pageMeta, tc.token)
 			assert.Equal(t, tc.err, err)

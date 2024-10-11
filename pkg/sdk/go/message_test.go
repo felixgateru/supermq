@@ -14,7 +14,7 @@ import (
 	"github.com/absmach/magistrala/http/api"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	authmocks "github.com/absmach/magistrala/pkg/auth/mocks"
+	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	pubsub "github.com/absmach/magistrala/pkg/messaging/mocks"
@@ -30,10 +30,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func setupMessages() (*httptest.Server, *authmocks.AuthClient, *pubsub.PubSub) {
-	auth := new(authmocks.AuthClient)
+func setupMessages() (*httptest.Server, *thmocks.ThingsServiceClient, *pubsub.PubSub) {
+	things := new(thmocks.ThingsServiceClient)
 	pub := new(pubsub.PubSub)
-	handler := adapter.NewHandler(pub, mglog.NewMock(), auth)
+	handler := adapter.NewHandler(pub, mglog.NewMock(), things)
 
 	mux := api.MakeHandler(mglog.NewMock(), "")
 	target := httptest.NewServer(mux)
@@ -47,20 +47,20 @@ func setupMessages() (*httptest.Server, *authmocks.AuthClient, *pubsub.PubSub) {
 		return nil, nil, nil
 	}
 
-	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), auth, pub
+	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), things, pub
 }
 
-func setupReader() (*httptest.Server, *authmocks.AuthClient, *readersmocks.MessageRepository) {
+func setupReader() (*httptest.Server, *authzmocks.Authorization, *readersmocks.MessageRepository) {
 	repo := new(readersmocks.MessageRepository)
-	auth := new(authmocks.AuthClient)
-	tauth := new(thmocks.ThingsServiceClient)
+	authz := new(authzmocks.Authorization)
+	things := new(thmocks.ThingsServiceClient)
 
-	mux := readersapi.MakeHandler(repo, auth, tauth, "test", "")
-	return httptest.NewServer(mux), auth, repo
+	mux := readersapi.MakeHandler(repo, authz, things, "test", "")
+	return httptest.NewServer(mux), authz, repo
 }
 
 func TestSendMessage(t *testing.T) {
-	ts, auth, pub := setupMessages()
+	ts, things, pub := setupMessages()
 	defer ts.Close()
 
 	msg := `[{"n":"current","t":-1,"v":1.6}]`
@@ -80,7 +80,7 @@ func TestSendMessage(t *testing.T) {
 		chanName string
 		msg      string
 		thingKey string
-		authRes  *magistrala.AuthorizeRes
+		authRes  *magistrala.ThingsAuthzRes
 		authErr  error
 		svcErr   error
 		err      errors.SDKError
@@ -90,7 +90,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: channelID,
 			msg:      msg,
 			thingKey: thingKey,
-			authRes:  &magistrala.AuthorizeRes{Authorized: true, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: true, Id: ""},
 			authErr:  nil,
 			svcErr:   nil,
 			err:      nil,
@@ -100,7 +100,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: channelID,
 			msg:      msg,
 			thingKey: "",
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
@@ -110,7 +110,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: channelID,
 			msg:      msg,
 			thingKey: "invalid",
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   svcerr.ErrAuthorization,
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
@@ -120,7 +120,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: wrongID,
 			msg:      msg,
 			thingKey: thingKey,
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   svcerr.ErrAuthorization,
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
@@ -130,7 +130,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: channelID,
 			msg:      "",
 			thingKey: thingKey,
-			authRes:  &magistrala.AuthorizeRes{Authorized: true, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: true, Id: ""},
 			authErr:  nil,
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrEmptyMessage), http.StatusBadRequest),
@@ -140,7 +140,7 @@ func TestSendMessage(t *testing.T) {
 			chanName: channelID + ".subtopic",
 			msg:      msg,
 			thingKey: thingKey,
-			authRes:  &magistrala.AuthorizeRes{Authorized: true, Id: ""},
+			authRes:  &magistrala.ThingsAuthzRes{Authorized: true, Id: ""},
 			authErr:  nil,
 			svcErr:   nil,
 			err:      nil,
@@ -148,7 +148,7 @@ func TestSendMessage(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authRes, tc.authErr)
+			authCall := things.On("Authorize", mock.Anything, mock.Anything).Return(tc.authRes, tc.authErr)
 			svcCall := pub.On("Publish", mock.Anything, channelID, mock.Anything).Return(tc.svcErr)
 			err := mgsdk.SendMessage(tc.chanName, tc.msg, tc.thingKey)
 			assert.Equal(t, tc.err, err)
@@ -196,7 +196,7 @@ func TestSetContentType(t *testing.T) {
 }
 
 func TestReadMessages(t *testing.T) {
-	ts, auth, repo := setupReader()
+	ts, authz, repo := setupReader()
 	defer ts.Close()
 
 	channelID := "channelID"
@@ -379,7 +379,7 @@ func TestReadMessages(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Authorize", mock.Anything, mock.Anything).Return(tc.authRes, tc.authErr)
+			authCall := authz.On("Authorize", mock.Anything, mock.Anything).Return(tc.authErr)
 			repoCall := repo.On("ReadAll", channelID, mock.Anything).Return(tc.repoRes, tc.repoErr)
 			response, err := mgsdk.ReadMessages(tc.messagePageMeta, tc.chanName, tc.token)
 			assert.Equal(t, tc.err, err)

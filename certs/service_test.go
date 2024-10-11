@@ -14,6 +14,7 @@ import (
 	"github.com/absmach/magistrala/certs"
 	"github.com/absmach/magistrala/certs/mocks"
 	"github.com/absmach/magistrala/certs/pki"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
 	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
@@ -64,7 +65,7 @@ func TestIssueCert(t *testing.T) {
 		ttl             string
 		key             string
 		pki             pki.Cert
-		authenticateRes *magistrala.AuthenticateRes
+		authenticateRes mgauthn.Session
 		authenticateErr error
 		thingErr        errors.SDKError
 		issueCertErr    error
@@ -85,7 +86,7 @@ func TestIssueCert(t *testing.T) {
 				Serial:         "",
 				Expire:         0,
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID},
 		},
 		{
 			desc:    "issue new cert for non existing thing id",
@@ -101,7 +102,7 @@ func TestIssueCert(t *testing.T) {
 				Serial:         "",
 				Expire:         0,
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID},
 			thingErr:        errors.NewSDKError(errors.ErrMalformedEntity),
 			err:             certs.ErrFailedCertCreation,
 		},
@@ -119,14 +120,14 @@ func TestIssueCert(t *testing.T) {
 				Serial:         "",
 				Expire:         0,
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID},
 			authenticateErr: svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
 		},
 	}
 
 	for _, tc := range cases {
-		authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: tc.token}).Return(tc.authenticateRes, tc.authenticateErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
 		sdkCall := sdk.On("Thing", tc.thingID, tc.token).Return(mgsdk.Thing{ID: tc.thingID, Credentials: mgsdk.Credentials{Secret: thingKey}}, tc.thingErr)
 		agentCall := agent.On("IssueCert", thingKey, tc.ttl).Return(tc.pki, tc.issueCertErr)
 		repoCall := repo.On("Save", context.Background(), mock.Anything).Return("", tc.repoErr)
@@ -151,7 +152,7 @@ func TestRevokeCert(t *testing.T) {
 		desc            string
 		thingID         string
 		page            certs.Page
-		authenticateRes *magistrala.AuthenticateRes
+		authenticateRes mgauthn.Session
 		authenticateErr error
 		authErr         error
 		thingErr        errors.SDKError
@@ -163,14 +164,14 @@ func TestRevokeCert(t *testing.T) {
 			token:           token,
 			thingID:         thingID,
 			page:            certs.Page{Limit: 10000, Offset: 0, Total: 1, Certs: []certs.Cert{cert}},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 		{
 			desc:            "revoke cert for invalid token",
 			token:           invalid,
 			thingID:         thingID,
 			page:            certs.Page{},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{},
 			authenticateErr: svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
 		},
@@ -179,14 +180,14 @@ func TestRevokeCert(t *testing.T) {
 			token:           token,
 			thingID:         "2",
 			page:            certs.Page{},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 			thingErr:        errors.NewSDKError(certs.ErrFailedCertCreation),
 			err:             certs.ErrFailedCertRevocation,
 		},
 	}
 
 	for _, tc := range cases {
-		authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: tc.token}).Return(tc.authenticateRes, tc.authenticateErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
 		authCall1 := authz.On("Authorize", context.Background(), mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, tc.authErr)
 		sdkCall := sdk.On("Thing", tc.thingID, tc.token).Return(mgsdk.Thing{ID: tc.thingID, Credentials: mgsdk.Credentials{Secret: thingKey}}, tc.thingErr)
 		repoCall := repo.On("RetrieveByThing", context.Background(), validID, tc.thingID, tc.page.Offset, tc.page.Limit).Return(certs.Page{}, tc.repoErr)
@@ -223,7 +224,7 @@ func TestListCerts(t *testing.T) {
 		thingID         string
 		page            certs.Page
 		cert            certs.Cert
-		authenticateRes *magistrala.AuthenticateRes
+		authenticateRes mgauthn.Session
 		authenticateErr error
 		repoErr         error
 		err             error
@@ -239,7 +240,7 @@ func TestListCerts(t *testing.T) {
 				Serial:  "0",
 				Expire:  time.Now().Add(time.Hour),
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 		{
 			desc:    "list all certs with invalid token",
@@ -252,7 +253,7 @@ func TestListCerts(t *testing.T) {
 				Serial:  fmt.Sprintf("%d", certNum-1),
 				Expire:  time.Now().Add(time.Hour),
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{},
 			authenticateErr: svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
 		},
@@ -267,7 +268,7 @@ func TestListCerts(t *testing.T) {
 				Serial:  fmt.Sprintf("%d", certNum/2),
 				Expire:  time.Now().Add(time.Hour),
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 		{
 			desc:    "list last cert with valid token",
@@ -280,12 +281,12 @@ func TestListCerts(t *testing.T) {
 				Serial:  fmt.Sprintf("%d", certNum-1),
 				Expire:  time.Now().Add(time.Hour),
 			},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 	}
 
 	for _, tc := range cases {
-		authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: tc.token}).Return(tc.authenticateRes, tc.authenticateErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
 		repoCall := repo.On("RetrieveByThing", context.Background(), validID, thingID, tc.page.Offset, tc.page.Limit).Return(tc.page, tc.repoErr)
 
 		page, err := svc.ListCerts(context.Background(), tc.token, tc.thingID, tc.page.Offset, tc.page.Limit)
@@ -318,7 +319,7 @@ func TestListSerials(t *testing.T) {
 		offset          uint64
 		limit           uint64
 		certs           []certs.Cert
-		authenticateRes *magistrala.AuthenticateRes
+		authenticateRes mgauthn.Session
 		authenticateErr error
 		repoErr         error
 		err             error
@@ -330,7 +331,7 @@ func TestListSerials(t *testing.T) {
 			offset:          0,
 			limit:           certNum,
 			certs:           issuedCerts,
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 		{
 			desc:            "list all certs with invalid token",
@@ -339,7 +340,7 @@ func TestListSerials(t *testing.T) {
 			offset:          0,
 			limit:           certNum,
 			certs:           nil,
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{},
 			authenticateErr: svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
 		},
@@ -350,7 +351,7 @@ func TestListSerials(t *testing.T) {
 			offset:          certNum / 2,
 			limit:           certNum,
 			certs:           issuedCerts[certNum/2:],
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 		{
 			desc:            "list last cert with valid token",
@@ -359,12 +360,12 @@ func TestListSerials(t *testing.T) {
 			offset:          certNum - 1,
 			limit:           certNum,
 			certs:           []certs.Cert{issuedCerts[certNum-1]},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID},
 		},
 	}
 
 	for _, tc := range cases {
-		authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: tc.token}).Return(tc.authenticateRes, tc.authenticateErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
 		repoCall := repo.On("RetrieveByThing", context.Background(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(certs.Page{Limit: tc.limit, Offset: tc.offset, Total: certNum, Certs: tc.certs}, tc.repoErr)
 
 		page, err := svc.ListSerials(context.Background(), tc.token, tc.thingID, tc.offset, tc.limit)
@@ -378,7 +379,7 @@ func TestListSerials(t *testing.T) {
 func TestViewCert(t *testing.T) {
 	svc, repo, agent, authn, _, sdk := newService(t)
 
-	authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: token}).Return(&magistrala.AuthenticateRes{Id: validID}, nil)
+	authCall := authn.On("Authenticate", mock.Anything, token).Return(mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID}, nil)
 	sdkCall := sdk.On("Thing", thingID, token).Return(mgsdk.Thing{ID: thingID, Credentials: mgsdk.Credentials{Secret: thingKey}}, nil)
 	agentCall := agent.On("IssueCert", thingKey, ttl).Return(pki.Cert{}, nil)
 	repoCall := repo.On("Save", context.Background(), mock.Anything).Return("", nil)
@@ -402,7 +403,7 @@ func TestViewCert(t *testing.T) {
 		desc            string
 		serialID        string
 		cert            certs.Cert
-		authenticateRes *magistrala.AuthenticateRes
+		authenticateRes mgauthn.Session
 		authenticateErr error
 		repoErr         error
 		agentErr        error
@@ -413,14 +414,14 @@ func TestViewCert(t *testing.T) {
 			token:           token,
 			serialID:        cert.Serial,
 			cert:            cert,
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 		},
 		{
 			desc:            "list cert with invalid token",
 			token:           invalid,
 			serialID:        cert.Serial,
 			cert:            certs.Cert{},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{},
 			authenticateErr: svcerr.ErrAuthentication,
 			err:             svcerr.ErrAuthentication,
 		},
@@ -429,14 +430,14 @@ func TestViewCert(t *testing.T) {
 			token:           token,
 			serialID:        invalid,
 			cert:            certs.Cert{},
-			authenticateRes: &magistrala.AuthenticateRes{Id: validID},
+			authenticateRes: mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			repoErr:         repoerr.ErrNotFound,
 			err:             svcerr.ErrNotFound,
 		},
 	}
 
 	for _, tc := range cases {
-		authCall := authn.On("Authenticate", context.Background(), &magistrala.AuthenticateReq{Token: tc.token}).Return(tc.authenticateRes, tc.authenticateErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
 		repoCall := repo.On("RetrieveBySerial", context.Background(), validID, tc.serialID).Return(tc.cert, tc.repoErr)
 		agentCall := agent.On("Read", tc.serialID).Return(pki.Cert{}, tc.agentErr)
 

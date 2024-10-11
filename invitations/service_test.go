@@ -123,7 +123,7 @@ func TestSendInvitation(t *testing.T) {
 			authNErr:        nil,
 			domainMemberErr: svcerr.ErrAuthorization,
 			domainAdminErr:  svcerr.ErrAuthorization,
-			adminErr:        nil,
+			adminErr:        svcerr.ErrAuthorization,
 			authorised:      false,
 			issueErr:        nil,
 			repoErr:         nil,
@@ -190,8 +190,8 @@ func TestSendInvitation(t *testing.T) {
 			ObjectType:  policies.DomainType,
 			Object:      tc.req.DomainID,
 		}
-		domaincall := authz.On("Authorize", context.Background(), &domainMemberReq).Return(tc.domainMemberErr)
-		repocall := authn.On("Authenticate", context.Background(), token).Return(idRes, tc.authNErr)
+		domaincall := authz.On("Authorize", context.Background(), domainMemberReq).Return(tc.domainMemberErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(idRes, tc.authNErr)
 		domainAdminReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -200,7 +200,7 @@ func TestSendInvitation(t *testing.T) {
 			ObjectType:  policies.DomainType,
 			Object:      tc.req.DomainID,
 		}
-		domaincall1 := authz.On("Authorize", context.Background(), &domainAdminReq).Return(tc.domainAdminErr)
+		domaincall1 := authz.On("Authorize", context.Background(), domainAdminReq).Return(tc.domainAdminErr)
 		platformReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -209,7 +209,7 @@ func TestSendInvitation(t *testing.T) {
 			ObjectType:  policies.PlatformType,
 			Object:      policies.MagistralaObject,
 		}
-		platformcall := authz.On("Authorize", context.Background(), &platformReq).Return(tc.adminErr)
+		platformcall := authz.On("Authorize", context.Background(), platformReq).Return(tc.adminErr)
 		repocall1 := token.On("Issue", context.Background(), mock.Anything).Return(&magistrala.Token{AccessToken: tc.req.Token}, tc.issueErr)
 		repocall2 := repo.On("Create", context.Background(), mock.Anything).Return(tc.repoErr)
 		if tc.req.Resend {
@@ -217,7 +217,7 @@ func TestSendInvitation(t *testing.T) {
 		}
 		err := svc.SendInvitation(context.Background(), tc.token, tc.req)
 		assert.Equal(t, tc.err, err, tc.desc)
-		repocall.Unset()
+		authCall.Unset()
 		domaincall.Unset()
 		domaincall1.Unset()
 		platformcall.Unset()
@@ -375,7 +375,7 @@ func TestViewInvitation(t *testing.T) {
 			UserID:       tc.tokenUserID,
 			DomainUserID: testsutil.GenerateUUID(t) + "_" + tc.tokenUserID,
 		}
-		repocall := authn.On("Authenticate", context.Background(), token).Return(idRes, tc.authNErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(idRes, tc.authNErr)
 		domainReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -384,7 +384,7 @@ func TestViewInvitation(t *testing.T) {
 			ObjectType:  policies.DomainType,
 			Object:      tc.domainID,
 		}
-		domaincall := authz.On("Authorize", context.Background(), &domainReq).Return(tc.domainErr)
+		domaincall := authz.On("Authorize", context.Background(), domainReq).Return(tc.domainErr)
 		platformReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -393,12 +393,12 @@ func TestViewInvitation(t *testing.T) {
 			ObjectType:  policies.PlatformType,
 			Object:      policies.MagistralaObject,
 		}
-		platformcall := authz.On("Authorize", context.Background(), &platformReq).Return(tc.adminErr)
+		platformcall := authz.On("Authorize", context.Background(), platformReq).Return(tc.adminErr)
 		repocall1 := repo.On("Retrieve", context.Background(), mock.Anything, mock.Anything).Return(tc.resp, tc.repoErr)
 		inv, err := svc.ViewInvitation(context.Background(), tc.token, tc.userID, tc.domainID)
 		assert.Equal(t, tc.err, err, tc.desc)
 		assert.Equal(t, tc.resp, inv, tc.desc)
-		repocall.Unset()
+		authCall.Unset()
 		domaincall.Unset()
 		platformcall.Unset()
 		repocall1.Unset()
@@ -543,7 +543,7 @@ func TestListInvitations(t *testing.T) {
 			err:         svcerr.ErrAuthorization,
 			resp:        invitations.InvitationPage{},
 			authNErr:    nil,
-			domainErr:   nil,
+			domainErr:   svcerr.ErrAuthorization,
 			adminErr:    svcerr.ErrAuthorization,
 			authorised:  false,
 			repoErr:     nil,
@@ -555,7 +555,7 @@ func TestListInvitations(t *testing.T) {
 			UserID:       tc.tokenUserID,
 			DomainUserID: testsutil.GenerateUUID(t) + "_" + tc.tokenUserID,
 		}
-		repocall := authn.On("Authenticate", context.Background(), token).Return(idRes, tc.authNErr)
+		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(idRes, tc.authNErr)
 		domainReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -564,7 +564,7 @@ func TestListInvitations(t *testing.T) {
 			ObjectType:  policies.DomainType,
 			Object:      tc.page.DomainID,
 		}
-		domaincall := authz.On("Authorize", context.Background(), &domainReq).Return(tc.domainErr)
+		domaincall := authz.On("Authorize", context.Background(), domainReq).Return(tc.domainErr)
 		platformReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -573,12 +573,12 @@ func TestListInvitations(t *testing.T) {
 			ObjectType:  policies.PlatformType,
 			Object:      policies.MagistralaObject,
 		}
-		platformcall := authz.On("Authorize", context.Background(), &platformReq).Return(tc.adminErr)
+		platformcall := authz.On("Authorize", context.Background(), platformReq).Return(tc.adminErr)
 		repocall1 := repo.On("RetrieveAll", context.Background(), mock.Anything).Return(tc.resp, tc.repoErr)
 		resp, err := svc.ListInvitations(context.Background(), tc.token, tc.page)
 		assert.Equal(t, tc.err, err, tc.desc)
 		assert.Equal(t, tc.resp, resp, tc.desc)
-		repocall.Unset()
+		authCall.Unset()
 		domaincall.Unset()
 		platformcall.Unset()
 		repocall1.Unset()
@@ -591,7 +591,7 @@ func TestAcceptInvitation(t *testing.T) {
 	authz := new(authzmocks.Authorization)
 	token := new(authmocks.TokenServiceClient)
 	sdksvc := new(sdkmocks.SDK)
-	svc := invitations.NewService(authn, authz, token, repo, nil)
+	svc := invitations.NewService(authn, authz, token, repo, sdksvc)
 
 	userID := testsutil.GenerateUUID(t)
 
@@ -688,10 +688,48 @@ func TestAcceptInvitation(t *testing.T) {
 			repoErr:    nil,
 			repoErr1:   svcerr.ErrUpdateEntity,
 		},
+		{
+			desc:        "accept invitation that is already confirmed",
+			token:       validToken,
+			tokenUserID: userID,
+			domainID:    "",
+			resp: invitations.Invitation{
+				UserID:      userID,
+				DomainID:    testsutil.GenerateUUID(t),
+				Token:       validToken,
+				Relation:    policies.ContributorRelation,
+				ConfirmedAt: time.Now(),
+			},
+			err:        svcerr.ErrInvitationAlreadyAccepted,
+			authNErr:   nil,
+			domainErr:  nil,
+			adminErr:   nil,
+			authorised: true,
+			repoErr:    nil,
+		},
+		{
+			desc:        "accept rejected invitation",
+			token:       validToken,
+			tokenUserID: userID,
+			domainID:    "",
+			resp: invitations.Invitation{
+				UserID:     userID,
+				DomainID:   testsutil.GenerateUUID(t),
+				Token:      validToken,
+				Relation:   policies.ContributorRelation,
+				RejectedAt: time.Now(),
+			},
+			err:        svcerr.ErrInvitationAlreadyRejected,
+			authNErr:   nil,
+			domainErr:  nil,
+			adminErr:   nil,
+			authorised: true,
+			repoErr:    nil,
+		},
 	}
 
 	for _, tc := range cases {
-		repocall := authn.On("Authenticate", context.Background(), token).Return(mgauthn.Session{UserID: tc.tokenUserID}, tc.authNErr)
+		repocall := authn.On("Authenticate", context.Background(), tc.token).Return(mgauthn.Session{UserID: tc.tokenUserID}, tc.authNErr)
 		repocall1 := repo.On("Retrieve", context.Background(), mock.Anything, tc.domainID).Return(tc.resp, tc.repoErr)
 		sdkcall := sdksvc.On("AddUserToDomain", mock.Anything, mock.Anything, mock.Anything).Return(tc.sdkErr)
 		repocall2 := repo.On("UpdateConfirmation", context.Background(), mock.Anything).Return(tc.repoErr1)
@@ -804,7 +842,7 @@ func TestDeleteInvitation(t *testing.T) {
 			err:         svcerr.ErrAuthorization,
 			authNErr:    nil,
 			domainErr:   svcerr.ErrAuthorization,
-			adminErr:    nil,
+			adminErr:    svcerr.ErrAuthorization,
 			authorised:  false,
 			repoErr:     nil,
 		},
@@ -829,7 +867,7 @@ func TestDeleteInvitation(t *testing.T) {
 			UserID:       tc.tokenUserID,
 			DomainUserID: tc.domainID + "_" + tc.userID,
 		}
-		repocall := authn.On("Authenticate", context.Background(), token).Return(idRes, tc.authNErr)
+		repocall := authn.On("Authenticate", context.Background(), tc.token).Return(idRes, tc.authNErr)
 		domainReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -838,7 +876,7 @@ func TestDeleteInvitation(t *testing.T) {
 			ObjectType:  policies.DomainType,
 			Object:      tc.domainID,
 		}
-		domaincall := authz.On("Authorize", context.Background(), &domainReq).Return(tc.domainErr)
+		domaincall := authz.On("Authorize", context.Background(), domainReq).Return(tc.domainErr)
 		platformReq := mgauthz.PolicyReq{
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
@@ -847,7 +885,7 @@ func TestDeleteInvitation(t *testing.T) {
 			ObjectType:  policies.PlatformType,
 			Object:      policies.MagistralaObject,
 		}
-		platformcall := authz.On("Authorize", context.Background(), &platformReq).Return(tc.adminErr)
+		platformcall := authz.On("Authorize", context.Background(), platformReq).Return(tc.adminErr)
 		repocall1 := repo.On("Retrieve", context.Background(), mock.Anything, mock.Anything).Return(tc.resp, tc.repoErr)
 		repocall2 := repo.On("Delete", context.Background(), mock.Anything, mock.Anything).Return(tc.repoErr)
 		err := svc.DeleteInvitation(context.Background(), tc.token, tc.userID, tc.domainID)
@@ -951,7 +989,7 @@ func TestRejectInvitation(t *testing.T) {
 			UserID:       tc.tokenUserID,
 			DomainUserID: tc.domainID + "_" + tc.userID,
 		}
-		repocall := authn.On("Authenticate", context.Background(), token).Return(idRes, tc.authNErr)
+		repocall := authn.On("Authenticate", context.Background(), tc.token).Return(idRes, tc.authNErr)
 		repocall1 := repo.On("Retrieve", context.Background(), mock.Anything, mock.Anything).Return(tc.resp, tc.repoErr)
 		repocall3 := repo.On("UpdateRejection", context.Background(), mock.Anything).Return(tc.repoErr1)
 		err := svc.RejectInvitation(context.Background(), tc.token, tc.domainID)

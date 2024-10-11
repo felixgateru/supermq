@@ -161,7 +161,7 @@ func TestAuthPublish(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
+		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.ThingsAuthzRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
 		ctx := context.TODO()
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)
@@ -214,7 +214,7 @@ func TestAuthSubscribe(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
+		repocall := things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.ThingsAuthzRes{Authorized: true, Id: testsutil.GenerateUUID(t)}, tc.err)
 		ctx := context.TODO()
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)

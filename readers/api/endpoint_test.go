@@ -4,7 +4,6 @@
 package api_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -210,14 +209,6 @@ func TestReadAll(t *testing.T) {
 			key:          thingToken,
 			authResponse: true,
 			status:       http.StatusBadRequest,
-		},
-		{
-			desc:         "read page with invalid token as thing",
-			url:          fmt.Sprintf("%s/channels/%s/messages?offset=0&limit=10", ts.URL, chanID),
-			token:        invalidToken,
-			authResponse: false,
-			status:       http.StatusUnauthorized,
-			err:          svcerr.ErrAuthorization,
 		},
 		{
 			desc:         "read page with multiple offset as thing",
@@ -977,11 +968,10 @@ func TestReadAll(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		repoCall := authz.On("Identify", context.Background(), mock.Anything).Return(&magistrala.AuthenticateRes{Id: testsutil.GenerateUUID(t)}, nil)
-		authCall := authz.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: tc.authResponse}, tc.err)
+		authCall := authz.On("Authorize", mock.Anything, mock.Anything).Return(tc.err)
 		repo.On("ReadAll", chanID, tc.res.PageMetadata).Return(readers.MessagesPage{Total: tc.res.Total, Messages: fromSenml(tc.res.Messages)}, nil)
 		if tc.key != "" {
-			repoCall = things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: tc.authResponse}, tc.err)
+			authCall = things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.ThingsAuthzRes{Authorized: tc.authResponse}, tc.err)
 		}
 		req := testRequest{
 			client: ts.Client(),
@@ -1001,7 +991,6 @@ func TestReadAll(t *testing.T) {
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected %d got %d", tc.desc, tc.status, res.StatusCode))
 		assert.Equal(t, tc.res.Total, page.Total, fmt.Sprintf("%s: expected %d got %d", tc.desc, tc.res.Total, page.Total))
 		assert.ElementsMatch(t, tc.res.Messages, page.Messages, fmt.Sprintf("%s: got incorrect body from response", tc.desc))
-		repoCall.Unset()
 		authCall.Unset()
 	}
 }
