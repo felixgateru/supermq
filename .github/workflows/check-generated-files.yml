@@ -187,7 +187,7 @@ jobs:
           check_mock_changes ./auth/mocks/keys.go "Auth Keys ./auth/mocks/keys.go"
           check_mock_changes ./auth/mocks/service.go "Auth Service ./auth/mocks/service.go"
           check_mock_changes ./pkg/authn/mocks/authn.go "Authn Service Client .pkg/authn/mocks/authn.go"
-          check_mock_changes ./pkg/authz/mocks/authn.go "Authz Service Client .pkg/authz/mocks/authz.go"
+          check_mock_changes ./pkg/authz/mocks/authz.go "Authz Service Client .pkg/authz/mocks/authz.go"
           check_mock_changes ./pkg/events/mocks/publisher.go "ES Publisher ./pkg/events/mocks/publisher.go"
           check_mock_changes ./pkg/events/mocks/subscriber.go "EE Subscriber ./pkg/events/mocks/subscriber.go"
           check_mock_changes ./provision/mocks/service.go "Provision Service ./provision/mocks/service.go"
