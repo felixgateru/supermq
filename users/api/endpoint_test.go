@@ -108,7 +108,7 @@ func toJSON(data interface{}) string {
 }
 
 func TestRegisterClient(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1325,7 +1325,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 }
 
 func TestPasswordResetRequest(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	testemail := "test@example.com"
@@ -1775,7 +1775,7 @@ func TestUpdateClientSecret(t *testing.T) {
 }
 
 func TestIssueToken(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	validIdentity := "valid"
