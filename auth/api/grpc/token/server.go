@@ -12,9 +12,7 @@ import (
 	kitgrpc "github.com/go-kit/kit/transport/grpc"
 )
 
-var (
-	_ magistrala.TokenServiceServer = (*tokenGrpcServer)(nil)
-)
+var _ magistrala.TokenServiceServer = (*tokenGrpcServer)(nil)
 
 type tokenGrpcServer struct {
 	magistrala.UnimplementedTokenServiceServer

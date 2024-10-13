@@ -49,6 +49,16 @@ func newService(_ *testing.T) (certs.Service, *mocks.Repository, *mocks.Agent, *
 	return certs.New(authn, authz, repo, sdk, agent), repo, agent, authn, authz, sdk
 }
 
+func newMinimalService() (certs.Service, *mocks.Repository, *authnmocks.Authentication) {
+	repo := new(mocks.Repository)
+	agent := new(mocks.Agent)
+	authn := new(authnmocks.Authentication)
+	authz := new(authzmocks.Authorization)
+	sdk := new(sdkmocks.SDK)
+
+	return certs.New(authn, authz, repo, sdk, agent), repo, authn
+}
+
 var cert = certs.Cert{
 	OwnerID: validID,
 	ThingID: thingID,
@@ -299,7 +309,7 @@ func TestListCerts(t *testing.T) {
 }
 
 func TestListSerials(t *testing.T) {
-	svc, repo, _, authn, _, _ := newService(t)
+	svc, repo, authn := newMinimalService()
 
 	var issuedCerts []certs.Cert
 	for i := 0; i < certNum; i++ {

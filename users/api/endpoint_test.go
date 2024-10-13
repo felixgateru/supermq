@@ -83,7 +83,7 @@ func (tr testRequest) make() (*http.Response, error) {
 	return tr.client.Do(req)
 }
 
-func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service, *authnmocks.Authentication, *authmocks.TokenServiceClient) {
+func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service, *authnmocks.Authentication) {
 	svc := new(mocks.Service)
 	gsvc := new(gmocks.Service)
 
@@ -95,7 +95,7 @@ func newUsersServer() (*httptest.Server, *mocks.Service, *gmocks.Service, *authn
 	token := new(authmocks.TokenServiceClient)
 	httpapi.MakeHandler(svc, authn, token, true, gsvc, mux, logger, "", passRegex, provider)
 
-	return httptest.NewServer(mux), svc, gsvc, authn, token
+	return httptest.NewServer(mux), svc, gsvc, authn
 }
 
 func toJSON(data interface{}) string {
@@ -107,7 +107,7 @@ func toJSON(data interface{}) string {
 }
 
 func TestRegisterClient(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -245,7 +245,7 @@ func TestRegisterClient(t *testing.T) {
 }
 
 func TestViewClient(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -319,7 +319,7 @@ func TestViewClient(t *testing.T) {
 }
 
 func TestViewProfile(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -385,7 +385,7 @@ func TestViewProfile(t *testing.T) {
 }
 
 func TestListClients(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -722,7 +722,7 @@ func TestListClients(t *testing.T) {
 }
 
 func TestSearchUsers(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -846,7 +846,7 @@ func TestSearchUsers(t *testing.T) {
 }
 
 func TestUpdateClient(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	newName := "newname"
@@ -983,7 +983,7 @@ func TestUpdateClient(t *testing.T) {
 }
 
 func TestUpdateClientTags(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	defer us.Close()
@@ -1122,7 +1122,7 @@ func TestUpdateClientTags(t *testing.T) {
 }
 
 func TestUpdateClientIdentity(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1278,7 +1278,7 @@ func TestUpdateClientIdentity(t *testing.T) {
 }
 
 func TestPasswordResetRequest(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	testemail := "test@example.com"
@@ -1374,7 +1374,7 @@ func TestPasswordResetRequest(t *testing.T) {
 }
 
 func TestPasswordReset(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	strongPass := "StrongPassword"
@@ -1469,7 +1469,7 @@ func TestPasswordReset(t *testing.T) {
 }
 
 func TestUpdateClientRole(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1583,7 +1583,7 @@ func TestUpdateClientRole(t *testing.T) {
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1720,7 +1720,7 @@ func TestUpdateClientSecret(t *testing.T) {
 }
 
 func TestIssueToken(t *testing.T) {
-	us, svc, _, _, _ := newUsersServer()
+	us, svc, _, _ := newUsersServer()
 	defer us.Close()
 
 	validIdentity := "valid"
@@ -1810,7 +1810,7 @@ func TestIssueToken(t *testing.T) {
 }
 
 func TestRefreshToken(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -1908,7 +1908,7 @@ func TestRefreshToken(t *testing.T) {
 }
 
 func TestEnableClient(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 	cases := []struct {
 		desc     string
@@ -1995,7 +1995,7 @@ func TestEnableClient(t *testing.T) {
 }
 
 func TestDisableClient(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2074,7 +2074,7 @@ func TestDisableClient(t *testing.T) {
 }
 
 func TestDeleteClient(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2139,7 +2139,7 @@ func TestDeleteClient(t *testing.T) {
 }
 
 func TestListUsersByUserGroupId(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2462,7 +2462,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 }
 
 func TestListUsersByChannelID(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -2798,7 +2798,7 @@ func TestListUsersByChannelID(t *testing.T) {
 }
 
 func TestListUsersByDomainID(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3140,7 +3140,7 @@ func TestListUsersByDomainID(t *testing.T) {
 }
 
 func TestListUsersByThingID(t *testing.T) {
-	us, svc, _, authn, _ := newUsersServer()
+	us, svc, _, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3452,7 +3452,7 @@ func TestListUsersByThingID(t *testing.T) {
 }
 
 func TestAssignUsers(t *testing.T) {
-	us, _, gsvc, authn, _ := newUsersServer()
+	us, _, gsvc, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3556,7 +3556,7 @@ func TestAssignUsers(t *testing.T) {
 }
 
 func TestUnassignUsers(t *testing.T) {
-	us, _, gsvc, authn, _ := newUsersServer()
+	us, _, gsvc, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3660,7 +3660,7 @@ func TestUnassignUsers(t *testing.T) {
 }
 
 func TestAssignGroups(t *testing.T) {
-	us, _, gsvc, authn, _ := newUsersServer()
+	us, _, gsvc, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {
@@ -3759,7 +3759,7 @@ func TestAssignGroups(t *testing.T) {
 }
 
 func TestUnassignGroups(t *testing.T) {
-	us, _, gsvc, authn, _ := newUsersServer()
+	us, _, gsvc, authn := newUsersServer()
 	defer us.Close()
 
 	cases := []struct {

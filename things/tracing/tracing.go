@@ -113,7 +113,7 @@ func (tm *tracingMiddleware) Identify(ctx context.Context, key string) (string, 
 	return tm.svc.Identify(ctx, key)
 }
 
-// Authorize traces the "Authorize" operation of the wrapped things.Service
+// Authorize traces the "Authorize" operation of the wrapped things.Service.
 func (tm *tracingMiddleware) Authorize(ctx context.Context, req things.AuthzReq) (string, error) {
 	ctx, span := tm.tracer.Start(ctx, "connect", trace.WithAttributes(attribute.String("thingKey", req.ThingKey), attribute.String("channelID", req.ChannelID)))
 	defer span.End()

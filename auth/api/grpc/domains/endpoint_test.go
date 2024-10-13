@@ -42,9 +42,7 @@ const (
 	validPolicy     = "valid"
 )
 
-var (
-	authAddr = fmt.Sprintf("localhost:%d", port)
-)
+var authAddr = fmt.Sprintf("localhost:%d", port)
 
 func startGRPCServer(svc auth.Service, port int) {
 	listener, _ := net.Listen("tcp", fmt.Sprintf(":%d", port))
