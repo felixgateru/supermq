@@ -50,7 +50,7 @@ var (
 	authAddr = fmt.Sprintf("localhost:%d", port)
 )
 
-func startGRPCServer(svc auth.Service, port int)*grpc.Server {
+func startGRPCServer(svc auth.Service, port int) *grpc.Server {
 	listener, _ := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	server := grpc.NewServer()
 	magistrala.RegisterTokenServiceServer(server, grpcapi.NewTokenServer(svc))
