@@ -155,14 +155,6 @@ func main() {
 	}
 	defer cacheclient.Close()
 
-	switch cfg.StandaloneID != "" && cfg.StandaloneToken != "" {
-	default:
-		if err != nil {
-			logger.Error("standalone mode not implemented in things servcie ")
-			exitCode = 1
-			return
-		}
-	}
 	policyEvaluator, policyManager, err := newSpiceDBPolicyManagerEvaluator(cfg, logger)
 	if err != nil {
 		logger.Error(err.Error())
