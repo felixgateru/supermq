@@ -18,6 +18,7 @@ import (
 	"github.com/absmach/magistrala/internal/testsutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
+	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -218,7 +219,7 @@ func TestAdd(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, &magistrala.AuthenticateReq{Token: tc.token}).Return(&magistrala.AuthenticateRes{Id: tc.id, DomainId: tc.domainID}, tc.authenticateErr)
+		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
 		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
 		sdkCall := tv.sdk.On("Thing", tc.config.ThingID, tc.token).Return(mgsdk.Thing{ID: tc.config.ThingID, Credentials: mgsdk.Credentials{Secret: tc.config.ThingKey}}, errors.NewSDKError(tc.thingErr))
 		repoCall := tv.boot.On("ListExisting", context.Background(), domainID, mock.Anything).Return(tc.config.Channels, tc.listErr)
@@ -981,14 +982,14 @@ func TestList(t *testing.T) {
 	lastID := "0"
 	for _, tc := range cases {
 		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall1 := tv.authz.On("Authorize", context.Background(), mgauthz.PolicyReq{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
 			Permission:  policysvc.AdminPermission,
 			ObjectType:  policysvc.PlatformType,
 			Object:      policysvc.MagistralaObject,
 		}).Return(tc.superAdminAuthErr)
-		authCall2 := tv.authz.On("Authorize", context.Background(), &magistrala.AuthorizeReq{
+		authCall2 := tv.authz.On("Authorize", context.Background(), mgauthz.PolicyReq{
 			SubjectType: policysvc.UserType,
 			SubjectKind: policysvc.UsersKind,
 			Subject:     tc.userID,
