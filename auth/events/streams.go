@@ -212,10 +212,10 @@ func (es *eventStore) Identify(ctx context.Context, token string) (auth.Key, err
 	return es.svc.Identify(ctx, token)
 }
 
-func (es *eventStore) Authorize(ctx context.Context, pr auth.PolicyReq) error {
+func (es *eventStore) Authorize(ctx context.Context, pr policies.Policy) error {
 	return es.svc.Authorize(ctx, pr)
 }
 
-func (es *eventStore) DeleteUserPolicies(ctx context.Context, id string) error {
-	return es.svc.DeleteUserPolicies(ctx, id)
+func (es *eventStore) DeleteUserFromDomains(ctx context.Context, id string) error {
+	return es.svc.DeleteUserFromDomains(ctx, id)
 }

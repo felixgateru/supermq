@@ -6,26 +6,30 @@ syntax = "proto3";
 package magistrala;
 option go_package = "./magistrala";
 
-// AuthzService is a service that provides authorization functionalities
+// ThingsService is a service that provides things authorization functionalities
 // for magistrala services.
-service AuthzService {
-  // Authorize checks if the subject is authorized to perform
-  // the action on the object.
-  rpc Authorize(AuthorizeReq) returns (AuthorizeRes) {}
+service ThingsService {
+  // Authorize checks if the thing is authorized to perform
+  // the action on the channel.
+  rpc Authorize(ThingsAuthzReq) returns (ThingsAuthzRes) {}
 }
 
-// AuthnService is a service that provides authentication functionalities
-// for magistrala services.
-service AuthnService {
+service TokenService {
   rpc Issue(IssueReq) returns (Token) {}
   rpc Refresh(RefreshReq) returns (Token) {}
-  rpc Identify(IdentityReq) returns (IdentityRes) {}
 }
 
-// PolicyService is a service that provides policy CRUD
+// AuthService is a service that provides authentication and authorization
 // functionalities for magistrala services.
-service PolicyService {
-  rpc DeleteUserPolicies(DeleteUserPoliciesReq) returns (DeletePolicyRes) {}
+service AuthService {
+  rpc Authorize(AuthZReq) returns (AuthZRes) {}
+  rpc Authenticate(AuthNReq) returns (AuthNRes) {}
+}
+
+// DomainsService is a service that provides access to domains
+// functionalities for magistrala services.
+service DomainsService {
+  rpc DeleteUserFromDomains(DeleteUserReq) returns (DeleteUserRes) {}
 }
 
 // If a token is not carrying any information itself, the type
@@ -37,11 +41,11 @@ message Token {
     string accessType = 3;
 }
 
-message IdentityReq {
+message AuthNReq {
     string token = 1;
 }
 
-message IdentityRes {
+message AuthNRes {
     string id    = 1; // IMPROVEMENT NOTE: change name from "id" to "subject" , sub in jwt = user id  + domain id //
     string user_id = 2; // user id
     string domain_id = 3; // domain id
@@ -50,7 +54,7 @@ message IdentityRes {
 message IssueReq {
   string user_id = 1;
   optional string domain_id = 2;
-  uint32 type = 3; 
+  uint32 type = 3;
 }
 
 message RefreshReq {
@@ -58,7 +62,7 @@ message RefreshReq {
   optional string domain_id = 2;
 }
 
-message AuthorizeReq {
+message AuthZReq {
   string domain = 1;           // Domain
   string subject_type = 2;     // Thing or User
   string subject_kind = 3;     // ID or Token
@@ -70,13 +74,25 @@ message AuthorizeReq {
   string object_type = 9;      // Thing, User, Group
 }
 
-message AuthorizeRes {
+message AuthZRes {
   bool authorized = 1;
   string id = 2;
 }
 
-message DeletePolicyRes { bool deleted = 1; }
+message DeleteUserRes { bool deleted = 1; }
 
-message DeleteUserPoliciesReq{
+message DeleteUserReq{
   string id          = 1;
+}
+
+message ThingsAuthzReq {
+  string channelID = 1;
+  string thingID = 2;
+  string thingKey = 3;
+  string permission = 4;
+}
+
+message ThingsAuthzRes {
+  bool authorized = 1;
+  string id = 2;
 }

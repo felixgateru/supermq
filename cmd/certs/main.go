@@ -19,6 +19,10 @@ import (
 	pki "github.com/absmach/magistrala/certs/pki/amcerts"
 	"github.com/absmach/magistrala/certs/tracing"
 	mglog "github.com/absmach/magistrala/logger"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
+	authsvcAuthn "github.com/absmach/magistrala/pkg/authn/authsvc"
+	mgauthz "github.com/absmach/magistrala/pkg/authz"
+	authsvcAuthz "github.com/absmach/magistrala/pkg/authz/authsvc"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/prometheus"
@@ -109,9 +113,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	defer authHandler.Close()
-
-	logger.Info("AuthService gRPC client successfully connected to auth gRPC server " + authHandler.Secure())
+	defer authzClient.Close()
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {

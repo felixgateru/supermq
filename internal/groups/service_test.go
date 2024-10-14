@@ -14,8 +14,8 @@ import (
 	"github.com/absmach/magistrala/internal/groups"
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	"github.com/absmach/magistrala/pkg/auth"
-	pauth "github.com/absmach/magistrala/pkg/auth"
+	"github.com/absmach/magistrala/pkg/authn"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
@@ -50,12 +50,12 @@ var (
 
 func TestCreateGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc         string
-		session      auth.Session
+		session      authn.Session
 		kind         string
 		group        mggroups.Group
 		repoResp     mggroups.Group
@@ -66,7 +66,7 @@ func TestCreateGroup(t *testing.T) {
 	}{
 		{
 			desc:    "successfully",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:    policysvc.NewGroupKind,
 			group:   validGroup,
 			repoResp: mggroups.Group{
@@ -78,7 +78,7 @@ func TestCreateGroup(t *testing.T) {
 		},
 		{
 			desc:    "with invalid status",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:    policysvc.NewGroupKind,
 			group: mggroups.Group{
 				Name:        namegen.Generate(),
@@ -89,7 +89,7 @@ func TestCreateGroup(t *testing.T) {
 		},
 		{
 			desc:    "successfully with parent",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:    policysvc.NewGroupKind,
 			group: mggroups.Group{
 				Name:        namegen.Generate(),
@@ -106,7 +106,7 @@ func TestCreateGroup(t *testing.T) {
 		},
 		{
 			desc:     "with repo error",
-			session:  auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:  authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:     policysvc.NewGroupKind,
 			group:    validGroup,
 			repoResp: mggroups.Group{},
@@ -115,7 +115,7 @@ func TestCreateGroup(t *testing.T) {
 		},
 		{
 			desc:    "with failed to add policies",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:    policysvc.NewGroupKind,
 			group:   validGroup,
 			repoResp: mggroups.Group{
@@ -126,7 +126,7 @@ func TestCreateGroup(t *testing.T) {
 		},
 		{
 			desc:    "with failed to delete policies response",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			kind:    policysvc.NewGroupKind,
 			group: mggroups.Group{
 				Name:        namegen.Generate(),
@@ -164,7 +164,7 @@ func TestCreateGroup(t *testing.T) {
 
 func TestViewGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
@@ -190,7 +190,7 @@ func TestViewGroup(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			repoCall := repo.On("RetrieveByID", context.Background(), tc.id).Return(tc.repoResp, tc.repoErr)
-			got, err := svc.ViewGroup(context.Background(), pauth.Session{}, tc.id)
+			got, err := svc.ViewGroup(context.Background(), mgauthn.Session{}, tc.id)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			if err == nil {
 				assert.Equal(t, tc.repoResp, got)
@@ -204,12 +204,12 @@ func TestViewGroup(t *testing.T) {
 
 func TestViewGroupPerms(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc     string
-		session  auth.Session
+		session  authn.Session
 		id       string
 		listResp policysvc.Permissions
 		listErr  error
@@ -217,7 +217,7 @@ func TestViewGroupPerms(t *testing.T) {
 	}{
 		{
 			desc:    "successfully",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			listResp: []string{
 				policysvc.ViewPermission,
@@ -226,14 +226,14 @@ func TestViewGroupPerms(t *testing.T) {
 		},
 		{
 			desc:    "with failed to list permissions",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			listErr: svcerr.ErrAuthorization,
 			err:     svcerr.ErrAuthorization,
 		},
 		{
 			desc:     "with empty permissions",
-			session:  auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:  authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:       testsutil.GenerateUUID(t),
 			listResp: []string{},
 			err:      svcerr.ErrAuthorization,
@@ -242,7 +242,7 @@ func TestViewGroupPerms(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			policyCall := policies.On("ListPermissions", context.Background(), policysvc.PolicyReq{
+			policyCall := policies.On("ListPermissions", context.Background(), policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Subject:     validID,
 				Object:      tc.id,
@@ -260,12 +260,12 @@ func TestViewGroupPerms(t *testing.T) {
 
 func TestUpdateGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc     string
-		session  auth.Session
+		session  authn.Session
 		group    mggroups.Group
 		repoResp mggroups.Group
 		repoErr  error
@@ -273,7 +273,7 @@ func TestUpdateGroup(t *testing.T) {
 	}{
 		{
 			desc:    "successfully",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			group: mggroups.Group{
 				ID:   testsutil.GenerateUUID(t),
 				Name: namegen.Generate(),
@@ -282,7 +282,7 @@ func TestUpdateGroup(t *testing.T) {
 		},
 		{
 			desc:    " with repo error",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			group: mggroups.Group{
 				ID:   testsutil.GenerateUUID(t),
 				Name: namegen.Generate(),
@@ -309,12 +309,12 @@ func TestUpdateGroup(t *testing.T) {
 
 func TestEnableGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc         string
-		session      auth.Session
+		session      authn.Session
 		id           string
 		retrieveResp mggroups.Group
 		retrieveErr  error
@@ -324,7 +324,7 @@ func TestEnableGroup(t *testing.T) {
 	}{
 		{
 			desc:    "successfully",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{
 				Status: clients.Status(groups.DisabledStatus),
@@ -333,7 +333,7 @@ func TestEnableGroup(t *testing.T) {
 		},
 		{
 			desc:    "with enabled group",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{
 				Status: clients.Status(groups.EnabledStatus),
@@ -342,7 +342,7 @@ func TestEnableGroup(t *testing.T) {
 		},
 		{
 			desc:         "with retrieve error",
-			session:      auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:      authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:           testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{},
 			retrieveErr:  repoerr.ErrNotFound,
@@ -369,12 +369,12 @@ func TestEnableGroup(t *testing.T) {
 
 func TestDisableGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc         string
-		session      auth.Session
+		session      authn.Session
 		id           string
 		retrieveResp mggroups.Group
 		retrieveErr  error
@@ -384,7 +384,7 @@ func TestDisableGroup(t *testing.T) {
 	}{
 		{
 			desc:    "successfully",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{
 				Status: clients.Status(groups.EnabledStatus),
@@ -393,7 +393,7 @@ func TestDisableGroup(t *testing.T) {
 		},
 		{
 			desc:    "with enabled group",
-			session: auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session: authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:      testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{
 				Status: clients.Status(groups.DisabledStatus),
@@ -402,7 +402,7 @@ func TestDisableGroup(t *testing.T) {
 		},
 		{
 			desc:         "with retrieve error",
-			session:      auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:      authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			id:           testsutil.GenerateUUID(t),
 			retrieveResp: mggroups.Group{},
 			retrieveErr:  repoerr.ErrNotFound,
@@ -429,7 +429,7 @@ func TestDisableGroup(t *testing.T) {
 
 func TestListMembers(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
@@ -496,19 +496,19 @@ func TestListMembers(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			policyCall := policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+			policyCall := policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 				SubjectType: policysvc.GroupType,
 				Subject:     tc.groupID,
 				Relation:    policysvc.GroupRelation,
 				ObjectType:  policysvc.ThingType,
 			}).Return(tc.listObjectResp, tc.listObjectErr)
-			policyCall1 := policies.On("ListAllSubjects", context.Background(), policysvc.PolicyReq{
+			policyCall1 := policies.On("ListAllSubjects", context.Background(), policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  tc.permission,
 				Object:      tc.groupID,
 				ObjectType:  policysvc.GroupType,
 			}).Return(tc.listSubjectResp, tc.listSubjectErr)
-			got, err := svc.ListMembers(context.Background(), pauth.Session{}, tc.groupID, tc.permission, tc.memberKind)
+			got, err := svc.ListMembers(context.Background(), mgauthn.Session{}, tc.groupID, tc.permission, tc.memberKind)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			if err == nil {
 				assert.NotEmpty(t, got)
@@ -521,12 +521,12 @@ func TestListMembers(t *testing.T) {
 
 func TestListGroups(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc                 string
-		session              auth.Session
+		session              authn.Session
 		memberKind           string
 		memberID             string
 		page                 mggroups.Page
@@ -544,7 +544,7 @@ func TestListGroups(t *testing.T) {
 	}{
 		{
 			desc:       "successfully with things kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ThingsKind,
 			page: mggroups.Page{
@@ -567,7 +567,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "successfully with groups kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.GroupsKind,
 			page: mggroups.Page{
@@ -590,7 +590,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "successfully with channels kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ChannelsKind,
 			page: mggroups.Page{
@@ -613,7 +613,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "successfully with users kind non admin",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.UsersKind,
 			page: mggroups.Page{
@@ -636,7 +636,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "successfully with users kind admin",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberKind: policysvc.UsersKind,
 			page: mggroups.Page{
 				Permission: policysvc.ViewPermission,
@@ -658,7 +658,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with things kind due to failed to list subjects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ThingsKind,
 			page: mggroups.Page{
@@ -671,7 +671,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with things kind due to failed to list filtered objects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ThingsKind,
 			page: mggroups.Page{
@@ -685,7 +685,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to list subjects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.GroupsKind,
 			page: mggroups.Page{
@@ -698,7 +698,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to list filtered objects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.GroupsKind,
 			page: mggroups.Page{
@@ -712,7 +712,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with channels kind due to failed to list subjects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ChannelsKind,
 			page: mggroups.Page{
@@ -725,7 +725,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with channels kind due to failed to list filtered objects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ChannelsKind,
 			page: mggroups.Page{
@@ -739,7 +739,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with users kind due to failed to list subjects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.UsersKind,
 			page: mggroups.Page{
@@ -752,7 +752,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with users kind due to failed to list filtered objects",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.UsersKind,
 			page: mggroups.Page{
@@ -766,7 +766,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "successfully with users kind admin",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberKind: policysvc.UsersKind,
 			page: mggroups.Page{
 				Permission: policysvc.ViewPermission,
@@ -788,7 +788,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with invalid kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: "invalid",
 			page: mggroups.Page{
@@ -799,7 +799,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with things kind due to repo error",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ThingsKind,
 			page: mggroups.Page{
@@ -814,7 +814,7 @@ func TestListGroups(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with things kind due to failed to list permissions",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			memberID:   testsutil.GenerateUUID(t),
 			memberKind: policysvc.ThingsKind,
 			page: mggroups.Page{
@@ -842,52 +842,52 @@ func TestListGroups(t *testing.T) {
 			policyCall1 := &mock.Call{}
 			switch tc.memberKind {
 			case policysvc.ThingsKind:
-				policyCall = policies.On("ListAllSubjects", context.Background(), policysvc.PolicyReq{
+				policyCall = policies.On("ListAllSubjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.GroupType,
 					Permission:  policysvc.GroupRelation,
 					ObjectType:  policysvc.ThingType,
 					Object:      tc.memberID,
 				}).Return(tc.listSubjectResp, tc.listSubjectErr)
-				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.UserType,
 					Subject:     validID,
 					Permission:  tc.page.Permission,
 					ObjectType:  policysvc.GroupType,
 				}).Return(tc.listObjectFilterResp, tc.listObjectFilterErr)
 			case policysvc.GroupsKind:
-				policyCall = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.GroupType,
 					Subject:     tc.memberID,
 					Permission:  policysvc.ParentGroupRelation,
 					ObjectType:  policysvc.GroupType,
 				}).Return(tc.listObjectResp, tc.listObjectErr)
-				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.UserType,
 					Subject:     validID,
 					Permission:  tc.page.Permission,
 					ObjectType:  policysvc.GroupType,
 				}).Return(tc.listObjectFilterResp, tc.listObjectFilterErr)
 			case policysvc.ChannelsKind:
-				policyCall = policies.On("ListAllSubjects", context.Background(), policysvc.PolicyReq{
+				policyCall = policies.On("ListAllSubjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.GroupType,
 					Permission:  policysvc.ParentGroupRelation,
 					ObjectType:  policysvc.GroupType,
 					Object:      tc.memberID,
 				}).Return(tc.listSubjectResp, tc.listSubjectErr)
-				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.UserType,
 					Subject:     validID,
 					Permission:  tc.page.Permission,
 					ObjectType:  policysvc.GroupType,
 				}).Return(tc.listObjectFilterResp, tc.listObjectFilterErr)
 			case policysvc.UsersKind:
-				policyCall = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.UserType,
 					Subject:     mgauth.EncodeDomainUserID(validID, tc.memberID),
 					Permission:  tc.page.Permission,
 					ObjectType:  policysvc.GroupType,
 				}).Return(tc.listObjectResp, tc.listObjectErr)
-				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+				policyCall1 = policies.On("ListAllObjects", context.Background(), policysvc.Policy{
 					SubjectType: policysvc.UserType,
 					Subject:     validID,
 					Permission:  tc.page.Permission,
@@ -914,12 +914,12 @@ func TestListGroups(t *testing.T) {
 
 func TestAssign(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc                    string
-		session                 auth.Session
+		session                 authn.Session
 		groupID                 string
 		relation                string
 		memberKind              string
@@ -934,7 +934,7 @@ func TestAssign(t *testing.T) {
 	}{
 		{
 			desc:       "successfully with things kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.ThingsKind,
@@ -943,7 +943,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with channels kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.ChannelsKind,
@@ -952,7 +952,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with groups kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -968,7 +968,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with users kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.UsersKind,
@@ -977,7 +977,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to repo err",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -988,7 +988,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to empty page",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1000,7 +1000,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to non empty parent",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1017,7 +1017,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to add policies",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1034,7 +1034,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to assign parent",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1051,7 +1051,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to assign parent and delete policies",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1069,7 +1069,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with invalid kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: "invalid",
@@ -1078,7 +1078,7 @@ func TestAssign(t *testing.T) {
 		},
 		{
 			desc:           "unsuccessfully with failed to add policies",
-			session:        auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:        authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:        testsutil.GenerateUUID(t),
 			relation:       policysvc.ContributorRelation,
 			memberKind:     policysvc.ThingsKind,
@@ -1093,11 +1093,11 @@ func TestAssign(t *testing.T) {
 			retrieveByIDsCall := &mock.Call{}
 			deletePoliciesCall := &mock.Call{}
 			assignParentCall := &mock.Call{}
-			policyList := []policysvc.PolicyReq{}
+			policyList := []policysvc.Policy{}
 			switch tc.memberKind {
 			case policysvc.ThingsKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						SubjectKind: policysvc.ChannelsKind,
@@ -1110,7 +1110,7 @@ func TestAssign(t *testing.T) {
 			case policysvc.GroupsKind:
 				retrieveByIDsCall = repo.On("RetrieveByIDs", context.Background(), mggroups.Page{PageMeta: mggroups.PageMeta{Limit: 1<<63 - 1}}, mock.Anything).Return(tc.repoResp, tc.repoErr)
 				for _, group := range tc.repoResp.Groups {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						Subject:     tc.groupID,
@@ -1123,7 +1123,7 @@ func TestAssign(t *testing.T) {
 				assignParentCall = repo.On("AssignParentGroup", context.Background(), tc.groupID, tc.memberIDs).Return(tc.repoParentGroupErr)
 			case policysvc.ChannelsKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						Subject:     memberID,
@@ -1134,7 +1134,7 @@ func TestAssign(t *testing.T) {
 				}
 			case policysvc.UsersKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.UserType,
 						Subject:     mgauth.EncodeDomainUserID(validID, memberID),
@@ -1159,12 +1159,12 @@ func TestAssign(t *testing.T) {
 
 func TestUnassign(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
 		desc                    string
-		session                 auth.Session
+		session                 authn.Session
 		groupID                 string
 		relation                string
 		memberKind              string
@@ -1179,7 +1179,7 @@ func TestUnassign(t *testing.T) {
 	}{
 		{
 			desc:       "successfully with things kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.ThingsKind,
@@ -1188,7 +1188,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with channels kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.ChannelsKind,
@@ -1197,7 +1197,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with groups kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1213,7 +1213,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "successfully with users kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.UsersKind,
@@ -1222,7 +1222,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to repo err",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1233,7 +1233,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to empty page",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1245,7 +1245,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to non empty parent",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1262,7 +1262,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to add policies",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1279,7 +1279,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to unassign parent",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1296,7 +1296,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with groups kind due to failed to unassign parent and add policies",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: policysvc.GroupsKind,
@@ -1314,7 +1314,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:       "unsuccessfully with invalid kind",
-			session:    auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:    authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:    testsutil.GenerateUUID(t),
 			relation:   policysvc.ContributorRelation,
 			memberKind: "invalid",
@@ -1323,7 +1323,7 @@ func TestUnassign(t *testing.T) {
 		},
 		{
 			desc:              "unsuccessfully with failed to add policies",
-			session:           auth.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
+			session:           authn.Session{UserID: validID, DomainID: validID, DomainUserID: validID},
 			groupID:           testsutil.GenerateUUID(t),
 			relation:          policysvc.ContributorRelation,
 			memberKind:        policysvc.ThingsKind,
@@ -1338,11 +1338,11 @@ func TestUnassign(t *testing.T) {
 			retrieveByIDsCall := &mock.Call{}
 			addPoliciesCall := &mock.Call{}
 			assignParentCall := &mock.Call{}
-			policyList := []policysvc.PolicyReq{}
+			policyList := []policysvc.Policy{}
 			switch tc.memberKind {
 			case policysvc.ThingsKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						SubjectKind: policysvc.ChannelsKind,
@@ -1355,7 +1355,7 @@ func TestUnassign(t *testing.T) {
 			case policysvc.GroupsKind:
 				retrieveByIDsCall = repo.On("RetrieveByIDs", context.Background(), mggroups.Page{PageMeta: mggroups.PageMeta{Limit: 1<<63 - 1}}, mock.Anything).Return(tc.repoResp, tc.repoErr)
 				for _, group := range tc.repoResp.Groups {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						Subject:     tc.groupID,
@@ -1368,7 +1368,7 @@ func TestUnassign(t *testing.T) {
 				assignParentCall = repo.On("UnassignParentGroup", context.Background(), tc.groupID, tc.memberIDs).Return(tc.repoParentGroupErr)
 			case policysvc.ChannelsKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.GroupType,
 						Subject:     memberID,
@@ -1379,7 +1379,7 @@ func TestUnassign(t *testing.T) {
 				}
 			case policysvc.UsersKind:
 				for _, memberID := range tc.memberIDs {
-					policyList = append(policyList, policysvc.PolicyReq{
+					policyList = append(policyList, policysvc.Policy{
 						Domain:      validID,
 						SubjectType: policysvc.UserType,
 						Subject:     mgauth.EncodeDomainUserID(validID, memberID),
@@ -1404,7 +1404,7 @@ func TestUnassign(t *testing.T) {
 
 func TestDeleteGroup(t *testing.T) {
 	repo := new(mocks.Repository)
-	policies := new(policymocks.PolicyClient)
+	policies := new(policymocks.Service)
 	svc := groups.NewService(repo, idProvider, policies)
 
 	cases := []struct {
@@ -1442,16 +1442,16 @@ func TestDeleteGroup(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			policyCall := policies.On("DeletePolicyFilter", context.Background(), policysvc.PolicyReq{
+			policyCall := policies.On("DeletePolicyFilter", context.Background(), policysvc.Policy{
 				SubjectType: policysvc.GroupType,
 				Subject:     tc.groupID,
 			}).Return(tc.deleteSubjectPoliciesErr)
-			policyCall2 := policies.On("DeletePolicyFilter", context.Background(), policysvc.PolicyReq{
+			policyCall2 := policies.On("DeletePolicyFilter", context.Background(), policysvc.Policy{
 				ObjectType: policysvc.GroupType,
 				Object:     tc.groupID,
 			}).Return(tc.deleteObjectPoliciesErr)
 			repoCall := repo.On("Delete", context.Background(), tc.groupID).Return(tc.repoErr)
-			err := svc.DeleteGroup(context.Background(), pauth.Session{}, tc.groupID)
+			err := svc.DeleteGroup(context.Background(), mgauthn.Session{}, tc.groupID)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			policyCall.Unset()
 			policyCall2.Unset()
