@@ -35,7 +35,8 @@ const (
 
 func newService(_ *testing.T) (certs.Service, *mocks.Agent, *authmocks.AuthServiceClient, *sdkmocks.SDK) {
 	agent := new(mocks.Agent)
-	auth := new(authmocks.AuthClient)
+	authn := new(authnmocks.Authentication)
+	authz := new(authzmocks.Authorization)
 	sdk := new(sdkmocks.SDK)
 
 	return certs.New(auth, sdk, agent), agent, auth, sdk

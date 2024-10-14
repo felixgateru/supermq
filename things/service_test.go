@@ -9,12 +9,13 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala/internal/testsutil"
-	pauth "github.com/absmach/magistrala/pkg/auth"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	mgclients "github.com/absmach/magistrala/pkg/clients"
 	"github.com/absmach/magistrala/pkg/errors"
 	repoerr "github.com/absmach/magistrala/pkg/errors/repository"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	gmocks "github.com/absmach/magistrala/pkg/groups/mocks"
+	"github.com/absmach/magistrala/pkg/policies"
 	policysvc "github.com/absmach/magistrala/pkg/policies"
 	policymocks "github.com/absmach/magistrala/pkg/policies/mocks"
 	"github.com/absmach/magistrala/pkg/uuid"
@@ -44,18 +45,26 @@ var (
 	errRemovePolicies = errors.New("failed to delete policies")
 )
 
-func newService() (things.Service, *mocks.Repository, *policymocks.PolicyClient, *mocks.Cache) {
-	policyClient := new(policymocks.PolicyClient)
-	thingCache := new(mocks.Cache)
+var (
+	pService   *policymocks.Service
+	pEvaluator *policymocks.Evaluator
+	cache      *mocks.Cache
+	cRepo      *mocks.Repository
+)
+
+func newService() things.Service {
+	pService = new(policymocks.Service)
+	pEvaluator = new(policymocks.Evaluator)
+	cache = new(mocks.Cache)
 	idProvider := uuid.NewMock()
-	cRepo := new(mocks.Repository)
+	cRepo = new(mocks.Repository)
 	gRepo := new(gmocks.Repository)
 
-	return things.NewService(policyClient, cRepo, gRepo, thingCache, idProvider), cRepo, policyClient, thingCache
+	return things.NewService(pEvaluator, pService, cRepo, gRepo, cache, idProvider)
 }
 
 func TestCreateThings(t *testing.T) {
-	svc, cRepo, policies, _ := newService()
+	svc := newService()
 
 	cases := []struct {
 		desc            string
@@ -263,9 +272,9 @@ func TestCreateThings(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cRepo.On("Save", context.Background(), mock.Anything).Return([]mgclients.Client{tc.thing}, tc.saveErr)
-		policyCall := policies.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPolicyErr)
-		policyCall1 := policies.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePolicyErr)
-		expected, err := svc.CreateThings(context.Background(), pauth.Session{}, tc.thing)
+		policyCall := pService.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPolicyErr)
+		policyCall1 := pService.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePolicyErr)
+		expected, err := svc.CreateThings(context.Background(), mgauthn.Session{}, tc.thing)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
 			tc.thing.ID = expected[0].ID
@@ -283,7 +292,7 @@ func TestCreateThings(t *testing.T) {
 }
 
 func TestViewClient(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc := newService()
 
 	cases := []struct {
 		desc        string
@@ -321,7 +330,7 @@ func TestViewClient(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall1 := cRepo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.response, tc.err)
-		rClient, err := svc.ViewClient(context.Background(), pauth.Session{}, tc.clientID)
+		rClient, err := svc.ViewClient(context.Background(), mgauthn.Session{}, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, rClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, rClient))
 		repoCall1.Unset()
@@ -329,7 +338,7 @@ func TestViewClient(t *testing.T) {
 }
 
 func TestListClients(t *testing.T) {
-	svc, cRepo, policies, _ := newService()
+	svc := newService()
 
 	adminID := testsutil.GenerateUUID(t)
 	domainID := testsutil.GenerateUUID(t)
@@ -339,7 +348,7 @@ func TestListClients(t *testing.T) {
 	cases := []struct {
 		desc                    string
 		userKind                string
-		session                 pauth.Session
+		session                 mgauthn.Session
 		page                    mgclients.Page
 		listObjectsResponse     policysvc.PolicyPage
 		retrieveAllResponse     mgclients.ClientsPage
@@ -355,7 +364,7 @@ func TestListClients(t *testing.T) {
 		{
 			desc:     "list all clients successfully as non admin",
 			userKind: "non-admin",
-			session:  pauth.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
+			session:  mgauthn.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
 			id:       nonAdminID,
 			page: mgclients.Page{
 				Offset:    0,
@@ -385,7 +394,7 @@ func TestListClients(t *testing.T) {
 		{
 			desc:     "list all clients as non admin with failed to retrieve all",
 			userKind: "non-admin",
-			session:  pauth.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
+			session:  mgauthn.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
 			id:       nonAdminID,
 			page: mgclients.Page{
 				Offset:    0,
@@ -401,7 +410,7 @@ func TestListClients(t *testing.T) {
 		{
 			desc:     "list all clients as non admin with failed to list permissions",
 			userKind: "non-admin",
-			session:  pauth.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
+			session:  mgauthn.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
 			id:       nonAdminID,
 			page: mgclients.Page{
 				Offset:    0,
@@ -425,7 +434,7 @@ func TestListClients(t *testing.T) {
 		{
 			desc:     "list all clients as non admin with failed super admin",
 			userKind: "non-admin",
-			session:  pauth.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
+			session:  mgauthn.Session{UserID: nonAdminID, DomainID: domainID, SuperAdmin: false},
 			id:       nonAdminID,
 			page: mgclients.Page{
 				Offset:    0,
@@ -453,9 +462,9 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		listAllObjectsCall := policies.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
+		listAllObjectsCall := pService.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		retrieveAllCall := cRepo.On("SearchClients", mock.Anything, mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
-		listPermissionsCall := policies.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		listPermissionsCall := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClients(context.Background(), tc.session, tc.id, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -467,7 +476,7 @@ func TestListClients(t *testing.T) {
 	cases2 := []struct {
 		desc                    string
 		userKind                string
-		session                 pauth.Session
+		session                 mgauthn.Session
 		page                    mgclients.Page
 		listObjectsResponse     policysvc.PolicyPage
 		retrieveAllResponse     mgclients.ClientsPage
@@ -484,7 +493,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list all clients as admin successfully",
 			userKind: "admin",
 			id:       adminID,
-			session:  pauth.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
+			session:  mgauthn.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
 			page: mgclients.Page{
 				Offset:    0,
 				Limit:     100,
@@ -515,7 +524,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list all clients as admin with failed to retrieve all",
 			userKind: "admin",
 			id:       adminID,
-			session:  pauth.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
+			session:  mgauthn.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
 			page: mgclients.Page{
 				Offset:    0,
 				Limit:     100,
@@ -531,7 +540,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list all clients as admin with failed to list permissions",
 			userKind: "admin",
 			id:       adminID,
-			session:  pauth.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
+			session:  mgauthn.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
 			page: mgclients.Page{
 				Offset:    0,
 				Limit:     100,
@@ -555,7 +564,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list all clients as admin with failed to list clients",
 			userKind: "admin",
 			id:       adminID,
-			session:  pauth.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
+			session:  mgauthn.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
 			page: mgclients.Page{
 				Offset:    0,
 				Limit:     100,
@@ -569,20 +578,20 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases2 {
-		listAllObjectsCall := policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+		listAllObjectsCall := pService.On("ListAllObjects", context.Background(), policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.session.DomainID + "_" + adminID,
 			Permission:  "",
 			ObjectType:  policysvc.ThingType,
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
-		listAllObjectsCall2 := policies.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+		listAllObjectsCall2 := pService.On("ListAllObjects", context.Background(), policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.session.UserID,
 			Permission:  "",
 			ObjectType:  policysvc.ThingType,
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		retrieveAllCall := cRepo.On("SearchClients", mock.Anything, mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
-		listPermissionsCall := policies.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		listPermissionsCall := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClients(context.Background(), tc.session, tc.id, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -594,7 +603,7 @@ func TestListClients(t *testing.T) {
 }
 
 func TestUpdateClient(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc := newService()
 
 	client1 := client
 	client2 := client
@@ -604,7 +613,7 @@ func TestUpdateClient(t *testing.T) {
 	cases := []struct {
 		desc           string
 		client         mgclients.Client
-		session        pauth.Session
+		session        mgauthn.Session
 		updateResponse mgclients.Client
 		updateErr      error
 		err            error
@@ -612,7 +621,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client name successfully",
 			client:         client1,
-			session:        pauth.Session{UserID: validID},
+			session:        mgauthn.Session{UserID: validID},
 			updateResponse: client1,
 			err:            nil,
 		},
@@ -620,14 +629,14 @@ func TestUpdateClient(t *testing.T) {
 			desc:           "update client metadata with valid token",
 			client:         client2,
 			updateResponse: client2,
-			session:        pauth.Session{UserID: validID},
+			session:        mgauthn.Session{UserID: validID},
 			err:            nil,
 		},
 		{
 			desc:           "update client with failed to update repo",
 			client:         client1,
 			updateResponse: mgclients.Client{},
-			session:        pauth.Session{UserID: validID},
+			session:        mgauthn.Session{UserID: validID},
 			updateErr:      repoerr.ErrMalformedEntity,
 			err:            svcerr.ErrUpdateEntity,
 		},
@@ -643,14 +652,14 @@ func TestUpdateClient(t *testing.T) {
 }
 
 func TestUpdateClientTags(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc := newService()
 
 	client.Tags = []string{"updated"}
 
 	cases := []struct {
 		desc           string
 		client         mgclients.Client
-		session        pauth.Session
+		session        mgauthn.Session
 		updateResponse mgclients.Client
 		updateErr      error
 		err            error
@@ -658,7 +667,7 @@ func TestUpdateClientTags(t *testing.T) {
 		{
 			desc:           "update client tags successfully",
 			client:         client,
-			session:        pauth.Session{UserID: validID},
+			session:        mgauthn.Session{UserID: validID},
 			updateResponse: client,
 			err:            nil,
 		},
@@ -666,7 +675,7 @@ func TestUpdateClientTags(t *testing.T) {
 			desc:           "update client tags with failed to update repo",
 			client:         client,
 			updateResponse: mgclients.Client{},
-			session:        pauth.Session{UserID: validID},
+			session:        mgauthn.Session{UserID: validID},
 			updateErr:      repoerr.ErrMalformedEntity,
 			err:            svcerr.ErrUpdateEntity,
 		},
@@ -682,14 +691,14 @@ func TestUpdateClientTags(t *testing.T) {
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc := newService()
 
 	cases := []struct {
 		desc                 string
 		client               mgclients.Client
 		newSecret            string
 		updateSecretResponse mgclients.Client
-		session              pauth.Session
+		session              mgauthn.Session
 		updateErr            error
 		err                  error
 	}{
@@ -697,7 +706,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:      "update client secret successfully",
 			client:    client,
 			newSecret: "newSecret",
-			session:   pauth.Session{UserID: validID},
+			session:   mgauthn.Session{UserID: validID},
 			updateSecretResponse: mgclients.Client{
 				ID: client.ID,
 				Credentials: mgclients.Credentials{
@@ -711,7 +720,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			desc:                 "update client secret with failed to update repo",
 			client:               client,
 			newSecret:            "newSecret",
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			updateSecretResponse: mgclients.Client{},
 			updateErr:            repoerr.ErrMalformedEntity,
 			err:                  svcerr.ErrUpdateEntity,
@@ -728,7 +737,7 @@ func TestUpdateClientSecret(t *testing.T) {
 }
 
 func TestEnableClient(t *testing.T) {
-	svc, cRepo, _, _ := newService()
+	svc := newService()
 
 	enabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
 	disabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
@@ -738,7 +747,7 @@ func TestEnableClient(t *testing.T) {
 	cases := []struct {
 		desc                 string
 		id                   string
-		session              pauth.Session
+		session              mgauthn.Session
 		client               mgclients.Client
 		changeStatusResponse mgclients.Client
 		retrieveByIDResponse mgclients.Client
@@ -749,7 +758,7 @@ func TestEnableClient(t *testing.T) {
 		{
 			desc:                 "enable disabled client",
 			id:                   disabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               disabledClient1,
 			changeStatusResponse: endisabledClient1,
 			retrieveByIDResponse: disabledClient1,
@@ -758,7 +767,7 @@ func TestEnableClient(t *testing.T) {
 		{
 			desc:                 "enable disabled client with failed to update repo",
 			id:                   disabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               disabledClient1,
 			changeStatusResponse: mgclients.Client{},
 			retrieveByIDResponse: disabledClient1,
@@ -768,7 +777,7 @@ func TestEnableClient(t *testing.T) {
 		{
 			desc:                 "enable enabled client",
 			id:                   enabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               enabledClient1,
 			changeStatusResponse: enabledClient1,
 			retrieveByIDResponse: enabledClient1,
@@ -778,7 +787,7 @@ func TestEnableClient(t *testing.T) {
 		{
 			desc:                 "enable non-existing client",
 			id:                   wrongID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               mgclients.Client{},
 			changeStatusResponse: mgclients.Client{},
 			retrieveByIDResponse: mgclients.Client{},
@@ -798,7 +807,7 @@ func TestEnableClient(t *testing.T) {
 }
 
 func TestDisableClient(t *testing.T) {
-	svc, cRepo, _, cache := newService()
+	svc := newService()
 
 	enabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: mgclients.EnabledStatus}
 	disabledClient1 := mgclients.Client{ID: ID, Credentials: mgclients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: mgclients.DisabledStatus}
@@ -808,7 +817,7 @@ func TestDisableClient(t *testing.T) {
 	cases := []struct {
 		desc                 string
 		id                   string
-		session              pauth.Session
+		session              mgauthn.Session
 		client               mgclients.Client
 		changeStatusResponse mgclients.Client
 		retrieveByIDResponse mgclients.Client
@@ -820,7 +829,7 @@ func TestDisableClient(t *testing.T) {
 		{
 			desc:                 "disable enabled client",
 			id:                   enabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               enabledClient1,
 			changeStatusResponse: disenabledClient1,
 			retrieveByIDResponse: enabledClient1,
@@ -829,7 +838,7 @@ func TestDisableClient(t *testing.T) {
 		{
 			desc:                 "disable client with failed to update repo",
 			id:                   enabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               enabledClient1,
 			changeStatusResponse: mgclients.Client{},
 			retrieveByIDResponse: enabledClient1,
@@ -839,7 +848,7 @@ func TestDisableClient(t *testing.T) {
 		{
 			desc:                 "disable disabled client",
 			id:                   disabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               disabledClient1,
 			changeStatusResponse: mgclients.Client{},
 			retrieveByIDResponse: disabledClient1,
@@ -850,7 +859,7 @@ func TestDisableClient(t *testing.T) {
 			desc:                 "disable non-existing client",
 			id:                   wrongID,
 			client:               mgclients.Client{},
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			changeStatusResponse: mgclients.Client{},
 			retrieveByIDResponse: mgclients.Client{},
 			retrieveIDErr:        repoerr.ErrNotFound,
@@ -859,7 +868,7 @@ func TestDisableClient(t *testing.T) {
 		{
 			desc:                 "disable client with failed to remove from cache",
 			id:                   enabledClient1.ID,
-			session:              pauth.Session{UserID: validID},
+			session:              mgauthn.Session{UserID: validID},
 			client:               disabledClient1,
 			changeStatusResponse: disenabledClient1,
 			retrieveByIDResponse: enabledClient1,
@@ -881,7 +890,7 @@ func TestDisableClient(t *testing.T) {
 }
 
 func TestListMembers(t *testing.T) {
-	svc, cRepo, policies, _ := newService()
+	svc := newService()
 
 	nClients := uint64(10)
 	aClients := []mgclients.Client{}
@@ -907,7 +916,7 @@ func TestListMembers(t *testing.T) {
 		desc                     string
 		groupID                  string
 		page                     mgclients.Page
-		session                  pauth.Session
+		session                  mgauthn.Session
 		listObjectsResponse      policysvc.PolicyPage
 		listPermissionsResponse  policysvc.Permissions
 		retreiveAllByIDsResponse mgclients.ClientsPage
@@ -921,7 +930,7 @@ func TestListMembers(t *testing.T) {
 	}{
 		{
 			desc:                    "list members with authorized token",
-			session:                 pauth.Session{UserID: validID, DomainID: domainID},
+			session:                 mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID:                 testsutil.GenerateUUID(t),
 			listObjectsResponse:     policysvc.PolicyPage{},
 			listPermissionsResponse: []string{},
@@ -945,7 +954,7 @@ func TestListMembers(t *testing.T) {
 		},
 		{
 			desc:    "list members with offset and limit",
-			session: pauth.Session{UserID: validID, DomainID: domainID},
+			session: mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID: testsutil.GenerateUUID(t),
 			page: mgclients.Page{
 				Offset: 6,
@@ -970,7 +979,7 @@ func TestListMembers(t *testing.T) {
 		},
 		{
 			desc:                     "list members with an invalid id",
-			session:                  pauth.Session{UserID: validID, DomainID: domainID},
+			session:                  mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID:                  wrongID,
 			listObjectsResponse:      policysvc.PolicyPage{},
 			listPermissionsResponse:  []string{},
@@ -987,7 +996,7 @@ func TestListMembers(t *testing.T) {
 		},
 		{
 			desc:    "list members with permissions",
-			session: pauth.Session{UserID: validID, DomainID: domainID},
+			session: mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID: testsutil.GenerateUUID(t),
 			page: mgclients.Page{
 				ListPerms: true,
@@ -1010,7 +1019,7 @@ func TestListMembers(t *testing.T) {
 		},
 		{
 			desc:    "list members with failed to list objects",
-			session: pauth.Session{UserID: validID, DomainID: domainID},
+			session: mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID: testsutil.GenerateUUID(t),
 			page: mgclients.Page{
 				ListPerms: true,
@@ -1021,7 +1030,7 @@ func TestListMembers(t *testing.T) {
 		},
 		{
 			desc:    "list members with failed to list permissions",
-			session: pauth.Session{UserID: validID, DomainID: domainID},
+			session: mgauthn.Session{UserID: validID, DomainID: domainID},
 			groupID: testsutil.GenerateUUID(t),
 			page: mgclients.Page{
 				ListPerms: true,
@@ -1041,9 +1050,9 @@ func TestListMembers(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := policies.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
+		policyCall := pService.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		repoCall := cRepo.On("RetrieveAllByIDs", context.Background(), mock.Anything).Return(tc.retreiveAllByIDsResponse, tc.retreiveAllByIDsErr)
-		repoCall1 := policies.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		repoCall1 := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClientsByGroup(context.Background(), tc.session, tc.groupID, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -1054,7 +1063,7 @@ func TestListMembers(t *testing.T) {
 }
 
 func TestDeleteClient(t *testing.T) {
-	svc, cRepo, policies, cache := newService()
+	svc := newService()
 
 	client := mgclients.Client{
 		ID: testsutil.GenerateUUID(t),
@@ -1101,9 +1110,9 @@ func TestDeleteClient(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cache.On("Remove", mock.Anything, tc.clientID).Return(tc.removeErr)
-		policyCall := policies.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
+		policyCall := pService.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
 		repoCall1 := cRepo.On("Delete", context.Background(), tc.clientID).Return(tc.deleteErr)
-		err := svc.DeleteClient(context.Background(), pauth.Session{}, tc.clientID)
+		err := svc.DeleteClient(context.Background(), mgauthn.Session{}, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Unset()
 		policyCall.Unset()
@@ -1112,13 +1121,13 @@ func TestDeleteClient(t *testing.T) {
 }
 
 func TestShare(t *testing.T) {
-	svc, _, policies, _ := newService()
+	svc := newService()
 
 	clientID := "clientID"
 
 	cases := []struct {
 		desc           string
-		session        pauth.Session
+		session        mgauthn.Session
 		clientID       string
 		relation       string
 		userID         string
@@ -1127,13 +1136,13 @@ func TestShare(t *testing.T) {
 	}{
 		{
 			desc:     "share thing successfully",
-			session:  pauth.Session{UserID: validID, DomainID: validID},
+			session:  mgauthn.Session{UserID: validID, DomainID: validID},
 			clientID: clientID,
 			err:      nil,
 		},
 		{
 			desc:           "share thing with failed to add policies",
-			session:        pauth.Session{UserID: validID, DomainID: validID},
+			session:        mgauthn.Session{UserID: validID, DomainID: validID},
 			clientID:       clientID,
 			addPoliciesErr: svcerr.ErrInvalidPolicy,
 			err:            svcerr.ErrInvalidPolicy,
@@ -1141,7 +1150,7 @@ func TestShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := policies.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
+		policyCall := pService.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
 		err := svc.Share(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		policyCall.Unset()
@@ -1149,13 +1158,13 @@ func TestShare(t *testing.T) {
 }
 
 func TestUnShare(t *testing.T) {
-	svc, _, policies, _ := newService()
+	svc := newService()
 
 	clientID := "clientID"
 
 	cases := []struct {
 		desc              string
-		session           pauth.Session
+		session           mgauthn.Session
 		clientID          string
 		relation          string
 		userID            string
@@ -1164,13 +1173,13 @@ func TestUnShare(t *testing.T) {
 	}{
 		{
 			desc:     "unshare thing successfully",
-			session:  pauth.Session{UserID: validID, DomainID: validID},
+			session:  mgauthn.Session{UserID: validID, DomainID: validID},
 			clientID: clientID,
 			err:      nil,
 		},
 		{
 			desc:              "share thing with failed to delete policies",
-			session:           pauth.Session{UserID: validID, DomainID: validID},
+			session:           mgauthn.Session{UserID: validID, DomainID: validID},
 			clientID:          clientID,
 			deletePoliciesErr: svcerr.ErrInvalidPolicy,
 			err:               svcerr.ErrInvalidPolicy,
@@ -1178,7 +1187,7 @@ func TestUnShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := policies.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
+		policyCall := pService.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
 		err := svc.Unshare(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		policyCall.Unset()
@@ -1186,13 +1195,13 @@ func TestUnShare(t *testing.T) {
 }
 
 func TestViewClientPerms(t *testing.T) {
-	svc, _, policies, _ := newService()
+	svc := newService()
 
 	validID := valid
 
 	cases := []struct {
 		desc             string
-		session          pauth.Session
+		session          mgauthn.Session
 		thingID          string
 		listPermResponse policysvc.Permissions
 		listPermErr      error
@@ -1200,14 +1209,14 @@ func TestViewClientPerms(t *testing.T) {
 	}{
 		{
 			desc:             "view client permissions successfully",
-			session:          pauth.Session{UserID: validID, DomainID: validID},
+			session:          mgauthn.Session{UserID: validID, DomainID: validID},
 			thingID:          validID,
 			listPermResponse: policysvc.Permissions{"admin"},
 			err:              nil,
 		},
 		{
 			desc:             "view permissions with failed retrieve list permissions response",
-			session:          pauth.Session{UserID: validID, DomainID: validID},
+			session:          mgauthn.Session{UserID: validID, DomainID: validID},
 			thingID:          validID,
 			listPermResponse: []string{},
 			listPermErr:      svcerr.ErrAuthorization,
@@ -1216,7 +1225,7 @@ func TestViewClientPerms(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := policies.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
+		policyCall := pService.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
 		res, err := svc.ViewClientPerms(context.Background(), tc.session, tc.thingID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {
@@ -1227,7 +1236,7 @@ func TestViewClientPerms(t *testing.T) {
 }
 
 func TestIdentify(t *testing.T) {
-	svc, cRepo, _, cache := newService()
+	svc := newService()
 
 	valid := valid
 
@@ -1284,5 +1293,104 @@ func TestIdentify(t *testing.T) {
 		repoCall.Unset()
 		repoCall1.Unset()
 		repoCall2.Unset()
+	}
+}
+
+func TestAuthorize(t *testing.T) {
+	svc := newService()
+
+	cases := []struct {
+		desc                string
+		request             things.AuthzReq
+		cacheIDRes          string
+		cacheIDErr          error
+		retrieveBySecretRes mgclients.Client
+		retrieveBySecretErr error
+		cacheSaveErr        error
+		checkPolicyErr      error
+		id                  string
+		err                 error
+	}{
+		{
+			desc:                "authorize client with valid key not in cache",
+			request:             things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:          "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			retrieveBySecretRes: mgclients.Client{ID: valid},
+			retrieveBySecretErr: nil,
+			cacheSaveErr:        nil,
+			checkPolicyErr:      nil,
+			id:                  valid,
+			err:                 nil,
+		},
+		{
+			desc:           "authorize client with valid key in cache",
+			request:        things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:     valid,
+			checkPolicyErr: nil,
+			id:             valid,
+		},
+		{
+			desc:                "authorize client with invalid key not in cache for non existing client",
+			request:             things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:          "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			retrieveBySecretRes: mgclients.Client{},
+			retrieveBySecretErr: repoerr.ErrNotFound,
+			err:                 repoerr.ErrNotFound,
+		},
+		{
+			desc:                "authorize client with valid key not in cache with failed to save to cache",
+			request:             things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:          "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			retrieveBySecretRes: mgclients.Client{ID: valid},
+			cacheSaveErr:        errors.ErrMalformedEntity,
+			err:                 svcerr.ErrAuthorization,
+		},
+		{
+			desc:                "authorize client with valid key not in cache and failed to authorize",
+			request:             things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:          "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			retrieveBySecretRes: mgclients.Client{ID: valid},
+			retrieveBySecretErr: nil,
+			cacheSaveErr:        nil,
+			checkPolicyErr:      svcerr.ErrAuthorization,
+			err:                 svcerr.ErrAuthorization,
+		},
+		{
+			desc:                "authorize client with valid key not in cache and not authorize",
+			request:             things.AuthzReq{ThingKey: valid, ChannelID: valid, Permission: policies.PublishPermission},
+			cacheIDRes:          "",
+			cacheIDErr:          repoerr.ErrNotFound,
+			retrieveBySecretRes: mgclients.Client{ID: valid},
+			retrieveBySecretErr: nil,
+			cacheSaveErr:        nil,
+			checkPolicyErr:      svcerr.ErrAuthorization,
+			err:                 svcerr.ErrAuthorization,
+		},
+	}
+
+	for _, tc := range cases {
+		cacheCall := cache.On("ID", context.Background(), tc.request.ThingKey).Return(tc.cacheIDRes, tc.cacheIDErr)
+		repoCall := cRepo.On("RetrieveBySecret", context.Background(), tc.request.ThingKey).Return(tc.retrieveBySecretRes, tc.retrieveBySecretErr)
+		cacheCall1 := cache.On("Save", context.Background(), tc.request.ThingKey, tc.retrieveBySecretRes.ID).Return(tc.cacheSaveErr)
+		policyCall := pEvaluator.On("CheckPolicy", context.Background(), policies.Policy{
+			SubjectType: policies.GroupType,
+			Subject:     tc.request.ChannelID,
+			ObjectType:  policies.ThingType,
+			Object:      valid,
+			Permission:  tc.request.Permission,
+		}).Return(tc.checkPolicyErr)
+		id, err := svc.Authorize(context.Background(), tc.request)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		if tc.err == nil {
+			assert.Equal(t, tc.id, id, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.id, id))
+		}
+		cacheCall.Unset()
+		cacheCall1.Unset()
+		repoCall.Unset()
+		policyCall.Unset()
 	}
 }
