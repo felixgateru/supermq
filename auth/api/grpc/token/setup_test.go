@@ -14,9 +14,11 @@ var svc *mocks.Service
 
 func TestMain(m *testing.M) {
 	svc = new(mocks.Service)
-	startGRPCServer(svc, port)
+	server := startGRPCServer(svc, port)
 
 	code := m.Run()
+
+	server.GracefulStop()
 
 	os.Exit(code)
 }

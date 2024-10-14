@@ -49,7 +49,7 @@ var (
 	authAddr = fmt.Sprintf("localhost:%d", port)
 )
 
-func startGRPCServer(svc auth.Service, port int) {
+func startGRPCServer(svc auth.Service, port int) *grpc.Server {
 	listener, _ := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	server := grpc.NewServer()
 	magistrala.RegisterAuthServiceServer(server, grpcapi.NewAuthServer(svc))
@@ -57,6 +57,8 @@ func startGRPCServer(svc auth.Service, port int) {
 		err := server.Serve(listener)
 		assert.Nil(&testing.T{}, err, fmt.Sprintf(`"Unexpected error creating auth server %s"`, err))
 	}()
+
+	return server
 }
 
 func TestIdentify(t *testing.T) {
