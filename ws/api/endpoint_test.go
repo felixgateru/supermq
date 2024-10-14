@@ -100,7 +100,7 @@ func TestHandshake(t *testing.T) {
 	defer ts.Close()
 	things.On("Authorize", mock.Anything, &magistrala.ThingsAuthzReq{ThingKey: thingKey, ChannelID: id, Permission: "publish"}).Return(&magistrala.ThingsAuthzRes{Authorized: true, Id: "1"}, nil)
 	things.On("Authorize", mock.Anything, &magistrala.ThingsAuthzReq{ThingKey: thingKey, ChannelID: id, Permission: "subscribe"}).Return(&magistrala.ThingsAuthzRes{Authorized: true, Id: "2"}, nil)
-	things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: false, Id: "3"}, nil)
+	things.On("Authorize", mock.Anything, mock.Anything).Return(&magistrala.AuthZRes{Authorized: false, Id: "3"}, nil)
 	pubsub.On("Subscribe", mock.Anything, mock.Anything).Return(nil)
 	pubsub.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

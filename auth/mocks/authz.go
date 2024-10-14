@@ -17,7 +17,7 @@ type Authz struct {
 }
 
 // Authorize provides a mock function with given fields: ctx, pr
-func (_m *Authz) Authorize(ctx context.Context, pr policies.PolicyReq) error {
+func (_m *Authz) Authorize(ctx context.Context, pr policies.Policy) error {
 	ret := _m.Called(ctx, pr)
 
 	if len(ret) == 0 {
@@ -25,7 +25,7 @@ func (_m *Authz) Authorize(ctx context.Context, pr policies.PolicyReq) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, policies.PolicyReq) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, policies.Policy) error); ok {
 		r0 = rf(ctx, pr)
 	} else {
 		r0 = ret.Error(0)

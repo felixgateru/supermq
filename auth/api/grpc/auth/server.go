@@ -37,34 +37,34 @@ func NewAuthServer(svc auth.Service) magistrala.AuthServiceServer {
 	}
 }
 
-func (s *authGrpcServer) Authenticate(ctx context.Context, req *magistrala.AuthenticateReq) (*magistrala.AuthenticateRes, error) {
+func (s *authGrpcServer) Authenticate(ctx context.Context, req *magistrala.AuthNReq) (*magistrala.AuthNRes, error) {
 	_, res, err := s.authenticate.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, grpcapi.EncodeError(err)
 	}
-	return res.(*magistrala.AuthenticateRes), nil
+	return res.(*magistrala.AuthNRes), nil
 }
 
-func (s *authGrpcServer) Authorize(ctx context.Context, req *magistrala.AuthorizeReq) (*magistrala.AuthorizeRes, error) {
+func (s *authGrpcServer) Authorize(ctx context.Context, req *magistrala.AuthZReq) (*magistrala.AuthZRes, error) {
 	_, res, err := s.authorize.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, grpcapi.EncodeError(err)
 	}
-	return res.(*magistrala.AuthorizeRes), nil
+	return res.(*magistrala.AuthZRes), nil
 }
 
 func decodeAuthenticateRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
-	req := grpcReq.(*magistrala.AuthenticateReq)
+	req := grpcReq.(*magistrala.AuthNReq)
 	return authenticateReq{token: req.GetToken()}, nil
 }
 
 func encodeAuthenticateResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	res := grpcRes.(authenticateRes)
-	return &magistrala.AuthenticateRes{Id: res.id, UserId: res.userID, DomainId: res.domainID}, nil
+	return &magistrala.AuthNRes{Id: res.id, UserId: res.userID, DomainId: res.domainID}, nil
 }
 
 func decodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
-	req := grpcReq.(*magistrala.AuthorizeReq)
+	req := grpcReq.(*magistrala.AuthZReq)
 	return authReq{
 		Domain:      req.GetDomain(),
 		SubjectType: req.GetSubjectType(),
@@ -79,5 +79,5 @@ func decodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}
 
 func encodeAuthorizeResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	res := grpcRes.(authorizeRes)
-	return &magistrala.AuthorizeRes{Authorized: res.authorized, Id: res.id}, nil
+	return &magistrala.AuthZRes{Authorized: res.authorized, Id: res.id}, nil
 }

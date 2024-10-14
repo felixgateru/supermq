@@ -123,7 +123,7 @@ type ConfigReader interface {
 type bootstrapService struct {
 	authn      mgauthn.Authentication
 	authz      mgauthz.Authorization
-	policies   policies.Manager
+	policies   policies.Service
 	configs    ConfigRepository
 	sdk        mgsdk.SDK
 	encKey     []byte
@@ -131,13 +131,13 @@ type bootstrapService struct {
 }
 
 // New returns new Bootstrap service.
-func New(authn mgauthn.Authentication, authz mgauthz.Authorization, policyManager policies.Manager, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
+func New(authn mgauthn.Authentication, authz mgauthz.Authorization, policyService policies.Service, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
 		authn:      authn,
 		authz:      authz,
 		configs:    configs,
 		sdk:        sdk,
-		policies:   policyManager,
+		policies:   policyService,
 		encKey:     encKey,
 		idProvider: idp,
 	}
@@ -308,7 +308,7 @@ func (bs bootstrapService) UpdateConnections(ctx context.Context, token, id stri
 }
 
 func (bs bootstrapService) listClientIDs(ctx context.Context, userID string) ([]string, error) {
-	tids, err := bs.policies.ListAllObjects(ctx, policies.PolicyReq{
+	tids, err := bs.policies.ListAllObjects(ctx, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Permission:  policies.ViewPermission,

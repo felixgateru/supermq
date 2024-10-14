@@ -46,21 +46,21 @@ var (
 )
 
 var (
-	pManager   *policymocks.Manager
+	pService   *policymocks.Service
 	pEvaluator *policymocks.Evaluator
 	cache      *mocks.Cache
 	cRepo      *mocks.Repository
 )
 
 func newService() things.Service {
-	pManager = new(policymocks.Manager)
+	pService = new(policymocks.Service)
 	pEvaluator = new(policymocks.Evaluator)
 	cache = new(mocks.Cache)
 	idProvider := uuid.NewMock()
 	cRepo = new(mocks.Repository)
 	gRepo := new(gmocks.Repository)
 
-	return things.NewService(pEvaluator, pManager, cRepo, gRepo, cache, idProvider)
+	return things.NewService(pEvaluator, pService, cRepo, gRepo, cache, idProvider)
 }
 
 func TestCreateThings(t *testing.T) {
@@ -272,8 +272,8 @@ func TestCreateThings(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cRepo.On("Save", context.Background(), mock.Anything).Return([]mgclients.Client{tc.thing}, tc.saveErr)
-		policyCall := pManager.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPolicyErr)
-		policyCall1 := pManager.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePolicyErr)
+		policyCall := pService.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPolicyErr)
+		policyCall1 := pService.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePolicyErr)
 		expected, err := svc.CreateThings(context.Background(), mgauthn.Session{}, tc.thing)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if err == nil {
@@ -462,9 +462,9 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		listAllObjectsCall := pManager.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
+		listAllObjectsCall := pService.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		retrieveAllCall := cRepo.On("SearchClients", mock.Anything, mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
-		listPermissionsCall := pManager.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		listPermissionsCall := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClients(context.Background(), tc.session, tc.id, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -578,20 +578,20 @@ func TestListClients(t *testing.T) {
 	}
 
 	for _, tc := range cases2 {
-		listAllObjectsCall := pManager.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+		listAllObjectsCall := pService.On("ListAllObjects", context.Background(), policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.session.DomainID + "_" + adminID,
 			Permission:  "",
 			ObjectType:  policysvc.ThingType,
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
-		listAllObjectsCall2 := pManager.On("ListAllObjects", context.Background(), policysvc.PolicyReq{
+		listAllObjectsCall2 := pService.On("ListAllObjects", context.Background(), policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.session.UserID,
 			Permission:  "",
 			ObjectType:  policysvc.ThingType,
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		retrieveAllCall := cRepo.On("SearchClients", mock.Anything, mock.Anything).Return(tc.retrieveAllResponse, tc.retrieveAllErr)
-		listPermissionsCall := pManager.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		listPermissionsCall := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClients(context.Background(), tc.session, tc.id, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -1050,9 +1050,9 @@ func TestListMembers(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := pManager.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
+		policyCall := pService.On("ListAllObjects", mock.Anything, mock.Anything).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		repoCall := cRepo.On("RetrieveAllByIDs", context.Background(), mock.Anything).Return(tc.retreiveAllByIDsResponse, tc.retreiveAllByIDsErr)
-		repoCall1 := pManager.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
+		repoCall1 := pService.On("ListPermissions", mock.Anything, mock.Anything, mock.Anything).Return(tc.listPermissionsResponse, tc.listPermissionsErr)
 		page, err := svc.ListClientsByGroup(context.Background(), tc.session, tc.groupID, tc.page)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		assert.Equal(t, tc.response, page, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, page))
@@ -1110,7 +1110,7 @@ func TestDeleteClient(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := cache.On("Remove", mock.Anything, tc.clientID).Return(tc.removeErr)
-		policyCall := pManager.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
+		policyCall := pService.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyErr)
 		repoCall1 := cRepo.On("Delete", context.Background(), tc.clientID).Return(tc.deleteErr)
 		err := svc.DeleteClient(context.Background(), mgauthn.Session{}, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -1150,7 +1150,7 @@ func TestShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := pManager.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
+		policyCall := pService.On("AddPolicies", mock.Anything, mock.Anything).Return(tc.addPoliciesErr)
 		err := svc.Share(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		policyCall.Unset()
@@ -1187,7 +1187,7 @@ func TestUnShare(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := pManager.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
+		policyCall := pService.On("DeletePolicies", mock.Anything, mock.Anything).Return(tc.deletePoliciesErr)
 		err := svc.Unshare(context.Background(), tc.session, tc.clientID, tc.relation, tc.userID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		policyCall.Unset()
@@ -1225,7 +1225,7 @@ func TestViewClientPerms(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		policyCall := pManager.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
+		policyCall := pService.On("ListPermissions", mock.Anything, mock.Anything, []string{}).Return(tc.listPermResponse, tc.listPermErr)
 		res, err := svc.ViewClientPerms(context.Background(), tc.session, tc.thingID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		if tc.err == nil {
@@ -1376,7 +1376,7 @@ func TestAuthorize(t *testing.T) {
 		cacheCall := cache.On("ID", context.Background(), tc.request.ThingKey).Return(tc.cacheIDRes, tc.cacheIDErr)
 		repoCall := cRepo.On("RetrieveBySecret", context.Background(), tc.request.ThingKey).Return(tc.retrieveBySecretRes, tc.retrieveBySecretErr)
 		cacheCall1 := cache.On("Save", context.Background(), tc.request.ThingKey, tc.retrieveBySecretRes.ID).Return(tc.cacheSaveErr)
-		policyCall := pEvaluator.On("CheckPolicy", context.Background(), policies.PolicyReq{
+		policyCall := pEvaluator.On("CheckPolicy", context.Background(), policies.Policy{
 			SubjectType: policies.GroupType,
 			Subject:     tc.request.ChannelID,
 			ObjectType:  policies.ThingType,

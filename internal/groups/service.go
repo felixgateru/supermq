@@ -27,16 +27,16 @@ var (
 
 type service struct {
 	groups     groups.Repository
-	policies   policies.Manager
+	policies   policies.Service
 	idProvider magistrala.IDProvider
 }
 
 // NewService returns a new Clients service implementation.
-func NewService(g groups.Repository, idp magistrala.IDProvider, policyManager policies.Manager) groups.Service {
+func NewService(g groups.Repository, idp magistrala.IDProvider, policyService policies.Service) groups.Service {
 	return service{
 		groups:     g,
 		idProvider: idp,
-		policies:   policyManager,
+		policies:   policyService,
 	}
 }
 
@@ -93,7 +93,7 @@ func (svc service) ListGroups(ctx context.Context, session authn.Session, member
 
 	switch memberKind {
 	case policies.ThingsKind:
-		cids, err := svc.policies.ListAllSubjects(ctx, policies.PolicyReq{
+		cids, err := svc.policies.ListAllSubjects(ctx, policies.Policy{
 			SubjectType: policies.GroupType,
 			Permission:  policies.GroupRelation,
 			ObjectType:  policies.ThingType,
@@ -107,7 +107,7 @@ func (svc service) ListGroups(ctx context.Context, session authn.Session, member
 			return groups.Page{}, err
 		}
 	case policies.GroupsKind:
-		gids, err := svc.policies.ListAllObjects(ctx, policies.PolicyReq{
+		gids, err := svc.policies.ListAllObjects(ctx, policies.Policy{
 			SubjectType: policies.GroupType,
 			Subject:     memberID,
 			Permission:  policies.ParentGroupRelation,
@@ -121,7 +121,7 @@ func (svc service) ListGroups(ctx context.Context, session authn.Session, member
 			return groups.Page{}, err
 		}
 	case policies.ChannelsKind:
-		gids, err := svc.policies.ListAllSubjects(ctx, policies.PolicyReq{
+		gids, err := svc.policies.ListAllSubjects(ctx, policies.Policy{
 			SubjectType: policies.GroupType,
 			Permission:  policies.ParentGroupRelation,
 			ObjectType:  policies.GroupType,
@@ -138,7 +138,7 @@ func (svc service) ListGroups(ctx context.Context, session authn.Session, member
 	case policies.UsersKind:
 		switch {
 		case memberID != "" && session.UserID != memberID:
-			gids, err := svc.policies.ListAllObjects(ctx, policies.PolicyReq{
+			gids, err := svc.policies.ListAllObjects(ctx, policies.Policy{
 				SubjectType: policies.UserType,
 				Subject:     mgauth.EncodeDomainUserID(session.DomainID, memberID),
 				Permission:  gm.Permission,
@@ -199,7 +199,7 @@ func (svc service) retrievePermissions(ctx context.Context, userID string, group
 }
 
 func (svc service) listUserGroupPermission(ctx context.Context, userID, groupID string) ([]string, error) {
-	permissions, err := svc.policies.ListPermissions(ctx, policies.PolicyReq{
+	permissions, err := svc.policies.ListPermissions(ctx, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Object:      groupID,
@@ -218,7 +218,7 @@ func (svc service) listUserGroupPermission(ctx context.Context, userID, groupID 
 func (svc service) ListMembers(ctx context.Context, session authn.Session, groupID, permission, memberKind string) (groups.MembersPage, error) {
 	switch memberKind {
 	case policies.ThingsKind:
-		tids, err := svc.policies.ListAllObjects(ctx, policies.PolicyReq{
+		tids, err := svc.policies.ListAllObjects(ctx, policies.Policy{
 			SubjectType: policies.GroupType,
 			Subject:     groupID,
 			Relation:    policies.GroupRelation,
@@ -243,7 +243,7 @@ func (svc service) ListMembers(ctx context.Context, session authn.Session, group
 			Members: members,
 		}, nil
 	case policies.UsersKind:
-		uids, err := svc.policies.ListAllSubjects(ctx, policies.PolicyReq{
+		uids, err := svc.policies.ListAllSubjects(ctx, policies.Policy{
 			SubjectType: policies.UserType,
 			Permission:  permission,
 			Object:      groupID,
@@ -306,11 +306,11 @@ func (svc service) DisableGroup(ctx context.Context, session authn.Session, id s
 }
 
 func (svc service) Assign(ctx context.Context, session authn.Session, groupID, relation, memberKind string, memberIDs ...string) error {
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 	switch memberKind {
 	case policies.ThingsKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.GroupType,
 				SubjectKind: policies.ChannelsKind,
@@ -322,7 +322,7 @@ func (svc service) Assign(ctx context.Context, session authn.Session, groupID, r
 		}
 	case policies.ChannelsKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.GroupType,
 				Subject:     memberID,
@@ -336,7 +336,7 @@ func (svc service) Assign(ctx context.Context, session authn.Session, groupID, r
 
 	case policies.UsersKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.UserType,
 				Subject:     mgauth.EncodeDomainUserID(session.DomainID, memberID),
@@ -365,12 +365,12 @@ func (svc service) assignParentGroup(ctx context.Context, domain, parentGroupID 
 		return errGroupIDs
 	}
 
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 	for _, group := range groupsPage.Groups {
 		if group.Parent != "" {
 			return errors.Wrap(svcerr.ErrConflict, fmt.Errorf("%s group already have parent", group.ID))
 		}
-		policyList = append(policyList, policies.PolicyReq{
+		policyList = append(policyList, policies.Policy{
 			Domain:      domain,
 			SubjectType: policies.GroupType,
 			Subject:     parentGroupID,
@@ -403,12 +403,12 @@ func (svc service) unassignParentGroup(ctx context.Context, domain, parentGroupI
 		return errGroupIDs
 	}
 
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 	for _, group := range groupsPage.Groups {
 		if group.Parent != "" && group.Parent != parentGroupID {
 			return errors.Wrap(svcerr.ErrConflict, fmt.Errorf("%s group doesn't have same parent", group.ID))
 		}
-		policyList = append(policyList, policies.PolicyReq{
+		policyList = append(policyList, policies.Policy{
 			Domain:      domain,
 			SubjectType: policies.GroupType,
 			Subject:     parentGroupID,
@@ -433,11 +433,11 @@ func (svc service) unassignParentGroup(ctx context.Context, domain, parentGroupI
 }
 
 func (svc service) Unassign(ctx context.Context, session authn.Session, groupID, relation, memberKind string, memberIDs ...string) error {
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 	switch memberKind {
 	case policies.ThingsKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.GroupType,
 				SubjectKind: policies.ChannelsKind,
@@ -449,7 +449,7 @@ func (svc service) Unassign(ctx context.Context, session authn.Session, groupID,
 		}
 	case policies.ChannelsKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.GroupType,
 				Subject:     memberID,
@@ -462,7 +462,7 @@ func (svc service) Unassign(ctx context.Context, session authn.Session, groupID,
 		return svc.unassignParentGroup(ctx, session.DomainID, groupID, memberIDs)
 	case policies.UsersKind:
 		for _, memberID := range memberIDs {
-			policyList = append(policyList, policies.PolicyReq{
+			policyList = append(policyList, policies.Policy{
 				Domain:      session.DomainID,
 				SubjectType: policies.UserType,
 				Subject:     mgauth.EncodeDomainUserID(session.DomainID, memberID),
@@ -482,7 +482,7 @@ func (svc service) Unassign(ctx context.Context, session authn.Session, groupID,
 }
 
 func (svc service) DeleteGroup(ctx context.Context, session authn.Session, id string) error {
-	req := policies.PolicyReq{
+	req := policies.Policy{
 		SubjectType: policies.GroupType,
 		Subject:     id,
 	}
@@ -490,7 +490,7 @@ func (svc service) DeleteGroup(ctx context.Context, session authn.Session, id st
 		return errors.Wrap(svcerr.ErrDeletePolicies, err)
 	}
 
-	req = policies.PolicyReq{
+	req = policies.Policy{
 		Object:     id,
 		ObjectType: policies.GroupType,
 	}
@@ -524,7 +524,7 @@ func (svc service) filterAllowedGroupIDsOfUserID(ctx context.Context, userID, pe
 }
 
 func (svc service) listAllGroupsOfUserID(ctx context.Context, userID, permission string) ([]string, error) {
-	allowedIDs, err := svc.policies.ListAllObjects(ctx, policies.PolicyReq{
+	allowedIDs, err := svc.policies.ListAllObjects(ctx, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Permission:  permission,
@@ -549,9 +549,9 @@ func (svc service) changeGroupStatus(ctx context.Context, session authn.Session,
 	return svc.groups.ChangeStatus(ctx, group)
 }
 
-func (svc service) addGroupPolicy(ctx context.Context, userID, domainID, id, parentID, kind string) ([]policies.PolicyReq, error) {
-	policyList := []policies.PolicyReq{}
-	policyList = append(policyList, policies.PolicyReq{
+func (svc service) addGroupPolicy(ctx context.Context, userID, domainID, id, parentID, kind string) ([]policies.Policy, error) {
+	policyList := []policies.Policy{}
+	policyList = append(policyList, policies.Policy{
 		Domain:      domainID,
 		SubjectType: policies.UserType,
 		Subject:     userID,
@@ -560,7 +560,7 @@ func (svc service) addGroupPolicy(ctx context.Context, userID, domainID, id, par
 		ObjectType:  policies.GroupType,
 		Object:      id,
 	})
-	policyList = append(policyList, policies.PolicyReq{
+	policyList = append(policyList, policies.Policy{
 		Domain:      domainID,
 		SubjectType: policies.DomainType,
 		Subject:     domainID,
@@ -569,7 +569,7 @@ func (svc service) addGroupPolicy(ctx context.Context, userID, domainID, id, par
 		Object:      id,
 	})
 	if parentID != "" {
-		policyList = append(policyList, policies.PolicyReq{
+		policyList = append(policyList, policies.Policy{
 			Domain:      domainID,
 			SubjectType: policies.GroupType,
 			Subject:     parentID,
@@ -583,5 +583,5 @@ func (svc service) addGroupPolicy(ctx context.Context, userID, domainID, id, par
 		return policyList, errors.Wrap(svcerr.ErrAddPolicies, err)
 	}
 
-	return []policies.PolicyReq{}, nil
+	return []policies.Policy{}, nil
 }

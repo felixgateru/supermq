@@ -52,9 +52,9 @@ var (
 	errHashPassword = errors.New("generate hash from password failed")
 )
 
-func newService() (users.Service, *authmocks.TokenServiceClient, *mocks.Repository, *policymocks.Manager, *mocks.Emailer) {
+func newService() (users.Service, *authmocks.TokenServiceClient, *mocks.Repository, *policymocks.Service, *mocks.Emailer) {
 	cRepo := new(mocks.Repository)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	e := new(mocks.Emailer)
 	tokenClient := new(authmocks.TokenServiceClient)
 	return users.NewService(tokenClient, cRepo, policies, e, phasher, idProvider), tokenClient, cRepo, policies, e
@@ -62,7 +62,7 @@ func newService() (users.Service, *authmocks.TokenServiceClient, *mocks.Reposito
 
 func newServiceMinimal() (users.Service, *mocks.Repository) {
 	cRepo := new(mocks.Repository)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	e := new(mocks.Emailer)
 	tokenClient := new(authmocks.TokenServiceClient)
 	return users.NewService(tokenClient, cRepo, policies, e, phasher, idProvider), cRepo
@@ -1199,7 +1199,7 @@ func TestListMembers(t *testing.T) {
 		objectKind              string
 		objectID                string
 		page                    mgclients.Page
-		listAllSubjectsReq      policysvc.PolicyReq
+		listAllSubjectsReq      policysvc.Policy
 		listAllSubjectsResponse policysvc.PolicyPage
 		retrieveAllResponse     mgclients.ClientsPage
 		listPermissionsResponse policysvc.Permissions
@@ -1217,7 +1217,7 @@ func TestListMembers(t *testing.T) {
 			objectID:                validID,
 			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			listAllSubjectsResponse: policysvc.PolicyPage{},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1238,7 +1238,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.ThingsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1269,7 +1269,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.ThingsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1301,7 +1301,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.ThingsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read", ListPerms: true},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1327,7 +1327,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.ThingsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1343,7 +1343,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.ThingsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1362,7 +1362,7 @@ func TestListMembers(t *testing.T) {
 			objectID:                validID,
 			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			listAllSubjectsResponse: policysvc.PolicyPage{},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1383,7 +1383,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.DomainsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1415,7 +1415,7 @@ func TestListMembers(t *testing.T) {
 			objectID:                validID,
 			page:                    mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
 			listAllSubjectsResponse: policysvc.PolicyPage{},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,
@@ -1437,7 +1437,7 @@ func TestListMembers(t *testing.T) {
 			objectKind: policysvc.GroupsKind,
 			objectID:   validID,
 			page:       mgclients.Page{Offset: 0, Limit: 100, Permission: "read"},
-			listAllSubjectsReq: policysvc.PolicyReq{
+			listAllSubjectsReq: policysvc.Policy{
 				SubjectType: policysvc.UserType,
 				Permission:  "read",
 				Object:      validID,

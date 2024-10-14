@@ -28,7 +28,7 @@ func NewPolicyEvaluator(client *authzed.ClientWithExperimental, logger *slog.Log
 	}
 }
 
-func (pe *policyEvaluator) CheckPolicy(ctx context.Context, pr policies.PolicyReq) error {
+func (pe *policyEvaluator) CheckPolicy(ctx context.Context, pr policies.Policy) error {
 	checkReq := v1.CheckPermissionRequest{
 		// FullyConsistent means little caching will be available, which means performance will suffer.
 		// Only use if a ZedToken is not available or absolutely latest information is required.

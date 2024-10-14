@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 )
 
-type PolicyReq struct {
+type Policy struct {
 	// Domain contains the domain ID.
 	Domain string `json:"domain,omitempty"`
 
@@ -45,23 +45,12 @@ type PolicyReq struct {
 	Permission string `json:"permission,omitempty"`
 }
 
-func (pr PolicyReq) String() string {
+func (pr Policy) String() string {
 	data, err := json.Marshal(pr)
 	if err != nil {
 		return ""
 	}
 	return string(data)
-}
-
-type PolicyRes struct {
-	Namespace       string
-	Subject         string
-	SubjectType     string
-	SubjectRelation string
-	Object          string
-	ObjectType      string
-	Relation        string
-	Permission      string
 }
 
 type PolicyPage struct {
@@ -71,45 +60,45 @@ type PolicyPage struct {
 
 type Permissions []string
 
-// PolicyClient facilitates the communication to authorization
+// PolicyService facilitates the communication to authorization
 // services and implements Authz functionalities for spicedb
 //
-//go:generate mockery --name Manager --filename manager.go --quiet --note "Copyright (c) Abstract Machines"
-type Manager interface {
+//go:generate mockery --name Service --filename service.go --quiet --note "Copyright (c) Abstract Machines"
+type Service interface {
 	// AddPolicy creates a policy for the given subject, so that, after
 	// AddPolicy, `subject` has a `relation` on `object`. Returns a non-nil
 	// error in case of failures.
-	AddPolicy(ctx context.Context, pr PolicyReq) error
+	AddPolicy(ctx context.Context, pr Policy) error
 
 	// AddPolicies adds new policies for given subjects. This method is
 	// only allowed to use as an admin.
-	AddPolicies(ctx context.Context, prs []PolicyReq) error
+	AddPolicies(ctx context.Context, prs []Policy) error
 
 	// DeletePolicyFilter removes policy for given policy filter request.
-	DeletePolicyFilter(ctx context.Context, pr PolicyReq) error
+	DeletePolicyFilter(ctx context.Context, pr Policy) error
 
 	// DeletePolicies deletes policies for given subjects. This method is
 	// only allowed to use as an admin.
-	DeletePolicies(ctx context.Context, prs []PolicyReq) error
+	DeletePolicies(ctx context.Context, prs []Policy) error
 
-	// ListObjects lists policies based on the given PolicyReq structure.
-	ListObjects(ctx context.Context, pr PolicyReq, nextPageToken string, limit uint64) (PolicyPage, error)
+	// ListObjects lists policies based on the given Policy structure.
+	ListObjects(ctx context.Context, pr Policy, nextPageToken string, limit uint64) (PolicyPage, error)
 
-	// ListAllObjects lists all policies based on the given PolicyReq structure.
-	ListAllObjects(ctx context.Context, pr PolicyReq) (PolicyPage, error)
+	// ListAllObjects lists all policies based on the given Policy structure.
+	ListAllObjects(ctx context.Context, pr Policy) (PolicyPage, error)
 
-	// CountObjects count policies based on the given PolicyReq structure.
-	CountObjects(ctx context.Context, pr PolicyReq) (uint64, error)
+	// CountObjects count policies based on the given Policy structure.
+	CountObjects(ctx context.Context, pr Policy) (uint64, error)
 
-	// ListSubjects lists subjects based on the given PolicyReq structure.
-	ListSubjects(ctx context.Context, pr PolicyReq, nextPageToken string, limit uint64) (PolicyPage, error)
+	// ListSubjects lists subjects based on the given Policy structure.
+	ListSubjects(ctx context.Context, pr Policy, nextPageToken string, limit uint64) (PolicyPage, error)
 
-	// ListAllSubjects lists all subjects based on the given PolicyReq structure.
-	ListAllSubjects(ctx context.Context, pr PolicyReq) (PolicyPage, error)
+	// ListAllSubjects lists all subjects based on the given Policy structure.
+	ListAllSubjects(ctx context.Context, pr Policy) (PolicyPage, error)
 
-	// CountSubjects count policies based on the given PolicyReq structure.
-	CountSubjects(ctx context.Context, pr PolicyReq) (uint64, error)
+	// CountSubjects count policies based on the given Policy structure.
+	CountSubjects(ctx context.Context, pr Policy) (uint64, error)
 
 	// ListPermissions lists permission betweeen given subject and object .
-	ListPermissions(ctx context.Context, pr PolicyReq, permissionsFilter []string) (Permissions, error)
+	ListPermissions(ctx context.Context, pr Policy, permissionsFilter []string) (Permissions, error)
 }

@@ -38,7 +38,7 @@ func NewAuthentication(ctx context.Context, cfg grpcclient.Config) (authn.Authen
 }
 
 func (a authentication) Authenticate(ctx context.Context, token string) (authn.Session, error) {
-	res, err := a.authSvcClient.Authenticate(ctx, &magistrala.AuthenticateReq{Token: token})
+	res, err := a.authSvcClient.Authenticate(ctx, &magistrala.AuthNReq{Token: token})
 	if err != nil {
 		return authn.Session{}, errors.Wrap(errors.ErrAuthentication, err)
 	}

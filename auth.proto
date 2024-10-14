@@ -22,8 +22,8 @@ service TokenService {
 // AuthService is a service that provides authentication and authorization
 // functionalities for magistrala services.
 service AuthService {
-  rpc Authorize(AuthorizeReq) returns (AuthorizeRes) {}
-  rpc Authenticate(AuthenticateReq) returns (AuthenticateRes) {}
+  rpc Authorize(AuthZReq) returns (AuthZRes) {}
+  rpc Authenticate(AuthNReq) returns (AuthNRes) {}
 }
 
 // DomainsService is a service that provides access to domains
@@ -41,11 +41,11 @@ message Token {
     string accessType = 3;
 }
 
-message AuthenticateReq {
+message AuthNReq {
     string token = 1;
 }
 
-message AuthenticateRes {
+message AuthNRes {
     string id    = 1; // IMPROVEMENT NOTE: change name from "id" to "subject" , sub in jwt = user id  + domain id //
     string user_id = 2; // user id
     string domain_id = 3; // domain id
@@ -62,7 +62,7 @@ message RefreshReq {
   optional string domain_id = 2;
 }
 
-message AuthorizeReq {
+message AuthZReq {
   string domain = 1;           // Domain
   string subject_type = 2;     // Thing or User
   string subject_kind = 3;     // ID or Token
@@ -74,7 +74,7 @@ message AuthorizeReq {
   string object_type = 9;      // Thing, User, Group
 }
 
-message AuthorizeRes {
+message AuthZRes {
   bool authorized = 1;
   string id = 2;
 }

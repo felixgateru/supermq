@@ -33,7 +33,7 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 			"Authenticate",
 			encodeIdentifyRequest,
 			decodeIdentifyResponse,
-			magistrala.AuthenticateRes{},
+			magistrala.AuthNRes{},
 		).Endpoint(),
 		authorize: kitgrpc.NewClient(
 			conn,
@@ -41,35 +41,35 @@ func NewAuthClient(conn *grpc.ClientConn, timeout time.Duration) magistrala.Auth
 			"Authorize",
 			encodeAuthorizeRequest,
 			decodeAuthorizeResponse,
-			magistrala.AuthorizeRes{},
+			magistrala.AuthZRes{},
 		).Endpoint(),
 		timeout: timeout,
 	}
 }
 
-func (client authGrpcClient) Authenticate(ctx context.Context, token *magistrala.AuthenticateReq, _ ...grpc.CallOption) (*magistrala.AuthenticateRes, error) {
+func (client authGrpcClient) Authenticate(ctx context.Context, token *magistrala.AuthNReq, _ ...grpc.CallOption) (*magistrala.AuthNRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
 	res, err := client.authenticate(ctx, authenticateReq{token: token.GetToken()})
 	if err != nil {
-		return &magistrala.AuthenticateRes{}, grpcapi.DecodeError(err)
+		return &magistrala.AuthNRes{}, grpcapi.DecodeError(err)
 	}
 	ir := res.(authenticateRes)
-	return &magistrala.AuthenticateRes{Id: ir.id, UserId: ir.userID, DomainId: ir.domainID}, nil
+	return &magistrala.AuthNRes{Id: ir.id, UserId: ir.userID, DomainId: ir.domainID}, nil
 }
 
 func encodeIdentifyRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(authenticateReq)
-	return &magistrala.AuthenticateReq{Token: req.token}, nil
+	return &magistrala.AuthNReq{Token: req.token}, nil
 }
 
 func decodeIdentifyResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
-	res := grpcRes.(*magistrala.AuthenticateRes)
+	res := grpcRes.(*magistrala.AuthNRes)
 	return authenticateRes{id: res.GetId(), userID: res.GetUserId(), domainID: res.GetDomainId()}, nil
 }
 
-func (client authGrpcClient) Authorize(ctx context.Context, req *magistrala.AuthorizeReq, _ ...grpc.CallOption) (r *magistrala.AuthorizeRes, err error) {
+func (client authGrpcClient) Authorize(ctx context.Context, req *magistrala.AuthZReq, _ ...grpc.CallOption) (r *magistrala.AuthZRes, err error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -84,21 +84,21 @@ func (client authGrpcClient) Authorize(ctx context.Context, req *magistrala.Auth
 		Object:      req.GetObject(),
 	})
 	if err != nil {
-		return &magistrala.AuthorizeRes{}, grpcapi.DecodeError(err)
+		return &magistrala.AuthZRes{}, grpcapi.DecodeError(err)
 	}
 
 	ar := res.(authorizeRes)
-	return &magistrala.AuthorizeRes{Authorized: ar.authorized, Id: ar.id}, nil
+	return &magistrala.AuthZRes{Authorized: ar.authorized, Id: ar.id}, nil
 }
 
 func decodeAuthorizeResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
-	res := grpcRes.(*magistrala.AuthorizeRes)
+	res := grpcRes.(*magistrala.AuthZRes)
 	return authorizeRes{authorized: res.Authorized, id: res.Id}, nil
 }
 
 func encodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(authReq)
-	return &magistrala.AuthorizeReq{
+	return &magistrala.AuthZReq{
 		Domain:      req.Domain,
 		SubjectType: req.SubjectType,
 		Subject:     req.Subject,

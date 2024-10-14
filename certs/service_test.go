@@ -198,7 +198,7 @@ func TestRevokeCert(t *testing.T) {
 
 	for _, tc := range cases {
 		authCall := authn.On("Authenticate", context.Background(), tc.token).Return(tc.authenticateRes, tc.authenticateErr)
-		authCall1 := authz.On("Authorize", context.Background(), mock.Anything).Return(&magistrala.AuthorizeRes{Authorized: true}, tc.authErr)
+		authCall1 := authz.On("Authorize", context.Background(), mock.Anything).Return(&magistrala.AuthZRes{Authorized: true}, tc.authErr)
 		sdkCall := sdk.On("Thing", tc.thingID, tc.token).Return(mgsdk.Thing{ID: tc.thingID, Credentials: mgsdk.Credentials{Secret: thingKey}}, tc.thingErr)
 		repoCall := repo.On("RetrieveByThing", context.Background(), validID, tc.thingID, tc.page.Offset, tc.page.Limit).Return(certs.Page{}, tc.repoErr)
 

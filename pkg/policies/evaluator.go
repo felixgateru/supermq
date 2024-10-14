@@ -60,5 +60,5 @@ type Evaluator interface {
 	// CheckPolicy checks if the subject has a relation on the object.
 	// It returns a non-nil error if the subject has no relation on
 	// the object (which simply means the operation is denied).
-	CheckPolicy(ctx context.Context, pr PolicyReq) error
+	CheckPolicy(ctx context.Context, pr Policy) error
 }

@@ -155,7 +155,7 @@ func main() {
 	}
 	defer cacheclient.Close()
 
-	policyEvaluator, policyManager, err := newSpiceDBPolicyManagerEvaluator(cfg, logger)
+	policyEvaluator, policyService, err := newSpiceDBPolicyServiceEvaluator(cfg, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -185,7 +185,7 @@ func main() {
 	}
 	defer authzClient.Close()
 
-	csvc, gsvc, err := newService(ctx, db, dbConfig, authz, policyEvaluator, policyManager, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
+	csvc, gsvc, err := newService(ctx, db, dbConfig, authz, policyEvaluator, policyService, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create services: %s", err))
 		exitCode = 1
@@ -236,7 +236,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authz mgauthz.Authorization, pe policies.Evaluator, pm policies.Manager, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
+func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, authz mgauthz.Authorization, pe policies.Evaluator, ps policies.Service, cacheClient *redis.Client, keyDuration time.Duration, esURL string, tracer trace.Tracer, logger *slog.Logger) (things.Service, groups.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	cRepo := thingspg.NewRepository(database)
 	gRepo := gpostgres.New(database)
@@ -245,8 +245,8 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 
 	thingCache := thcache.NewCache(cacheClient, keyDuration)
 
-	csvc := things.NewService(pe, pm, cRepo, gRepo, thingCache, idp)
-	gsvc := mggroups.NewService(gRepo, idp, pm)
+	csvc := things.NewService(pe, ps, cRepo, gRepo, thingCache, idp)
+	gsvc := mggroups.NewService(gRepo, idp, ps)
 
 	csvc, err := thevents.NewEventStoreMiddleware(ctx, csvc, esURL)
 	if err != nil {
@@ -274,7 +274,7 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 	return csvc, gsvc, err
 }
 
-func newSpiceDBPolicyManagerEvaluator(cfg config, logger *slog.Logger) (policies.Evaluator, policies.Manager, error) {
+func newSpiceDBPolicyServiceEvaluator(cfg config, logger *slog.Logger) (policies.Evaluator, policies.Service, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -284,7 +284,7 @@ func newSpiceDBPolicyManagerEvaluator(cfg config, logger *slog.Logger) (policies
 		return nil, nil, err
 	}
 	pe := spicedb.NewPolicyEvaluator(client, logger)
-	pm := spicedb.NewPolicyManager(client, logger)
+	ps := spicedb.NewPolicyService(client, logger)
 
-	return pe, pm, nil
+	return pe, ps, nil
 }

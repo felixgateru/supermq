@@ -26,17 +26,17 @@ const defLimit = uint64(100)
 type handler struct {
 	clients       postgres.Repository
 	domains       magistrala.DomainsServiceClient
-	policies      policies.Manager
+	policies      policies.Service
 	checkInterval time.Duration
 	deleteAfter   time.Duration
 	logger        *slog.Logger
 }
 
-func NewDeleteHandler(ctx context.Context, clients postgres.Repository, policyManager policies.Manager, domainsClient magistrala.DomainsServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
+func NewDeleteHandler(ctx context.Context, clients postgres.Repository, policyService policies.Service, domainsClient magistrala.DomainsServiceClient, defCheckInterval, deleteAfter time.Duration, logger *slog.Logger) {
 	handler := &handler{
 		clients:       clients,
 		domains:       domainsClient,
-		policies:      policyManager,
+		policies:      policyService,
 		checkInterval: defCheckInterval,
 		deleteAfter:   deleteAfter,
 		logger:        logger,
@@ -87,7 +87,7 @@ func (h *handler) handle(ctx context.Context) {
 				continue
 			}
 
-			req := policies.PolicyReq{
+			req := policies.Policy{
 				Subject:     u.ID,
 				SubjectType: policies.UserType,
 			}

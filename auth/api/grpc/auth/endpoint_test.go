@@ -69,34 +69,34 @@ func TestIdentify(t *testing.T) {
 	cases := []struct {
 		desc   string
 		token  string
-		idt    *magistrala.AuthenticateRes
+		idt    *magistrala.AuthNRes
 		svcErr error
 		err    error
 	}{
 		{
 			desc:  "authenticate user with valid user token",
 			token: validToken,
-			idt:   &magistrala.AuthenticateRes{Id: id, UserId: email, DomainId: domainID},
+			idt:   &magistrala.AuthNRes{Id: id, UserId: email, DomainId: domainID},
 			err:   nil,
 		},
 		{
 			desc:   "authenticate user with invalid user token",
 			token:  "invalid",
-			idt:    &magistrala.AuthenticateRes{},
+			idt:    &magistrala.AuthNRes{},
 			svcErr: svcerr.ErrAuthentication,
 			err:    svcerr.ErrAuthentication,
 		},
 		{
 			desc:  "authenticate user with empty token",
 			token: "",
-			idt:   &magistrala.AuthenticateRes{},
+			idt:   &magistrala.AuthNRes{},
 			err:   apiutil.ErrBearerToken,
 		},
 	}
 
 	for _, tc := range cases {
 		svcCall := svc.On("Identify", mock.Anything, mock.Anything, mock.Anything).Return(auth.Key{Subject: id, User: email, Domain: domainID}, tc.svcErr)
-		idt, err := grpcClient.Authenticate(context.Background(), &magistrala.AuthenticateReq{Token: tc.token})
+		idt, err := grpcClient.Authenticate(context.Background(), &magistrala.AuthNReq{Token: tc.token})
 		if idt != nil {
 			assert.Equal(t, tc.idt, idt, fmt.Sprintf("%s: expected %v got %v", tc.desc, tc.idt, idt))
 		}
@@ -113,14 +113,14 @@ func TestAuthorize(t *testing.T) {
 	cases := []struct {
 		desc         string
 		token        string
-		authRequest  *magistrala.AuthorizeReq
-		authResponse *magistrala.AuthorizeRes
+		authRequest  *magistrala.AuthZReq
+		authResponse *magistrala.AuthZRes
 		err          error
 	}{
 		{
 			desc:  "authorize user with authorized token",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: usersType,
 				Object:      authoritiesObj,
@@ -128,13 +128,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: true},
+			authResponse: &magistrala.AuthZRes{Authorized: true},
 			err:          nil,
 		},
 		{
 			desc:  "authorize user with unauthorized token",
 			token: inValidToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: usersType,
 				Object:      authoritiesObj,
@@ -142,13 +142,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          svcerr.ErrAuthorization,
 		},
 		{
 			desc:  "authorize user with empty subject",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     "",
 				SubjectType: usersType,
 				Object:      authoritiesObj,
@@ -156,13 +156,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          apiutil.ErrMissingPolicySub,
 		},
 		{
 			desc:  "authorize user with empty subject type",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: "",
 				Object:      authoritiesObj,
@@ -170,13 +170,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          apiutil.ErrMissingPolicySub,
 		},
 		{
 			desc:  "authorize user with empty object",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: usersType,
 				Object:      "",
@@ -184,13 +184,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          apiutil.ErrMissingPolicyObj,
 		},
 		{
 			desc:  "authorize user with empty object type",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: usersType,
 				Object:      authoritiesObj,
@@ -198,13 +198,13 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  adminpermission,
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          apiutil.ErrMissingPolicyObj,
 		},
 		{
 			desc:  "authorize user with empty permission",
 			token: validToken,
-			authRequest: &magistrala.AuthorizeReq{
+			authRequest: &magistrala.AuthZReq{
 				Subject:     id,
 				SubjectType: usersType,
 				Object:      authoritiesObj,
@@ -212,7 +212,7 @@ func TestAuthorize(t *testing.T) {
 				Relation:    memberRelation,
 				Permission:  "",
 			},
-			authResponse: &magistrala.AuthorizeRes{Authorized: false},
+			authResponse: &magistrala.AuthZRes{Authorized: false},
 			err:          apiutil.ErrMalformedPolicyPer,
 		},
 	}

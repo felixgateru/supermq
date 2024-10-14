@@ -38,7 +38,7 @@ func NewAuthorization(ctx context.Context, cfg grpcclient.Config) (authz.Authori
 }
 
 func (a authorization) Authorize(ctx context.Context, pr authz.PolicyReq) error {
-	req := magistrala.AuthorizeReq{
+	req := magistrala.AuthZReq{
 		Domain:          pr.Domain,
 		SubjectType:     pr.SubjectType,
 		SubjectKind:     pr.SubjectKind,

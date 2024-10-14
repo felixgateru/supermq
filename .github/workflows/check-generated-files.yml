@@ -47,7 +47,6 @@ jobs:
               - "pkg/sdk/go/sdk.go"
               - "users/postgres/clients.go"
               - "users/clients.go"
-              - "pkg/auth/client.go"
               - "pkg/clients/clients.go"
               - "pkg/messaging/pubsub.go"
               - "things/postgres/clients.go"

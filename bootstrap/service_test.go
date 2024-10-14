@@ -82,7 +82,7 @@ func TestAdd(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -215,7 +215,7 @@ func TestView(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -311,7 +311,7 @@ func TestUpdate(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -399,7 +399,7 @@ func TestUpdateCert(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -512,7 +512,7 @@ func TestUpdateConnections(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -627,7 +627,7 @@ func TestList(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -653,8 +653,8 @@ func TestList(t *testing.T) {
 		token               string
 		userID              string
 		domainID            string
-		superAdminAuthRes   *magistrala.AuthorizeRes
-		domainAdminAuthRes  *magistrala.AuthorizeRes
+		superAdminAuthRes   *magistrala.AuthZRes
+		domainAdminAuthRes  *magistrala.AuthZRes
 		superAdmiAuthErr    error
 		domainAdmiAuthErr   error
 		listObjectsResponse policysvc.PolicyPage
@@ -687,7 +687,7 @@ func TestList(t *testing.T) {
 			token:               validID,
 			userID:              validID,
 			domainID:            domainID,
-			superAdminAuthRes:   &magistrala.AuthorizeRes{Authorized: false},
+			superAdminAuthRes:   &magistrala.AuthZRes{Authorized: false},
 			listObjectsResponse: policysvc.PolicyPage{},
 			offset:              0,
 			limit:               10,
@@ -962,7 +962,7 @@ func TestList(t *testing.T) {
 			ObjectType:  policysvc.DomainType,
 			Object:      tc.domainID,
 		}).Return(tc.domainAdmiAuthErr)
-		authCall3 := policies.On("ListAllObjects", mock.Anything, policysvc.PolicyReq{
+		authCall3 := policies.On("ListAllObjects", mock.Anything, policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
 			Permission:  policysvc.ViewPermission,
@@ -986,7 +986,7 @@ func TestRemove(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -998,7 +998,7 @@ func TestRemove(t *testing.T) {
 		token           string
 		userID          string
 		domainID        string
-		authorizeRes    *magistrala.AuthorizeRes
+		authorizeRes    *magistrala.AuthZRes
 		authorizeErr    error
 		authenticateErr error
 		removeErr       error
@@ -1073,7 +1073,7 @@ func TestBootstrap(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1147,7 +1147,7 @@ func TestChangeState(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1254,7 +1254,7 @@ func TestUpdateChannelHandler(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1294,7 +1294,7 @@ func TestRemoveChannelHandler(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1328,7 +1328,7 @@ func TestRemoveConfigHandler(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1362,7 +1362,7 @@ func TestConnectThingsHandler(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -1399,7 +1399,7 @@ func TestDisconnectThingsHandler(t *testing.T) {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)

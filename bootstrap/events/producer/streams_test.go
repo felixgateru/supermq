@@ -93,7 +93,7 @@ type testVariable struct {
 	boot     *mocks.ConfigRepository
 	authn    *authnmocks.Authentication
 	authz    *authzmocks.Authorization
-	policies *policymocks.Manager
+	policies *policymocks.Service
 	sdk      *sdkmocks.SDK
 }
 
@@ -101,7 +101,7 @@ func newTestVariable(t *testing.T, redisURL string) testVariable {
 	boot := new(mocks.ConfigRepository)
 	authn := new(authnmocks.Authentication)
 	authz := new(authzmocks.Authorization)
-	policies := new(policymocks.Manager)
+	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
 	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
@@ -997,7 +997,7 @@ func TestList(t *testing.T) {
 			ObjectType:  policysvc.DomainType,
 			Object:      tc.domainID,
 		}).Return(tc.domainAdmiAuthErr)
-		authCall3 := tv.policies.On("ListAllObjects", mock.Anything, policysvc.PolicyReq{
+		authCall3 := tv.policies.On("ListAllObjects", mock.Anything, policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
 			Permission:  policysvc.ViewPermission,
@@ -1197,7 +1197,7 @@ func TestChangeState(t *testing.T) {
 		domainID        string
 		token           string
 		state           bootstrap.State
-		authResponse    *magistrala.AuthorizeRes
+		authResponse    *magistrala.AuthZRes
 		authorizeErr    error
 		connectErr      error
 		retrieveErr     error
@@ -1213,7 +1213,7 @@ func TestChangeState(t *testing.T) {
 			userID:       validID,
 			domainID:     domainID,
 			state:        bootstrap.Active,
-			authResponse: &magistrala.AuthorizeRes{Authorized: true},
+			authResponse: &magistrala.AuthZRes{Authorized: true},
 			err:          nil,
 			event: map[string]interface{}{
 				"thing_id":  config.ThingID,

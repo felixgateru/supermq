@@ -30,17 +30,17 @@ type service struct {
 	token      magistrala.TokenServiceClient
 	clients    postgres.Repository
 	idProvider magistrala.IDProvider
-	policies   policies.Manager
+	policies   policies.Service
 	hasher     Hasher
 	email      Emailer
 }
 
 // NewService returns a new Users service implementation.
-func NewService(token magistrala.TokenServiceClient, crepo postgres.Repository, policyManager policies.Manager, emailer Emailer, hasher Hasher, idp magistrala.IDProvider) Service {
+func NewService(token magistrala.TokenServiceClient, crepo postgres.Repository, policyService policies.Service, emailer Emailer, hasher Hasher, idp magistrala.IDProvider) Service {
 	return service{
 		token:      token,
 		clients:    crepo,
-		policies:   policyManager,
+		policies:   policyService,
 		hasher:     hasher,
 		email:      emailer,
 		idProvider: idp,
@@ -428,7 +428,7 @@ func (svc service) ListMembers(ctx context.Context, session authn.Session, objec
 		objectType = policies.GroupType
 	}
 
-	duids, err := svc.policies.ListAllSubjects(ctx, policies.PolicyReq{
+	duids, err := svc.policies.ListAllSubjects(ctx, policies.Policy{
 		SubjectType: policies.UserType,
 		Permission:  pm.Permission,
 		Object:      objectID,
@@ -499,7 +499,7 @@ func (svc service) retrieveObjectUsersPermissions(ctx context.Context, domainID,
 }
 
 func (svc service) listObjectUserPermission(ctx context.Context, userID, objectType, objectID string) ([]string, error) {
-	permissions, err := svc.policies.ListPermissions(ctx, policies.PolicyReq{
+	permissions, err := svc.policies.ListPermissions(ctx, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Object:      objectID,
@@ -550,9 +550,9 @@ func (svc service) Identify(ctx context.Context, session authn.Session) (string,
 }
 
 func (svc service) addClientPolicy(ctx context.Context, userID string, role mgclients.Role) error {
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 
-	policyList = append(policyList, policies.PolicyReq{
+	policyList = append(policyList, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Relation:    policies.MemberRelation,
@@ -561,7 +561,7 @@ func (svc service) addClientPolicy(ctx context.Context, userID string, role mgcl
 	})
 
 	if role == mgclients.AdminRole {
-		policyList = append(policyList, policies.PolicyReq{
+		policyList = append(policyList, policies.Policy{
 			SubjectType: policies.UserType,
 			Subject:     userID,
 			Relation:    policies.AdministratorRelation,
@@ -578,9 +578,9 @@ func (svc service) addClientPolicy(ctx context.Context, userID string, role mgcl
 }
 
 func (svc service) addClientPolicyRollback(ctx context.Context, userID string, role mgclients.Role) error {
-	policyList := []policies.PolicyReq{}
+	policyList := []policies.Policy{}
 
-	policyList = append(policyList, policies.PolicyReq{
+	policyList = append(policyList, policies.Policy{
 		SubjectType: policies.UserType,
 		Subject:     userID,
 		Relation:    policies.MemberRelation,
@@ -589,7 +589,7 @@ func (svc service) addClientPolicyRollback(ctx context.Context, userID string, r
 	})
 
 	if role == mgclients.AdminRole {
-		policyList = append(policyList, policies.PolicyReq{
+		policyList = append(policyList, policies.Policy{
 			SubjectType: policies.UserType,
 			Subject:     userID,
 			Relation:    policies.AdministratorRelation,
@@ -608,7 +608,7 @@ func (svc service) addClientPolicyRollback(ctx context.Context, userID string, r
 func (svc service) updateClientPolicy(ctx context.Context, userID string, role mgclients.Role) error {
 	switch role {
 	case mgclients.AdminRole:
-		err := svc.policies.AddPolicy(ctx, policies.PolicyReq{
+		err := svc.policies.AddPolicy(ctx, policies.Policy{
 			SubjectType: policies.UserType,
 			Subject:     userID,
 			Relation:    policies.AdministratorRelation,
@@ -623,7 +623,7 @@ func (svc service) updateClientPolicy(ctx context.Context, userID string, role m
 	case mgclients.UserRole:
 		fallthrough
 	default:
-		err := svc.policies.DeletePolicyFilter(ctx, policies.PolicyReq{
+		err := svc.policies.DeletePolicyFilter(ctx, policies.Policy{
 			SubjectType: policies.UserType,
 			Subject:     userID,
 			Relation:    policies.AdministratorRelation,

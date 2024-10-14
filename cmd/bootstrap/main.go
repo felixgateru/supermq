@@ -113,7 +113,7 @@ func main() {
 	}
 	defer db.Close()
 
-	policyClient, err := newPolicyManager(cfg, logger)
+	policySvc, err := newPolicyService(cfg, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -157,7 +157,7 @@ func main() {
 	defer authzClient.Close()
 
 	// Create new service
-	svc, err := newService(ctx, authn, authz, policyClient, db, tracer, logger, cfg, dbConfig)
+	svc, err := newService(ctx, authn, authz, policySvc, db, tracer, logger, cfg, dbConfig)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
@@ -198,7 +198,7 @@ func main() {
 	}
 }
 
-func newService(ctx context.Context, authn mgauthn.Authentication, authz mgauthz.Authorization, policyManager policies.Manager, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
+func newService(ctx context.Context, authn mgauthn.Authentication, authz mgauthz.Authorization, policySvc policies.Service, db *sqlx.DB, tracer trace.Tracer, logger *slog.Logger, cfg config, dbConfig pgclient.Config) (bootstrap.Service, error) {
 	database := pgclient.NewDatabase(db, dbConfig, tracer)
 
 	repoConfig := bootstrappg.NewConfigRepository(database, logger)
@@ -210,7 +210,7 @@ func newService(ctx context.Context, authn mgauthn.Authentication, authz mgauthz
 	sdk := mgsdk.NewSDK(config)
 	idp := uuid.New()
 
-	svc := bootstrap.New(authn, authz, policyManager, repoConfig, sdk, []byte(cfg.EncKey), idp)
+	svc := bootstrap.New(authn, authz, policySvc, repoConfig, sdk, []byte(cfg.EncKey), idp)
 
 	publisher, err := store.NewPublisher(ctx, cfg.ESURL, streamID)
 	if err != nil {
@@ -240,7 +240,7 @@ func subscribeToThingsES(ctx context.Context, svc bootstrap.Service, cfg config,
 	return subscriber.Subscribe(ctx, subConfig)
 }
 
-func newPolicyManager(cfg config, logger *slog.Logger) (policies.Manager, error) {
+func newPolicyService(cfg config, logger *slog.Logger) (policies.Service, error) {
 	client, err := authzed.NewClientWithExperimentalAPIs(
 		fmt.Sprintf("%s:%s", cfg.SpicedbHost, cfg.SpicedbPort),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -249,7 +249,7 @@ func newPolicyManager(cfg config, logger *slog.Logger) (policies.Manager, error)
 	if err != nil {
 		return nil, err
 	}
-	policyManager := spicedb.NewPolicyManager(client, logger)
+	policySvc := spicedb.NewPolicyService(client, logger)
 
-	return policyManager, nil
+	return policySvc, nil
 }

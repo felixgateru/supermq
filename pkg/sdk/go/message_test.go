@@ -221,7 +221,6 @@ func TestReadMessages(t *testing.T) {
 		token           string
 		chanName        string
 		messagePageMeta sdk.MessagePageMetadata
-		authRes         *magistrala.AuthorizeRes
 		authErr         error
 		repoRes         readers.MessagesPage
 		repoErr         error
@@ -241,7 +240,6 @@ func TestReadMessages(t *testing.T) {
 				Publisher: validID,
 				BoolValue: &boolVal,
 			},
-			authRes: &magistrala.AuthorizeRes{Authorized: true, Id: validID},
 			repoRes: readers.MessagesPage{
 				Total:    1,
 				Messages: []readers.Message{msg},
@@ -266,7 +264,6 @@ func TestReadMessages(t *testing.T) {
 				},
 				Publisher: validID,
 			},
-			authRes: &magistrala.AuthorizeRes{Authorized: true, Id: validID},
 			repoRes: readers.MessagesPage{
 				Total:    1,
 				Messages: []readers.Message{msg},
@@ -292,7 +289,6 @@ func TestReadMessages(t *testing.T) {
 				Subtopic:  "subtopic",
 				Publisher: validID,
 			},
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			repoRes:  readers.MessagesPage{},
 			response: sdk.MessagesPage{},
@@ -310,7 +306,6 @@ func TestReadMessages(t *testing.T) {
 				Subtopic:  "subtopic",
 				Publisher: validID,
 			},
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			repoRes:  readers.MessagesPage{},
 			response: sdk.MessagesPage{},
@@ -328,7 +323,6 @@ func TestReadMessages(t *testing.T) {
 				Subtopic:  "subtopic",
 				Publisher: validID,
 			},
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
 			repoRes:  readers.MessagesPage{},
 			repoErr:  nil,
 			response: sdk.MessagesPage{},
@@ -349,7 +343,6 @@ func TestReadMessages(t *testing.T) {
 				Subtopic:  "subtopic",
 				Publisher: validID,
 			},
-			authRes:  &magistrala.AuthorizeRes{Authorized: false, Id: ""},
 			repoRes:  readers.MessagesPage{},
 			repoErr:  nil,
 			response: sdk.MessagesPage{},
@@ -367,7 +360,6 @@ func TestReadMessages(t *testing.T) {
 				Subtopic:  "subtopic",
 				Publisher: validID,
 			},
-			authRes: &magistrala.AuthorizeRes{Authorized: true, Id: validID},
 			repoRes: readers.MessagesPage{
 				Total:    1,
 				Messages: []readers.Message{invalidMsg},
