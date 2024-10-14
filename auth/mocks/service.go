@@ -38,7 +38,7 @@ func (_m *Service) AssignUsers(ctx context.Context, token string, id string, use
 }
 
 // Authorize provides a mock function with given fields: ctx, pr
-func (_m *Service) Authorize(ctx context.Context, pr auth.PolicyReq) error {
+func (_m *Service) Authorize(ctx context.Context, pr policies.Policy) error {
 	ret := _m.Called(ctx, pr)
 
 	if len(ret) == 0 {
@@ -46,7 +46,7 @@ func (_m *Service) Authorize(ctx context.Context, pr auth.PolicyReq) error {
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, auth.PolicyReq) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, policies.Policy) error); ok {
 		r0 = rf(ctx, pr)
 	} else {
 		r0 = ret.Error(0)
@@ -111,12 +111,12 @@ func (_m *Service) CreateDomain(ctx context.Context, token string, d auth.Domain
 	return r0, r1
 }
 
-// DeleteUserPolicies provides a mock function with given fields: ctx, id
-func (_m *Service) DeleteUserPolicies(ctx context.Context, id string) error {
+// DeleteUserFromDomains provides a mock function with given fields: ctx, id
+func (_m *Service) DeleteUserFromDomains(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteUserPolicies")
+		panic("no return value specified for DeleteUserFromDomains")
 	}
 
 	var r0 error

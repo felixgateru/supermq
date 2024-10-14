@@ -100,7 +100,7 @@ func (lm *loggingMiddleware) Identify(ctx context.Context, token string) (id aut
 	return lm.svc.Identify(ctx, token)
 }
 
-func (lm *loggingMiddleware) Authorize(ctx context.Context, pr auth.PolicyReq) (err error) {
+func (lm *loggingMiddleware) Authorize(ctx context.Context, pr policies.Policy) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -286,7 +286,7 @@ func (lm *loggingMiddleware) ListUserDomains(ctx context.Context, token, userID 
 	return lm.svc.ListUserDomains(ctx, token, userID, page)
 }
 
-func (lm *loggingMiddleware) DeleteUserPolicies(ctx context.Context, id string) (err error) {
+func (lm *loggingMiddleware) DeleteUserFromDomains(ctx context.Context, id string) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
@@ -299,5 +299,5 @@ func (lm *loggingMiddleware) DeleteUserPolicies(ctx context.Context, id string) 
 		}
 		lm.logger.Info("Delete entity policies completed successfully", args...)
 	}(time.Now())
-	return lm.svc.DeleteUserPolicies(ctx, id)
+	return lm.svc.DeleteUserFromDomains(ctx, id)
 }
