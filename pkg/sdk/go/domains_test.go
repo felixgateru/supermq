@@ -427,10 +427,10 @@ func TestDomainPermissions(t *testing.T) {
 			desc:     "retrieve domain permissions successfully",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			svcRes:   policies.Permissions{auth.ViewPermission},
+			svcRes:   policies.Permissions{policies.ViewPermission},
 			svcErr:   nil,
 			response: sdk.Domain{
-				Permissions: []string{auth.ViewPermission},
+				Permissions: []string{policies.ViewPermission},
 			},
 			err: nil,
 		},
@@ -954,7 +954,7 @@ func TestAddUserToDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			addUserDomainReq: sdk.UsersRelationRequest{
 				UserIDs:  []string{newUser},
-				Relation: auth.MemberRelation,
+				Relation: policies.MemberRelation,
 			},
 			svcErr: nil,
 			err:    nil,
@@ -965,7 +965,7 @@ func TestAddUserToDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			addUserDomainReq: sdk.UsersRelationRequest{
 				UserIDs:  []string{newUser},
-				Relation: auth.MemberRelation,
+				Relation: policies.MemberRelation,
 			},
 			svcErr: svcerr.ErrAuthentication,
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -976,7 +976,7 @@ func TestAddUserToDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			addUserDomainReq: sdk.UsersRelationRequest{
 				UserIDs:  []string{newUser},
-				Relation: auth.MemberRelation,
+				Relation: policies.MemberRelation,
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -987,7 +987,7 @@ func TestAddUserToDomain(t *testing.T) {
 			domainID: "",
 			addUserDomainReq: sdk.UsersRelationRequest{
 				UserIDs:  []string{newUser},
-				Relation: auth.MemberRelation,
+				Relation: policies.MemberRelation,
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
@@ -998,7 +998,7 @@ func TestAddUserToDomain(t *testing.T) {
 			domainID: sdkDomain.ID,
 			addUserDomainReq: sdk.UsersRelationRequest{
 				UserIDs:  []string{},
-				Relation: auth.MemberRelation,
+				Relation: policies.MemberRelation,
 			},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
