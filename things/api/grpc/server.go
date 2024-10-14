@@ -9,7 +9,6 @@ import (
 	"github.com/absmach/magistrala"
 	mgauth "github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/pkg/apiutil"
-	"github.com/absmach/magistrala/pkg/auth"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/things"
@@ -29,7 +28,7 @@ type grpcServer struct {
 func NewServer(svc things.Service) magistrala.ThingsServiceServer {
 	return &grpcServer{
 		authorize: kitgrpc.NewServer(
-			(authorizeEndpoint(svc, authClient)),
+			(authorizeEndpoint(svc)),
 			decodeAuthorizeRequest,
 			encodeAuthorizeResponse,
 		),

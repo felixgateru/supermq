@@ -1424,7 +1424,6 @@ func TestResetPassword(t *testing.T) {
 			newPassword:  newPassword,
 			confPassword: newPassword,
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          nil,
 		},
 		{
@@ -1450,7 +1449,6 @@ func TestResetPassword(t *testing.T) {
 			newPassword:  "",
 			confPassword: newPassword,
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingPass), http.StatusBadRequest),
 		},
 		{
@@ -1460,7 +1458,6 @@ func TestResetPassword(t *testing.T) {
 			newPassword:  newPassword,
 			confPassword: "",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingConfPass), http.StatusBadRequest),
 		},
 		{
@@ -1470,7 +1467,6 @@ func TestResetPassword(t *testing.T) {
 			newPassword:  newPassword,
 			confPassword: "wrongPassword",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrInvalidResetPass), http.StatusBadRequest),
 		},
 		{
@@ -1480,7 +1476,6 @@ func TestResetPassword(t *testing.T) {
 			newPassword:  "weak",
 			confPassword: "weak",
 			svcErr:       nil,
-			identifyRes:  &magistrala.IdentityRes{UserId: validID, DomainId: validID},
 			err:          errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrPasswordFormat), http.StatusBadRequest),
 		},
 	}

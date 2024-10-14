@@ -45,7 +45,7 @@ func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 			return viewGroupRes{}, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
-		session, ok := ctx.Value(api.SessionKey).(auth.Session)
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
 		if !ok {
 			return viewGroupRes{}, svcerr.ErrAuthorization
 		}

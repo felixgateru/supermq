@@ -33,7 +33,7 @@ var (
 	invalid   = "invalid"
 )
 
-func startGRPCServer(svc *mocks.Service, auth *authmocks.AuthClient, port int) {
+func startGRPCServer(svc *mocks.Service, port int) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(fmt.Sprintf("failed to obtain port: %s", err))
@@ -49,8 +49,7 @@ func startGRPCServer(svc *mocks.Service, auth *authmocks.AuthClient, port int) {
 
 func TestAuthorize(t *testing.T) {
 	svc := new(mocks.Service)
-	auth := new(authmocks.AuthClient)
-	startGRPCServer(svc, auth, port)
+	startGRPCServer(svc, port)
 	authAddr := fmt.Sprintf("localhost:%d", port)
 	conn, _ := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	client := grpcapi.NewClient(conn, time.Second)
