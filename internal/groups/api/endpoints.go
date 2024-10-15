@@ -49,11 +49,6 @@ func ViewGroupEndpoint(svc groups.Service) endpoint.Endpoint {
 		if !ok {
 			return viewGroupRes{}, svcerr.ErrAuthorization
 		}
-
-		session, ok := ctx.Value(api.SessionKey).(authn.Session)
-		if !ok {
-			return viewGroupRes{}, svcerr.ErrAuthorization
-		}
 		group, err := svc.ViewGroup(ctx, session, req.id)
 		if err != nil {
 			return viewGroupRes{}, err
@@ -68,10 +63,6 @@ func ViewGroupPermsEndpoint(svc groups.Service) endpoint.Endpoint {
 		req := request.(groupPermsReq)
 		if err := req.validate(); err != nil {
 			return viewGroupPermsRes{}, errors.Wrap(apiutil.ErrValidation, err)
-		}
-		session, err := identify(ctx, authClient, req.token)
-		if err != nil {
-			return viewGroupPermsRes{}, err
 		}
 
 		session, ok := ctx.Value(api.SessionKey).(authn.Session)

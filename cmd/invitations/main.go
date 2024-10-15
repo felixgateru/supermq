@@ -19,7 +19,7 @@ import (
 	"github.com/absmach/magistrala/invitations/middleware"
 	invitationspg "github.com/absmach/magistrala/invitations/postgres"
 	mglog "github.com/absmach/magistrala/logger"
-	authsvcAuthn "github.com/absmach/magistrala/pkg/authn/authsvc"
+	jwksAuthn "github.com/absmach/magistrala/pkg/authn/jwks"
 	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	authsvcAuthz "github.com/absmach/magistrala/pkg/authz/authsvc"
 	"github.com/absmach/magistrala/pkg/grpcclient"
@@ -110,14 +110,8 @@ func main() {
 	defer tokenHandler.Close()
 	logger.Info("Token service client successfully connected to auth gRPC server " + tokenHandler.Secure())
 
-	authn, authnHandler, err := authsvcAuthn.NewAuthentication(ctx, authClientCfg)
-	if err != nil {
-		logger.Error(err.Error())
-		exitCode = 1
-		return
-	}
-	defer authnHandler.Close()
-	logger.Info("AuthN successfully connected to auth gRPC server " + authnHandler.Secure())
+	authn := jwksAuthn.NewAuthentication(authClientCfg.JWKSURL)
+	logger.Info("Service is using JWKS authentication")
 
 	authz, authzHandler, err := authsvcAuthz.NewAuthorization(ctx, authClientCfg)
 	if err != nil {

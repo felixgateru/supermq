@@ -6,6 +6,7 @@ package spicedb
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/absmach/magistrala/pkg/errors"
@@ -14,6 +15,7 @@ import (
 	"github.com/absmach/magistrala/pkg/policies"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/authzed-go/v1"
+	gstatus "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -914,6 +916,11 @@ func handleSpicedbError(err error) error {
 		return convertGRPCStatusToError(st)
 	}
 	return err
+}
+
+func convertToGrpcStatus(gst *gstatus.Status) *status.Status {
+	st := status.New(codes.Code(gst.Code), gst.GetMessage())
+	return st
 }
 
 func convertGRPCStatusToError(st *status.Status) error {

@@ -168,14 +168,9 @@ func main() {
 		exitCode = 1
 		return
 	}
-	authn, authnClient, err := authsvcAuthn.NewAuthentication(ctx, grpcCfg)
-	if err != nil {
-		logger.Error(err.Error())
-		exitCode = 1
-		return
-	}
-	defer authnClient.Close()
-	logger.Info("AuthN  successfully connected to auth gRPC server " + authnClient.Secure())
+
+	authn := jwksAuthn.NewAuthentication(grpcCfg.JWKSURL)
+	logger.Info("Service is using JWKS authentication")
 
 	authz, authzClient, err := authsvcAuthz.NewAuthorization(ctx, grpcCfg)
 	if err != nil {
@@ -184,7 +179,7 @@ func main() {
 		return
 	}
 	defer authzClient.Close()
-	logger.Info("AuthZ  successfully connected to auth gRPC server " + authnClient.Secure())
+	logger.Info("AuthZ  successfully connected to auth gRPC server " + authzClient.Secure())
 
 	csvc, gsvc, err := newService(ctx, db, dbConfig, authz, policyEvaluator, policyService, cacheclient, cfg.CacheKeyDuration, cfg.ESURL, tracer, logger)
 	if err != nil {

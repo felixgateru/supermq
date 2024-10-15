@@ -21,7 +21,7 @@ import (
 	journalpg "github.com/absmach/magistrala/journal/postgres"
 	mglog "github.com/absmach/magistrala/logger"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
-	authsvcAuthn "github.com/absmach/magistrala/pkg/authn/authsvc"
+	jwksAuthn "github.com/absmach/magistrala/pkg/authn/jwks"
 	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	authsvcAuthz "github.com/absmach/magistrala/pkg/authz/authsvc"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -103,14 +103,8 @@ func main() {
 		return
 	}
 
-	authn, authnHandler, err := authsvcAuthn.NewAuthentication(ctx, authClientCfg)
-	if err != nil {
-		logger.Error(err.Error())
-		exitCode = 1
-		return
-	}
-	defer authnHandler.Close()
-	logger.Info("Authn successfully connected to auth gRPC server " + authnHandler.Secure())
+	authn := jwksAuthn.NewAuthentication(authClientCfg.JWKSURL)
+	logger.Info("Service is using JWKS authentication")
 
 	authz, authzHandler, err := authsvcAuthz.NewAuthorization(ctx, authClientCfg)
 	if err != nil {

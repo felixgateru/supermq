@@ -19,7 +19,7 @@ import (
 	pki "github.com/absmach/magistrala/certs/pki/amcerts"
 	"github.com/absmach/magistrala/certs/tracing"
 	mglog "github.com/absmach/magistrala/logger"
-	authsvcAuthn "github.com/absmach/magistrala/pkg/authn/authsvc"
+	jwksAuthn "github.com/absmach/magistrala/pkg/authn/jwks"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	jaegerclient "github.com/absmach/magistrala/pkg/jaeger"
 	"github.com/absmach/magistrala/pkg/prometheus"
@@ -103,14 +103,9 @@ func main() {
 		exitCode = 1
 		return
 	}
-	authn, authnClient, err := authsvcAuthn.NewAuthentication(ctx, grpcCfg)
-	if err != nil {
-		logger.Error(err.Error())
-		exitCode = 1
-		return
-	}
-	defer authnClient.Close()
-	logger.Info("AutN successfully connected to auth gRPC server " + authnClient.Secure())
+
+	authn := jwksAuthn.NewAuthentication(grpcCfg.JWKSURL)
+	logger.Info("Service is using JWKS authentication")
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
