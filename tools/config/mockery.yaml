@@ -21,8 +21,8 @@ packages:
       TokenServiceClient:
         config:
           dir: "./auth/mocks"
-          mockname: "PolicyServiceClient"
-          filename: "policy_client.go"
+          mockname: "TokenServiceClient"
+          filename: "token_client.go"
 
   github.com/absmach/magistrala/certs/pki/amcerts:
     interfaces:
