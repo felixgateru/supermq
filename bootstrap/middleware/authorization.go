@@ -37,10 +37,82 @@ func (am *authorizationMiddleware) Add(ctx context.Context, session mgauthn.Sess
 }
 
 func (am *authorizationMiddleware) View(ctx context.Context, session mgauthn.Session, id string) (bootstrap.Config, error) {
-	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.ViewPermission, policies.DomainType, session.DomainID); err != nil {
+	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.ViewPermission, policies.ThingType, id); err != nil {
 		return bootstrap.Config{}, err
 	}
-	return am.svc.View(ctx, session, token, id)
+
+	return am.svc.View(ctx, session, id)
+}
+
+func (am *authorizationMiddleware) Update(ctx context.Context, session mgauthn.Session, cfg bootstrap.Config) error {
+	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.EditPermission, policies.ThingType, cfg.ThingID); err != nil {
+		return err
+	}
+
+	return am.svc.Update(ctx, session, cfg)
+}
+
+func (am *authorizationMiddleware) UpdateCert(ctx context.Context, session mgauthn.Session, thingID, clientCert, clientKey, caCert string) (bootstrap.Config, error) {
+	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.EditPermission, policies.ThingType, thingID); err != nil {
+		return bootstrap.Config{}, err
+	}
+
+	return am.svc.UpdateCert(ctx, session, thingID, clientCert, clientKey, caCert)
+}
+
+func (am *authorizationMiddleware) UpdateConnections(ctx context.Context, session mgauthn.Session, token, id string, connections []string) error {
+	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.EditPermission, policies.ThingType, id); err != nil {
+		return err
+	}
+
+	return am.svc.UpdateConnections(ctx, session, token, id, connections)
+}
+
+func (am *authorizationMiddleware) List(ctx context.Context, session mgauthn.Session, filter bootstrap.Filter, offset, limit uint64) (bootstrap.ConfigsPage, error) {
+	if err := am.checkSuperAdmin(ctx, session.DomainUserID); err == nil {
+		session.SuperAdmin = true
+	}
+	if err := am.authorize(ctx, "", policies.UserType, policies.UsersKind, session.DomainUserID, policies.AdminPermission, policies.DomainType, session.DomainID); err == nil {
+		session.SuperAdmin = true
+	}
+
+	return am.svc.List(ctx, session, filter, offset, limit)
+}
+
+func (am *authorizationMiddleware) Remove(ctx context.Context, session mgauthn.Session, id string) error {
+	if err := am.authorize(ctx, session.DomainID, policies.UserType, policies.UsersKind, session.DomainUserID, policies.DeletePermission, policies.ThingType, id); err != nil {
+		return err
+	}
+
+	return am.svc.Remove(ctx, session, id)
+}
+
+func (am *authorizationMiddleware) Bootstrap(ctx context.Context, externalKey, externalID string, secure bool) (bootstrap.Config, error) {
+	return am.svc.Bootstrap(ctx, externalKey, externalID, secure)
+}
+
+func (am *authorizationMiddleware) ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state bootstrap.State) error {
+	return am.svc.ChangeState(ctx, session, token, id, state)
+}
+
+func (am *authorizationMiddleware) UpdateChannelHandler(ctx context.Context, channel bootstrap.Channel) error {
+	return am.svc.UpdateChannelHandler(ctx, channel)
+}
+
+func (am *authorizationMiddleware) RemoveConfigHandler(ctx context.Context, id string) error {
+	return am.svc.RemoveConfigHandler(ctx, id)
+}
+
+func (am *authorizationMiddleware) RemoveChannelHandler(ctx context.Context, id string) error {
+	return am.svc.RemoveChannelHandler(ctx, id)
+}
+
+func (am *authorizationMiddleware) ConnectThingHandler(ctx context.Context, channelID, ThingID string) error {
+	return am.svc.ConnectThingHandler(ctx, channelID, ThingID)
+}
+
+func (am *authorizationMiddleware) DisconnectThingHandler(ctx context.Context, channelID, ThingID string) error {
+	return am.svc.DisconnectThingHandler(ctx, channelID, ThingID)
 }
 
 func (am *authorizationMiddleware) checkSuperAdmin(ctx context.Context, adminID string) error {

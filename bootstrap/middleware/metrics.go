@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala/bootstrap"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/go-kit/kit/metrics"
 )
 
@@ -31,73 +32,73 @@ func MetricsMiddleware(svc bootstrap.Service, counter metrics.Counter, latency m
 }
 
 // Add instruments Add method with metrics.
-func (mm *metricsMiddleware) Add(ctx context.Context, token string, cfg bootstrap.Config) (saved bootstrap.Config, err error) {
+func (mm *metricsMiddleware) Add(ctx context.Context, session mgauthn.Session, token string, cfg bootstrap.Config) (saved bootstrap.Config, err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "add").Add(1)
 		mm.latency.With("method", "add").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.Add(ctx, token, cfg)
+	return mm.svc.Add(ctx, session, token, cfg)
 }
 
 // View instruments View method with metrics.
-func (mm *metricsMiddleware) View(ctx context.Context, token, id string) (saved bootstrap.Config, err error) {
+func (mm *metricsMiddleware) View(ctx context.Context, session mgauthn.Session, id string) (saved bootstrap.Config, err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "view").Add(1)
 		mm.latency.With("method", "view").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.View(ctx, token, id)
+	return mm.svc.View(ctx, session, id)
 }
 
 // Update instruments Update method with metrics.
-func (mm *metricsMiddleware) Update(ctx context.Context, token string, cfg bootstrap.Config) (err error) {
+func (mm *metricsMiddleware) Update(ctx context.Context, session mgauthn.Session, cfg bootstrap.Config) (err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "update").Add(1)
 		mm.latency.With("method", "update").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.Update(ctx, token, cfg)
+	return mm.svc.Update(ctx, session, cfg)
 }
 
 // UpdateCert instruments UpdateCert method with metrics.
-func (mm *metricsMiddleware) UpdateCert(ctx context.Context, token, thingKey, clientCert, clientKey, caCert string) (cfg bootstrap.Config, err error) {
+func (mm *metricsMiddleware) UpdateCert(ctx context.Context, session mgauthn.Session, thingKey, clientCert, clientKey, caCert string) (cfg bootstrap.Config, err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "update_cert").Add(1)
 		mm.latency.With("method", "update_cert").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.UpdateCert(ctx, token, thingKey, clientCert, clientKey, caCert)
+	return mm.svc.UpdateCert(ctx, session, thingKey, clientCert, clientKey, caCert)
 }
 
 // UpdateConnections instruments UpdateConnections method with metrics.
-func (mm *metricsMiddleware) UpdateConnections(ctx context.Context, token, id string, connections []string) (err error) {
+func (mm *metricsMiddleware) UpdateConnections(ctx context.Context, session mgauthn.Session, token, id string, connections []string) (err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "update_connections").Add(1)
 		mm.latency.With("method", "update_connections").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.UpdateConnections(ctx, token, id, connections)
+	return mm.svc.UpdateConnections(ctx, session, token, id, connections)
 }
 
 // List instruments List method with metrics.
-func (mm *metricsMiddleware) List(ctx context.Context, token string, filter bootstrap.Filter, offset, limit uint64) (saved bootstrap.ConfigsPage, err error) {
+func (mm *metricsMiddleware) List(ctx context.Context, session mgauthn.Session, filter bootstrap.Filter, offset, limit uint64) (saved bootstrap.ConfigsPage, err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "list").Add(1)
 		mm.latency.With("method", "list").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.List(ctx, token, filter, offset, limit)
+	return mm.svc.List(ctx, session, filter, offset, limit)
 }
 
 // Remove instruments Remove method with metrics.
-func (mm *metricsMiddleware) Remove(ctx context.Context, token, id string) (err error) {
+func (mm *metricsMiddleware) Remove(ctx context.Context, session mgauthn.Session, id string) (err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "remove").Add(1)
 		mm.latency.With("method", "remove").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.Remove(ctx, token, id)
+	return mm.svc.Remove(ctx, session, id)
 }
 
 // Bootstrap instruments Bootstrap method with metrics.
@@ -111,13 +112,13 @@ func (mm *metricsMiddleware) Bootstrap(ctx context.Context, externalKey, externa
 }
 
 // ChangeState instruments ChangeState method with metrics.
-func (mm *metricsMiddleware) ChangeState(ctx context.Context, token, id string, state bootstrap.State) (err error) {
+func (mm *metricsMiddleware) ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state bootstrap.State) (err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "change_state").Add(1)
 		mm.latency.With("method", "change_state").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.ChangeState(ctx, token, id, state)
+	return mm.svc.ChangeState(ctx, session, token, id, state)
 }
 
 // UpdateChannelHandler instruments UpdateChannelHandler method with metrics.

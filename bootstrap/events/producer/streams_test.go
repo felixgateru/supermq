@@ -18,7 +18,6 @@ import (
 	"github.com/absmach/magistrala/internal/testsutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
-	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -99,20 +98,16 @@ type testVariable struct {
 
 func newTestVariable(t *testing.T, redisURL string) testVariable {
 	boot := new(mocks.ConfigRepository)
-	authn := new(authnmocks.Authentication)
-	authz := new(authzmocks.Authorization)
 	policies := new(policymocks.Service)
 	sdk := new(sdkmocks.SDK)
 	idp := uuid.NewMock()
-	svc := bootstrap.New(authn, authz, policies, boot, sdk, encKey, idp)
+	svc := bootstrap.New(policies, boot, sdk, encKey, idp)
 	publisher, err := store.NewPublisher(context.Background(), redisURL, streamID)
 	require.Nil(t, err, fmt.Sprintf("got unexpected error: %s", err))
 	svc = producer.NewEventStoreMiddleware(svc, publisher)
 	return testVariable{
 		svc:      svc,
 		boot:     boot,
-		authn:    authn,
-		authz:    authz,
 		policies: policies,
 		sdk:      sdk,
 	}
@@ -134,19 +129,18 @@ func TestAdd(t *testing.T) {
 	invalidConfig.Channels = []bootstrap.Channel{{ID: "empty"}}
 
 	cases := []struct {
-		desc            string
-		config          bootstrap.Config
-		token           string
-		id              string
-		domainID        string
-		authorizeErr    error
-		authenticateErr error
-		thingErr        error
-		channel         []bootstrap.Channel
-		listErr         error
-		saveErr         error
-		err             error
-		event           map[string]interface{}
+		desc     string
+		config   bootstrap.Config
+		token    string
+		session  mgauthn.Session
+		id       string
+		domainID string
+		thingErr error
+		channel  []bootstrap.Channel
+		listErr  error
+		saveErr  error
+		err      error
+		event    map[string]interface{}
 	}{
 		{
 			desc:     "create config successfully",
@@ -166,24 +160,6 @@ func TestAdd(t *testing.T) {
 				"operation":   configCreate,
 			},
 			err: nil,
-		},
-		{
-			desc:            "create config with invalid token",
-			config:          config,
-			token:           invalidToken,
-			event:           nil,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-		},
-		{
-			desc:         "create config with failed authorization",
-			config:       config,
-			token:        validToken,
-			id:           validID,
-			domainID:     domainID,
-			event:        nil,
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
 		},
 		{
 			desc:     "create config with failed to fetch thing",
@@ -219,13 +195,12 @@ func TestAdd(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		sdkCall := tv.sdk.On("Thing", tc.config.ThingID, tc.token).Return(mgsdk.Thing{ID: tc.config.ThingID, Credentials: mgsdk.Credentials{Secret: tc.config.ThingKey}}, errors.NewSDKError(tc.thingErr))
 		repoCall := tv.boot.On("ListExisting", context.Background(), domainID, mock.Anything).Return(tc.config.Channels, tc.listErr)
 		repoCall1 := tv.boot.On("Save", context.Background(), mock.Anything, mock.Anything).Return(mock.Anything, tc.saveErr)
 
-		_, err := tv.svc.Add(context.Background(), tc.token, tc.config)
+		_, err := tv.svc.Add(context.Background(), tc.session, tc.token, tc.config)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -242,8 +217,6 @@ func TestAdd(t *testing.T) {
 
 		test(t, tc.event, event, tc.desc)
 
-		authCall.Unset()
-		authCall1.Unset()
 		sdkCall.Unset()
 		repoCall.Unset()
 		repoCall1.Unset()
@@ -260,16 +233,15 @@ func TestView(t *testing.T) {
 	nonExisting.ThingID = unknownThingID
 
 	cases := []struct {
-		desc            string
-		config          bootstrap.Config
-		token           string
-		id              string
-		domainID        string
-		authorizeErr    error
-		authenticateErr error
-		retrieveErr     error
-		err             error
-		event           map[string]interface{}
+		desc        string
+		config      bootstrap.Config
+		token       string
+		session     mgauthn.Session
+		id          string
+		domainID    string
+		retrieveErr error
+		err         error
+		event       map[string]interface{}
 	}{
 		{
 			desc:     "view successfully",
@@ -290,24 +262,6 @@ func TestView(t *testing.T) {
 			},
 		},
 		{
-			desc:            "view with invalid token",
-			config:          config,
-			token:           invalidToken,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:         "view with failed authorization",
-			config:       config,
-			token:        validToken,
-			id:           validID,
-			domainID:     domainID,
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-			event:        nil,
-		},
-		{
 			desc:        "view with failed retrieve",
 			config:      nonExisting,
 			token:       validToken,
@@ -321,11 +275,9 @@ func TestView(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID}
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.config.ThingID).Return(config, tc.retrieveErr)
-
-		_, err := tv.svc.View(context.Background(), tc.token, tc.config.ThingID)
+		_, err := tv.svc.View(context.Background(), tc.session, tc.config.ThingID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -343,8 +295,6 @@ func TestView(t *testing.T) {
 		}
 
 		test(t, tc.event, event, tc.desc)
-		authCall.Unset()
-		authCall1.Unset()
 		repoCall.Unset()
 	}
 }
@@ -375,16 +325,15 @@ func TestUpdate(t *testing.T) {
 	channels := []string{modified.Channels[0].ID, modified.Channels[1].ID}
 
 	cases := []struct {
-		desc            string
-		config          bootstrap.Config
-		token           string
-		id              string
-		domainID        string
-		authorizeErr    error
-		authenticateErr error
-		updateErr       error
-		err             error
-		event           map[string]interface{}
+		desc      string
+		config    bootstrap.Config
+		token     string
+		session   mgauthn.Session
+		id        string
+		domainID  string
+		updateErr error
+		err       error
+		event     map[string]interface{}
 	}{
 		{
 			desc:     "update config successfully",
@@ -407,24 +356,6 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			desc:            "update with invalid token",
-			config:          modified,
-			token:           invalidToken,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:         "update with failed authorization",
-			config:       modified,
-			token:        validToken,
-			id:           validID,
-			domainID:     domainID,
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-			event:        nil,
-		},
-		{
 			desc:      "update with failed update",
 			config:    nonExisting,
 			token:     validToken,
@@ -438,10 +369,9 @@ func TestUpdate(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		repoCall := tv.boot.On("Update", context.Background(), mock.Anything).Return(tc.updateErr)
-		err := tv.svc.Update(context.Background(), tc.token, tc.config)
+		err := tv.svc.Update(context.Background(), tc.session, tc.config)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -459,8 +389,6 @@ func TestUpdate(t *testing.T) {
 		}
 
 		test(t, tc.event, event, tc.desc)
-		authCall.Unset()
-		authCall1.Unset()
 		repoCall.Unset()
 	}
 }
@@ -472,21 +400,20 @@ func TestUpdateConnections(t *testing.T) {
 	tv := newTestVariable(t, redisURL)
 
 	cases := []struct {
-		desc            string
-		configID        string
-		id              string
-		domainID        string
-		token           string
-		connections     []string
-		authorizeErr    error
-		authenticateErr error
-		thingErr        error
-		channelErr      error
-		retrieveErr     error
-		listErr         error
-		updateErr       error
-		err             error
-		event           map[string]interface{}
+		desc        string
+		configID    string
+		id          string
+		domainID    string
+		token       string
+		session     mgauthn.Session
+		connections []string
+		thingErr    error
+		channelErr  error
+		retrieveErr error
+		listErr     error
+		updateErr   error
+		err         error
+		event       map[string]interface{}
 	}{
 		{
 			desc:        "update connections successfully",
@@ -502,25 +429,6 @@ func TestUpdateConnections(t *testing.T) {
 				"timestamp": time.Now().Unix(),
 				"operation": thingUpdateConnections,
 			},
-		},
-		{
-			desc:            "update connections with invalid token",
-			configID:        config.ThingID,
-			token:           invalidToken,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:         "update connections with failed authorization",
-			configID:     config.ThingID,
-			token:        validToken,
-			id:           validID,
-			domainID:     domainID,
-			connections:  []string{config.Channels[0].ID},
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-			event:        nil,
 		},
 		{
 			desc:        "update connections with failed channel fetch",
@@ -570,13 +478,12 @@ func TestUpdateConnections(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		sdkCall := tv.sdk.On("Channel", mock.Anything, tc.token).Return(mgsdk.Channel{}, tc.channelErr)
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.configID).Return(config, tc.retrieveErr)
 		repoCall1 := tv.boot.On("ListExisting", context.Background(), domainID, mock.Anything, mock.Anything).Return(config.Channels, tc.listErr)
 		repoCall2 := tv.boot.On("UpdateConnections", context.Background(), tc.domainID, tc.configID, mock.Anything, tc.connections).Return(tc.updateErr)
-		err := tv.svc.UpdateConnections(context.Background(), tc.token, tc.configID, tc.connections)
+		err := tv.svc.UpdateConnections(context.Background(), tc.session, tc.token, tc.configID, tc.connections)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -592,8 +499,6 @@ func TestUpdateConnections(t *testing.T) {
 		}
 
 		test(t, tc.event, event, tc.desc)
-		authCall.Unset()
-		authCall1.Unset()
 		sdkCall.Unset()
 		repoCall.Unset()
 		repoCall1.Unset()
@@ -608,19 +513,18 @@ func TestUpdateCert(t *testing.T) {
 	tv := newTestVariable(t, redisURL)
 
 	cases := []struct {
-		desc            string
-		configID        string
-		userID          string
-		domainID        string
-		token           string
-		clientCert      string
-		clientKey       string
-		caCert          string
-		authenticateErr error
-		authorizeErr    error
-		updateErr       error
-		err             error
-		event           map[string]interface{}
+		desc       string
+		configID   string
+		userID     string
+		domainID   string
+		token      string
+		session    mgauthn.Session
+		clientCert string
+		clientKey  string
+		caCert     string
+		updateErr  error
+		err        error
+		event      map[string]interface{}
 	}{
 		{
 			desc:       "update cert successfully",
@@ -639,30 +543,6 @@ func TestUpdateCert(t *testing.T) {
 				"ca_cert":     "caCert",
 				"operation":   certUpdate,
 			},
-		},
-		{
-			desc:            "update cert with invalid token",
-			configID:        config.ThingID,
-			token:           "invalid",
-			clientCert:      "clientCert",
-			clientKey:       "clientKey",
-			caCert:          "caCert",
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:         "update cert with failed authorization",
-			configID:     config.ThingID,
-			token:        validToken,
-			userID:       validID,
-			domainID:     domainID,
-			clientCert:   "clientCert",
-			clientKey:    "clientKey",
-			caCert:       "caCert",
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-			event:        nil,
 		},
 		{
 			desc:       "update cert with failed update",
@@ -736,10 +616,9 @@ func TestUpdateCert(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}
 		repoCall := tv.boot.On("UpdateCert", context.Background(), tc.domainID, tc.configID, tc.clientCert, tc.clientKey, tc.caCert).Return(config, tc.updateErr)
-		_, err := tv.svc.UpdateCert(context.Background(), tc.token, tc.configID, tc.clientCert, tc.clientKey, tc.caCert)
+		_, err := tv.svc.UpdateCert(context.Background(), tc.session, tc.configID, tc.clientCert, tc.clientKey, tc.caCert)
 
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
@@ -757,8 +636,6 @@ func TestUpdateCert(t *testing.T) {
 
 		test(t, tc.event, event, tc.desc)
 
-		authCall.Unset()
-		authCall1.Unset()
 		repoCall.Unset()
 	}
 }
@@ -783,17 +660,15 @@ func TestList(t *testing.T) {
 	cases := []struct {
 		desc                string
 		token               string
+		session             mgauthn.Session
 		userID              string
 		domainID            string
 		config              bootstrap.ConfigsPage
 		filter              bootstrap.Filter
 		offset              uint64
 		limit               uint64
-		authenticateErr     error
 		listObjectsResponse policysvc.PolicyPage
 		listObjectsErr      error
-		superAdminAuthErr   error
-		domainAdmiAuthErr   error
 		retrieveErr         error
 		err                 error
 		event               map[string]interface{}
@@ -803,6 +678,7 @@ func TestList(t *testing.T) {
 			token:    validToken,
 			userID:   validID,
 			domainID: domainID,
+			session:  mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID, SuperAdmin: true},
 			config: bootstrap.ConfigsPage{
 				Total:   uint64(len(saved)),
 				Offset:  0,
@@ -826,11 +702,11 @@ func TestList(t *testing.T) {
 			},
 		},
 		{
-			desc:              "list successfully as domain admin",
-			token:             validToken,
-			userID:            validID,
-			domainID:          domainID,
-			superAdminAuthErr: svcerr.ErrAuthorization,
+			desc:     "list successfully as domain admin",
+			token:    validToken,
+			userID:   validID,
+			domainID: domainID,
+			session:  mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID, SuperAdmin: true},
 			config: bootstrap.ConfigsPage{
 				Total:   uint64(len(saved)),
 				Offset:  0,
@@ -854,12 +730,11 @@ func TestList(t *testing.T) {
 			},
 		},
 		{
-			desc:              "list successfully as non admin",
-			token:             validToken,
-			userID:            validID,
-			domainID:          domainID,
-			superAdminAuthErr: svcerr.ErrAuthorization,
-			domainAdmiAuthErr: svcerr.ErrAuthorization,
+			desc:     "list successfully as non admin",
+			token:    validToken,
+			userID:   validID,
+			domainID: domainID,
+			session:  mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID},
 			config: bootstrap.ConfigsPage{
 				Total:   uint64(len(saved)),
 				Offset:  0,
@@ -881,55 +756,17 @@ func TestList(t *testing.T) {
 				"timestamp":   time.Now().Unix(),
 				"operation":   configList,
 			},
-		},
-		{
-			desc:            "list with invalid token",
-			token:           invalidToken,
-			filter:          bootstrap.Filter{},
-			offset:          0,
-			limit:           10,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:                "list as super admin with failed authorization",
-			token:               validToken,
-			userID:              validID,
-			domainID:            domainID,
-			filter:              bootstrap.Filter{},
-			offset:              0,
-			limit:               10,
-			listObjectsResponse: policysvc.PolicyPage{},
-			superAdminAuthErr:   svcerr.ErrAuthorization,
-			err:                 nil,
-			event:               nil,
-		},
-		{
-			desc:                "list as domain admin with failed authorization",
-			token:               validToken,
-			userID:              validID,
-			domainID:            domainID,
-			filter:              bootstrap.Filter{},
-			offset:              0,
-			limit:               10,
-			listObjectsResponse: policysvc.PolicyPage{},
-			superAdminAuthErr:   svcerr.ErrAuthorization,
-			domainAdmiAuthErr:   svcerr.ErrAuthorization,
-			err:                 nil,
-			event:               nil,
 		},
 		{
 			desc:                "list as non admin with failed list all objects",
 			token:               validToken,
 			userID:              validID,
 			domainID:            domainID,
+			session:             mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID},
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
 			listObjectsResponse: policysvc.PolicyPage{},
-			superAdminAuthErr:   svcerr.ErrAuthorization,
-			domainAdmiAuthErr:   svcerr.ErrAuthorization,
 			listObjectsErr:      svcerr.ErrNotFound,
 			err:                 svcerr.ErrNotFound,
 			event:               nil,
@@ -940,6 +777,7 @@ func TestList(t *testing.T) {
 			token:               validToken,
 			userID:              validID,
 			domainID:            domainID,
+			session:             mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID, SuperAdmin: true},
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
@@ -953,11 +791,11 @@ func TestList(t *testing.T) {
 			token:               validToken,
 			userID:              validID,
 			domainID:            domainID,
+			session:             mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID, SuperAdmin: true},
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
 			listObjectsResponse: policysvc.PolicyPage{},
-			superAdminAuthErr:   svcerr.ErrAuthorization,
 			retrieveErr:         nil,
 			err:                 nil,
 			event:               nil,
@@ -967,12 +805,11 @@ func TestList(t *testing.T) {
 			token:               validToken,
 			userID:              validID,
 			domainID:            domainID,
+			session:             mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: validID},
 			filter:              bootstrap.Filter{},
 			offset:              0,
 			limit:               10,
 			listObjectsResponse: policysvc.PolicyPage{},
-			superAdminAuthErr:   svcerr.ErrAuthorization,
-			domainAdmiAuthErr:   svcerr.ErrAuthorization,
 			retrieveErr:         nil,
 			err:                 nil,
 			event:               nil,
@@ -981,23 +818,7 @@ func TestList(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mgauthz.PolicyReq{
-			SubjectType: policysvc.UserType,
-			Subject:     tc.userID,
-			Permission:  policysvc.AdminPermission,
-			ObjectType:  policysvc.PlatformType,
-			Object:      policysvc.MagistralaObject,
-		}).Return(tc.superAdminAuthErr)
-		authCall2 := tv.authz.On("Authorize", context.Background(), mgauthz.PolicyReq{
-			SubjectType: policysvc.UserType,
-			SubjectKind: policysvc.UsersKind,
-			Subject:     tc.userID,
-			Permission:  policysvc.AdminPermission,
-			ObjectType:  policysvc.DomainType,
-			Object:      tc.domainID,
-		}).Return(tc.domainAdmiAuthErr)
-		authCall3 := tv.policies.On("ListAllObjects", mock.Anything, policysvc.Policy{
+		policyCall := tv.policies.On("ListAllObjects", mock.Anything, policysvc.Policy{
 			SubjectType: policysvc.UserType,
 			Subject:     tc.userID,
 			Permission:  policysvc.ViewPermission,
@@ -1005,7 +826,7 @@ func TestList(t *testing.T) {
 		}).Return(tc.listObjectsResponse, tc.listObjectsErr)
 		repoCall := tv.boot.On("RetrieveAll", context.Background(), mock.Anything, mock.Anything, tc.filter, tc.offset, tc.limit).Return(tc.config, tc.retrieveErr)
 
-		_, err := tv.svc.List(context.Background(), tc.token, tc.filter, tc.offset, tc.limit)
+		_, err := tv.svc.List(context.Background(), tc.session, tc.filter, tc.offset, tc.limit)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -1022,10 +843,7 @@ func TestList(t *testing.T) {
 
 		test(t, tc.event, event, tc.desc)
 
-		authCall.Unset()
-		authCall1.Unset()
-		authCall2.Unset()
-		authCall3.Unset()
+		policyCall.Unset()
 		repoCall.Unset()
 	}
 }
@@ -1040,16 +858,15 @@ func TestRemove(t *testing.T) {
 	nonExisting.ThingID = unknownThingID
 
 	cases := []struct {
-		desc            string
-		configID        string
-		userID          string
-		domainID        string
-		token           string
-		authorizeErr    error
-		authenticateErr error
-		removeErr       error
-		err             error
-		event           map[string]interface{}
+		desc      string
+		configID  string
+		userID    string
+		domainID  string
+		token     string
+		session   mgauthn.Session
+		removeErr error
+		err       error
+		event     map[string]interface{}
 	}{
 		{
 			desc:     "remove config successfully",
@@ -1065,24 +882,6 @@ func TestRemove(t *testing.T) {
 			},
 		},
 		{
-			desc:            "remove config with invalid credentials",
-			configID:        config.ThingID,
-			token:           "",
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
-		},
-		{
-			desc:         "remove config with failed authorization",
-			configID:     config.ThingID,
-			token:        validToken,
-			userID:       validID,
-			domainID:     domainID,
-			authorizeErr: svcerr.ErrAuthorization,
-			err:          svcerr.ErrAuthorization,
-			event:        nil,
-		},
-		{
 			desc:      "remove config with failed removal",
 			configID:  nonExisting.ThingID,
 			token:     validToken,
@@ -1096,10 +895,9 @@ func TestRemove(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
-		authCall1 := tv.authz.On("Authorize", context.Background(), mock.Anything).Return(tc.authorizeErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		repoCall := tv.boot.On("Remove", context.Background(), mock.Anything, mock.Anything).Return(tc.removeErr)
-		err := tv.svc.Remove(context.Background(), tc.token, tc.configID)
+		err := tv.svc.Remove(context.Background(), tc.session, tc.configID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -1115,8 +913,6 @@ func TestRemove(t *testing.T) {
 		}
 
 		test(t, tc.event, event, tc.desc)
-		authCall.Unset()
-		authCall1.Unset()
 		repoCall.Unset()
 	}
 }
@@ -1196,6 +992,7 @@ func TestChangeState(t *testing.T) {
 		userID          string
 		domainID        string
 		token           string
+		session         mgauthn.Session
 		state           bootstrap.State
 		authResponse    *magistrala.AuthZRes
 		authorizeErr    error
@@ -1221,15 +1018,6 @@ func TestChangeState(t *testing.T) {
 				"timestamp": time.Now().Unix(),
 				"operation": thingStateChange,
 			},
-		},
-		{
-			desc:            "change state invalid credentials",
-			id:              config.ThingID,
-			token:           "invalid",
-			state:           bootstrap.Inactive,
-			authenticateErr: svcerr.ErrAuthentication,
-			err:             svcerr.ErrAuthentication,
-			event:           nil,
 		},
 		{
 			desc:        "change state with failed retrieve by ID",
@@ -1268,11 +1056,11 @@ func TestChangeState(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		authCall := tv.authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: validID}, tc.authenticateErr)
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.id).Return(config, tc.retrieveErr)
 		sdkCall1 := tv.sdk.On("Connect", mock.Anything, mock.Anything).Return(errors.NewSDKError(tc.connectErr))
 		repoCall1 := tv.boot.On("ChangeState", context.Background(), mock.Anything, mock.Anything, mock.Anything).Return(tc.stateErr)
-		err := tv.svc.ChangeState(context.Background(), tc.token, tc.id, tc.state)
+		err := tv.svc.ChangeState(context.Background(), tc.session, tc.token, tc.id, tc.state)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 
 		streams := redisClient.XRead(context.Background(), &redis.XReadArgs{
@@ -1288,7 +1076,6 @@ func TestChangeState(t *testing.T) {
 		}
 
 		test(t, tc.event, event, tc.desc)
-		authCall.Unset()
 		sdkCall1.Unset()
 		repoCall.Unset()
 		repoCall1.Unset()
