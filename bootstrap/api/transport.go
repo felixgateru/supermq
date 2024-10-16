@@ -15,6 +15,7 @@ import (
 	"github.com/absmach/magistrala/bootstrap"
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/pkg/apiutil"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/errors"
 	"github.com/go-chi/chi/v5"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -39,7 +40,7 @@ var (
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(svc bootstrap.Service, reader bootstrap.ConfigReader, logger *slog.Logger, instanceID string) http.Handler {
+func MakeHandler(svc bootstrap.Service, authn mgauthn.Authentication, reader bootstrap.ConfigReader, logger *slog.Logger, instanceID string) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
@@ -47,48 +48,52 @@ func MakeHandler(svc bootstrap.Service, reader bootstrap.ConfigReader, logger *s
 	r := chi.NewRouter()
 
 	r.Route("/things", func(r chi.Router) {
-		r.Route("/configs", func(r chi.Router) {
-			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-				addEndpoint(svc),
-				decodeAddRequest,
-				api.EncodeResponse,
-				opts...), "add").ServeHTTP)
+		r.Group(func(r chi.Router) {
+			r.Use(api.AuthenticateMiddleware(authn))
 
-			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-				listEndpoint(svc),
-				decodeListRequest,
-				api.EncodeResponse,
-				opts...), "list").ServeHTTP)
+			r.Route("/configs", func(r chi.Router) {
+				r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
+					addEndpoint(svc),
+					decodeAddRequest,
+					api.EncodeResponse,
+					opts...), "add").ServeHTTP)
 
-			r.Get("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
-				viewEndpoint(svc),
-				decodeEntityRequest,
-				api.EncodeResponse,
-				opts...), "view").ServeHTTP)
+				r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
+					listEndpoint(svc),
+					decodeListRequest,
+					api.EncodeResponse,
+					opts...), "list").ServeHTTP)
 
-			r.Put("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
-				updateEndpoint(svc),
-				decodeUpdateRequest,
-				api.EncodeResponse,
-				opts...), "update").ServeHTTP)
+				r.Get("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
+					viewEndpoint(svc),
+					decodeEntityRequest,
+					api.EncodeResponse,
+					opts...), "view").ServeHTTP)
 
-			r.Delete("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
-				removeEndpoint(svc),
-				decodeEntityRequest,
-				api.EncodeResponse,
-				opts...), "remove").ServeHTTP)
+				r.Put("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
+					updateEndpoint(svc),
+					decodeUpdateRequest,
+					api.EncodeResponse,
+					opts...), "update").ServeHTTP)
 
-			r.Patch("/certs/{certID}", otelhttp.NewHandler(kithttp.NewServer(
-				updateCertEndpoint(svc),
-				decodeUpdateCertRequest,
-				api.EncodeResponse,
-				opts...), "update_cert").ServeHTTP)
+				r.Delete("/{configID}", otelhttp.NewHandler(kithttp.NewServer(
+					removeEndpoint(svc),
+					decodeEntityRequest,
+					api.EncodeResponse,
+					opts...), "remove").ServeHTTP)
 
-			r.Put("/connections/{connID}", otelhttp.NewHandler(kithttp.NewServer(
-				updateConnEndpoint(svc),
-				decodeUpdateConnRequest,
-				api.EncodeResponse,
-				opts...), "update_connections").ServeHTTP)
+				r.Patch("/certs/{certID}", otelhttp.NewHandler(kithttp.NewServer(
+					updateCertEndpoint(svc),
+					decodeUpdateCertRequest,
+					api.EncodeResponse,
+					opts...), "update_cert").ServeHTTP)
+
+				r.Put("/connections/{connID}", otelhttp.NewHandler(kithttp.NewServer(
+					updateConnEndpoint(svc),
+					decodeUpdateConnRequest,
+					api.EncodeResponse,
+					opts...), "update_connections").ServeHTTP)
+			})
 		})
 
 		r.Route("/bootstrap", func(r chi.Router) {
@@ -109,7 +114,7 @@ func MakeHandler(svc bootstrap.Service, reader bootstrap.ConfigReader, logger *s
 				opts...), "bootstrap_secure").ServeHTTP)
 		})
 
-		r.Put("/state/{thingID}", otelhttp.NewHandler(kithttp.NewServer(
+		r.With(api.AuthenticateMiddleware(authn)).Put("/state/{thingID}", otelhttp.NewHandler(kithttp.NewServer(
 			stateEndpoint(svc),
 			decodeStateRequest,
 			api.EncodeResponse,
