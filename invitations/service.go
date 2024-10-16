@@ -9,11 +9,10 @@ import (
 
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/auth"
+	"github.com/absmach/magistrala/pkg/authn"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	mgauthz "github.com/absmach/magistrala/pkg/authz"
-	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/pkg/policies"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 )
 
@@ -25,39 +24,20 @@ type service struct {
 	sdk   mgsdk.SDK
 }
 
-// ErrMemberExist indicates that the user is already a member of the domain.
-var ErrMemberExist = errors.New("user is already a member of the domain")
-
-func NewService(authn mgauthn.Authentication, authz mgauthz.Authorization, token magistrala.TokenServiceClient, repo Repository, sdk mgsdk.SDK) Service {
+func NewService(token magistrala.TokenServiceClient, repo Repository, sdk mgsdk.SDK) Service {
 	return &service{
-		authn: authn,
-		authz: authz,
 		token: token,
 		repo:  repo,
 		sdk:   sdk,
 	}
 }
 
-func (svc *service) SendInvitation(ctx context.Context, token string, invitation Invitation) error {
+func (svc *service) SendInvitation(ctx context.Context, session authn.Session, invitation Invitation) error {
 	if err := CheckRelation(invitation.Relation); err != nil {
 		return err
 	}
 
-	session, err := svc.authn.Authenticate(ctx, token)
-	if err != nil {
-		return err
-	}
 	invitation.InvitedBy = session.UserID
-
-	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.UserID)
-	if err := svc.authorize(ctx, domainUserId, policies.MembershipPermission, policies.DomainType, invitation.DomainID); err == nil {
-		// return error if the user is already a member of the domain
-		return errors.Wrap(svcerr.ErrConflict, ErrMemberExist)
-	}
-
-	if err := svc.checkAdmin(ctx, session.DomainUserID, invitation.DomainID); err != nil {
-		return err
-	}
 
 	joinToken, err := svc.token.Issue(ctx, &magistrala.IssueReq{UserId: session.UserID, DomainId: &invitation.DomainID, Type: uint32(auth.InvitationKey)})
 	if err != nil {
@@ -76,61 +56,25 @@ func (svc *service) SendInvitation(ctx context.Context, token string, invitation
 	return svc.repo.Create(ctx, invitation)
 }
 
-func (svc *service) ViewInvitation(ctx context.Context, token, userID, domainID string) (invitation Invitation, err error) {
-	session, err := svc.authn.Authenticate(ctx, token)
-	if err != nil {
-		return Invitation{}, err
-	}
+func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation Invitation, err error) {
 	inv, err := svc.repo.Retrieve(ctx, userID, domainID)
 	if err != nil {
 		return Invitation{}, err
 	}
 	inv.Token = ""
 
-	if session.UserID == userID {
-		return inv, nil
-	}
-
-	if inv.InvitedBy == session.UserID {
-		return inv, nil
-	}
-
-	if err := svc.checkAdmin(ctx, session.DomainUserID, domainID); err != nil {
-		return Invitation{}, err
-	}
-
 	return inv, nil
 }
 
-func (svc *service) ListInvitations(ctx context.Context, token string, page Page) (invitations InvitationPage, err error) {
-	session, err := svc.authn.Authenticate(ctx, token)
+func (svc *service) ListInvitations(ctx context.Context, session authn.Session, page Page) (invitations InvitationPage, err error) {
+	ip, err := svc.repo.RetrieveAll(ctx, page)
 	if err != nil {
 		return InvitationPage{}, err
 	}
-
-	if err := svc.authorize(ctx, session.DomainUserID, policies.AdminPermission, policies.PlatformType, policies.MagistralaObject); err == nil {
-		return svc.repo.RetrieveAll(ctx, page)
-	}
-
-	if page.DomainID != "" {
-		if err := svc.checkAdmin(ctx, session.DomainUserID, page.DomainID); err != nil {
-			return InvitationPage{}, err
-		}
-
-		return svc.repo.RetrieveAll(ctx, page)
-	}
-
-	page.InvitedByOrUserID = session.UserID
-
-	return svc.repo.RetrieveAll(ctx, page)
+	return ip, nil
 }
 
-func (svc *service) AcceptInvitation(ctx context.Context, token, domainID string) error {
-	session, err := svc.authn.Authenticate(ctx, token)
-	if err != nil {
-		return err
-	}
-
+func (svc *service) AcceptInvitation(ctx context.Context, session authn.Session, domainID string) error {
 	inv, err := svc.repo.Retrieve(ctx, session.UserID, domainID)
 	if err != nil {
 		return err
@@ -161,12 +105,7 @@ func (svc *service) AcceptInvitation(ctx context.Context, token, domainID string
 	return svc.repo.UpdateConfirmation(ctx, inv)
 }
 
-func (svc *service) RejectInvitation(ctx context.Context, token, domainID string) error {
-	session, err := svc.authn.Authenticate(ctx, token)
-	if err != nil {
-		return err
-	}
-
+func (svc *service) RejectInvitation(ctx context.Context, session authn.Session, domainID string) error {
 	inv, err := svc.repo.Retrieve(ctx, session.UserID, domainID)
 	if err != nil {
 		return err
@@ -189,11 +128,7 @@ func (svc *service) RejectInvitation(ctx context.Context, token, domainID string
 	return svc.repo.UpdateRejection(ctx, inv)
 }
 
-func (svc *service) DeleteInvitation(ctx context.Context, token, userID, domainID string) error {
-	session, err := svc.authn.Authenticate(ctx, token)
-	if err != nil {
-		return err
-	}
+func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) error {
 	if session.UserID == userID {
 		return svc.repo.Delete(ctx, userID, domainID)
 	}
@@ -207,38 +142,5 @@ func (svc *service) DeleteInvitation(ctx context.Context, token, userID, domainI
 		return svc.repo.Delete(ctx, userID, domainID)
 	}
 
-	if err := svc.checkAdmin(ctx, session.DomainUserID, domainID); err != nil {
-		return err
-	}
-
 	return svc.repo.Delete(ctx, userID, domainID)
-}
-
-func (svc *service) authorize(ctx context.Context, subj, perm, objType, obj string) error {
-	req := mgauthz.PolicyReq{
-		SubjectType: policies.UserType,
-		SubjectKind: policies.UsersKind,
-		Subject:     subj,
-		Permission:  perm,
-		ObjectType:  objType,
-		Object:      obj,
-	}
-	if err := svc.authz.Authorize(ctx, req); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// checkAdmin checks if the given user is a domain or platform administrator.
-func (svc *service) checkAdmin(ctx context.Context, userID, domainID string) error {
-	if err := svc.authorize(ctx, userID, policies.AdminPermission, policies.DomainType, domainID); err == nil {
-		return nil
-	}
-
-	if err := svc.authorize(ctx, userID, policies.AdminPermission, policies.PlatformType, policies.MagistralaObject); err == nil {
-		return nil
-	}
-
-	return svcerr.ErrAuthorization
 }

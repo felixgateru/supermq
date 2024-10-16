@@ -14,6 +14,7 @@ import (
 	"github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/invitations"
 	"github.com/absmach/magistrala/pkg/apiutil"
+	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/errors"
 	"github.com/go-chi/chi/v5"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -29,14 +30,16 @@ const (
 	stateKey     = "state"
 )
 
-func MakeHandler(svc invitations.Service, logger *slog.Logger, instanceID string) http.Handler {
+func MakeHandler(svc invitations.Service, logger *slog.Logger, authn mgauthn.Authentication, instanceID string) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
 	mux := chi.NewRouter()
 
+	mux.Use(api.AuthenticateMiddleware(authn))
 	mux.Route("/invitations", func(r chi.Router) {
+
 		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 			sendInvitationEndpoint(svc),
 			decodeSendInvitationReq,
