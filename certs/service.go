@@ -9,7 +9,6 @@ import (
 
 	"github.com/absmach/certs/sdk"
 	pki "github.com/absmach/magistrala/certs/pki/amcerts"
-	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"

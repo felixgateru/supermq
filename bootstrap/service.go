@@ -129,8 +129,6 @@ type bootstrapService struct {
 // New returns new Bootstrap service.
 func New(policyService policies.Service, configs ConfigRepository, sdk mgsdk.SDK, encKey []byte, idp magistrala.IDProvider) Service {
 	return &bootstrapService{
-		authn:      authn,
-		authz:      authz,
 		configs:    configs,
 		sdk:        sdk,
 		policies:   policyService,
