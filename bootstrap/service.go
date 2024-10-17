@@ -62,39 +62,31 @@ var _ Service = (*bootstrapService)(nil)
 type Service interface {
 	// Add adds new Thing Config to the user identified by the provided token.
 	Add(ctx context.Context, session mgauthn.Session, token string, cfg Config) (Config, error)
-	Add(ctx context.Context, session mgauthn.Session, token string, cfg Config) (Config, error)
 
 	// View returns Thing Config with given ID belonging to the user identified by the given token.
 	View(ctx context.Context, session mgauthn.Session, id string) (Config, error)
-	View(ctx context.Context, session mgauthn.Session, id string) (Config, error)
 
 	// Update updates editable fields of the provided Config.
-	Update(ctx context.Context, session mgauthn.Session, cfg Config) error
 	Update(ctx context.Context, session mgauthn.Session, cfg Config) error
 
 	// UpdateCert updates an existing Config certificate and token.
 	// A non-nil error is returned to indicate operation failure.
 	UpdateCert(ctx context.Context, session mgauthn.Session, thingID, clientCert, clientKey, caCert string) (Config, error)
-	UpdateCert(ctx context.Context, session mgauthn.Session, thingID, clientCert, clientKey, caCert string) (Config, error)
 
 	// UpdateConnections updates list of Channels related to given Config.
-	UpdateConnections(ctx context.Context, session mgauthn.Session, token, id string, connections []string) error
 	UpdateConnections(ctx context.Context, session mgauthn.Session, token, id string, connections []string) error
 
 	// List returns subset of Configs with given search params that belong to the
 	// user identified by the given token.
 	List(ctx context.Context, session mgauthn.Session, filter Filter, offset, limit uint64) (ConfigsPage, error)
-	List(ctx context.Context, session mgauthn.Session, filter Filter, offset, limit uint64) (ConfigsPage, error)
 
 	// Remove removes Config with specified token that belongs to the user identified by the given token.
-	Remove(ctx context.Context, session mgauthn.Session, id string) error
 	Remove(ctx context.Context, session mgauthn.Session, id string) error
 
 	// Bootstrap returns Config to the Thing with provided external ID using external key.
 	Bootstrap(ctx context.Context, externalKey, externalID string, secure bool) (Config, error)
 
 	// ChangeState changes state of the Thing with given thing ID and domain ID.
-	ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state State) error
 	ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state State) error
 
 	// Methods RemoveConfig, UpdateChannel, and RemoveChannel are used as
@@ -145,7 +137,6 @@ func New(policyService policies.Service, configs ConfigRepository, sdk mgsdk.SDK
 	}
 }
 
-func (bs bootstrapService) Add(ctx context.Context, session mgauthn.Session, token string, cfg Config) (Config, error) {
 func (bs bootstrapService) Add(ctx context.Context, session mgauthn.Session, token string, cfg Config) (Config, error) {
 	toConnect := bs.toIDList(cfg.Channels)
 
@@ -205,7 +196,6 @@ func (bs bootstrapService) View(ctx context.Context, session mgauthn.Session, id
 
 func (bs bootstrapService) Update(ctx context.Context, session mgauthn.Session, cfg Config) error {
 	cfg.DomainID = session.DomainID
-	if err := bs.configs.Update(ctx, cfg); err != nil {
 	if err := bs.configs.Update(ctx, cfg); err != nil {
 		return errors.Wrap(errUpdateConnections, err)
 	}
@@ -333,7 +323,6 @@ func (bs bootstrapService) Bootstrap(ctx context.Context, externalKey, externalI
 	return cfg, nil
 }
 
-func (bs bootstrapService) ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state State) error {
 func (bs bootstrapService) ChangeState(ctx context.Context, session mgauthn.Session, token, id string, state State) error {
 	cfg, err := bs.configs.RetrieveByID(ctx, session.DomainID, id)
 	if err != nil {

@@ -17,8 +17,6 @@ import (
 	"github.com/absmach/magistrala/bootstrap/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
-	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
-	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/events/store"
@@ -90,8 +88,6 @@ var (
 type testVariable struct {
 	svc      bootstrap.Service
 	boot     *mocks.ConfigRepository
-	authn    *authnmocks.Authentication
-	authz    *authzmocks.Authorization
 	policies *policymocks.Service
 	sdk      *sdkmocks.SDK
 }

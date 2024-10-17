@@ -71,7 +71,7 @@ func newCertServer() (*httptest.Server, *mocks.Service, *authnmocks.Authenticati
 	logger := mglog.NewMock()
 	authn := new(authnmocks.Authentication)
 	mux := httpapi.MakeHandler(svc, authn, logger, "")
-	
+
 	return httptest.NewServer(mux), svc, authn
 }
 
