@@ -19,7 +19,6 @@ import (
 	"github.com/absmach/magistrala/invitations/middleware"
 	invitationspg "github.com/absmach/magistrala/invitations/postgres"
 	mglog "github.com/absmach/magistrala/logger"
-	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	authsvcAuthn "github.com/absmach/magistrala/pkg/authn/authsvc"
 	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	authsvcAuthz "github.com/absmach/magistrala/pkg/authz/authsvc"
@@ -142,7 +141,7 @@ func main() {
 	}()
 	tracer := tp.Tracer(svcName)
 
-	svc, err := newService(db, dbConfig, authn, authz, tokenClient, tracer, cfg, logger)
+	svc, err := newService(db, dbConfig, authz, tokenClient, tracer, cfg, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create %s service: %s", svcName, err))
 		exitCode = 1
@@ -156,7 +155,7 @@ func main() {
 		return
 	}
 
-	httpSvr := http.NewServer(ctx, cancel, svcName, httpServerConfig, api.MakeHandler(svc, logger, cfg.InstanceID), logger)
+	httpSvr := http.NewServer(ctx, cancel, svcName, httpServerConfig, api.MakeHandler(svc, logger, authn, cfg.InstanceID), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, magistrala.Version, logger, cancel)
@@ -176,7 +175,7 @@ func main() {
 	}
 }
 
-func newService(db *sqlx.DB, dbConfig clientspg.Config, authn mgauthn.Authentication, authz mgauthz.Authorization, token magistrala.TokenServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
+func newService(db *sqlx.DB, dbConfig clientspg.Config, authz mgauthz.Authorization, token magistrala.TokenServiceClient, tracer trace.Tracer, conf config, logger *slog.Logger) (invitations.Service, error) {
 	database := postgres.NewDatabase(db, dbConfig, tracer)
 	repo := invitationspg.NewRepository(database)
 
@@ -186,7 +185,8 @@ func newService(db *sqlx.DB, dbConfig clientspg.Config, authn mgauthn.Authentica
 	}
 	sdk := mgsdk.NewSDK(config)
 
-	svc := invitations.NewService(authn, authz, token, repo, sdk)
+	svc := invitations.NewService(token, repo, sdk)
+	svc = middleware.AuthorizationMiddleware(authz, svc)
 	svc = middleware.Tracing(svc, tracer)
 	svc = middleware.Logging(logger, svc)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")

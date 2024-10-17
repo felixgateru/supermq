@@ -10,15 +10,11 @@ import (
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/auth"
 	"github.com/absmach/magistrala/pkg/authn"
-	mgauthn "github.com/absmach/magistrala/pkg/authn"
-	mgauthz "github.com/absmach/magistrala/pkg/authz"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	mgsdk "github.com/absmach/magistrala/pkg/sdk/go"
 )
 
 type service struct {
-	authn mgauthn.Authentication
-	authz mgauthz.Authorization
 	token magistrala.TokenServiceClient
 	repo  Repository
 	sdk   mgsdk.SDK
