@@ -271,7 +271,7 @@ func TestView(t *testing.T) {
 
 	lastID := "0"
 	for _, tc := range cases {
-		tc.session = mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID}
+		tc.session = mgauthn.Session{UserID: validID, DomainID: tc.domainID, DomainUserID: validID}
 		repoCall := tv.boot.On("RetrieveByID", context.Background(), tc.domainID, tc.config.ThingID).Return(config, tc.retrieveErr)
 		_, err := tv.svc.View(context.Background(), tc.session, tc.config.ThingID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
