@@ -36,7 +36,7 @@ const (
 // Error wrappers for MQTT errors.
 var (
 	errMalformedSubtopic        = errors.New("malformed subtopic")
-	errClientNotInitialized     = errors.New("client is not initialized")
+	ErrClientNotInitialized     = errors.New("client is not initialized")
 	errMalformedTopic           = errors.New("malformed topic")
 	errMissingTopicPub          = errors.New("failed to publish due to missing topic")
 	errFailedPublish            = errors.New("failed to publish")
@@ -67,7 +67,7 @@ func NewHandler(publisher messaging.Publisher, logger *slog.Logger, thingsClient
 func (h *handler) AuthConnect(ctx context.Context) error {
 	s, ok := session.FromContext(ctx)
 	if !ok {
-		return mhttp.NewHTTPProxyError(http.StatusUnauthorized, errClientNotInitialized)
+		return mhttp.NewHTTPProxyError(http.StatusUnauthorized, ErrClientNotInitialized)
 	}
 
 	var tok string
@@ -107,7 +107,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	topic = &strings.Split(*topic, "?")[0]
 	s, ok := session.FromContext(ctx)
 	if !ok {
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, errClientNotInitialized))
+		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, ErrClientNotInitialized))
 	}
 	h.logger.Info(fmt.Sprintf(logInfoPublished, s.ID, *topic))
 	// Topics are in the format:
