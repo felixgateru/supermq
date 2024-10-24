@@ -17,7 +17,7 @@ type EntityType uint8
 const (
 	UserEntity EntityType = iota
 	GroupEntity
-	ThingEntity
+	ClientEntity
 	ChannelEntity
 )
 
@@ -25,7 +25,7 @@ const (
 const (
 	userEntityType    = "user"
 	groupEntityType   = "group"
-	thingEntityType   = "thing"
+	clientEntityType  = "client"
 	channelEntityType = "channel"
 )
 
@@ -36,8 +36,8 @@ func (e EntityType) String() string {
 		return userEntityType
 	case GroupEntity:
 		return groupEntityType
-	case ThingEntity:
-		return thingEntityType
+	case ClientEntity:
+		return clientEntityType
 	case ChannelEntity:
 		return channelEntityType
 	default:
@@ -52,8 +52,8 @@ func (e EntityType) AuthString() string {
 		return policies.UserType
 	case GroupEntity, ChannelEntity:
 		return policies.GroupType
-	case ThingEntity:
-		return policies.ThingType
+	case ClientEntity:
+		return policies.ClientType
 	default:
 		return ""
 	}
@@ -66,8 +66,8 @@ func ToEntityType(entityType string) (EntityType, error) {
 		return UserEntity, nil
 	case groupEntityType:
 		return GroupEntity, nil
-	case thingEntityType:
-		return ThingEntity, nil
+	case clientEntityType:
+		return ClientEntity, nil
 	case channelEntityType:
 		return ChannelEntity, nil
 	default:
@@ -82,8 +82,8 @@ func (e EntityType) Query() string {
 		return "((operation LIKE 'user.%' AND attributes->>'id' = :entity_id) OR (attributes->>'user_id' = :entity_id))"
 	case GroupEntity, ChannelEntity:
 		return "((operation LIKE 'group.%' AND attributes->>'id' = :entity_id) OR (attributes->>'group_id' = :entity_id))"
-	case ThingEntity:
-		return "((operation LIKE 'thing.%' AND attributes->>'id' = :entity_id) OR (attributes->>'thing_id' = :entity_id))"
+	case ClientEntity:
+		return "((operation LIKE 'client.%' AND attributes->>'id' = :entity_id) OR (attributes->>'client_id' = :entity_id))"
 	default:
 		return ""
 	}
@@ -94,7 +94,7 @@ type Journal struct {
 	ID         string                 `json:"id,omitempty" db:"id"`
 	Operation  string                 `json:"operation,omitempty" db:"operation,omitempty"`
 	OccurredAt time.Time              `json:"occurred_at,omitempty" db:"occurred_at,omitempty"`
-	Attributes map[string]interface{} `json:"attributes,omitempty" db:"attributes,omitempty"` // This is extra information about the journal for example thing_id, user_id, group_id etc.
+	Attributes map[string]interface{} `json:"attributes,omitempty" db:"attributes,omitempty"` // This is extra information about the journal for example client_id, user_id, group_id etc.
 	Metadata   map[string]interface{} `json:"metadata,omitempty" db:"metadata,omitempty"`     // This is decoded metadata from the journal.
 }
 

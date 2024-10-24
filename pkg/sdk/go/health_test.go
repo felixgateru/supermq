@@ -23,8 +23,8 @@ import (
 )
 
 func TestHealth(t *testing.T) {
-	thingsTs, _, _ := setupThings()
-	defer thingsTs.Close()
+	clientsTs, _, _ := setupClients()
+	defer clientsTs.Close()
 
 	usersTs, _, _ := setupUsers()
 	defer usersTs.Close()
@@ -42,7 +42,7 @@ func TestHealth(t *testing.T) {
 	defer httpAdapterTs.Close()
 
 	sdkConf := sdk.Config{
-		ThingsURL:       thingsTs.URL,
+		ClientsURL:      clientsTs.URL,
 		UsersURL:        usersTs.URL,
 		CertsURL:        certsTs.URL,
 		BootstrapURL:    bootstrapTs.URL,
@@ -62,11 +62,11 @@ func TestHealth(t *testing.T) {
 		err         errors.SDKError
 	}{
 		{
-			desc:        "get things service health check",
-			service:     "things",
+			desc:        "get clients service health check",
+			service:     "clients",
 			empty:       false,
 			err:         nil,
-			description: "things service",
+			description: "clients service",
 			status:      "pass",
 		},
 		{
