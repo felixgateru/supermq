@@ -12,6 +12,8 @@ import (
 	"time"
 
 	authmocks "github.com/absmach/magistrala/auth/mocks"
+	"github.com/absmach/magistrala/groups"
+	"github.com/absmach/magistrala/groups/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
@@ -19,8 +21,6 @@ import (
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/pkg/groups"
-	"github.com/absmach/magistrala/pkg/groups/mocks"
 	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
 	policies "github.com/absmach/magistrala/pkg/policies"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"

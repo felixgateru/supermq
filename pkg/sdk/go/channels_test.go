@@ -12,6 +12,8 @@ import (
 	"time"
 
 	authmocks "github.com/absmach/magistrala/auth/mocks"
+	"github.com/absmach/magistrala/groups"
+	gmocks "github.com/absmach/magistrala/groups/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
@@ -19,8 +21,6 @@ import (
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	"github.com/absmach/magistrala/pkg/groups"
-	gmocks "github.com/absmach/magistrala/pkg/groups/mocks"
 	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
 	policies "github.com/absmach/magistrala/pkg/policies"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
@@ -52,7 +52,7 @@ func setupChannels() (*httptest.Server, *gmocks.Service, *authnmocks.Authenticat
 
 	mux := chi.NewRouter()
 
-	thapi.MakeHandler(tsvc, gsvc, authn, mux, logger, "")
+	thapi.MakeHandler(tsvc, authn, mux, logger, "")
 	usapi.MakeHandler(usvc, authn, token, true, gsvc, mux, logger, "", passRegex, provider)
 	return httptest.NewServer(mux), gsvc, authn
 }

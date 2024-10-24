@@ -9,13 +9,13 @@ import (
 
 	"github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/postgres"
+	"github.com/absmach/magistrala/pkg/roles"
 )
 
-type AuthzReq struct {
-	ChannelID  string
-	ClientID   string
-	ClientKey  string
-	Permission string
+type Connection struct {
+	ThingID   string
+	ChannelID string
+	DomainID  string
 }
 
 type ClientRepository struct {
@@ -55,7 +55,7 @@ type Repository interface {
 	ChangeStatus(ctx context.Context, client Client) (Client, error)
 
 	// Delete deletes client with given id
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, clientIDs ...string) error
 
 	// Save persists the client account. A non-nil error is returned to indicate
 	// operation failure.
@@ -63,12 +63,38 @@ type Repository interface {
 
 	// RetrieveBySecret retrieves a client based on the secret (key).
 	RetrieveBySecret(ctx context.Context, key string) (Client, error)
+
+	RetrieveByIds(ctx context.Context, ids []string) (ClientsPage, error)
+
+	AddConnections(ctx context.Context, conns []Connection) error
+
+	RemoveConnections(ctx context.Context, conns []Connection) error
+
+	ThingConnectionsCount(ctx context.Context, id string) (uint64, error)
+
+	DoesThingHaveConnections(ctx context.Context, id string) (bool, error)
+
+	RemoveChannelConnections(ctx context.Context, channelID string) error
+
+	RemoveThingConnections(ctx context.Context, thingID string) error
+
+	// SetParentGroup set parent group id to a given channel id
+	SetParentGroup(ctx context.Context, th Client) error
+
+	// RemoveParentGroup remove parent group id fr given chanel id
+	RemoveParentGroup(ctx context.Context, th Client) error
+
+	RetrieveParentGroupThings(ctx context.Context, parentGroupID string) ([]Client, error)
+
+	UnsetParentGroupFromThings(ctx context.Context, parentGroupID string) error
+
+	roles.Repository
 }
 
 // Service specifies an API that must be fullfiled by the domain service
 // implementation, and all of its decorators (e.g. logging & metrics).
 //
-//go:generate mockery --name Service --filename service.go --quiet --note "Copyright (c) Abstract Machines"
+//go:generate mockery --name Service --output=./mocks --filename service.go  --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
 	// CreateClients creates new client. In case of the failed registration, a
 	// non-nil error value is returned.
@@ -77,16 +103,8 @@ type Service interface {
 	// View retrieves client info for a given client ID and an authorized token.
 	View(ctx context.Context, session authn.Session, id string) (Client, error)
 
-	// ViewPerms retrieves permissions on the client id for the given authorized token.
-	ViewPerms(ctx context.Context, session authn.Session, id string) ([]string, error)
-
 	// ListClients retrieves clients list for a valid auth token.
 	ListClients(ctx context.Context, session authn.Session, reqUserID string, pm Page) (ClientsPage, error)
-
-	// ListClientsByGroup retrieves data about subset of clients that are
-	// connected or not connected to specified channel and belong to the user identified by
-	// the provided key.
-	ListClientsByGroup(ctx context.Context, session authn.Session, groupID string, pm Page) (MembersPage, error)
 
 	// Update updates the client's name and metadata.
 	Update(ctx context.Context, session authn.Session, client Client) (Client, error)
@@ -103,25 +121,19 @@ type Service interface {
 	// Disable logically disables the client identified with the provided ID
 	Disable(ctx context.Context, session authn.Session, id string) (Client, error)
 
-	// Share add share policy to client id with given relation for given user ids
-	Share(ctx context.Context, session authn.Session, id string, relation string, userids ...string) error
-
-	// Unshare remove share policy to client id with given relation for given user ids
-	Unshare(ctx context.Context, session authn.Session, id string, relation string, userids ...string) error
-
-	// Identify returns client ID for given client key.
-	Identify(ctx context.Context, key string) (string, error)
-
-	// Authorize used for Clients authorization.
-	Authorize(ctx context.Context, req AuthzReq) (string, error)
-
 	// Delete deletes client with given ID.
 	Delete(ctx context.Context, session authn.Session, id string) error
+
+	SetParentGroup(ctx context.Context, session authn.Session, parentGroupID string, id string) error
+
+	RemoveParentGroup(ctx context.Context, session authn.Session, id string) error
+
+	roles.RoleManager
 }
 
 // Cache contains client caching interface.
 //
-//go:generate mockery --name Cache --filename cache.go --quiet --note "Copyright (c) Abstract Machines"
+//go:generate mockery --name Cache --output=./mocks --filename cache.go --quiet --note "Copyright (c) Abstract Machines"
 type Cache interface {
 	// Save stores pair client secret, client id.
 	Save(ctx context.Context, clientSecret, clientID string) error
@@ -140,6 +152,7 @@ type Client struct {
 	Name        string      `json:"name,omitempty"`
 	Tags        []string    `json:"tags,omitempty"`
 	Domain      string      `json:"domain_id,omitempty"`
+	ParentGroup string      `josn:"parent_group_id,omitempty"`
 	Credentials Credentials `json:"credentials,omitempty"`
 	Metadata    Metadata    `json:"metadata,omitempty"`
 	CreatedAt   time.Time   `json:"created_at,omitempty"`

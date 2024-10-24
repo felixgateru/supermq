@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala/auth"
-	httpapi "github.com/absmach/magistrala/auth/api/http/domains"
 	authmocks "github.com/absmach/magistrala/auth/mocks"
+	httpapi "github.com/absmach/magistrala/domains/api/http"
 	internalapi "github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"

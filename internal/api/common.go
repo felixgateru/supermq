@@ -11,7 +11,7 @@ import (
 	"github.com/absmach/magistrala"
 	"github.com/absmach/magistrala/bootstrap"
 	"github.com/absmach/magistrala/certs"
-	"github.com/absmach/magistrala/internal/groups"
+	"github.com/absmach/magistrala/groups"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -50,7 +50,7 @@ const (
 	EmailKey         = "email"
 	SharedByKey      = "shared_by"
 	TokenKey         = "token"
-	DefPermission    = "view"
+	DefPermission    = "read_permission"
 	DefTotal         = uint64(100)
 	DefOffset        = 0
 	DefOrder         = "updated_at"
