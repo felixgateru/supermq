@@ -35,13 +35,13 @@ const (
 
 // Error wrappers for MQTT errors.
 var (
-	errMalformedSubtopic        = errors.New("malformed subtopic")
+	ErrMalformedSubtopic        = errors.New("malformed subtopic")
 	ErrClientNotInitialized     = errors.New("client is not initialized")
-	errMalformedTopic           = errors.New("malformed topic")
-	errMissingTopicPub          = errors.New("failed to publish due to missing topic")
-	errFailedPublish            = errors.New("failed to publish")
-	errFailedParseSubtopic      = errors.New("failed to parse subtopic")
-	errFailedPublishToMsgBroker = errors.New("failed to publish to magistrala message broker")
+	ErrMalformedTopic           = errors.New("malformed topic")
+	ErrMissingTopicPub          = errors.New("failed to publish due to missing topic")
+	ErrFailedPublish            = errors.New("failed to publish")
+	ErrFailedParseSubtopic      = errors.New("failed to parse subtopic")
+	ErrFailedPublishToMsgBroker = errors.New("failed to publish to magistrala message broker")
 )
 
 var channelRegExp = regexp.MustCompile(`^\/?channels\/([\w\-]+)\/messages(\/[^?]*)?(\?.*)?$`)
@@ -102,12 +102,12 @@ func (h *handler) Connect(ctx context.Context) error {
 // Publish - after client successfully published.
 func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) error {
 	if topic == nil {
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errMissingTopicPub)
+		return mhttp.NewHTTPProxyError(http.StatusBadRequest, ErrMissingTopicPub)
 	}
 	topic = &strings.Split(*topic, "?")[0]
 	s, ok := session.FromContext(ctx)
 	if !ok {
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, ErrClientNotInitialized))
+		return mhttp.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(ErrFailedPublish, ErrClientNotInitialized))
 	}
 	h.logger.Info(fmt.Sprintf(logInfoPublished, s.ID, *topic))
 	// Topics are in the format:
@@ -115,7 +115,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	channelParts := channelRegExp.FindStringSubmatch(*topic)
 	if len(channelParts) < 2 {
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, errMalformedTopic))
+		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(ErrFailedPublish, ErrMalformedTopic))
 	}
 
 	chanID := channelParts[1]
@@ -123,7 +123,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	subtopic, err := parseSubtopic(subtopic)
 	if err != nil {
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedParseSubtopic, err))
+		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(ErrFailedParseSubtopic, err))
 	}
 
 	msg := messaging.Message{
@@ -136,7 +136,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	var tok string
 	switch {
 	case string(s.Password) == "":
-		return mhttp.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerKey))
+		return mhttp.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerKey))
 	case strings.HasPrefix(string(s.Password), "Thing"):
 		tok = extractThingKey(string(s.Password))
 	default:
@@ -157,7 +157,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg.Publisher = res.GetId()
 
 	if err := h.publisher.Publish(ctx, msg.Channel, &msg); err != nil {
-		return mhttp.NewHTTPProxyError(http.StatusForbidden, errors.Wrap(errFailedPublishToMsgBroker, err))
+		return mhttp.NewHTTPProxyError(http.StatusForbidden, errors.Wrap(ErrFailedPublishToMsgBroker, err))
 	}
 
 	return nil
@@ -185,7 +185,7 @@ func parseSubtopic(subtopic string) (string, error) {
 
 	subtopic, err := url.QueryUnescape(subtopic)
 	if err != nil {
-		return "", errMalformedSubtopic
+		return "", ErrMalformedSubtopic
 	}
 	subtopic = strings.ReplaceAll(subtopic, "/", ".")
 
@@ -197,7 +197,7 @@ func parseSubtopic(subtopic string) (string, error) {
 		}
 
 		if len(elem) > 1 && (strings.Contains(elem, "*") || strings.Contains(elem, ">")) {
-			return "", errMalformedSubtopic
+			return "", ErrMalformedSubtopic
 		}
 
 		filteredElems = append(filteredElems, elem)
