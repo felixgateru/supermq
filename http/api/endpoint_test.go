@@ -151,7 +151,7 @@ func TestPublish(t *testing.T) {
 			msg:         msg,
 			contentType: ctSenmlJSON,
 			key:         invalidKey,
-			status:      http.StatusBadRequest,
+			status:      http.StatusForbidden,
 		},
 		"publish message with invalid basic auth": {
 			chanID:      chanID,
@@ -159,7 +159,7 @@ func TestPublish(t *testing.T) {
 			contentType: ctSenmlJSON,
 			key:         invalidKey,
 			basicAuth:   true,
-			status:      http.StatusBadRequest,
+			status:      http.StatusForbidden,
 		},
 		"publish message without content type": {
 			chanID:      chanID,

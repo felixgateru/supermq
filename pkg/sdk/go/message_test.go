@@ -103,7 +103,7 @@ func TestSendMessage(t *testing.T) {
 			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   nil,
-			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(errors.New(""), svcerr.ErrAuthorization), http.StatusForbidden),
 		},
 		{
 			desc:     "publish message with invalid thing key",
@@ -113,7 +113,7 @@ func TestSendMessage(t *testing.T) {
 			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   svcerr.ErrAuthorization,
-			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(errors.New(""), svcerr.ErrAuthorization), http.StatusForbidden),
 		},
 		{
 			desc:     "publish message with invalid channel ID",
@@ -123,7 +123,7 @@ func TestSendMessage(t *testing.T) {
 			authRes:  &magistrala.ThingsAuthzRes{Authorized: false, Id: ""},
 			authErr:  svcerr.ErrAuthorization,
 			svcErr:   svcerr.ErrAuthorization,
-			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
+			err:      errors.NewSDKErrorWithStatus(errors.Wrap(errors.New(""), svcerr.ErrAuthorization), http.StatusForbidden),
 		},
 		{
 			desc:     "publish message with empty message body",
