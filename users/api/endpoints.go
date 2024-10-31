@@ -433,7 +433,7 @@ func updateProfilePictureEndpoint(svc users.Service) endpoint.Endpoint {
 			return nil, svcerr.ErrAuthorization
 		}
 
-		user, err := svc.Update(ctx, session, user)
+		user, err := svc.UpdateProfilePicture(ctx, session, user)
 		if err != nil {
 			return nil, err
 		}

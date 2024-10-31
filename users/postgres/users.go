@@ -178,7 +178,7 @@ func (repo *userRepo) UpdateUsername(ctx context.Context, user users.User) (user
 
 	row, err := repo.Repository.DB.NamedQueryContext(ctx, q, dbu)
 	if err != nil {
-		return users.User{}, postgres.HandleError(err, repoerr.ErrUpdateEntity)
+		return users.User{}, postgres.HandleError(repoerr.ErrUpdateEntity, err)
 	}
 
 	defer row.Close()
@@ -388,7 +388,7 @@ func (repo *userRepo) RetrieveAllByIDs(ctx context.Context, pm users.Page) (user
 
 		items = append(items, c)
 	}
-	cq := fmt.Sprintf(`SELECT COUNT(*) FROM clients c %s;`, query)
+	cq := fmt.Sprintf(`SELECT COUNT(*) FROM users u %s;`, query)
 
 	total, err := postgres.Total(ctx, repo.Repository.DB, cq, dbPage)
 	if err != nil {
