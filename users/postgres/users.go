@@ -233,7 +233,7 @@ func (repo *userRepo) Update(ctx context.Context, user users.User) (users.User, 
 
 	q := fmt.Sprintf(`UPDATE users SET %s updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, tags, metadata, status, created_at, updated_at, updated_by, last_name, first_name, username, profile_picture, email`, upq)
+        RETURNING id, tags, metadata, status, created_at, updated_at, updated_by, last_name, first_name, username, profile_picture, email, role`, upq)
 
 	user.Status = users.EnabledStatus
 	return repo.update(ctx, user, q)
