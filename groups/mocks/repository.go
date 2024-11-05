@@ -741,12 +741,12 @@ func (_m *Repository) Save(ctx context.Context, g groups.Group) (groups.Group, e
 	return r0, r1
 }
 
-// UnassignAllChildrenGroup provides a mock function with given fields: ctx, id
-func (_m *Repository) UnassignAllChildrenGroup(ctx context.Context, id string) error {
+// UnassignAllChildrenGroups provides a mock function with given fields: ctx, id
+func (_m *Repository) UnassignAllChildrenGroups(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UnassignAllChildrenGroup")
+		panic("no return value specified for UnassignAllChildrenGroups")
 	}
 
 	var r0 error

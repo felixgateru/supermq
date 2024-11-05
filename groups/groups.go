@@ -114,7 +114,7 @@ type Repository interface {
 	// UnassignParentGroup unassign parent group id fr given group id
 	UnassignParentGroup(ctx context.Context, parentGroupID string, groupIDs ...string) error
 
-	UnassignAllChildrenGroup(ctx context.Context, id string) error
+	UnassignAllChildrenGroups(ctx context.Context, id string) error
 
 	RetrieveUserGroups(ctx context.Context, domainID, userID string, pm PageMeta) (Page, error)
 

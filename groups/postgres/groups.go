@@ -59,6 +59,7 @@ func (repo groupRepository) Save(ctx context.Context, g mggroups.Group) (mggroup
 	if err != nil {
 		return mggroups.Group{}, err
 	}
+
 	row, err := repo.db.NamedQueryContext(ctx, q, dbg)
 	if err != nil {
 		return mggroups.Group{}, postgres.HandleError(repoerr.ErrCreateEntity, err)
@@ -147,11 +148,11 @@ func (repo groupRepository) RetrieveByID(ctx context.Context, id string) (mggrou
 		ID: id,
 	}
 
-	row, err := repo.db.NamedQueryContext(ctx, q, dbg)
+	rows, err := repo.db.NamedQueryContext(ctx, q, dbg)
 	if err != nil {
 		return mggroups.Group{}, errors.Wrap(repoerr.ErrViewEntity, err)
 	}
-	defer row.Close()
+	defer rows.Close()
 
 	dbg = dbGroup{}
 	if ok := row.Next(); !ok {
@@ -540,19 +541,20 @@ func (repo groupRepository) UnassignParentGroup(ctx context.Context, parentGroup
 	return nil
 }
 
-func (repo groupRepository) UnassignAllChildrenGroup(ctx context.Context, id string) error {
-
+func (repo groupRepository) UnassignAllChildrenGroups(ctx context.Context, id string) error {
 	query := `
 			UPDATE groups AS g SET
 				parent_id = NULL
-			WHERE g.parent = :parent_id ;
+			WHERE g.parent_id = :parent_id ;
 	`
 
-	row, err := repo.db.NamedQueryContext(ctx, query, dbGroup{ParentID: &id})
+	result, err := repo.db.NamedExecContext(ctx, query, dbGroup{ParentID: &id})
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
 	}
-	defer row.Close()
+	if rows, _ := result.RowsAffected(); rows == 0 {
+		return repoerr.ErrNotFound
+	}
 
 	return nil
 }
@@ -995,7 +997,7 @@ func toDBGroupPageMeta(pm mggroups.PageMeta) (dbGroupPageMeta, error) {
 	}, nil
 }
 
-// ToDo: check and remove field "Level" after new auth stabilize
+// ToDo: check and remove field "Level" after new auth stabilize.
 type dbGroupPageMeta struct {
 	ID         string          `db:"id"`
 	Name       string          `db:"name"`

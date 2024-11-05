@@ -20,7 +20,7 @@ import (
 	"github.com/absmach/magistrala/pkg/roles"
 )
 
-var errGroupIDs = errors.New("invalid group ids")
+var ErrGroupIDs = errors.New("invalid group ids")
 
 type service struct {
 	repo       Repository
@@ -109,6 +109,7 @@ func (svc service) ViewGroup(ctx context.Context, session mgauthn.Session, id st
 	if err != nil {
 		return Group{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
+	group.Path = ""
 
 	return group, nil
 }
@@ -144,7 +145,11 @@ func (svc service) UpdateGroup(ctx context.Context, session mgauthn.Session, g G
 	g.UpdatedAt = time.Now()
 	g.UpdatedBy = session.UserID
 
-	return svc.repo.Update(ctx, g)
+	group, err := svc.repo.Update(ctx, g)
+	if err != nil {
+		return Group{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+	}
+	return group, nil
 }
 
 func (svc service) EnableGroup(ctx context.Context, session mgauthn.Session, id string) (Group, error) {
@@ -265,7 +270,6 @@ func (svc service) RemoveParentGroup(ctx context.Context, session mgauthn.Sessio
 	}
 
 	if group.Parent != "" {
-
 		var pols []policies.Policy
 		pols = append(pols, policies.Policy{
 			Domain:      session.DomainID,
@@ -286,8 +290,11 @@ func (svc service) RemoveParentGroup(ctx context.Context, session mgauthn.Sessio
 				}
 			}
 		}()
+		if err := svc.repo.UnassignParentGroup(ctx, group.Parent, group.ID); err != nil {
+			return errors.Wrap(svcerr.ErrRemoveEntity, err)
+		}
 
-		return svc.repo.UnassignParentGroup(ctx, group.Parent, group.ID)
+		return nil
 	}
 
 	return nil
@@ -299,7 +306,7 @@ func (svc service) AddChildrenGroups(ctx context.Context, session mgauthn.Sessio
 		return errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	if len(childrenGroupsPage.Groups) == 0 {
-		return errGroupIDs
+		return ErrGroupIDs
 	}
 
 	for _, childGroup := range childrenGroupsPage.Groups {
@@ -330,8 +337,11 @@ func (svc service) AddChildrenGroups(ctx context.Context, session mgauthn.Sessio
 			}
 		}
 	}()
+	if err = svc.repo.AssignParentGroup(ctx, parentGroupID, childrenGroupIDs...); err != nil {
+		return errors.Wrap(svcerr.ErrUpdateEntity, err)
+	}
 
-	return svc.repo.AssignParentGroup(ctx, parentGroupID, childrenGroupIDs...)
+	return nil
 }
 
 func (svc service) RemoveChildrenGroups(ctx context.Context, session mgauthn.Session, parentGroupID string, childrenGroupIDs []string) (retErr error) {
@@ -340,7 +350,7 @@ func (svc service) RemoveChildrenGroups(ctx context.Context, session mgauthn.Ses
 		return errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	if len(childrenGroupsPage.Groups) == 0 {
-		return errGroupIDs
+		return ErrGroupIDs
 	}
 
 	var pols []policies.Policy
@@ -369,8 +379,11 @@ func (svc service) RemoveChildrenGroups(ctx context.Context, session mgauthn.Ses
 			}
 		}
 	}()
+	if err := svc.repo.UnassignParentGroup(ctx, parentGroupID, childrenGroupIDs...); err != nil {
+		return errors.Wrap(svcerr.ErrUpdateEntity, err)
+	}
 
-	return svc.repo.UnassignParentGroup(ctx, parentGroupID, childrenGroupIDs...)
+	return nil
 }
 
 func (svc service) RemoveAllChildrenGroups(ctx context.Context, session mgauthn.Session, id string) error {
@@ -385,8 +398,11 @@ func (svc service) RemoveAllChildrenGroups(ctx context.Context, session mgauthn.
 	if err := svc.policy.DeletePolicyFilter(ctx, pol); err != nil {
 		return errors.Wrap(svcerr.ErrDeletePolicies, err)
 	}
+	if err := svc.repo.UnassignAllChildrenGroups(ctx, id); err != nil {
+		return errors.Wrap(svcerr.ErrRemoveEntity, err)
+	}
 
-	return svc.repo.UnassignAllChildrenGroup(ctx, id)
+	return nil
 }
 
 func (svc service) ListChildrenGroups(ctx context.Context, session mgauthn.Session, id string, startLevel, endLevel int64, pm PageMeta) (Page, error) {
