@@ -178,6 +178,23 @@ func (tm *tracingMiddleware) ListChildrenGroups(ctx context.Context, session aut
 	return tm.svc.ListChildrenGroups(ctx, session, id, startLevel, endLevel, pm)
 }
 
+func (tm *tracingMiddleware) ListAllChildrenGroups(ctx context.Context, session authn.Session, id string, pm groups.PageMeta) (groups.Page, error) {
+	attr := []attribute.KeyValue{
+		attribute.String("id", id),
+		attribute.String("name", pm.Name),
+		attribute.String("tag", pm.Tag),
+		attribute.String("status", pm.Status.String()),
+		attribute.Int64("offset", int64(pm.Offset)),
+		attribute.Int64("limit", int64(pm.Limit)),
+	}
+	for k, v := range pm.Metadata {
+		attr = append(attr, attribute.String(k, fmt.Sprintf("%v", v)))
+	}
+	ctx, span := tm.tracer.Start(ctx, "svc_list_all_children_groups", trace.WithAttributes(attr...))
+	defer span.End()
+	return tm.svc.ListAllChildrenGroups(ctx, session, id, pm)
+}
+
 // DeleteGroup traces the "DeleteGroup" operation of the wrapped groups.Service.
 func (tm *tracingMiddleware) DeleteGroup(ctx context.Context, session authn.Session, id string) error {
 	ctx, span := tm.tracer.Start(ctx, "svc_delete_group", trace.WithAttributes(attribute.String("id", id)))
