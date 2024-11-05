@@ -166,3 +166,11 @@ func (ms *metricsMiddleware) ListAllChildrenGroups(ctx context.Context, session 
 	}(time.Now())
 	return ms.svc.ListAllChildrenGroups(ctx, session, id, pm)
 }
+
+func (ms *metricsMiddleware) ListAllChildrenGroups(ctx context.Context, session authn.Session, id string, pm groups.PageMeta) (groups.Page, error) {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "list_all_children_groups").Add(1)
+		ms.latency.With("method", "list_all_children_groups").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	return ms.svc.ListAllChildrenGroups(ctx, session, id, pm)
+}

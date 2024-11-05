@@ -27,6 +27,7 @@ var (
 	groupRemoveChildrenGroups    = groupPrefix + "remove_children_groups"
 	groupRemoveAllChildrenGroups = groupPrefix + "remove_all_children_groups"
 	groupListChildrenGroups      = groupPrefix + "list_children_groups"
+	groupListAllChildrenGroups   = groupPrefix + "list_all_children_groups"
 )
 
 var (
@@ -357,6 +358,37 @@ func (vcge listChildrenGroupsEvent) Encode() (map[string]interface{}, error) {
 		"total":       vcge.Total,
 		"offset":      vcge.Offset,
 		"limit":       vcge.Limit,
+	}
+	if vcge.Name != "" {
+		val["name"] = vcge.Name
+	}
+	if vcge.DomainID != "" {
+		val["domain_id"] = vcge.DomainID
+	}
+	if vcge.Tag != "" {
+		val["tag"] = vcge.Tag
+	}
+	if vcge.Metadata != nil {
+		val["metadata"] = vcge.Metadata
+	}
+	if vcge.Status.String() != "" {
+		val["status"] = vcge.Status.String()
+	}
+	return val, nil
+}
+
+type listAllChildrenGroupsEvent struct {
+	id string
+	groups.PageMeta
+}
+
+func (vcge listAllChildrenGroupsEvent) Encode() (map[string]interface{}, error) {
+	val := map[string]interface{}{
+		"operation": groupListAllChildrenGroups,
+		"id":        vcge.id,
+		"total":     vcge.Total,
+		"offset":    vcge.Offset,
+		"limit":     vcge.Limit,
 	}
 	if vcge.Name != "" {
 		val["name"] = vcge.Name
