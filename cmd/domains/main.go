@@ -235,14 +235,16 @@ func newDomainService(ctx context.Context, db *sqlx.DB, tracer trace.Tracer, cfg
 	if err != nil {
 		return nil, fmt.Errorf("failed to init domain event store middleware: %w", err)
 	}
-	svc = dmw.LoggingMiddleware(svc, logger)
-	counter, latency := prometheus.MakeMetrics("domains", "api")
-	svc = dmw.MetricsMiddleware(svc, counter, latency)
 
 	svc, err = dmw.AuthorizationMiddleware(policies.DomainType, svc, authz, domains.NewOperationPermissionMap(), domains.NewRolesOperationPermissionMap())
 	if err != nil {
 		return nil, err
 	}
+
+	counter, latency := prometheus.MakeMetrics("domains", "api")
+	svc = dmw.MetricsMiddleware(svc, counter, latency)
+
+	svc = dmw.LoggingMiddleware(svc, logger)
 
 	svc = dtracing.New(svc, tracer)
 	return svc, nil
