@@ -6,6 +6,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -182,6 +183,7 @@ func decodeConnectChannelClientRequest(_ context.Context, r *http.Request) (inte
 		channelID: chi.URLParam(r, "channelID"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("Error", err)
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(errors.ErrMalformedEntity, err))
 	}
 

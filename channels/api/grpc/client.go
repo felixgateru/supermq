@@ -27,7 +27,7 @@ var _ grpcChannelsV1.ChannelsServiceClient = (*grpcClient)(nil)
 type grpcClient struct {
 	timeout                      time.Duration
 	authorize                    endpoint.Endpoint
-	removeClientConnections       endpoint.Endpoint
+	removeClientConnections      endpoint.Endpoint
 	unsetParentGroupFromChannels endpoint.Endpoint
 	retrieveEntity               endpoint.Endpoint
 }

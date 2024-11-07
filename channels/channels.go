@@ -1,4 +1,4 @@
-// Copyright (c) Mainflux
+// Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
 package channels
@@ -13,7 +13,7 @@ import (
 	"github.com/absmach/magistrala/pkg/roles"
 )
 
-// Channel represents a Mainflux "communication topic". This topic
+// Channel represents a Magistrala "communication topic". This topic
 // contains the clients that can exchange messages between each other.
 type Channel struct {
 	ID          string           `json:"id"`
