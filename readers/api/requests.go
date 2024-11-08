@@ -28,6 +28,9 @@ func (req listMessagesReq) validate() error {
 	if req.token == "" && req.key == "" {
 		return apiutil.ErrBearerToken
 	}
+	if req.token != "" && req.domainID == "" {
+		return apiutil.ErrMissingDomainID
+	}
 
 	if req.chanID == "" {
 		return apiutil.ErrMissingID

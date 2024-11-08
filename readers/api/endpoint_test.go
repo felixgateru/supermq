@@ -175,6 +175,12 @@ func TestReadAll(t *testing.T) {
 			},
 		},
 		{
+			desc:   "read page as user without domain id",
+			url:    fmt.Sprintf("%s/%s/channels/%s/messages", ts.URL, "", chanID),
+			token:  userToken,
+			status: http.StatusBadRequest,
+		},
+		{
 			desc:         "read page with negative offset as thing",
 			url:          fmt.Sprintf("%s/%s/channels/%s/messages?offset=-1&limit=10", ts.URL, "", chanID),
 			key:          thingToken,

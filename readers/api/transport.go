@@ -154,9 +154,10 @@ func decodeList(_ context.Context, r *http.Request) (interface{}, error) {
 	}
 
 	req := listMessagesReq{
-		chanID: chi.URLParam(r, "chanID"),
-		token:  apiutil.ExtractBearerToken(r),
-		key:    apiutil.ExtractThingKey(r),
+		chanID:   chi.URLParam(r, "chanID"),
+		token:    apiutil.ExtractBearerToken(r),
+		key:      apiutil.ExtractThingKey(r),
+		domainID: chi.URLParam(r, "domainID"),
 		pageMeta: readers.PageMetadata{
 			Offset:      offset,
 			Limit:       limit,
@@ -214,7 +215,8 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 		errors.Contains(err, apiutil.ErrInvalidAggregation),
 		errors.Contains(err, apiutil.ErrInvalidInterval),
 		errors.Contains(err, apiutil.ErrMissingFrom),
-		errors.Contains(err, apiutil.ErrMissingTo):
+		errors.Contains(err, apiutil.ErrMissingTo),
+		errors.Contains(err, apiutil.ErrMissingDomainID):
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Contains(err, svcerr.ErrAuthentication),
 		errors.Contains(err, svcerr.ErrAuthorization),
@@ -248,7 +250,7 @@ func authorize(ctx context.Context, req listMessagesReq, authn mgauthn.Authentic
 			Domain:      req.domainID,
 			SubjectType: policies.UserType,
 			SubjectKind: policies.UsersKind,
-			Subject:     session.UserID,
+			Subject:     req.domainID + "_" + session.UserID,
 			Permission:  policies.ViewPermission,
 			ObjectType:  policies.GroupType,
 			Object:      req.chanID,
