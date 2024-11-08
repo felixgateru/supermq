@@ -20,6 +20,7 @@ type listMessagesReq struct {
 	chanID   string
 	token    string
 	key      string
+	domainID string
 	pageMeta readers.PageMetadata
 }
 
