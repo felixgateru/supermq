@@ -33,7 +33,7 @@ const (
 )
 
 var (
-	fullMatch    = []string{"state", "external_id", "thing_id", "thing_key"}
+	fullMatch    = []string{"state", "external_id", "client_id", "thing_key"}
 	partialMatch = []string{"name"}
 	// ErrBootstrap indicates error in getting bootstrap configuration.
 	ErrBootstrap = errors.New("failed to read bootstrap configuration")
@@ -47,7 +47,7 @@ func MakeHandler(svc bootstrap.Service, authn mgauthn.Authentication, reader boo
 
 	r := chi.NewRouter()
 
-	r.Route("/{domainID}/things", func(r chi.Router) {
+	r.Route("/{domainID}/clients", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(api.AuthenticateMiddleware(authn, true))
 
@@ -103,7 +103,7 @@ func MakeHandler(svc bootstrap.Service, authn mgauthn.Authentication, reader boo
 			opts...), "update_state").ServeHTTP)
 	})
 
-	r.Route("/things/bootstrap", func(r chi.Router) {
+	r.Route("/clients/bootstrap", func(r chi.Router) {
 		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
 			bootstrapEndpoint(svc, reader, false),
 			decodeBootstrapRequest,
@@ -216,7 +216,7 @@ func decodeListRequest(_ context.Context, r *http.Request) (interface{}, error) 
 func decodeBootstrapRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	req := bootstrapReq{
 		id:  chi.URLParam(r, "externalID"),
-		key: apiutil.ExtractThingKey(r),
+		key: apiutil.ExtractClientSecret(r),
 	}
 
 	return req, nil
@@ -229,7 +229,7 @@ func decodeStateRequest(_ context.Context, r *http.Request) (interface{}, error)
 
 	req := changeStateReq{
 		token: apiutil.ExtractBearerToken(r),
-		id:    chi.URLParam(r, "thingID"),
+		id:    chi.URLParam(r, "clientID"),
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, errors.Wrap(err, errors.ErrMalformedEntity))

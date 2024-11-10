@@ -72,14 +72,14 @@ func (es *eventStore) Update(ctx context.Context, session mgauthn.Session, cfg b
 	return es.Publish(ctx, ev)
 }
 
-func (es eventStore) UpdateCert(ctx context.Context, session mgauthn.Session, thingKey, clientCert, clientKey, caCert string) (bootstrap.Config, error) {
-	cfg, err := es.svc.UpdateCert(ctx, session, thingKey, clientCert, clientKey, caCert)
+func (es eventStore) UpdateCert(ctx context.Context, session mgauthn.Session, clientID, clientCert, clientKey, caCert string) (bootstrap.Config, error) {
+	cfg, err := es.svc.UpdateCert(ctx, session, clientID, clientCert, clientKey, caCert)
 	if err != nil {
 		return cfg, err
 	}
 
 	ev := updateCertEvent{
-		thingKey:   thingKey,
+		clientID:   clientID,
 		clientCert: clientCert,
 		clientKey:  clientKey,
 		caCert:     caCert,
@@ -131,7 +131,7 @@ func (es *eventStore) Remove(ctx context.Context, session mgauthn.Session, id st
 	}
 
 	ev := removeConfigEvent{
-		mgThing: id,
+		client: id,
 	}
 
 	return es.Publish(ctx, ev)
@@ -208,26 +208,26 @@ func (es *eventStore) UpdateChannelHandler(ctx context.Context, channel bootstra
 	return es.Publish(ctx, ev)
 }
 
-func (es *eventStore) ConnectThingHandler(ctx context.Context, channelID, thingID string) error {
-	if err := es.svc.ConnectThingHandler(ctx, channelID, thingID); err != nil {
+func (es *eventStore) ConnectClientHandler(ctx context.Context, channelID, clientID string) error {
+	if err := es.svc.ConnectClientHandler(ctx, channelID, clientID); err != nil {
 		return err
 	}
 
 	ev := connectThingEvent{
-		thingID:   thingID,
+		thingID:   clientID,
 		channelID: channelID,
 	}
 
 	return es.Publish(ctx, ev)
 }
 
-func (es *eventStore) DisconnectThingHandler(ctx context.Context, channelID, thingID string) error {
-	if err := es.svc.DisconnectThingHandler(ctx, channelID, thingID); err != nil {
+func (es *eventStore) DisconnectClientHandler(ctx context.Context, channelID, clientID string) error {
+	if err := es.svc.DisconnectClientHandler(ctx, channelID, clientID); err != nil {
 		return err
 	}
 
 	ev := disconnectThingEvent{
-		thingID:   thingID,
+		thingID:   clientID,
 		channelID: channelID,
 	}
 

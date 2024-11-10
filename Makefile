@@ -3,9 +3,9 @@
 
 MG_DOCKER_IMAGE_NAME_PREFIX ?= magistrala
 BUILD_DIR ?= build
-SERVICES = auth users things groups channels domains http coap ws postgres-writer postgres-reader timescale-writer \
+SERVICES = auth users clients groups channels domains http coap ws postgres-writer postgres-reader timescale-writer \
 	timescale-reader cli bootstrap mqtt provision certs invitations journal
-TEST_API_SERVICES = journal auth bootstrap certs http invitations notifiers provision readers things users
+TEST_API_SERVICES = journal auth bootstrap certs http invitations notifiers provision readers clients users
 TEST_API = $(addprefix test_api_,$(TEST_API_SERVICES))
 DOCKERS = $(addprefix docker_,$(SERVICES))
 DOCKERS_DEV = $(addprefix docker_dev_,$(SERVICES))
@@ -142,8 +142,8 @@ define test_api_service
 		exit 1; \
 	fi
 
-	@if [ "$(svc)" = "http" ] && [ -z "$(THING_SECRET)" ]; then \
-		echo "THING_SECRET is not set"; \
+	@if [ "$(svc)" = "http" ] && [ -z "$(CLIENT_SECRET)" ]; then \
+		echo "CLIENT_SECRET is not set"; \
 		echo "Please set it to a valid secret"; \
 		exit 1; \
 	fi
@@ -152,7 +152,7 @@ define test_api_service
 		st run api/openapi/$(svc).yml \
 		--checks all \
 		--base-url $(2) \
-		--header "Authorization: Thing $(THING_SECRET)" \
+		--header "Authorization: Client $(CLIENT_SECRET)" \
 		--contrib-openapi-formats-uuid \
 		--hypothesis-suppress-health-check=filter_too_much \
 		--stateful=links; \
@@ -168,7 +168,7 @@ define test_api_service
 endef
 
 test_api_users: TEST_API_URL := http://localhost:9002
-test_api_things: TEST_API_URL := http://localhost:9000
+test_api_clients: TEST_API_URL := http://localhost:9000
 test_api_http: TEST_API_URL := http://localhost:8008
 test_api_invitations: TEST_API_URL := http://localhost:9020
 test_api_auth: TEST_API_URL := http://localhost:8189
@@ -223,7 +223,7 @@ rundev:
 	cd scripts && ./run.sh
 
 grpc_mtls_certs:
-	$(MAKE) -C docker/ssl auth_grpc_certs things_grpc_certs
+	$(MAKE) -C docker/ssl auth_grpc_certs clients_grpc_certs
 
 check_tls:
 ifeq ($(GRPC_TLS),true)
@@ -249,7 +249,7 @@ check_certs: check_mtls check_tls
 ifeq ($(GRPC_MTLS_CERT_FILES_EXISTS),0)
 ifeq ($(filter true,$(GRPC_MTLS) $(GRPC_TLS)),true)
 ifeq ($(filter $(DEFAULT_DOCKER_COMPOSE_COMMAND),$(DOCKER_COMPOSE_COMMAND)),$(DEFAULT_DOCKER_COMPOSE_COMMAND))
-	$(MAKE) -C docker/ssl auth_grpc_certs things_grpc_certs
+	$(MAKE) -C docker/ssl auth_grpc_certs clients_grpc_certs
 endif
 endif
 endif

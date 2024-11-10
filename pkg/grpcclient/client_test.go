@@ -11,18 +11,18 @@ import (
 
 	tokengrpcapi "github.com/absmach/magistrala/auth/api/grpc/token"
 	"github.com/absmach/magistrala/auth/mocks"
+	thingsgrpcapi "github.com/absmach/magistrala/clients/api/grpc"
+	climocks "github.com/absmach/magistrala/clients/private/mocks"
 	domainsgrpcapi "github.com/absmach/magistrala/domains/api/grpc"
 	domainsMocks "github.com/absmach/magistrala/domains/mocks"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	grpcDomainsV1 "github.com/absmach/magistrala/internal/grpc/domains/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
 	grpcTokenV1 "github.com/absmach/magistrala/internal/grpc/token/v1"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/errors"
 	"github.com/absmach/magistrala/pkg/grpcclient"
 	"github.com/absmach/magistrala/pkg/server"
 	grpcserver "github.com/absmach/magistrala/pkg/server/grpc"
-	thingsgrpcapi "github.com/absmach/magistrala/things/api/grpc"
-	thmocks "github.com/absmach/magistrala/things/private/mocks"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -83,9 +83,9 @@ func TestSetupThingsClient(t *testing.T) {
 	defer cancel()
 
 	registerThingsServiceServer := func(srv *grpc.Server) {
-		grpcThingsV1.RegisterThingsServiceServer(srv, thingsgrpcapi.NewServer(new(thmocks.Service)))
+		grpcClientsV1.RegisterClientsServiceServer(srv, thingsgrpcapi.NewServer(new(climocks.Service)))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, "things", server.Config{Port: "12345"}, registerThingsServiceServer, mglog.NewMock())
+	gs := grpcserver.NewServer(ctx, cancel, "clients", server.Config{Port: "12345"}, registerThingsServiceServer, mglog.NewMock())
 	go func() {
 		err := gs.Start()
 		assert.Nil(t, err, fmt.Sprintf(`"Unexpected error creating server %s"`, err))
@@ -120,7 +120,7 @@ func TestSetupThingsClient(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.desc, func(t *testing.T) {
-			client, handler, err := grpcclient.SetupThingsClient(context.Background(), c.config)
+			client, handler, err := grpcclient.SetupClientsClient(context.Background(), c.config)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s", err, c.err))
 			if err == nil {
 				assert.NotNil(t, client)

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/connections"
@@ -41,7 +41,7 @@ const (
 	logInfoConnected        = "connected with thing_key %s"
 	logInfoPublished        = "published with client_type %s client_id %s to the topic %s"
 	logInfoFailedAuthNToken = "failed to authenticate token for topic %s with error %s"
-	logInfoFailedAuthNThing = "failed to authenticate thing key %s for topic %s with error %s"
+	logInfoFailedAuthNThing = "failed to authenticate client key %s for topic %s with error %s"
 )
 
 // Error wrappers for MQTT errors.
@@ -60,18 +60,18 @@ var channelRegExp = regexp.MustCompile(`^\/?channels\/([\w\-]+)\/messages(\/[^?]
 // Event implements events.Event interface.
 type handler struct {
 	publisher messaging.Publisher
-	things    grpcThingsV1.ThingsServiceClient
+	clients   grpcClientsV1.ClientsServiceClient
 	channels  grpcChannelsV1.ChannelsServiceClient
 	authn     mgauthn.Authentication
 	logger    *slog.Logger
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(publisher messaging.Publisher, authn mgauthn.Authentication, things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, logger *slog.Logger) session.Handler {
+func NewHandler(publisher messaging.Publisher, authn mgauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, logger *slog.Logger) session.Handler {
 	return &handler{
 		publisher: publisher,
 		authn:     authn,
-		things:    things,
+		clients:   clients,
 		channels:  channels,
 		logger:    logger,
 	}
@@ -89,8 +89,8 @@ func (h *handler) AuthConnect(ctx context.Context) error {
 	switch {
 	case string(s.Password) == "":
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerKey))
-	case strings.HasPrefix(string(s.Password), apiutil.ThingPrefix):
-		tok = strings.TrimPrefix(string(s.Password), apiutil.ThingPrefix)
+	case strings.HasPrefix(string(s.Password), apiutil.ClientPrefix):
+		tok = strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
 	default:
 		tok = string(s.Password)
 	}
@@ -127,19 +127,18 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	var clientID, clientType string
 	switch {
-	case strings.HasPrefix(string(s.Password), "Thing"):
-		thingKey := strings.TrimPrefix(string(s.Password), apiutil.ThingPrefix)
-
-		authnRes, err := h.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{ThingKey: thingKey})
+	case strings.HasPrefix(string(s.Password), "Client"):
+		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
+		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: secret})
 		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNThing, thingKey, *topic, err))
+			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNThing, secret, *topic, err))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		if !authnRes.Authenticated {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNThing, thingKey, *topic, svcerr.ErrAuthentication))
+			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNThing, secret, *topic, svcerr.ErrAuthentication))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
-		clientType = policies.ThingType
+		clientType = policies.ClientType
 		clientID = authnRes.GetId()
 	case strings.HasPrefix(string(s.Password), apiutil.BearerPrefix):
 		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
@@ -181,7 +180,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthorization)
 	}
 
-	if clientType == policies.ThingType {
+	if clientType == policies.ClientType {
 		msg.Publisher = clientID
 	}
 

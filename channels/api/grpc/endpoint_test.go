@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net"
 
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
-	grpcapi "github.com/absmach/magistrala/things/api/grpc"
-	"github.com/absmach/magistrala/things/private/mocks"
+	grpcapi "github.com/absmach/magistrala/clients/api/grpc"
+	"github.com/absmach/magistrala/clients/private/mocks"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"google.golang.org/grpc"
 )
 
@@ -28,7 +28,7 @@ func startGRPCServer(svc *mocks.Service, port int) {
 		panic(fmt.Sprintf("failed to obtain port: %s", err))
 	}
 	server := grpc.NewServer()
-	grpcThingsV1.RegisterThingsServiceServer(server, grpcapi.NewServer(svc))
+	grpcClientsV1.RegisterClientsServiceServer(server, grpcapi.NewServer(svc))
 	go func() {
 		if err := server.Serve(listener); err != nil {
 			panic(fmt.Sprintf("failed to serve: %s", err))

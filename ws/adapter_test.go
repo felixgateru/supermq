@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	chmocks "github.com/absmach/magistrala/channels/mocks"
+	climocks "github.com/absmach/magistrala/clients/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/messaging"
 	"github.com/absmach/magistrala/pkg/messaging/mocks"
-	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/magistrala/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,9 +37,9 @@ var msg = messaging.Message{
 	Payload:   []byte(`[{"n":"current","t":-5,"v":1.2}]`),
 }
 
-func newService() (ws.Service, *mocks.PubSub, *thmocks.ThingsServiceClient, *chmocks.ChannelsServiceClient) {
+func newService() (ws.Service, *mocks.PubSub, *climocks.ClientsServiceClient, *chmocks.ChannelsServiceClient) {
 	pubsub := new(mocks.PubSub)
-	things := new(thmocks.ThingsServiceClient)
+	things := new(climocks.ClientsServiceClient)
 	channels := new(chmocks.ChannelsServiceClient)
 
 	return ws.New(things, channels, pubsub), pubsub, things, channels

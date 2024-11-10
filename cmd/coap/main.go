@@ -34,7 +34,7 @@ const (
 	svcName           = "coap_adapter"
 	envPrefix         = "MG_COAP_ADAPTER_"
 	envPrefixHTTP     = "MG_COAP_ADAPTER_HTTP_"
-	envPrefixThings   = "MG_THINGS_AUTH_GRPC_"
+	envPrefixThings   = "MG_CLIENTS_AUTH_GRPC_"
 	envPrefixChannels = "MG_CHANNELS_GRPC_"
 	defSvcHTTPPort    = "5683"
 	defSvcCoAPPort    = "5683"
@@ -95,7 +95,7 @@ func main() {
 		return
 	}
 
-	thingsClient, thingsHandler, err := grpcclient.SetupThingsClient(ctx, thingsClientCfg)
+	thingsClient, thingsHandler, err := grpcclient.SetupClientsClient(ctx, thingsClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
@@ -103,7 +103,7 @@ func main() {
 	}
 	defer thingsHandler.Close()
 
-	logger.Info("Things service gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("Things service gRPC client successfully connected to clients gRPC server " + thingsHandler.Secure())
 
 	channelsClientCfg := grpcclient.Config{}
 	if err := env.ParseWithOptions(&channelsClientCfg, env.Options{Prefix: envPrefixChannels}); err != nil {

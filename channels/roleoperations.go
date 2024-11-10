@@ -56,8 +56,8 @@ const (
 	DomainOpListChannel
 	GroupOpSetChildChannel
 	GroupsOpRemoveChildChannel
-	ThingsOpConnectChannel
-	ThingsOpDisconnectChannel
+	ClientsOpConnectChannel
+	ClientsOpDisconnectChannel
 )
 
 var expectedExternalOperations = []svcutil.ExternalOperation{
@@ -65,16 +65,17 @@ var expectedExternalOperations = []svcutil.ExternalOperation{
 	DomainOpListChannel,
 	GroupOpSetChildChannel,
 	GroupsOpRemoveChildChannel,
-	ThingsOpConnectChannel,
-	ThingsOpDisconnectChannel,
+	ClientsOpConnectChannel,
+	ClientsOpDisconnectChannel,
 }
+
 var externalOperationNames = []string{
 	"DomainOpCreateChannel",
 	"DomainOpListChannel",
 	"GroupOpSetChildChannel",
 	"GroupsOpRemoveChildChannel",
-	"ThingsOpConnectChannel",
-	"ThingsOpDisconnectChannel",
+	"ClientsOpConnectChannel",
+	"ClientsOpDisconnectChannel",
 }
 
 func NewExternalOperationPerm() svcutil.ExternalOperationPerm {
@@ -88,7 +89,7 @@ const (
 	readPermission           = "read_permission"
 	deletePermission         = "delete_permission"
 	setParentGroupPermission = "set_parent_group_permission"
-	connectToThingPermission = "connect_to_thing_permission"
+	connectToThingPermission = "connect_to_client_permission"
 
 	manageRolePermission      = "manage_role_permission"
 	addRoleUsersPermission    = "add_role_users_permission"
@@ -141,9 +142,9 @@ const (
 	// Groups
 	groupSetChildChannelPermission    = "channel_create_permission"
 	groupRemoveChildChannelPermission = "channel_create_permission"
-	// Thing
-	thingsConnectChannelPermission    = "connect_to_channel_permission"
-	thingsDisconnectChannelPermission = "connect_to_channel_permission"
+	// Client
+	clientsConnectChannelPermission    = "connect_to_channel_permission"
+	clientsDisconnectChannelPermission = "connect_to_channel_permission"
 )
 
 func NewExternalOperationPermissionMap() map[svcutil.ExternalOperation]svcutil.Permission {
@@ -152,8 +153,8 @@ func NewExternalOperationPermissionMap() map[svcutil.ExternalOperation]svcutil.P
 		DomainOpListChannel:        domainListChanelPermission,
 		GroupOpSetChildChannel:     groupSetChildChannelPermission,
 		GroupsOpRemoveChildChannel: groupRemoveChildChannelPermission,
-		ThingsOpConnectChannel:     thingsConnectChannelPermission,
-		ThingsOpDisconnectChannel:  thingsDisconnectChannelPermission,
+		ClientsOpConnectChannel:    clientsConnectChannelPermission,
+		ClientsOpDisconnectChannel: clientsDisconnectChannelPermission,
 	}
 	return extOpPerm
 }

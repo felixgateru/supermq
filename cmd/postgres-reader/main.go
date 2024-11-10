@@ -34,7 +34,7 @@ const (
 	envPrefixDB       = "MG_POSTGRES_"
 	envPrefixHTTP     = "MG_POSTGRES_READER_HTTP_"
 	envPrefixAuth     = "MG_AUTH_GRPC_"
-	envPrefixThings   = "MG_THINGS_AUTH_GRPC_"
+	envPrefixThings   = "MG_CLIENTS_AUTH_GRPC_"
 	envPrefixChannels = "MG_CHANNELS_GRPC_"
 	defDB             = "magistrala"
 	defSvcHTTPPort    = "9009"
@@ -87,19 +87,19 @@ func main() {
 
 	thingsClientCfg := grpcclient.Config{}
 	if err := env.ParseWithOptions(&thingsClientCfg, env.Options{Prefix: envPrefixThings}); err != nil {
-		logger.Error(fmt.Sprintf("failed to load things gRPC client configuration : %s", err))
+		logger.Error(fmt.Sprintf("failed to load clients gRPC client configuration : %s", err))
 		exitCode = 1
 		return
 	}
 
-	thingsClient, thingsHandler, err := grpcclient.SetupThingsClient(ctx, thingsClientCfg)
+	thingsClient, thingsHandler, err := grpcclient.SetupClientsClient(ctx, thingsClientCfg)
 	if err != nil {
 		logger.Error(err.Error())
 		exitCode = 1
 		return
 	}
 	defer thingsHandler.Close()
-	logger.Info("Things service gRPC client successfully connected to things gRPC server " + thingsHandler.Secure())
+	logger.Info("Things service gRPC client successfully connected to clients gRPC server " + thingsHandler.Secure())
 
 	channelsClientCfg := grpcclient.Config{}
 	if err := env.ParseWithOptions(&channelsClientCfg, env.Options{Prefix: envPrefixChannels}); err != nil {

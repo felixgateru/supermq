@@ -41,7 +41,7 @@ func newService(_ *testing.T) (certs.Service, *mocks.Agent, *sdkmocks.SDK) {
 }
 
 var cert = mgcrt.Cert{
-	ThingID:      thingID,
+	ClientID:     thingID,
 	SerialNumber: "Serial",
 	ExpiryTime:   time.Now().Add(time.Duration(1000)),
 	Revoked:      false,
@@ -83,7 +83,7 @@ func TestIssueCert(t *testing.T) {
 			err:          certs.ErrFailedCertCreation,
 		},
 		{
-			desc:     "issue new cert for non existing thing id",
+			desc:     "issue new cert for non existing client id",
 			domainID: domain,
 			token:    token,
 			thingID:  "2",
@@ -106,7 +106,7 @@ func TestIssueCert(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			sdkCall := sdk.On("Thing", tc.thingID, tc.domainID, tc.token).Return(mgsdk.Thing{ID: tc.thingID, Credentials: mgsdk.ClientCredentials{Secret: thingKey}}, tc.thingErr)
+			sdkCall := sdk.On("Thing", tc.thingID, tc.domainID, tc.token).Return(mgsdk.Client{ID: tc.thingID, Credentials: mgsdk.ClientCredentials{Secret: thingKey}}, tc.thingErr)
 			agentCall := agent.On("Issue", thingID, tc.ttl, tc.ipAddr).Return(tc.cert, tc.issueCertErr)
 			resp, err := svc.IssueCert(context.Background(), tc.domainID, tc.token, tc.thingID, tc.ttl)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -148,7 +148,7 @@ func TestRevokeCert(t *testing.T) {
 			err:       certs.ErrFailedCertRevocation,
 		},
 		{
-			desc:     "revoke cert for invalid thing id",
+			desc:     "revoke cert for invalid client id",
 			domainID: domain,
 			token:    token,
 			thingID:  "2",
@@ -169,7 +169,7 @@ func TestRevokeCert(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			sdkCall := sdk.On("Thing", tc.thingID, tc.domainID, tc.token).Return(mgsdk.Thing{ID: tc.thingID, Credentials: mgsdk.ClientCredentials{Secret: thingKey}}, tc.thingErr)
+			sdkCall := sdk.On("Thing", tc.thingID, tc.domainID, tc.token).Return(mgsdk.Client{ID: tc.thingID, Credentials: mgsdk.ClientCredentials{Secret: thingKey}}, tc.thingErr)
 			agentCall := agent.On("Revoke", mock.Anything).Return(tc.revokeErr)
 			agentCall1 := agent.On("ListCerts", mock.Anything).Return(tc.page, tc.listErr)
 			_, err := svc.RevokeCert(context.Background(), tc.domainID, tc.token, tc.thingID)
@@ -186,7 +186,7 @@ func TestListCerts(t *testing.T) {
 	var mycerts []mgcrt.Cert
 	for i := 0; i < certNum; i++ {
 		c := mgcrt.Cert{
-			ThingID:      thingID,
+			ClientID:     thingID,
 			SerialNumber: fmt.Sprintf("%d", i),
 			ExpiryTime:   time.Now().Add(time.Hour),
 		}
@@ -243,7 +243,7 @@ func TestListSerials(t *testing.T) {
 	var issuedCerts []mgcrt.Cert
 	for i := 0; i < certNum; i++ {
 		crt := mgcrt.Cert{
-			ThingID:      cert.ThingID,
+			ClientID:     cert.ClientID,
 			SerialNumber: cert.SerialNumber,
 			ExpiryTime:   cert.ExpiryTime,
 			Revoked:      false,

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/absmach/magistrala"
+	climocks "github.com/absmach/magistrala/clients/mocks"
 	adapter "github.com/absmach/magistrala/http"
 	"github.com/absmach/magistrala/http/api"
 	mglog "github.com/absmach/magistrala/logger"
@@ -23,17 +24,16 @@ import (
 	"github.com/absmach/magistrala/readers"
 	readersapi "github.com/absmach/magistrala/readers/api"
 	readersmocks "github.com/absmach/magistrala/readers/mocks"
-	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/mgate"
 	proxy "github.com/absmach/mgate/pkg/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func setupMessages() (*httptest.Server, *thmocks.ThingsServiceClient, *pubsub.PubSub) {
-	things := new(thmocks.ThingsServiceClient)
+func setupMessages() (*httptest.Server, *climocks.ClientsServiceClient, *pubsub.PubSub) {
+	clients := new(climocks.ClientsServiceClient)
 	pub := new(pubsub.PubSub)
-	handler := adapter.NewHandler(pub, mglog.NewMock(), things)
+	handler := adapter.NewHandler(pub, mglog.NewMock(), clients)
 
 	mux := api.MakeHandler(mglog.NewMock(), "")
 	target := httptest.NewServer(mux)
@@ -47,20 +47,20 @@ func setupMessages() (*httptest.Server, *thmocks.ThingsServiceClient, *pubsub.Pu
 		return nil, nil, nil
 	}
 
-	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), things, pub
+	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), clients, pub
 }
 
 func setupReader() (*httptest.Server, *authzmocks.Authorization, *readersmocks.MessageRepository) {
 	repo := new(readersmocks.MessageRepository)
 	authz := new(authzmocks.Authorization)
-	things := new(thmocks.ThingsServiceClient)
+	clients := new(climocks.ClientsServiceClient)
 
-	mux := readersapi.MakeHandler(repo, authz, things, "test", "")
+	mux := readersapi.MakeHandler(repo, authz, clients, "test", "")
 	return httptest.NewServer(mux), authz, repo
 }
 
 func TestSendMessage(t *testing.T) {
-	ts, things, pub := setupMessages()
+	ts, clients, pub := setupMessages()
 	defer ts.Close()
 
 	msg := `[{"n":"current","t":-1,"v":1.6}]`
@@ -96,7 +96,7 @@ func TestSendMessage(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:     "publish message with empty thing key",
+			desc:     "publish message with empty client key",
 			chanName: channelID,
 			msg:      msg,
 			thingKey: "",
@@ -106,7 +106,7 @@ func TestSendMessage(t *testing.T) {
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusBadRequest),
 		},
 		{
-			desc:     "publish message with invalid thing key",
+			desc:     "publish message with invalid client key",
 			chanName: channelID,
 			msg:      msg,
 			thingKey: "invalid",
@@ -148,7 +148,7 @@ func TestSendMessage(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := things.On("Authorize", mock.Anything, mock.Anything).Return(tc.authRes, tc.authErr)
+			authCall := clients.On("Authorize", mock.Anything, mock.Anything).Return(tc.authRes, tc.authErr)
 			svcCall := pub.On("Publish", mock.Anything, channelID, mock.Anything).Return(tc.svcErr)
 			err := mgsdk.SendMessage(tc.chanName, tc.msg, tc.thingKey)
 			assert.Equal(t, tc.err, err)

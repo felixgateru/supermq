@@ -81,11 +81,11 @@ func (lm *loggingMiddleware) ListChannels(ctx context.Context, session authn.Ses
 	return lm.svc.ListChannels(ctx, session, pm)
 }
 
-func (lm *loggingMiddleware) ListChannelsByThing(ctx context.Context, session authn.Session, thingID string, pm channels.PageMetadata) (cp channels.Page, err error) {
+func (lm *loggingMiddleware) ListChannelsByClient(ctx context.Context, session authn.Session, clientID string, pm channels.PageMetadata) (cp channels.Page, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("thing_id", thingID),
+			slog.String("client_id", clientID),
 			slog.Group("page",
 				slog.Uint64("limit", pm.Limit),
 				slog.Uint64("offset", pm.Offset),
@@ -94,12 +94,12 @@ func (lm *loggingMiddleware) ListChannelsByThing(ctx context.Context, session au
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
-			lm.logger.Warn("List channels by thing failed", args...)
+			lm.logger.Warn("List channels by client failed", args...)
 			return
 		}
-		lm.logger.Info("List channels by thing completed successfully", args...)
+		lm.logger.Info("List channels by client completed successfully", args...)
 	}(time.Now())
-	return lm.svc.ListChannelsByThing(ctx, session, thingID, pm)
+	return lm.svc.ListChannelsByClient(ctx, session, clientID, pm)
 }
 
 func (lm *loggingMiddleware) UpdateChannel(ctx context.Context, session authn.Session, client channels.Channel) (c channels.Channel, err error) {
@@ -196,38 +196,38 @@ func (lm *loggingMiddleware) RemoveChannel(ctx context.Context, session authn.Se
 	return lm.svc.RemoveChannel(ctx, session, id)
 }
 
-func (lm *loggingMiddleware) Connect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connTypes []connections.ConnType) (err error) {
+func (lm *loggingMiddleware) Connect(ctx context.Context, session authn.Session, chIDs, clIDs []string, connTypes []connections.ConnType) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 			slog.Any("channel_ids", chIDs),
-			slog.Any("thing_ids", thIDs),
+			slog.Any("client_ids", clIDs),
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
-			lm.logger.Warn("Connect channels and things failed", args...)
+			lm.logger.Warn("Connect channels and clients failed", args...)
 			return
 		}
-		lm.logger.Info("Connect channels and things completed successfully", args...)
+		lm.logger.Info("Connect channels and clients completed successfully", args...)
 	}(time.Now())
-	return lm.svc.Connect(ctx, session, chIDs, thIDs, connTypes)
+	return lm.svc.Connect(ctx, session, chIDs, clIDs, connTypes)
 }
 
-func (lm *loggingMiddleware) Disconnect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connTypes []connections.ConnType) (err error) {
+func (lm *loggingMiddleware) Disconnect(ctx context.Context, session authn.Session, chIDs, clIDs []string, connTypes []connections.ConnType) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 			slog.Any("channel_ids", chIDs),
-			slog.Any("thing_ids", thIDs),
+			slog.Any("client_ids", clIDs),
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
-			lm.logger.Warn("Disconnect channels and things failed", args...)
+			lm.logger.Warn("Disconnect channels and clients failed", args...)
 			return
 		}
-		lm.logger.Info("Disconnect channels and things completed successfully", args...)
+		lm.logger.Info("Disconnect channels and clients completed successfully", args...)
 	}(time.Now())
-	return lm.svc.Disconnect(ctx, session, chIDs, thIDs, connTypes)
+	return lm.svc.Disconnect(ctx, session, chIDs, clIDs, connTypes)
 }
 
 func (lm *loggingMiddleware) SetParentGroup(ctx context.Context, session authn.Session, parentGroupID string, id string) (err error) {

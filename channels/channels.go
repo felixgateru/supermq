@@ -7,14 +7,14 @@ import (
 	"context"
 	"time"
 
+	clients "github.com/absmach/magistrala/clients"
 	"github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/connections"
 	"github.com/absmach/magistrala/pkg/roles"
-	clients "github.com/absmach/magistrala/things"
 )
 
-// Channel represents a Mainflux "communication group". This group contains the
-// things that can exchange messages between each other.
+// Channel represents a Mainflux "communication topic". This topic
+// contains the clients that can exchange messages between each other.
 type Channel struct {
 	ID          string           `json:"id"`
 	Name        string           `json:"name,omitempty"`
@@ -44,7 +44,7 @@ type PageMetadata struct {
 	Status     clients.Status   `json:"status,omitempty"`
 	IDs        []string         `json:"ids,omitempty"`
 	ListPerms  bool             `json:"-"`
-	ThingID    string           `json:"-"`
+	ClientID   string           `json:"-"`
 }
 
 // ChannelsPage contains page related metadata as well as list of channels that
@@ -55,7 +55,7 @@ type Page struct {
 }
 
 type Connection struct {
-	ThingID   string
+	ClientID  string
 	ChannelID string
 	DomainID  string
 	Type      connections.ConnType
@@ -93,20 +93,20 @@ type Service interface {
 	// user identified by the provided key.
 	ListChannels(ctx context.Context, session authn.Session, pm PageMetadata) (Page, error)
 
-	// ListChannelsByThing retrieves data about subset of channels that have
-	// specified thing connected or not connected to them and belong to the user identified by
+	// ListChannelsByClient retrieves data about subset of channels that have
+	// specified client connected or not connected to them and belong to the user identified by
 	// the provided key.
-	ListChannelsByThing(ctx context.Context, session authn.Session, thID string, pm PageMetadata) (Page, error)
+	ListChannelsByClient(ctx context.Context, session authn.Session, id string, pm PageMetadata) (Page, error)
 
-	// RemoveChannel removes the thing identified by the provided ID, that
+	// RemoveChannel removes the client identified by the provided ID, that
 	// belongs to the user identified by the provided key.
 	RemoveChannel(ctx context.Context, session authn.Session, id string) error
 
-	// Connect adds things to the channels list of connected things.
-	Connect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connType []connections.ConnType) error
+	// Connect adds clients to the channels list of connected clients.
+	Connect(ctx context.Context, session authn.Session, chIDs, clIDs []string, connType []connections.ConnType) error
 
-	// Disconnect removes things from the channels list of connected things.
-	Disconnect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connType []connections.ConnType) error
+	// Disconnect removes clients from the channels list of connected clients.
+	Disconnect(ctx context.Context, session authn.Session, chIDs, clIDs []string, connType []connections.ConnType) error
 
 	SetParentGroup(ctx context.Context, session authn.Session, parentGroupID string, id string) error
 
@@ -152,13 +152,13 @@ type Repository interface {
 
 	CheckConnection(ctx context.Context, conn Connection) error
 
-	ThingAuthorize(ctx context.Context, conn Connection) error
+	ClientAuthorize(ctx context.Context, conn Connection) error
 
 	ChannelConnectionsCount(ctx context.Context, id string) (uint64, error)
 
 	DoesChannelHaveConnections(ctx context.Context, id string) (bool, error)
 
-	RemoveThingConnections(ctx context.Context, thingID string) error
+	RemoveClientConnections(ctx context.Context, clientID string) error
 
 	RemoveChannelConnections(ctx context.Context, channelID string) error
 

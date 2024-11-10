@@ -16,7 +16,6 @@ import (
 	"github.com/absmach/magistrala/journal"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
 	"github.com/absmach/magistrala/pkg/uuid"
-	"github.com/absmach/magistrala/things"
 	"github.com/absmach/magistrala/users"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,7 +63,7 @@ func convertUsers(cs []sdk.User) []users.User {
 	return ccs
 }
 
-func convertThings(cs ...sdk.Thing) []things.Client {
+func convertThings(cs ...sdk.Client) []things.Client {
 	ccs := []things.Client{}
 
 	for _, c := range cs {
@@ -162,7 +161,7 @@ func convertUser(c sdk.User) users.User {
 	}
 }
 
-func convertThing(c sdk.Thing) things.Client {
+func convertThing(c sdk.Client) things.Client {
 	if c.Status == "" {
 		c.Status = things.EnabledStatus.String()
 	}

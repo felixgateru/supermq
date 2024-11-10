@@ -11,12 +11,12 @@ import (
 	"testing"
 
 	chmocks "github.com/absmach/magistrala/channels/mocks"
+	climocks "github.com/absmach/magistrala/clients/mocks"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/mqtt"
 	"github.com/absmach/magistrala/mqtt/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
-	thmocks "github.com/absmach/magistrala/things/mocks"
 	"github.com/absmach/mgate/pkg/session"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -445,12 +445,12 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
-func newHandler() (session.Handler, *thmocks.ThingsServiceClient, *chmocks.ChannelsServiceClient, *mocks.EventStore) {
+func newHandler() (session.Handler, *climocks.ClientsServiceClient, *chmocks.ChannelsServiceClient, *mocks.EventStore) {
 	logger, err := mglog.New(&logBuffer, "debug")
 	if err != nil {
 		log.Fatalf("failed to create logger: %s", err)
 	}
-	things := new(thmocks.ThingsServiceClient)
+	things := new(climocks.ClientsServiceClient)
 	channels := new(chmocks.ChannelsServiceClient)
 	eventStore := new(mocks.EventStore)
 	return mqtt.NewHandler(mocks.NewPublisher(), eventStore, logger, things, channels), things, channels, eventStore

@@ -10,7 +10,7 @@ import (
 
 	"github.com/absmach/magistrala"
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/connections"
@@ -47,7 +47,7 @@ const (
 	defFormat      = "messages"
 
 	tokenKind           = "token"
-	thingType           = "thing"
+	clientType          = "client"
 	userType            = "user"
 	subscribePermission = "subscribe"
 	viewPermission      = "view"
@@ -57,14 +57,14 @@ const (
 var errUserAccess = errors.New("user has no permission")
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(svc readers.MessageRepository, authn mgauthn.Authentication, things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, svcName, instanceID string) http.Handler {
+func MakeHandler(svc readers.MessageRepository, authn mgauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, svcName, instanceID string) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
 	mux := chi.NewRouter()
 	mux.Get("/channels/{chanID}/messages", kithttp.NewServer(
-		listMessagesEndpoint(svc, authn, things, channels),
+		listMessagesEndpoint(svc, authn, clients, channels),
 		decodeList,
 		encodeResponse,
 		opts...,
@@ -163,7 +163,7 @@ func decodeList(_ context.Context, r *http.Request) (interface{}, error) {
 	req := listMessagesReq{
 		chanID: chi.URLParam(r, "chanID"),
 		token:  apiutil.ExtractBearerToken(r),
-		key:    apiutil.ExtractThingKey(r),
+		key:    apiutil.ExtractClientSecret(r),
 		pageMeta: readers.PageMetadata{
 			Offset:      offset,
 			Limit:       limit,
@@ -244,8 +244,8 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	}
 }
 
-func authnAuthz(ctx context.Context, req listMessagesReq, authn mgauthn.Authentication, things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) error {
-	clientID, clientType, err := authenticate(ctx, req, authn, things)
+func authnAuthz(ctx context.Context, req listMessagesReq, authn mgauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) error {
+	clientID, clientType, err := authenticate(ctx, req, authn, clients)
 	if err != nil {
 		return nil
 	}
@@ -255,7 +255,7 @@ func authnAuthz(ctx context.Context, req listMessagesReq, authn mgauthn.Authenti
 	return nil
 }
 
-func authenticate(ctx context.Context, req listMessagesReq, authn mgauthn.Authentication, things grpcThingsV1.ThingsServiceClient) (clientID string, clientType string, err error) {
+func authenticate(ctx context.Context, req listMessagesReq, authn mgauthn.Authentication, clients grpcClientsV1.ClientsServiceClient) (clientID string, clientType string, err error) {
 	switch {
 	case req.token != "":
 		session, err := authn.Authenticate(ctx, req.token)
@@ -265,8 +265,8 @@ func authenticate(ctx context.Context, req listMessagesReq, authn mgauthn.Authen
 
 		return session.DomainUserID, policies.UserType, nil
 	case req.key != "":
-		res, err := things.Authenticate(ctx, &grpcThingsV1.AuthnReq{
-			ThingKey: req.key,
+		res, err := clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{
+			ClientSecret: req.key,
 		})
 		if err != nil {
 			return "", "", err
@@ -274,7 +274,7 @@ func authenticate(ctx context.Context, req listMessagesReq, authn mgauthn.Authen
 		if !res.GetAuthenticated() {
 			return "", "", svcerr.ErrAuthentication
 		}
-		return res.GetId(), policies.ThingType, nil
+		return res.GetId(), policies.ClientType, nil
 	default:
 		return "", "", svcerr.ErrAuthentication
 	}
@@ -287,7 +287,6 @@ func authorize(ctx context.Context, clientID, clientType, chanID string, channel
 		Type:       uint32(connections.Subscribe),
 		ChannelId:  chanID,
 	})
-
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}

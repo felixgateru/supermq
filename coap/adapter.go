@@ -11,7 +11,7 @@ import (
 	"fmt"
 
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"github.com/absmach/magistrala/pkg/connections"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
@@ -44,13 +44,13 @@ var _ Service = (*adapterService)(nil)
 
 // Observers is a map of maps,.
 type adapterService struct {
-	things   grpcThingsV1.ThingsServiceClient
+	things   grpcClientsV1.ClientsServiceClient
 	channels grpcChannelsV1.ChannelsServiceClient
 	pubsub   messaging.PubSub
 }
 
 // New instantiates the CoAP adapter implementation.
-func New(things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, pubsub messaging.PubSub) Service {
+func New(things grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, pubsub messaging.PubSub) Service {
 	as := &adapterService{
 		things:   things,
 		channels: channels,
@@ -61,9 +61,8 @@ func New(things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.Channe
 }
 
 func (svc *adapterService) Publish(ctx context.Context, key string, msg *messaging.Message) error {
-
-	authnRes, err := svc.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{
-		ThingKey: key,
+	authnRes, err := svc.things.Authenticate(ctx, &grpcClientsV1.AuthnReq{
+		ClientSecret: key,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
@@ -74,11 +73,10 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
 		ClientId:   authnRes.GetId(),
-		ClientType: policies.ThingType,
+		ClientType: policies.ClientType,
 		Type:       uint32(connections.Publish),
 		ChannelId:  msg.GetChannel(),
 	})
-
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -92,8 +90,8 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 }
 
 func (svc *adapterService) Subscribe(ctx context.Context, key, chanID, subtopic string, c Client) error {
-	authnRes, err := svc.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{
-		ThingKey: key,
+	authnRes, err := svc.things.Authenticate(ctx, &grpcClientsV1.AuthnReq{
+		ClientSecret: key,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
@@ -105,11 +103,10 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, chanID, subtopic 
 	thingID := authnRes.GetId()
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
 		ClientId:   thingID,
-		ClientType: policies.ThingType,
+		ClientType: policies.ClientType,
 		Type:       uint32(connections.Subscribe),
 		ChannelId:  chanID,
 	})
-
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -132,8 +129,8 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, chanID, subtopic 
 }
 
 func (svc *adapterService) Unsubscribe(ctx context.Context, key, chanID, subtopic, token string) error {
-	authnRes, err := svc.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{
-		ThingKey: key,
+	authnRes, err := svc.things.Authenticate(ctx, &grpcClientsV1.AuthnReq{
+		ClientSecret: key,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthentication, err)
@@ -145,11 +142,10 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, chanID, subtopi
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
 		DomainId:   "",
 		ClientId:   authnRes.GetId(),
-		ClientType: policies.ThingType,
+		ClientType: policies.ClientType,
 		Type:       uint32(connections.Subscribe),
 		ChannelId:  chanID,
 	})
-
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -195,7 +191,7 @@ func newAuthzClient(thingID, channelID, subTopic string, channels grpcChannelsV1
 }
 
 func (a ac) Handle(m *messaging.Message) error {
-	res, err := a.channels.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{ClientId: a.thingID, ClientType: policies.ThingType, ChannelId: a.channelID, Type: uint32(connections.Subscribe)})
+	res, err := a.channels.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{ClientId: a.thingID, ClientType: policies.ClientType, ChannelId: a.channelID, Type: uint32(connections.Subscribe)})
 	if err != nil {
 		if disErr := a.Cancel(); disErr != nil {
 			return errors.Wrap(err, errors.Wrap(errFailedToDisconnectClient, disErr))
@@ -211,6 +207,7 @@ func (a ac) Handle(m *messaging.Message) error {
 	}
 	return a.client.Handle(m)
 }
+
 func (a ac) Cancel() error {
 	return a.client.Cancel()
 }

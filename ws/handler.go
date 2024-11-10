@@ -13,7 +13,7 @@ import (
 	"time"
 
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/connections"
@@ -55,19 +55,19 @@ var channelRegExp = regexp.MustCompile(`^\/?channels\/([\w\-]+)\/messages(\/[^?]
 // Event implements events.Event interface.
 type handler struct {
 	pubsub   messaging.PubSub
-	things   grpcThingsV1.ThingsServiceClient
+	things   grpcClientsV1.ClientsServiceClient
 	channels grpcChannelsV1.ChannelsServiceClient
 	authn    mgauthn.Authentication
 	logger   *slog.Logger
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn mgauthn.Authentication, things grpcThingsV1.ThingsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) session.Handler {
+func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn mgauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) session.Handler {
 	return &handler{
 		logger:   logger,
 		pubsub:   pubsub,
 		authn:    authn,
-		things:   things,
+		things:   clients,
 		channels: channels,
 	}
 }
@@ -163,15 +163,15 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	var clientID, clientType string
 	switch {
 	case strings.HasPrefix(string(s.Password), "Thing"):
-		thingKey := extractThingKey(string(s.Password))
-		authnRes, err := h.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{ThingKey: thingKey})
+		thingKey := extractClientSecret(string(s.Password))
+		authnRes, err := h.things.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: thingKey})
 		if err != nil {
 			return errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		if !authnRes.Authenticated {
 			return svcerr.ErrAuthentication
 		}
-		clientType = policies.ThingType
+		clientType = policies.ClientType
 		clientID = authnRes.GetId()
 	default:
 		token := string(s.Password)
@@ -205,7 +205,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		Created:  time.Now().UnixNano(),
 	}
 
-	if clientType == policies.ThingType {
+	if clientType == policies.ClientType {
 		msg.Publisher = clientID
 	}
 
@@ -246,15 +246,15 @@ func (h *handler) authAccess(ctx context.Context, token, topic string, msgType c
 	var clientID, clientType string
 	switch {
 	case strings.HasPrefix(token, "Thing"):
-		thingKey := extractThingKey(token)
-		authnRes, err := h.things.Authenticate(ctx, &grpcThingsV1.AuthnReq{ThingKey: thingKey})
+		thingKey := extractClientSecret(token)
+		authnRes, err := h.things.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: thingKey})
 		if err != nil {
 			return errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		if !authnRes.Authenticated {
 			return svcerr.ErrAuthentication
 		}
-		clientType = policies.ThingType
+		clientType = policies.ClientType
 		clientID = authnRes.GetId()
 	default:
 		authnSession, err := h.authn.Authenticate(ctx, extractBearerToken(token))
@@ -324,13 +324,13 @@ func parseSubtopic(subtopic string) (string, error) {
 	return subtopic, nil
 }
 
-// extractThingKey returns value of the thing key. If there is no thing key - an empty value is returned.
-func extractThingKey(topic string) string {
-	if !strings.HasPrefix(topic, apiutil.ThingPrefix) {
+// extractClientSecret returns value of the client secret. If there is no client key - an empty value is returned.
+func extractClientSecret(topic string) string {
+	if !strings.HasPrefix(topic, apiutil.ClientPrefix) {
 		return ""
 	}
 
-	return strings.TrimPrefix(topic, apiutil.ThingPrefix)
+	return strings.TrimPrefix(topic, apiutil.ClientPrefix)
 }
 
 // extractBearerToken

@@ -188,7 +188,7 @@ func usersHandler(svc users.Service, authn mgauthn.Authentication, tokenClient g
 			opts...,
 		), "list_users_by_user_group_id").ServeHTTP)
 
-		// Ideal location: things service, channels endpoint.
+		// Ideal location: clients service, channels endpoint.
 		// Reason for placing here :
 		// SpiceDB provides list of user ids in given channel_id
 		// and users service can access spiceDB and get the user list with channel_id.
@@ -205,7 +205,7 @@ func usersHandler(svc users.Service, authn mgauthn.Authentication, tokenClient g
 			decodeListMembersByThing,
 			api.EncodeResponse,
 			opts...,
-		), "list_users_by_thing_id").ServeHTTP)
+		), "list_users_by_client_id").ServeHTTP)
 
 		r.Get("/{domainID}/users", otelhttp.NewHandler(kithttp.NewServer(
 			listMembersByDomainEndpoint(svc),
@@ -583,7 +583,7 @@ func decodeListMembersByThing(_ context.Context, r *http.Request) (interface{}, 
 	}
 	req := listMembersByObjectReq{
 		Page:     page,
-		objectID: chi.URLParam(r, "thingID"),
+		objectID: chi.URLParam(r, "clientID"),
 	}
 
 	return req, nil

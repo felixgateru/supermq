@@ -75,22 +75,22 @@ magistrala-cli users disable <user_id> <user_token>
 #### Create Thing
 
 ```bash
-magistrala-cli things create '{"name":"myThing"}' <user_token>
+magistrala-cli clients create '{"name":"myThing"}' <user_token>
 ```
 
 #### Create Thing with metadata
 
 ```bash
-magistrala-cli things create '{"name":"myThing", "metadata": {"key1":"value1"}}' <user_token>
+magistrala-cli clients create '{"name":"myThing", "metadata": {"key1":"value1"}}' <user_token>
 ```
 
 #### Bulk Provision Things
 
 ```bash
-magistrala-cli provision things <file> <user_token>
+magistrala-cli provision clients <file> <user_token>
 ```
 
-- `file` - A CSV or JSON file containing thing names (must have extension `.csv` or `.json`)
+- `file` - A CSV or JSON file containing client names (must have extension `.csv` or `.json`)
 - `user_token` - A valid user auth token for the current system
 
 An example CSV file might be:
@@ -131,43 +131,43 @@ With JSON you can be able to specify more fields of the channels you want to cre
 #### Update Thing
 
 ```bash
-magistrala-cli things update <thing_id> '{"name":"value1", "metadata":{"key1": "value2"}}' <user_token>
+magistrala-cli clients update <client_id> '{"name":"value1", "metadata":{"key1": "value2"}}' <user_token>
 ```
 
 #### Identify Thing
 
 ```bash
-magistrala-cli things identify <thing_key>
+magistrala-cli clients identify <client_key>
 ```
 
 #### Enable Thing
 
 ```bash
-magistrala-cli things enable <thing_id> <user_token>
+magistrala-cli clients enable <client_id> <user_token>
 ```
 
 #### Disable Thing
 
 ```bash
-magistrala-cli things disable <thing_id> <user_token>
+magistrala-cli clients disable <client_id> <user_token>
 ```
 
 #### Get Thing
 
 ```bash
-magistrala-cli things get <thing_id> <user_token>
+magistrala-cli clients get <client_id> <user_token>
 ```
 
 #### Get Things
 
 ```bash
-magistrala-cli things get all <user_token>
+magistrala-cli clients get all <user_token>
 ```
 
 #### Get a subset list of provisioned Things
 
 ```bash
-magistrala-cli things get all --offset=1 --limit=5 <user_token>
+magistrala-cli clients get all --offset=1 --limit=5 <user_token>
 ```
 
 #### Create Channel
@@ -260,7 +260,7 @@ magistrala-cli channels get all --offset=1 --limit=5 <user_token>
 #### Connect Thing to Channel
 
 ```bash
-magistrala-cli things connect <thing_id> <channel_id> <user_token>
+magistrala-cli clients connect <client_id> <channel_id> <user_token>
 ```
 
 #### Bulk Connect Things to Channels
@@ -269,23 +269,23 @@ magistrala-cli things connect <thing_id> <channel_id> <user_token>
 magistrala-cli provision connect <file> <user_token>
 ```
 
-- `file` - A CSV or JSON file containing thing and channel ids (must have extension `.csv` or `.json`)
+- `file` - A CSV or JSON file containing client and channel ids (must have extension `.csv` or `.json`)
 - `user_token` - A valid user auth token for the current system
 
 An example CSV file might be
 
 ```csv
-<thing_id1>,<channel_id1>
-<thing_id2>,<channel_id2>
+<client_id1>,<channel_id1>
+<client_id2>,<channel_id2>
 ```
 
-in which the first column is thing IDs and the second column is channel IDs. A connection will be created for each thing to each channel. This example would result in 4 connections being created.
+in which the first column is client IDs and the second column is channel IDs. A connection will be created for each client to each channel. This example would result in 4 connections being created.
 
 A comparable JSON file would be
 
 ```json
 {
-  "client_ids": ["<thing_id1>", "<thing_id2>"],
+  "client_ids": ["<client_id1>", "<client_id2>"],
   "group_ids": ["<channel_id1>", "<channel_id2>"]
 }
 ```
@@ -293,13 +293,13 @@ A comparable JSON file would be
 #### Disconnect Thing from Channel
 
 ```bash
-magistrala-cli things disconnect <thing_id> <channel_id> <user_token>
+magistrala-cli clients disconnect <client_id> <channel_id> <user_token>
 ```
 
 #### Get a subset list of Channels connected to Thing
 
 ```bash
-magistrala-cli things connections <thing_id> <user_token>
+magistrala-cli clients connections <client_id> <user_token>
 ```
 
 #### Get a subset list of Things connected to Channel
@@ -333,19 +333,19 @@ magistrala-cli bootstrap create '{"external_id": "myExtID", "external_key": "myE
 #### View configuration
 
 ```bash
-magistrala-cli bootstrap get <thing_id> <user_token> -b <bootstrap-url>
+magistrala-cli bootstrap get <client_id> <user_token> -b <bootstrap-url>
 ```
 
 #### Update configuration
 
 ```bash
-magistrala-cli bootstrap update '{"thing_id":"<thing_id>", "name": "newName", "content": "newContent"}' <user_token> -b <bootstrap-url>
+magistrala-cli bootstrap update '{"client_id":"<client_id>", "name": "newName", "content": "newContent"}' <user_token> -b <bootstrap-url>
 ```
 
 #### Remove configuration
 
 ```bash
-magistrala-cli bootstrap remove <thing_id> <user_token> -b <bootstrap-url>
+magistrala-cli bootstrap remove <client_id> <user_token> -b <bootstrap-url>
 ```
 
 #### Bootstrap configuration

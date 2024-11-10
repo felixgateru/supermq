@@ -52,8 +52,8 @@ func (ce configEvent) Encode() (map[string]interface{}, error) {
 		"state":     ce.State.String(),
 		"operation": ce.operation,
 	}
-	if ce.ThingID != "" {
-		val["thing_id"] = ce.ThingID
+	if ce.ClientID != "" {
+		val["client_id"] = ce.ClientID
 	}
 	if ce.Content != "" {
 		val["content"] = ce.Content
@@ -91,12 +91,12 @@ func (ce configEvent) Encode() (map[string]interface{}, error) {
 }
 
 type removeConfigEvent struct {
-	mgThing string
+	client string
 }
 
 func (rce removeConfigEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_id":  rce.mgThing,
+		"client_id": rce.client,
 		"operation": configRemove,
 	}, nil
 }
@@ -137,8 +137,8 @@ func (be bootstrapEvent) Encode() (map[string]interface{}, error) {
 		"operation":   thingBootstrap,
 	}
 
-	if be.ThingID != "" {
-		val["thing_id"] = be.ThingID
+	if be.ClientID != "" {
+		val["client_id"] = be.ClientID
 	}
 	if be.Content != "" {
 		val["content"] = be.Content
@@ -181,7 +181,7 @@ type changeStateEvent struct {
 
 func (cse changeStateEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_id":  cse.mgThing,
+		"client_id": cse.mgThing,
 		"state":     cse.state.String(),
 		"operation": thingStateChange,
 	}, nil
@@ -194,19 +194,22 @@ type updateConnectionsEvent struct {
 
 func (uce updateConnectionsEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_id":  uce.mgThing,
+		"client_id": uce.mgThing,
 		"channels":  uce.mgChannels,
 		"operation": thingUpdateConnections,
 	}, nil
 }
 
 type updateCertEvent struct {
-	thingKey, clientCert, clientKey, caCert string
+	clientID   string
+	clientCert string
+	clientKey  string
+	caCert     string
 }
 
 func (uce updateCertEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_key":   uce.thingKey,
+		"client_id":   uce.clientID,
 		"client_cert": uce.clientCert,
 		"client_key":  uce.clientKey,
 		"ca_cert":     uce.caCert,
@@ -254,7 +257,7 @@ type connectThingEvent struct {
 
 func (cte connectThingEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_id":   cte.thingID,
+		"client_id":  cte.thingID,
 		"channel_id": cte.channelID,
 		"operation":  thingConnect,
 	}, nil
@@ -267,7 +270,7 @@ type disconnectThingEvent struct {
 
 func (dte disconnectThingEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"thing_id":   dte.thingID,
+		"client_id":  dte.thingID,
 		"channel_id": dte.channelID,
 		"operation":  thingDisconnect,
 	}, nil

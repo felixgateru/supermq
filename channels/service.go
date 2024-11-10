@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/absmach/magistrala"
+	mgclients "github.com/absmach/magistrala/clients"
+	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	grpcCommonV1 "github.com/absmach/magistrala/internal/grpc/common/v1"
 	grpcGroupsV1 "github.com/absmach/magistrala/internal/grpc/groups/v1"
-	grpcThingsV1 "github.com/absmach/magistrala/internal/grpc/things/v1"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	"github.com/absmach/magistrala/pkg/authn"
 	"github.com/absmach/magistrala/pkg/connections"
@@ -17,30 +18,29 @@ import (
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	"github.com/absmach/magistrala/pkg/policies"
 	"github.com/absmach/magistrala/pkg/roles"
-	mgclients "github.com/absmach/magistrala/things"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
-	errCreateChannelsPolicies  = errors.New("failed to create channels policies")
-	errRollbackRepo            = errors.New("failed to rollback repo")
-	errAddConnectionsThings    = errors.New("failed to add connections in things service")
-	errRemoveConnectionsThings = errors.New("failed to remove connections from things service")
-	errSetParentGroup          = errors.New("channel already have parent")
+	errCreateChannelsPolicies   = errors.New("failed to create channels policies")
+	errRollbackRepo             = errors.New("failed to rollback repo")
+	errAddConnectionsClients    = errors.New("failed to add connections in clients service")
+	errRemoveConnectionsClients = errors.New("failed to remove connections from clients service")
+	errSetParentGroup           = errors.New("channel already have parent")
 )
 
 type service struct {
 	repo       Repository
 	policy     policies.Service
 	idProvider magistrala.IDProvider
-	things     grpcThingsV1.ThingsServiceClient
+	clients    grpcClientsV1.ClientsServiceClient
 	groups     grpcGroupsV1.GroupsServiceClient
 	roles.ProvisionManageService
 }
 
 var _ Service = (*service)(nil)
 
-func New(repo Repository, policy policies.Service, idProvider magistrala.IDProvider, things grpcThingsV1.ThingsServiceClient, groups grpcGroupsV1.GroupsServiceClient, sidProvider magistrala.IDProvider) (Service, error) {
+func New(repo Repository, policy policies.Service, idProvider magistrala.IDProvider, clients grpcClientsV1.ClientsServiceClient, groups grpcGroupsV1.GroupsServiceClient, sidProvider magistrala.IDProvider) (Service, error) {
 	rpms, err := roles.NewProvisionManageService(policies.ChannelType, repo, policy, sidProvider, AvailableActions(), BuiltInRoles())
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func New(repo Repository, policy policies.Service, idProvider magistrala.IDProvi
 		repo:                   repo,
 		policy:                 policy,
 		idProvider:             idProvider,
-		things:                 things,
+		clients:                clients,
 		groups:                 groups,
 		ProvisionManageService: rpms,
 	}, nil
@@ -131,7 +131,6 @@ func (svc service) UpdateChannel(ctx context.Context, session authn.Session, ch 
 }
 
 func (svc service) UpdateChannelTags(ctx context.Context, session authn.Session, ch Channel) (Channel, error) {
-
 	channel := Channel{
 		ID:        ch.ID,
 		Tags:      ch.Tags,
@@ -222,8 +221,7 @@ func (svc service) ListChannels(ctx context.Context, session authn.Session, pm P
 	return cp, nil
 }
 
-func (svc service) ListChannelsByThing(ctx context.Context, session authn.Session, thID string, pm PageMetadata) (Page, error) {
-
+func (svc service) ListChannelsByClient(ctx context.Context, session authn.Session, clID string, pm PageMetadata) (Page, error) {
 	return Page{}, nil
 }
 
@@ -234,7 +232,7 @@ func (svc service) RemoveChannel(ctx context.Context, session authn.Session, id 
 	}
 
 	if ok {
-		if _, err := svc.things.RemoveChannelConnections(ctx, &grpcThingsV1.RemoveChannelConnectionsReq{ChannelId: id}); err != nil {
+		if _, err := svc.clients.RemoveChannelConnections(ctx, &grpcClientsV1.RemoveChannelConnectionsReq{ChannelId: id}); err != nil {
 			return errors.Wrap(svcerr.ErrRemoveEntity, err)
 		}
 	}
@@ -286,7 +284,6 @@ func (svc service) RemoveChannel(ctx context.Context, session authn.Session, id 
 }
 
 func (svc service) Connect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connTypes []connections.ConnType) (retErr error) {
-
 	for _, chID := range chIDs {
 		c, err := svc.repo.RetrieveByID(ctx, chID)
 		if err != nil {
@@ -301,31 +298,31 @@ func (svc service) Connect(ctx context.Context, session authn.Session, chIDs, th
 	}
 
 	for _, thID := range thIDs {
-		resp, err := svc.things.RetrieveEntity(ctx, &grpcCommonV1.RetrieveEntityReq{Id: thID})
+		resp, err := svc.clients.RetrieveEntity(ctx, &grpcCommonV1.RetrieveEntityReq{Id: thID})
 		if err != nil {
 			return errors.Wrap(svcerr.ErrCreateEntity, err)
 		}
 		if resp.GetEntity().GetStatus() != uint32(mgclients.EnabledStatus) {
-			return errors.Wrap(svcerr.ErrCreateEntity, fmt.Errorf("thing id %s is not in enabled state", thID))
+			return errors.Wrap(svcerr.ErrCreateEntity, fmt.Errorf("client id %s is not in enabled state", thID))
 		}
 		if resp.GetEntity().GetDomainId() != session.DomainID {
-			return errors.Wrap(svcerr.ErrCreateEntity, fmt.Errorf("thing id %s has invalid domain id", thID))
+			return errors.Wrap(svcerr.ErrCreateEntity, fmt.Errorf("client id %s has invalid domain id", thID))
 		}
 	}
 
 	conns := []Connection{}
-	thConns := []*grpcCommonV1.Connection{}
+	cliConns := []*grpcCommonV1.Connection{}
 	for _, chID := range chIDs {
 		for _, thID := range thIDs {
 			for _, connType := range connTypes {
 				conns = append(conns, Connection{
-					ThingID:   thID,
+					ClientID:  thID,
 					ChannelID: chID,
 					DomainID:  session.DomainID,
 					Type:      connType,
 				})
-				thConns = append(thConns, &grpcCommonV1.Connection{
-					ThingId:   thID,
+				cliConns = append(cliConns, &grpcCommonV1.Connection{
+					ClientId:  thID,
 					ChannelId: chID,
 					DomainId:  session.DomainID,
 					Type:      uint32(connType),
@@ -333,19 +330,18 @@ func (svc service) Connect(ctx context.Context, session authn.Session, chIDs, th
 			}
 		}
 	}
-
 	for _, conn := range conns {
 		err := svc.repo.CheckConnection(ctx, conn)
 
 		switch {
 		case err == nil:
-			return errors.Wrap(svcerr.ErrConflict, fmt.Errorf("channel %s and thing %s are already connected for type %s in domain %s ", conn.ChannelID, conn.ThingID, conn.Type.String(), conn.DomainID))
+			return errors.Wrap(svcerr.ErrConflict, fmt.Errorf("channel %s and client %s are already connected for type %s in domain %s ", conn.ChannelID, conn.ClientID, conn.Type.String(), conn.DomainID))
 		case err != repoerr.ErrNotFound:
 			return errors.Wrap(svcerr.ErrCreateEntity, err)
 		}
 	}
-	if _, err := svc.things.AddConnections(ctx, &grpcCommonV1.AddConnectionsReq{Connections: thConns}); err != nil {
-		return errors.Wrap(svcerr.ErrCreateEntity, errors.Wrap(errAddConnectionsThings, err))
+	if _, err := svc.clients.AddConnections(ctx, &grpcCommonV1.AddConnectionsReq{Connections: cliConns}); err != nil {
+		return errors.Wrap(svcerr.ErrCreateEntity, errors.Wrap(errAddConnectionsClients, err))
 	}
 
 	if err := svc.repo.AddConnections(ctx, conns); err != nil {
@@ -356,7 +352,6 @@ func (svc service) Connect(ctx context.Context, session authn.Session, chIDs, th
 }
 
 func (svc service) Disconnect(ctx context.Context, session authn.Session, chIDs, thIDs []string, connTypes []connections.ConnType) (retErr error) {
-
 	for _, chID := range chIDs {
 		c, err := svc.repo.RetrieveByID(ctx, chID)
 		if err != nil {
@@ -368,7 +363,7 @@ func (svc service) Disconnect(ctx context.Context, session authn.Session, chIDs,
 	}
 
 	for _, thID := range thIDs {
-		resp, err := svc.things.RetrieveEntity(ctx, &grpcCommonV1.RetrieveEntityReq{Id: thID})
+		resp, err := svc.clients.RetrieveEntity(ctx, &grpcCommonV1.RetrieveEntityReq{Id: thID})
 		if err != nil {
 			return errors.Wrap(svcerr.ErrCreateEntity, err)
 		}
@@ -384,13 +379,13 @@ func (svc service) Disconnect(ctx context.Context, session authn.Session, chIDs,
 		for _, thID := range thIDs {
 			for _, connType := range connTypes {
 				conns = append(conns, Connection{
-					ThingID:   thID,
+					ClientID:  thID,
 					ChannelID: chID,
 					DomainID:  session.DomainID,
 					Type:      connType,
 				})
 				thConns = append(thConns, &grpcCommonV1.Connection{
-					ThingId:   thID,
+					ClientId:  thID,
 					ChannelId: chID,
 					DomainId:  session.DomainID,
 					Type:      uint32(connType),
@@ -399,8 +394,8 @@ func (svc service) Disconnect(ctx context.Context, session authn.Session, chIDs,
 		}
 	}
 
-	if _, err := svc.things.RemoveConnections(ctx, &grpcCommonV1.RemoveConnectionsReq{Connections: thConns}); err != nil {
-		return errors.Wrap(svcerr.ErrRemoveEntity, errors.Wrap(errRemoveConnectionsThings, err))
+	if _, err := svc.clients.RemoveConnections(ctx, &grpcCommonV1.RemoveConnectionsReq{Connections: thConns}); err != nil {
+		return errors.Wrap(svcerr.ErrRemoveEntity, errors.Wrap(errRemoveConnectionsClients, err))
 	}
 
 	if err := svc.repo.RemoveConnections(ctx, conns); err != nil {
@@ -532,7 +527,6 @@ func (svc service) listUserThingPermission(ctx context.Context, userID, thingID 
 }
 
 func (svc service) changeChannelStatus(ctx context.Context, userID string, channel Channel) (Channel, error) {
-
 	dbchannel, err := svc.repo.RetrieveByID(ctx, channel.ID)
 	if err != nil {
 		return Channel{}, errors.Wrap(svcerr.ErrViewEntity, err)
