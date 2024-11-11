@@ -87,7 +87,7 @@ func toJSON(data interface{}) string {
 	return string(jsonData)
 }
 
-func newThingsServer() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
+func newClientsServer() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
 	svc := new(mocks.Service)
 	authn := new(authnmocks.Authentication)
 
@@ -98,8 +98,8 @@ func newThingsServer() (*httptest.Server, *mocks.Service, *authnmocks.Authentica
 	return httptest.NewServer(mux), svc, authn
 }
 
-func TestCreateThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestCreateClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -242,8 +242,8 @@ func TestCreateThing(t *testing.T) {
 	}
 }
 
-func TestCreateThings(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestCreateClients(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	num := 3
@@ -414,20 +414,20 @@ func TestCreateThings(t *testing.T) {
 	}
 }
 
-func TestListThings(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestListClients(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
-		desc               string
-		query              string
-		domainID           string
-		token              string
-		listThingsResponse clients.ClientsPage
-		status             int
-		authnRes           mgauthn.Session
-		authnErr           error
-		err                error
+		desc                string
+		query               string
+		domainID            string
+		token               string
+		listClientsResponse clients.ClientsPage
+		status              int
+		authnRes            mgauthn.Session
+		authnErr            error
+		err                 error
 	}{
 		{
 			desc:     "list clients as admin with valid token",
@@ -435,7 +435,7 @@ func TestListThings(t *testing.T) {
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
 			status:   http.StatusOK,
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -449,7 +449,7 @@ func TestListThings(t *testing.T) {
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
 			status:   http.StatusOK,
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -477,7 +477,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Offset: 1,
 					Total:  1,
@@ -502,7 +502,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Limit: 1,
 					Total: 1,
@@ -536,7 +536,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -569,7 +569,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -602,7 +602,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -635,7 +635,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -668,7 +668,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -701,7 +701,7 @@ func TestListThings(t *testing.T) {
 			domainID: domainID,
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
-			listThingsResponse: clients.ClientsPage{
+			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
 				},
@@ -742,7 +742,7 @@ func TestListThings(t *testing.T) {
 			}
 
 			authCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.authnRes, tc.authnErr)
-			svcCall := svc.On("ListClients", mock.Anything, tc.authnRes, "", mock.Anything).Return(tc.listThingsResponse, tc.err)
+			svcCall := svc.On("ListClients", mock.Anything, tc.authnRes, "", mock.Anything).Return(tc.listClientsResponse, tc.err)
 			res, err := req.make()
 			assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 
@@ -760,8 +760,8 @@ func TestListThings(t *testing.T) {
 	}
 }
 
-func TestViewThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestViewClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -840,8 +840,8 @@ func TestViewThing(t *testing.T) {
 	}
 }
 
-func TestViewThingPerms(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestViewClientPerms(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -937,8 +937,8 @@ func TestViewThingPerms(t *testing.T) {
 	}
 }
 
-func TestUpdateThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestUpdateClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	newName := "newname"
@@ -1081,8 +1081,8 @@ func TestUpdateThing(t *testing.T) {
 	}
 }
 
-func TestUpdateThingsTags(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestUpdateClientsTags(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	newTag := "newtag"
@@ -1216,7 +1216,7 @@ func TestUpdateThingsTags(t *testing.T) {
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1383,8 +1383,8 @@ func TestUpdateClientSecret(t *testing.T) {
 	}
 }
 
-func TestEnableThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestEnableClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1468,8 +1468,8 @@ func TestEnableThing(t *testing.T) {
 	}
 }
 
-func TestDisableThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestDisableClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1553,8 +1553,8 @@ func TestDisableThing(t *testing.T) {
 	}
 }
 
-func TestShareThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestShareClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1710,8 +1710,8 @@ func TestShareThing(t *testing.T) {
 	}
 }
 
-func TestUnShareThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestUnShareClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1867,8 +1867,8 @@ func TestUnShareThing(t *testing.T) {
 	}
 }
 
-func TestDeleteThing(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+func TestDeleteClient(t *testing.T) {
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {
@@ -1942,7 +1942,7 @@ func TestDeleteThing(t *testing.T) {
 }
 
 func TestListMembers(t *testing.T) {
-	ts, svc, authn := newThingsServer()
+	ts, svc, authn := newClientsServer()
 	defer ts.Close()
 
 	cases := []struct {

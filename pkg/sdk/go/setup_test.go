@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/absmach/magistrala/clients"
 	mggroups "github.com/absmach/magistrala/groups"
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/invitations"
@@ -63,11 +64,11 @@ func convertUsers(cs []sdk.User) []users.User {
 	return ccs
 }
 
-func convertThings(cs ...sdk.Client) []things.Client {
-	ccs := []things.Client{}
+func convertClients(cs ...sdk.Client) []clients.Client {
+	ccs := []clients.Client{}
 
 	for _, c := range cs {
-		ccs = append(ccs, convertThing(c))
+		ccs = append(ccs, convertClient(c))
 	}
 
 	return ccs
@@ -161,21 +162,21 @@ func convertUser(c sdk.User) users.User {
 	}
 }
 
-func convertThing(c sdk.Client) things.Client {
+func convertClient(c sdk.Client) clients.Client {
 	if c.Status == "" {
-		c.Status = things.EnabledStatus.String()
+		c.Status = clients.EnabledStatus.String()
 	}
-	status, err := things.ToStatus(c.Status)
+	status, err := clients.ToStatus(c.Status)
 	if err != nil {
-		return things.Client{}
+		return clients.Client{}
 	}
-	return things.Client{
+	return clients.Client{
 		ID:          c.ID,
 		Name:        c.Name,
 		Tags:        c.Tags,
 		Domain:      c.DomainID,
-		Credentials: things.Credentials(c.Credentials),
-		Metadata:    things.Metadata(c.Metadata),
+		Credentials: clients.Credentials(c.Credentials),
+		Metadata:    clients.Metadata(c.Metadata),
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 		Status:      status,

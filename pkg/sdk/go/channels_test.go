@@ -432,12 +432,12 @@ func TestListChannels(t *testing.T) {
 			domainID: domainID,
 			offset:   0,
 			limit:    10,
-			metadata: sdk.Metadata{"name": "thing_89"},
+			metadata: sdk.Metadata{"name": "client_89"},
 			groupsPageMeta: groups.Page{
 				PageMeta: groups.PageMeta{
 					Offset:   offset,
 					Limit:    10,
-					Metadata: groups.Metadata{"name": "thing_89"},
+					Metadata: groups.Metadata{"name": "client_89"},
 				},
 				Permission: "view",
 				Direction:  -1,
@@ -937,7 +937,7 @@ func TestUpdateChannel(t *testing.T) {
 	}
 }
 
-func TestListChannelsByThing(t *testing.T) {
+func TestListChannelsByClient(t *testing.T) {
 	ts, gsvc, auth := setupChannels()
 	defer ts.Close()
 
@@ -1169,7 +1169,7 @@ func TestListChannelsByThing(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("ListGroups", mock.Anything, tc.session, policies.ClientsKind, tc.ClientID, tc.listGroupsReq).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.ChannelsByThing(tc.ClientID, tc.pageMeta, tc.domainID, tc.token)
+			resp, err := mgsdk.ChannelsByClient(tc.ClientID, tc.pageMeta, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -2499,7 +2499,7 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
-func TestConnectThing(t *testing.T) {
+func TestConnectClient(t *testing.T) {
 	ts, gsvc, auth := setupChannels()
 	defer ts.Close()
 
@@ -2583,7 +2583,7 @@ func TestConnectThing(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("Assign", mock.Anything, tc.session, tc.channelID, policies.GroupRelation, policies.ClientsKind, []string{tc.clientID}).Return(tc.svcErr)
-			err := mgsdk.ConnectThing(tc.clientID, tc.channelID, tc.domainID, tc.token)
+			err := mgsdk.ConnectClient(tc.clientID, tc.channelID, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Assign", mock.Anything, tc.session, tc.channelID, policies.GroupRelation, policies.ClientsKind, []string{tc.clientID})

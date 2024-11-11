@@ -12,6 +12,7 @@ import (
 
 	"github.com/absmach/magistrala/auth"
 	authmocks "github.com/absmach/magistrala/auth/mocks"
+	"github.com/absmach/magistrala/domains"
 	httpapi "github.com/absmach/magistrala/domains/api/http"
 	internalapi "github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
@@ -28,7 +29,7 @@ import (
 
 var (
 	authDomain, sdkDomain = generateTestDomain(&testing.T{})
-	authDomainReq         = auth.Domain{
+	authDomainReq         = domains.Domain{
 		Name:     authDomain.Name,
 		Metadata: authDomain.Metadata,
 		Tags:     authDomain.Tags,
@@ -67,8 +68,8 @@ func TestCreateDomain(t *testing.T) {
 		desc     string
 		token    string
 		domain   sdk.Domain
-		svcReq   auth.Domain
-		svcRes   auth.Domain
+		svcReq   domains.Domain
+		svcRes   domains.Domain
 		svcErr   error
 		response sdk.Domain
 		err      error
@@ -88,7 +89,7 @@ func TestCreateDomain(t *testing.T) {
 			token:    invalidToken,
 			domain:   sdkDomainReq,
 			svcReq:   authDomainReq,
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   svcerr.ErrAuthentication,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -98,7 +99,7 @@ func TestCreateDomain(t *testing.T) {
 			token:    "",
 			domain:   sdkDomainReq,
 			svcReq:   authDomainReq,
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -112,8 +113,8 @@ func TestCreateDomain(t *testing.T) {
 				Tags:     sdkDomain.Tags,
 				Alias:    sdkDomain.Alias,
 			},
-			svcReq:   auth.Domain{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingName, http.StatusBadRequest),
@@ -127,8 +128,8 @@ func TestCreateDomain(t *testing.T) {
 					"key": make(chan int),
 				},
 			},
-			svcReq:   auth.Domain{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
@@ -138,7 +139,7 @@ func TestCreateDomain(t *testing.T) {
 			token:  validToken,
 			domain: sdkDomainReq,
 			svcReq: authDomainReq,
-			svcRes: auth.Domain{
+			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
 				Metadata: auth.Metadata{
@@ -186,7 +187,7 @@ func TestUpdateDomain(t *testing.T) {
 		token    string
 		domainID string
 		domain   sdk.Domain
-		svcRes   auth.Domain
+		svcRes   domains.Domain
 		svcErr   error
 		response sdk.Domain
 		err      error
@@ -212,7 +213,7 @@ func TestUpdateDomain(t *testing.T) {
 				ID:   sdkDomain.ID,
 				Name: updatedDomianName,
 			},
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   svcerr.ErrAuthentication,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -225,7 +226,7 @@ func TestUpdateDomain(t *testing.T) {
 				ID:   sdkDomain.ID,
 				Name: updatedDomianName,
 			},
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -238,7 +239,7 @@ func TestUpdateDomain(t *testing.T) {
 				ID:   wrongID,
 				Name: updatedDomianName,
 			},
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   svcerr.ErrAuthorization,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
@@ -250,7 +251,7 @@ func TestUpdateDomain(t *testing.T) {
 			domain: sdk.Domain{
 				Name: sdkDomain.Name,
 			},
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKError(apiutil.ErrMissingID),
@@ -266,7 +267,7 @@ func TestUpdateDomain(t *testing.T) {
 					"key": make(chan int),
 				},
 			},
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
@@ -279,7 +280,7 @@ func TestUpdateDomain(t *testing.T) {
 				ID:   sdkDomain.ID,
 				Name: sdkDomain.Name,
 			},
-			svcRes: auth.Domain{
+			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
 				Metadata: auth.Metadata{
@@ -321,7 +322,7 @@ func TestViewDomain(t *testing.T) {
 		desc     string
 		token    string
 		domainID string
-		svcRes   auth.Domain
+		svcRes   domains.Domain
 		svcErr   error
 		response sdk.Domain
 		err      error
@@ -339,7 +340,7 @@ func TestViewDomain(t *testing.T) {
 			desc:     "view domain with invalid token",
 			token:    invalidToken,
 			domainID: sdkDomain.ID,
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   svcerr.ErrAuthentication,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -348,7 +349,7 @@ func TestViewDomain(t *testing.T) {
 			desc:     "view domain with empty token",
 			token:    "",
 			domainID: sdkDomain.ID,
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -357,7 +358,7 @@ func TestViewDomain(t *testing.T) {
 			desc:     "view domain with invalid domain ID",
 			token:    validToken,
 			domainID: wrongID,
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   svcerr.ErrAuthorization,
 			response: sdk.Domain{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthorization, http.StatusForbidden),
@@ -366,7 +367,7 @@ func TestViewDomain(t *testing.T) {
 			desc:     "view domain with empty id",
 			token:    validToken,
 			domainID: "",
-			svcRes:   auth.Domain{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			response: sdk.Domain{},
 			err:      errors.NewSDKError(apiutil.ErrMissingID),
@@ -375,7 +376,7 @@ func TestViewDomain(t *testing.T) {
 			desc:     "view domain with response that cannot be unmarshalled",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			svcRes: auth.Domain{
+			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
 				Metadata: auth.Metadata{
@@ -501,7 +502,7 @@ func TestListDomians(t *testing.T) {
 		token    string
 		pageMeta sdk.PageMetadata
 		svcReq   auth.Page
-		svcRes   auth.DomainsPage
+		svcRes   domains.DomainsPage
 		svcErr   error
 		response sdk.DomainsPage
 		err      error
@@ -519,9 +520,9 @@ func TestListDomians(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes: auth.DomainsPage{
+			svcRes: domains.DomainsPage{
 				Total:   1,
-				Domains: []auth.Domain{authDomain},
+				Domains: []domains.Domain{authDomain},
 			},
 			svcErr: nil,
 			response: sdk.DomainsPage{
@@ -545,7 +546,7 @@ func TestListDomians(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   svcerr.ErrAuthentication,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -558,7 +559,7 @@ func TestListDomians(t *testing.T) {
 				Limit:  10,
 			},
 			svcReq:   auth.Page{},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrBearerToken), http.StatusUnauthorized),
@@ -574,7 +575,7 @@ func TestListDomians(t *testing.T) {
 				},
 			},
 			svcReq:   auth.Page{},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
@@ -592,9 +593,9 @@ func TestListDomians(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes: auth.DomainsPage{
+			svcRes: domains.DomainsPage{
 				Total: 1,
-				Domains: []auth.Domain{{
+				Domains: []domains.Domain{{
 					Name:     authDomain.Name,
 					Metadata: auth.Metadata{"key": make(chan int)},
 				}},
@@ -636,7 +637,7 @@ func TestListUserDomains(t *testing.T) {
 		userID   string
 		pageMeta sdk.PageMetadata
 		svcReq   auth.Page
-		svcRes   auth.DomainsPage
+		svcRes   domains.DomainsPage
 		svcErr   error
 		response sdk.DomainsPage
 		err      error
@@ -655,9 +656,9 @@ func TestListUserDomains(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes: auth.DomainsPage{
+			svcRes: domains.DomainsPage{
 				Total:   1,
-				Domains: []auth.Domain{authDomain},
+				Domains: []domains.Domain{authDomain},
 			},
 			svcErr: nil,
 			response: sdk.DomainsPage{
@@ -682,7 +683,7 @@ func TestListUserDomains(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   svcerr.ErrAuthentication,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -696,7 +697,7 @@ func TestListUserDomains(t *testing.T) {
 				Limit:  10,
 			},
 			svcReq:   auth.Page{},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -710,7 +711,7 @@ func TestListUserDomains(t *testing.T) {
 				Limit:  10,
 			},
 			svcReq:   auth.Page{},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
@@ -729,9 +730,9 @@ func TestListUserDomains(t *testing.T) {
 				Order:  internalapi.DefOrder,
 				Dir:    internalapi.DefDir,
 			},
-			svcRes: auth.DomainsPage{
+			svcRes: domains.DomainsPage{
 				Total: 1,
-				Domains: []auth.Domain{{
+				Domains: []domains.Domain{{
 					Name:     authDomain.Name,
 					Metadata: auth.Metadata{"key": make(chan int)},
 				}},
@@ -752,7 +753,7 @@ func TestListUserDomains(t *testing.T) {
 				},
 			},
 			svcReq:   auth.Page{},
-			svcRes:   auth.DomainsPage{},
+			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
 			err:      errors.NewSDKError(errors.New("json: unsupported type: chan int")),
@@ -790,8 +791,8 @@ func TestEnableDomain(t *testing.T) {
 		desc     string
 		token    string
 		domainID string
-		svcReq   auth.DomainReq
-		svcRes   auth.Domain
+		svcReq   domains.DomainReq
+		svcRes   domains.Domain
 		svcErr   error
 		err      error
 	}{
@@ -799,7 +800,7 @@ func TestEnableDomain(t *testing.T) {
 			desc:     "enable domain successfully",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			svcReq: auth.DomainReq{
+			svcReq: domains.DomainReq{
 				Status: &enable,
 			},
 			svcRes: authDomain,
@@ -810,10 +811,10 @@ func TestEnableDomain(t *testing.T) {
 			desc:     "enable domain with invalid token",
 			token:    invalidToken,
 			domainID: sdkDomain.ID,
-			svcReq: auth.DomainReq{
+			svcReq: domains.DomainReq{
 				Status: &enable,
 			},
-			svcRes: auth.Domain{},
+			svcRes: domains.Domain{},
 			svcErr: svcerr.ErrAuthentication,
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
@@ -821,8 +822,8 @@ func TestEnableDomain(t *testing.T) {
 			desc:     "enable domain with empty token",
 			token:    "",
 			domainID: sdkDomain.ID,
-			svcReq:   auth.DomainReq{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.DomainReq{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
@@ -830,8 +831,8 @@ func TestEnableDomain(t *testing.T) {
 			desc:     "enable domain with empty domain id",
 			token:    validToken,
 			domainID: "",
-			svcReq:   auth.DomainReq{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.DomainReq{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
 		},
@@ -867,8 +868,8 @@ func TestDisableDomain(t *testing.T) {
 		desc     string
 		token    string
 		domainID string
-		svcReq   auth.DomainReq
-		svcRes   auth.Domain
+		svcReq   domains.DomainReq
+		svcRes   domains.Domain
 		svcErr   error
 		err      error
 	}{
@@ -876,7 +877,7 @@ func TestDisableDomain(t *testing.T) {
 			desc:     "disable domain successfully",
 			token:    validToken,
 			domainID: sdkDomain.ID,
-			svcReq: auth.DomainReq{
+			svcReq: domains.DomainReq{
 				Status: &disable,
 			},
 			svcRes: authDomain,
@@ -887,10 +888,10 @@ func TestDisableDomain(t *testing.T) {
 			desc:     "disable domain with invalid token",
 			token:    invalidToken,
 			domainID: sdkDomain.ID,
-			svcReq: auth.DomainReq{
+			svcReq: domains.DomainReq{
 				Status: &disable,
 			},
-			svcRes: auth.Domain{},
+			svcRes: domains.Domain{},
 			svcErr: svcerr.ErrAuthentication,
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
@@ -898,8 +899,8 @@ func TestDisableDomain(t *testing.T) {
 			desc:     "disable domain with empty token",
 			token:    "",
 			domainID: sdkDomain.ID,
-			svcReq:   auth.DomainReq{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.DomainReq{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
@@ -907,8 +908,8 @@ func TestDisableDomain(t *testing.T) {
 			desc:     "disable domain with empty domain id",
 			token:    validToken,
 			domainID: "",
-			svcReq:   auth.DomainReq{},
-			svcRes:   auth.Domain{},
+			svcReq:   domains.DomainReq{},
+			svcRes:   domains.Domain{},
 			svcErr:   nil,
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingID, http.StatusBadRequest),
 		},
@@ -1103,11 +1104,11 @@ func TestRemoveUserFromDomain(t *testing.T) {
 	}
 }
 
-func generateTestDomain(t *testing.T) (auth.Domain, sdk.Domain) {
+func generateTestDomain(t *testing.T) (domains.Domain, sdk.Domain) {
 	createdAt, err := time.Parse(time.RFC3339, "2024-04-01T00:00:00Z")
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error parsing time: %s", err))
 	ownerID := testsutil.GenerateUUID(t)
-	ad := auth.Domain{
+	ad := domains.Domain{
 		ID:        testsutil.GenerateUUID(t),
 		Name:      "test-domain",
 		Metadata:  auth.Metadata(validMetadata),

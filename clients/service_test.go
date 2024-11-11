@@ -330,9 +330,9 @@ func TestViewClient(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall1 := repo.On("RetrieveByID", context.Background(), mock.Anything).Return(tc.response, tc.err)
-		rThing, err := svc.View(context.Background(), mgauthn.Session{}, tc.clientID)
+		rClient, err := svc.View(context.Background(), mgauthn.Session{}, tc.clientID)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		assert.Equal(t, tc.response, rThing, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, rThing))
+		assert.Equal(t, tc.response, rClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, rClient))
 		repoCall1.Unset()
 	}
 }
@@ -644,9 +644,9 @@ func TestUpdateClient(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall1 := repo.On("Update", context.Background(), mock.Anything).Return(tc.updateResponse, tc.updateErr)
-		updatedThing, err := svc.Update(context.Background(), tc.session, tc.client)
+		updatedClient, err := svc.Update(context.Background(), tc.session, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		assert.Equal(t, tc.updateResponse, updatedThing, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateResponse, updatedThing))
+		assert.Equal(t, tc.updateResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateResponse, updatedClient))
 		repoCall1.Unset()
 	}
 }
@@ -683,9 +683,9 @@ func TestUpdateTags(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall1 := repo.On("UpdateTags", context.Background(), mock.Anything).Return(tc.updateResponse, tc.updateErr)
-		updatedThing, err := svc.UpdateTags(context.Background(), tc.session, tc.client)
+		updatedClient, err := svc.UpdateTags(context.Background(), tc.session, tc.client)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		assert.Equal(t, tc.updateResponse, updatedThing, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateResponse, updatedThing))
+		assert.Equal(t, tc.updateResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateResponse, updatedClient))
 		repoCall1.Unset()
 	}
 }
@@ -729,9 +729,9 @@ func TestUpdateSecret(t *testing.T) {
 
 	for _, tc := range cases {
 		repoCall := repo.On("UpdateSecret", context.Background(), mock.Anything).Return(tc.updateSecretResponse, tc.updateErr)
-		updatedThing, err := svc.UpdateSecret(context.Background(), tc.session, tc.client.ID, tc.newSecret)
+		updatedClient, err := svc.UpdateSecret(context.Background(), tc.session, tc.client.ID, tc.newSecret)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		assert.Equal(t, tc.updateSecretResponse, updatedThing, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateSecretResponse, updatedThing))
+		assert.Equal(t, tc.updateSecretResponse, updatedClient, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.updateSecretResponse, updatedClient))
 		repoCall.Unset()
 	}
 }
@@ -739,10 +739,10 @@ func TestUpdateSecret(t *testing.T) {
 func TestEnable(t *testing.T) {
 	svc := newService()
 
-	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
-	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
-	endisabledThing1 := disabledThing1
-	endisabledThing1.Status = clients.EnabledStatus
+	enabledClient1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
+	disabledClient1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
+	endisabledClient1 := disabledClient1
+	endisabledClient1.Status = clients.EnabledStatus
 
 	cases := []struct {
 		desc                 string
@@ -757,30 +757,30 @@ func TestEnable(t *testing.T) {
 	}{
 		{
 			desc:                 "enable disabled client",
-			id:                   disabledThing1.ID,
+			id:                   disabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               disabledThing1,
-			changeStatusResponse: endisabledThing1,
-			retrieveByIDResponse: disabledThing1,
+			client:               disabledClient1,
+			changeStatusResponse: endisabledClient1,
+			retrieveByIDResponse: disabledClient1,
 			err:                  nil,
 		},
 		{
 			desc:                 "enable disabled client with failed to update repo",
-			id:                   disabledThing1.ID,
+			id:                   disabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               disabledThing1,
+			client:               disabledClient1,
 			changeStatusResponse: clients.Client{},
-			retrieveByIDResponse: disabledThing1,
+			retrieveByIDResponse: disabledClient1,
 			changeStatusErr:      repoerr.ErrMalformedEntity,
 			err:                  svcerr.ErrUpdateEntity,
 		},
 		{
 			desc:                 "enable enabled client",
-			id:                   enabledThing1.ID,
+			id:                   enabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               enabledThing1,
-			changeStatusResponse: enabledThing1,
-			retrieveByIDResponse: enabledThing1,
+			client:               enabledClient1,
+			changeStatusResponse: enabledClient1,
+			retrieveByIDResponse: enabledClient1,
 			changeStatusErr:      errors.ErrStatusAlreadyAssigned,
 			err:                  errors.ErrStatusAlreadyAssigned,
 		},
@@ -809,9 +809,9 @@ func TestEnable(t *testing.T) {
 func TestDisable(t *testing.T) {
 	svc := newService()
 
-	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
-	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
-	disenabledClient1 := enabledThing1
+	enabledClient1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
+	disabledClient1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
+	disenabledClient1 := enabledClient1
 	disenabledClient1.Status = clients.DisabledStatus
 
 	cases := []struct {
@@ -828,30 +828,30 @@ func TestDisable(t *testing.T) {
 	}{
 		{
 			desc:                 "disable enabled client",
-			id:                   enabledThing1.ID,
+			id:                   enabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               enabledThing1,
+			client:               enabledClient1,
 			changeStatusResponse: disenabledClient1,
-			retrieveByIDResponse: enabledThing1,
+			retrieveByIDResponse: enabledClient1,
 			err:                  nil,
 		},
 		{
 			desc:                 "disable client with failed to update repo",
-			id:                   enabledThing1.ID,
+			id:                   enabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               enabledThing1,
+			client:               enabledClient1,
 			changeStatusResponse: clients.Client{},
-			retrieveByIDResponse: enabledThing1,
+			retrieveByIDResponse: enabledClient1,
 			changeStatusErr:      repoerr.ErrMalformedEntity,
 			err:                  svcerr.ErrUpdateEntity,
 		},
 		{
 			desc:                 "disable disabled client",
-			id:                   disabledThing1.ID,
+			id:                   disabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               disabledThing1,
+			client:               disabledClient1,
 			changeStatusResponse: clients.Client{},
-			retrieveByIDResponse: disabledThing1,
+			retrieveByIDResponse: disabledClient1,
 			changeStatusErr:      errors.ErrStatusAlreadyAssigned,
 			err:                  errors.ErrStatusAlreadyAssigned,
 		},
@@ -867,11 +867,11 @@ func TestDisable(t *testing.T) {
 		},
 		{
 			desc:                 "disable client with failed to remove from cache",
-			id:                   enabledThing1.ID,
+			id:                   enabledClient1.ID,
 			session:              mgauthn.Session{UserID: validID},
-			client:               disabledThing1,
+			client:               disabledClient1,
 			changeStatusResponse: disenabledClient1,
-			retrieveByIDResponse: enabledThing1,
+			retrieveByIDResponse: enabledClient1,
 			removeErr:            svcerr.ErrRemoveEntity,
 			err:                  svcerr.ErrRemoveEntity,
 		},
