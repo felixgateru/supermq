@@ -2359,8 +2359,8 @@ func TestEnable(t *testing.T) {
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusUnprocessableEntity,
-			svcErr:   svcerr.ErrUpdateEntity,
-			err:      svcerr.ErrUpdateEntity,
+			svcErr:   svcerr.ErrEnableUser,
+			err:      svcerr.ErrEnableUser,
 		},
 	}
 
@@ -2459,8 +2459,8 @@ func TestDisable(t *testing.T) {
 			token:    validToken,
 			authnRes: mgauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusUnprocessableEntity,
-			svcErr:   svcerr.ErrUpdateEntity,
-			err:      svcerr.ErrUpdateEntity,
+			svcErr:   svcerr.ErrDisableUser,
+			err:      svcerr.ErrDisableUser,
 		},
 	}
 
@@ -3867,7 +3867,7 @@ func TestListUsersByClientID(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/things/%s/users?", us.URL, validID, validID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/clients/%s/users?", us.URL, validID, validID) + tc.query,
 				token:  tc.token,
 			}
 

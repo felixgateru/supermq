@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	thingRemove     = "thing.remove"
-	thingConnect    = "group.assign"
-	thingDisconnect = "group.unassign"
+	clientRemove     = "client.remove"
+	clientConnect    = "group.assign"
+	clientDisconnect = "group.unassign"
 
 	channelPrefix = "group."
 	channelUpdate = channelPrefix + "update"
@@ -43,10 +43,10 @@ func (es *eventHandler) Handle(ctx context.Context, event events.Event) error {
 	}
 
 	switch msg["operation"] {
-	case thingRemove:
+	case clientRemove:
 		rte := decodeRemoveClient(msg)
 		err = es.svc.RemoveConfigHandler(ctx, rte.id)
-	case thingConnect:
+	case clientConnect:
 		cte := decodeConnectClient(msg)
 		if cte.channelID == "" || len(cte.clientIDs) == 0 {
 			return svcerr.ErrMalformedEntity
@@ -59,13 +59,13 @@ func (es *eventHandler) Handle(ctx context.Context, event events.Event) error {
 				return err
 			}
 		}
-	case thingDisconnect:
+	case clientDisconnect:
 		dte := decodeDisconnectClient(msg)
 		if dte.channelID == "" || len(dte.clientIDs) == 0 {
 			return svcerr.ErrMalformedEntity
 		}
-		for _, thingID := range dte.clientIDs {
-			if thingID == "" {
+		for _, clientID := range dte.clientIDs {
+			if clientID == "" {
 				return svcerr.ErrMalformedEntity
 			}
 		}
