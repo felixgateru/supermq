@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	mgchannels "github.com/absmach/magistrala/channels"
 	"github.com/absmach/magistrala/clients"
 	mggroups "github.com/absmach/magistrala/groups"
 	"github.com/absmach/magistrala/internal/testsutil"
@@ -84,14 +85,14 @@ func convertGroups(cs []sdk.Group) []mggroups.Group {
 	return cgs
 }
 
-func convertChannels(cs []sdk.Channel) []mggroups.Group {
-	cgs := []mggroups.Group{}
+func convertChannels(cs []sdk.Channel) []mgchannels.Channel {
+	chs := []mgchannels.Channel{}
 
 	for _, c := range cs {
-		cgs = append(cgs, convertChannel(c))
+		chs = append(chs, convertChannel(c))
 	}
 
-	return cgs
+	return chs
 }
 
 func convertGroup(g sdk.Group) mggroups.Group {
@@ -183,23 +184,20 @@ func convertClient(c sdk.Client) clients.Client {
 	}
 }
 
-func convertChannel(g sdk.Channel) mggroups.Group {
+func convertChannel(g sdk.Channel) mgchannels.Channel {
 	if g.Status == "" {
-		g.Status = mggroups.EnabledStatus.String()
+		g.Status = clients.EnabledStatus.String()
 	}
-	status, err := mggroups.ToStatus(g.Status)
+	status, err := clients.ToStatus(g.Status)
 	if err != nil {
-		return mggroups.Group{}
+		return mgchannels.Channel{}
 	}
-	return mggroups.Group{
+	return mgchannels.Channel{
 		ID:          g.ID,
 		Domain:      g.DomainID,
-		Parent:      g.ParentID,
+		ParentGroup: g.ParentID,
 		Name:        g.Name,
-		Description: g.Description,
-		Metadata:    mggroups.Metadata(g.Metadata),
-		Level:       g.Level,
-		Path:        g.Path,
+		Metadata:    clients.Metadata(g.Metadata),
 		CreatedAt:   g.CreatedAt,
 		UpdatedAt:   g.UpdatedAt,
 		Status:      status,

@@ -14,7 +14,6 @@ import (
 	"github.com/absmach/magistrala/clients"
 	api "github.com/absmach/magistrala/clients/api/http"
 	"github.com/absmach/magistrala/clients/mocks"
-	gmocks "github.com/absmach/magistrala/groups/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
@@ -31,12 +30,11 @@ import (
 
 func setupClients() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
 	tsvc := new(mocks.Service)
-	gsvc := new(gmocks.Service)
 
 	logger := mglog.NewMock()
 	mux := chi.NewRouter()
 	authn := new(authnmocks.Authentication)
-	api.MakeHandler(tsvc, gsvc, authn, mux, logger, "")
+	api.MakeHandler(tsvc, authn, mux, logger, "")
 
 	return httptest.NewServer(mux), tsvc, authn
 }
@@ -250,7 +248,7 @@ func TestCreateClients(t *testing.T) {
 			desc:                 "create new clients with invalid token",
 			domainID:             domainID,
 			token:                invalidToken,
-			createClientsRequest: clients,
+			createClientsRequest: sdkClients,
 			svcReq:               convertClients(sdkClients...),
 			svcRes:               []clients.Client{},
 			authenticateErr:      svcerr.ErrAuthentication,
@@ -261,7 +259,7 @@ func TestCreateClients(t *testing.T) {
 			desc:                 "create new clients with empty token",
 			domainID:             domainID,
 			token:                "",
-			createClientsRequest: clients,
+			createClientsRequest: sdkClients,
 			svcReq:               convertClients(sdkClients...),
 			svcRes:               []clients.Client{},
 			svcErr:               nil,
@@ -283,7 +281,7 @@ func TestCreateClients(t *testing.T) {
 			desc:                 "create new clients with a response that can't be unmarshalled",
 			domainID:             domainID,
 			token:                validToken,
-			createClientsRequest: clients,
+			createClientsRequest: sdkClients,
 			svcReq:               convertClients(sdkClients...),
 			svcRes: []clients.Client{{
 				Name:        sdkClients[0].Name,

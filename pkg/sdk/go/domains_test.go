@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/absmach/magistrala/auth"
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/domains"
 	httpapi "github.com/absmach/magistrala/domains/api/http"
+	"github.com/absmach/magistrala/domains/mocks"
 	internalapi "github.com/absmach/magistrala/internal/api"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
+	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	policies "github.com/absmach/magistrala/pkg/policies"
@@ -44,12 +44,13 @@ var (
 	updatedDomianName = "updated-domain"
 )
 
-func setupDomains() (*httptest.Server, *authmocks.Service) {
-	svc := new(authmocks.Service)
+func setupDomains() (*httptest.Server, *mocks.Service) {
+	svc := new(mocks.Service)
 	logger := mglog.NewMock()
 	mux := chi.NewRouter()
+	authn := new(authnmocks.Authentication)
 
-	mux = httpapi.MakeHandler(svc, mux, logger)
+	mux = httpapi.MakeHandler(svc, authn, mux, logger, "")
 	return httptest.NewServer(mux), svc
 }
 
@@ -142,7 +143,7 @@ func TestCreateDomain(t *testing.T) {
 			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
-				Metadata: auth.Metadata{
+				Metadata: domains.Metadata{
 					"key": make(chan int),
 				},
 			},
@@ -283,7 +284,7 @@ func TestUpdateDomain(t *testing.T) {
 			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
-				Metadata: auth.Metadata{
+				Metadata: domains.Metadata{
 					"key": make(chan int),
 				},
 			},
@@ -379,7 +380,7 @@ func TestViewDomain(t *testing.T) {
 			svcRes: domains.Domain{
 				ID:   authDomain.ID,
 				Name: authDomain.Name,
-				Metadata: auth.Metadata{
+				Metadata: domains.Metadata{
 					"key": make(chan int),
 				},
 			},
@@ -501,7 +502,7 @@ func TestListDomians(t *testing.T) {
 		desc     string
 		token    string
 		pageMeta sdk.PageMetadata
-		svcReq   auth.Page
+		svcReq   domains.Page
 		svcRes   domains.DomainsPage
 		svcErr   error
 		response sdk.DomainsPage
@@ -514,7 +515,7 @@ func TestListDomians(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -540,7 +541,7 @@ func TestListDomians(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -558,7 +559,7 @@ func TestListDomians(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq:   auth.Page{},
+			svcReq:   domains.Page{},
 			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
@@ -574,7 +575,7 @@ func TestListDomians(t *testing.T) {
 					"key": make(chan int),
 				},
 			},
-			svcReq:   auth.Page{},
+			svcReq:   domains.Page{},
 			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
@@ -587,7 +588,7 @@ func TestListDomians(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -597,7 +598,7 @@ func TestListDomians(t *testing.T) {
 				Total: 1,
 				Domains: []domains.Domain{{
 					Name:     authDomain.Name,
-					Metadata: auth.Metadata{"key": make(chan int)},
+					Metadata: domains.Metadata{"key": make(chan int)},
 				}},
 			},
 			svcErr:   nil,
@@ -636,7 +637,7 @@ func TestListUserDomains(t *testing.T) {
 		token    string
 		userID   string
 		pageMeta sdk.PageMetadata
-		svcReq   auth.Page
+		svcReq   domains.Page
 		svcRes   domains.DomainsPage
 		svcErr   error
 		response sdk.DomainsPage
@@ -650,7 +651,7 @@ func TestListUserDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -677,7 +678,7 @@ func TestListUserDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -696,7 +697,7 @@ func TestListUserDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq:   auth.Page{},
+			svcReq:   domains.Page{},
 			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
@@ -710,7 +711,7 @@ func TestListUserDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq:   auth.Page{},
+			svcReq:   domains.Page{},
 			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
@@ -724,7 +725,7 @@ func TestListUserDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: auth.Page{
+			svcReq: domains.Page{
 				Offset: 0,
 				Limit:  10,
 				Order:  internalapi.DefOrder,
@@ -734,7 +735,7 @@ func TestListUserDomains(t *testing.T) {
 				Total: 1,
 				Domains: []domains.Domain{{
 					Name:     authDomain.Name,
-					Metadata: auth.Metadata{"key": make(chan int)},
+					Metadata: domains.Metadata{"key": make(chan int)},
 				}},
 			},
 			svcErr:   nil,
@@ -752,7 +753,7 @@ func TestListUserDomains(t *testing.T) {
 					"key": make(chan int),
 				},
 			},
-			svcReq:   auth.Page{},
+			svcReq:   domains.Page{},
 			svcRes:   domains.DomainsPage{},
 			svcErr:   nil,
 			response: sdk.DomainsPage{},
@@ -785,7 +786,7 @@ func TestEnableDomain(t *testing.T) {
 
 	mgsdk := sdk.NewSDK(sdkConf)
 
-	enable := auth.EnabledStatus
+	enable := domains.EnabledStatus
 
 	cases := []struct {
 		desc     string
@@ -862,7 +863,7 @@ func TestDisableDomain(t *testing.T) {
 
 	mgsdk := sdk.NewSDK(sdkConf)
 
-	disable := auth.DisabledStatus
+	disable := domains.DisabledStatus
 
 	cases := []struct {
 		desc     string
@@ -1111,10 +1112,10 @@ func generateTestDomain(t *testing.T) (domains.Domain, sdk.Domain) {
 	ad := domains.Domain{
 		ID:        testsutil.GenerateUUID(t),
 		Name:      "test-domain",
-		Metadata:  auth.Metadata(validMetadata),
+		Metadata:  domains.Metadata(validMetadata),
 		Tags:      []string{"tag1", "tag2"},
 		Alias:     "test-alias",
-		Status:    auth.EnabledStatus,
+		Status:    domains.EnabledStatus,
 		CreatedBy: ownerID,
 		CreatedAt: createdAt,
 		UpdatedBy: ownerID,

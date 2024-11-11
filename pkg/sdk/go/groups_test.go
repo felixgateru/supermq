@@ -13,6 +13,7 @@ import (
 
 	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/groups"
+	"github.com/absmach/magistrala/groups/api"
 	"github.com/absmach/magistrala/groups/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
@@ -24,8 +25,6 @@ import (
 	oauth2mocks "github.com/absmach/magistrala/pkg/oauth2/mocks"
 	policies "github.com/absmach/magistrala/pkg/policies"
 	sdk "github.com/absmach/magistrala/pkg/sdk/go"
-	"github.com/absmach/magistrala/users/api"
-	umocks "github.com/absmach/magistrala/users/mocks"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -39,8 +38,7 @@ var (
 )
 
 func setupGroups() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
-	usvc := new(umocks.Service)
-	gsvc := new(mocks.Service)
+	svc := new(mocks.Service)
 
 	logger := mglog.NewMock()
 	mux := chi.NewRouter()
@@ -48,9 +46,9 @@ func setupGroups() (*httptest.Server, *mocks.Service, *authnmocks.Authentication
 	provider.On("Name").Return("test")
 	authn := new(authnmocks.Authentication)
 	token := new(authmocks.TokenServiceClient)
-	api.MakeHandler(usvc, authn, token, true, gsvc, mux, logger, "", passRegex, provider)
+	api.MakeHandler(svc, authn, token, true, mux, logger, "", passRegex, provider)
 
-	return httptest.NewServer(mux), gsvc, authn
+	return httptest.NewServer(mux), svc, authn
 }
 
 func TestCreateGroup(t *testing.T) {
@@ -327,8 +325,6 @@ func TestListGroups(t *testing.T) {
 					Offset: offset,
 					Limit:  100,
 				},
-				Permission: policies.ViewPermission,
-				Direction:  -1,
 			},
 			svcRes: groups.Page{
 				PageMeta: groups.PageMeta{
@@ -357,8 +353,6 @@ func TestListGroups(t *testing.T) {
 					Offset: offset,
 					Limit:  100,
 				},
-				Permission: policies.ViewPermission,
-				Direction:  -1,
 			},
 			svcRes:          groups.Page{},
 			authenticateErr: svcerr.ErrAuthentication,
@@ -392,8 +386,6 @@ func TestListGroups(t *testing.T) {
 					Offset: offset,
 					Limit:  10,
 				},
-				Permission: policies.ViewPermission,
-				Direction:  -1,
 			},
 			svcRes: groups.Page{
 				PageMeta: groups.PageMeta{
@@ -443,8 +435,6 @@ func TestListGroups(t *testing.T) {
 						"name": "user_89",
 					},
 				},
-				Permission: policies.ViewPermission,
-				Direction:  -1,
 			},
 			svcRes: groups.Page{
 				PageMeta: groups.PageMeta{
@@ -506,8 +496,6 @@ func TestListGroups(t *testing.T) {
 					Offset: offset,
 					Limit:  limit,
 				},
-				Permission: policies.ViewPermission,
-				Direction:  -1,
 			},
 			svcRes: groups.Page{
 				PageMeta: groups.PageMeta{
