@@ -30,9 +30,9 @@ var (
 	ID             = "6e5e10b3-d4df-4758-b426-4929d55ad740"
 	client         = clients.Client{
 		ID:          ID,
-		Name:        "thingname",
+		Name:        "clientname",
 		Tags:        []string{"tag1", "tag2"},
-		Credentials: clients.Credentials{Identity: "thingidentity", Secret: secret},
+		Credentials: clients.Credentials{Identity: "clientidentity", Secret: secret},
 		Metadata:    validTMetadata,
 		Status:      clients.EnabledStatus,
 	}
@@ -82,7 +82,7 @@ func TestCreateClients(t *testing.T) {
 			err:    nil,
 		},
 		{
-			desc:    "create an existing thing",
+			desc:    "create an existing client",
 			client:  client,
 			token:   validToken,
 			saveErr: repoerr.ErrConflict,
@@ -91,9 +91,9 @@ func TestCreateClients(t *testing.T) {
 		{
 			desc: "create a new client without secret",
 			client: clients.Client{
-				Name: "thingWithoutSecret",
+				Name: "clientWithoutSecret",
 				Credentials: clients.Credentials{
-					Identity: "newthingwithoutsecret@example.com",
+					Identity: "newclientwithoutsecret@example.com",
 				},
 				Status: clients.EnabledStatus,
 			},
@@ -103,9 +103,9 @@ func TestCreateClients(t *testing.T) {
 		{
 			desc: "create a new client without identity",
 			client: clients.Client{
-				Name: "thingWithoutIdentity",
+				Name: "clientWithoutIdentity",
 				Credentials: clients.Credentials{
-					Identity: "newthingwithoutsecret@example.com",
+					Identity: "newclientwithoutsecret@example.com",
 				},
 				Status: clients.EnabledStatus,
 			},
@@ -115,9 +115,9 @@ func TestCreateClients(t *testing.T) {
 		{
 			desc: "create a new enabled client with name",
 			client: clients.Client{
-				Name: "thingWithName",
+				Name: "clientWithName",
 				Credentials: clients.Credentials{
-					Identity: "newthingwithname@example.com",
+					Identity: "newclientwithname@example.com",
 					Secret:   secret,
 				},
 				Status: clients.EnabledStatus,
@@ -129,9 +129,9 @@ func TestCreateClients(t *testing.T) {
 		{
 			desc: "create a new disabled client with name",
 			client: clients.Client{
-				Name: "thingWithName",
+				Name: "clientWithName",
 				Credentials: clients.Credentials{
-					Identity: "newthingwithname@example.com",
+					Identity: "newclientwithname@example.com",
 					Secret:   secret,
 				},
 			},
@@ -143,7 +143,7 @@ func TestCreateClients(t *testing.T) {
 			client: clients.Client{
 				Tags: []string{"tag1", "tag2"},
 				Credentials: clients.Credentials{
-					Identity: "newthingwithtags@example.com",
+					Identity: "newclientwithtags@example.com",
 					Secret:   secret,
 				},
 				Status: clients.EnabledStatus,
@@ -156,7 +156,7 @@ func TestCreateClients(t *testing.T) {
 			client: clients.Client{
 				Tags: []string{"tag1", "tag2"},
 				Credentials: clients.Credentials{
-					Identity: "newthingwithtags@example.com",
+					Identity: "newclientwithtags@example.com",
 					Secret:   secret,
 				},
 				Status: clients.DisabledStatus,
@@ -168,7 +168,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new enabled client with metadata",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithmetadata@example.com",
+					Identity: "newclientwithmetadata@example.com",
 					Secret:   secret,
 				},
 				Metadata: validTMetadata,
@@ -181,7 +181,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new disabled client with metadata",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithmetadata@example.com",
+					Identity: "newclientwithmetadata@example.com",
 					Secret:   secret,
 				},
 				Metadata: validTMetadata,
@@ -190,10 +190,10 @@ func TestCreateClients(t *testing.T) {
 			err:   nil,
 		},
 		{
-			desc: "create a new disabled thing",
+			desc: "create a new disabled client",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithvalidstatus@example.com",
+					Identity: "newclientwithvalidstatus@example.com",
 					Secret:   secret,
 				},
 			},
@@ -204,7 +204,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new client with valid disabled status",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithvalidstatus@example.com",
+					Identity: "newclientwithvalidstatus@example.com",
 					Secret:   secret,
 				},
 				Status: clients.DisabledStatus,
@@ -215,14 +215,14 @@ func TestCreateClients(t *testing.T) {
 		{
 			desc: "create a new client with all fields",
 			client: clients.Client{
-				Name: "newthingwithallfields",
+				Name: "newclientwithallfields",
 				Tags: []string{"tag1", "tag2"},
 				Credentials: clients.Credentials{
-					Identity: "newthingwithallfields@example.com",
+					Identity: "newclientwithallfields@example.com",
 					Secret:   secret,
 				},
 				Metadata: clients.Metadata{
-					"name": "newthingwithallfields",
+					"name": "newclientwithallfields",
 				},
 				Status: clients.EnabledStatus,
 			},
@@ -233,7 +233,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new client with invalid status",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithinvalidstatus@example.com",
+					Identity: "newclientwithinvalidstatus@example.com",
 					Secret:   secret,
 				},
 				Status: clients.AllStatus,
@@ -245,7 +245,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new client with failed add policies response",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithfailedpolicy@example.com",
+					Identity: "newclientwithfailedpolicy@example.com",
 					Secret:   secret,
 				},
 				Status: clients.EnabledStatus,
@@ -258,7 +258,7 @@ func TestCreateClients(t *testing.T) {
 			desc: "create a new client with failed delete policies response",
 			client: clients.Client{
 				Credentials: clients.Credentials{
-					Identity: "newthingwithfailedpolicy@example.com",
+					Identity: "newclientwithfailedpolicy@example.com",
 					Secret:   secret,
 				},
 				Status: clients.EnabledStatus,
@@ -561,7 +561,7 @@ func TestListClients(t *testing.T) {
 			err:                     svcerr.ErrNotFound,
 		},
 		{
-			desc:     "list all clients as admin with failed to list things",
+			desc:     "list all clients as admin with failed to list clients",
 			userKind: "admin",
 			id:       adminID,
 			session:  mgauthn.Session{UserID: adminID, DomainID: domainID, SuperAdmin: true},
@@ -605,10 +605,10 @@ func TestListClients(t *testing.T) {
 func TestUpdateClient(t *testing.T) {
 	svc := newService()
 
-	thing1 := client
-	thing2 := client
-	thing1.Name = "Updated thing"
-	thing2.Metadata = clients.Metadata{"role": "test"}
+	client1 := client
+	client2 := client
+	client1.Name = "Updated client"
+	client2.Metadata = clients.Metadata{"role": "test"}
 
 	cases := []struct {
 		desc           string
@@ -620,21 +620,21 @@ func TestUpdateClient(t *testing.T) {
 	}{
 		{
 			desc:           "update client name successfully",
-			client:         thing1,
+			client:         client1,
 			session:        mgauthn.Session{UserID: validID},
-			updateResponse: thing1,
+			updateResponse: client1,
 			err:            nil,
 		},
 		{
 			desc:           "update client metadata with valid token",
-			client:         thing2,
-			updateResponse: thing2,
+			client:         client2,
+			updateResponse: client2,
 			session:        mgauthn.Session{UserID: validID},
 			err:            nil,
 		},
 		{
 			desc:           "update client with failed to update repo",
-			client:         thing1,
+			client:         client1,
 			updateResponse: clients.Client{},
 			session:        mgauthn.Session{UserID: validID},
 			updateErr:      repoerr.ErrMalformedEntity,
@@ -739,8 +739,8 @@ func TestUpdateSecret(t *testing.T) {
 func TestEnable(t *testing.T) {
 	svc := newService()
 
-	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "thing1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
-	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "thing3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
+	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
+	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
 	endisabledThing1 := disabledThing1
 	endisabledThing1.Status = clients.EnabledStatus
 
@@ -756,7 +756,7 @@ func TestEnable(t *testing.T) {
 		err                  error
 	}{
 		{
-			desc:                 "enable disabled thing",
+			desc:                 "enable disabled client",
 			id:                   disabledThing1.ID,
 			session:              mgauthn.Session{UserID: validID},
 			client:               disabledThing1,
@@ -775,7 +775,7 @@ func TestEnable(t *testing.T) {
 			err:                  svcerr.ErrUpdateEntity,
 		},
 		{
-			desc:                 "enable enabled thing",
+			desc:                 "enable enabled client",
 			id:                   enabledThing1.ID,
 			session:              mgauthn.Session{UserID: validID},
 			client:               enabledThing1,
@@ -785,7 +785,7 @@ func TestEnable(t *testing.T) {
 			err:                  errors.ErrStatusAlreadyAssigned,
 		},
 		{
-			desc:                 "enable non-existing thing",
+			desc:                 "enable non-existing client",
 			id:                   wrongID,
 			session:              mgauthn.Session{UserID: validID},
 			client:               clients.Client{},
@@ -809,8 +809,8 @@ func TestEnable(t *testing.T) {
 func TestDisable(t *testing.T) {
 	svc := newService()
 
-	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "thing1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
-	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "thing3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
+	enabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client1@example.com", Secret: "password"}, Status: clients.EnabledStatus}
+	disabledThing1 := clients.Client{ID: ID, Credentials: clients.Credentials{Identity: "client3@example.com", Secret: "password"}, Status: clients.DisabledStatus}
 	disenabledClient1 := enabledThing1
 	disenabledClient1.Status = clients.DisabledStatus
 
@@ -827,7 +827,7 @@ func TestDisable(t *testing.T) {
 		err                  error
 	}{
 		{
-			desc:                 "disable enabled thing",
+			desc:                 "disable enabled client",
 			id:                   enabledThing1.ID,
 			session:              mgauthn.Session{UserID: validID},
 			client:               enabledThing1,
@@ -846,7 +846,7 @@ func TestDisable(t *testing.T) {
 			err:                  svcerr.ErrUpdateEntity,
 		},
 		{
-			desc:                 "disable disabled thing",
+			desc:                 "disable disabled client",
 			id:                   disabledThing1.ID,
 			session:              mgauthn.Session{UserID: validID},
 			client:               disabledThing1,
@@ -856,7 +856,7 @@ func TestDisable(t *testing.T) {
 			err:                  errors.ErrStatusAlreadyAssigned,
 		},
 		{
-			desc:                 "disable non-existing thing",
+			desc:                 "disable non-existing client",
 			id:                   wrongID,
 			client:               clients.Client{},
 			session:              mgauthn.Session{UserID: validID},
