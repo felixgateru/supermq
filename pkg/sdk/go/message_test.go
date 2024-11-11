@@ -17,7 +17,6 @@ import (
 	mglog "github.com/absmach/magistrala/logger"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	authnmocks "github.com/absmach/magistrala/pkg/authn/mocks"
-	authzmocks "github.com/absmach/magistrala/pkg/authz/mocks"
 	"github.com/absmach/magistrala/pkg/errors"
 	svcerr "github.com/absmach/magistrala/pkg/errors/service"
 	pubsub "github.com/absmach/magistrala/pkg/messaging/mocks"
@@ -54,13 +53,14 @@ func setupMessages() (*httptest.Server, *climocks.ClientsServiceClient, *pubsub.
 	return httptest.NewServer(http.HandlerFunc(mp.ServeHTTP)), clients, pub
 }
 
-func setupReader() (*httptest.Server, *authzmocks.Authorization, *readersmocks.MessageRepository) {
+func setupReader() (*httptest.Server, *authnmocks.Authentication, *readersmocks.MessageRepository) {
 	repo := new(readersmocks.MessageRepository)
-	authz := new(authzmocks.Authorization)
+	authn := new(authnmocks.Authentication)
 	clients := new(climocks.ClientsServiceClient)
+	channels := new(chmocks.ChannelsServiceClient)
 
-	mux := readersapi.MakeHandler(repo, authz, clients, "test", "")
-	return httptest.NewServer(mux), authz, repo
+	mux := readersapi.MakeHandler(repo, authn, clients, channels, "test", "")
+	return httptest.NewServer(mux), authn, repo
 }
 
 func TestSendMessage(t *testing.T) {

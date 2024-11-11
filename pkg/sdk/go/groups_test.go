@@ -11,9 +11,8 @@ import (
 	"testing"
 	"time"
 
-	authmocks "github.com/absmach/magistrala/auth/mocks"
 	"github.com/absmach/magistrala/groups"
-	"github.com/absmach/magistrala/groups/api"
+	httpapi "github.com/absmach/magistrala/groups/api/http"
 	"github.com/absmach/magistrala/groups/mocks"
 	"github.com/absmach/magistrala/internal/testsutil"
 	mglog "github.com/absmach/magistrala/logger"
@@ -45,8 +44,7 @@ func setupGroups() (*httptest.Server, *mocks.Service, *authnmocks.Authentication
 	provider := new(oauth2mocks.Provider)
 	provider.On("Name").Return("test")
 	authn := new(authnmocks.Authentication)
-	token := new(authmocks.TokenServiceClient)
-	api.MakeHandler(svc, authn, token, true, mux, logger, "", passRegex, provider)
+	httpapi.MakeHandler(svc, authn, mux, logger, "")
 
 	return httptest.NewServer(mux), svc, authn
 }
