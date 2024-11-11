@@ -96,7 +96,7 @@ func clientsHandler(svc clients.Service, authn mgauthn.Authentication, r *chi.Mu
 					decodeSetClientParentGroupStatus,
 					api.EncodeResponse,
 					opts...,
-				), "set_thing_parent_group").ServeHTTP)
+				), "set_client_parent_group").ServeHTTP)
 
 				r.Delete("/parent", otelhttp.NewHandler(kithttp.NewServer(
 					removeClientParentGroupEndpoint(svc),
