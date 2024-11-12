@@ -17,7 +17,7 @@ const (
 	clientConnect    = "group.assign"
 	clientDisconnect = "group.unassign"
 
-	channelPrefix = "group."
+	channelPrefix = "channels."
 	channelUpdate = channelPrefix + "update"
 	channelRemove = channelPrefix + "remove"
 
