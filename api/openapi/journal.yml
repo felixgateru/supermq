@@ -196,8 +196,8 @@ components:
       example: bb7edb32-2eac-4aad-aebe-ed96fe073879
 
     entity_type:
-      name: entity_type
-      description: Type of entity, e.g. user, group, thing, etc.
+      name: entityType
+      description: Type of entity, e.g. user, group, thing, etc.entityType
       in: path
       schema:
         type: string
