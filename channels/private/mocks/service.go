@@ -53,6 +53,34 @@ func (_m *Service) RemoveClientConnections(ctx context.Context, clientID string)
 	return r0
 }
 
+// RetrieveByID provides a mock function with given fields: ctx, id
+func (_m *Service) RetrieveByID(ctx context.Context, id string) (channels.Channel, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveByID")
+	}
+
+	var r0 channels.Channel
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (channels.Channel, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) channels.Channel); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(channels.Channel)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UnsetParentGroupFromChannels provides a mock function with given fields: ctx, parentGroupID
 func (_m *Service) UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error {
 	ret := _m.Called(ctx, parentGroupID)

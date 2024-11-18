@@ -13,7 +13,9 @@ import (
 	ch "github.com/absmach/magistrala/channels"
 	grpcapi "github.com/absmach/magistrala/channels/api/grpc"
 	"github.com/absmach/magistrala/channels/private/mocks"
+	"github.com/absmach/magistrala/clients"
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
+	grpcCommonV1 "github.com/absmach/magistrala/internal/grpc/common/v1"
 	"github.com/absmach/magistrala/internal/testsutil"
 	"github.com/absmach/magistrala/pkg/connections"
 	"github.com/absmach/magistrala/pkg/errors"
@@ -28,7 +30,14 @@ import (
 
 const port = 7005
 
-var validID = testsutil.GenerateUUID(&testing.T{})
+var (
+	validID      = testsutil.GenerateUUID(&testing.T{})
+	validChannel = ch.Channel{
+		ID:     validID,
+		Domain: testsutil.GenerateUUID(&testing.T{}),
+		Status: clients.EnabledStatus,
+	}
+)
 
 func startGRPCServer(svc *mocks.Service, port int) *grpc.Server {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -201,6 +210,57 @@ func TestUnsetParentGroupFromChannelsEndpoint(t *testing.T) {
 			})
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s", tc.desc, tc.err, err))
 			assert.Equal(t, &grpcChannelsV1.UnsetParentGroupFromChannelsRes{}, res)
+			svcCall.Unset()
+		})
+	}
+}
+
+func TestRetrieveEntity(t *testing.T) {
+	svc := new(mocks.Service)
+	server := startGRPCServer(svc, port)
+	defer server.GracefulStop()
+	authAddr := fmt.Sprintf("localhost:%d", port)
+	conn, _ := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client := grpcapi.NewClient(conn, time.Second)
+
+	cases := []struct {
+		desc   string
+		id     string
+		svcRes ch.Channel
+		resp   *grpcCommonV1.RetrieveEntityRes
+		code   codes.Code
+		err    error
+	}{
+		{
+			desc:   "retrieve entity successfully",
+			id:     validID,
+			svcRes: validChannel,
+			resp: &grpcCommonV1.RetrieveEntityRes{
+				Entity: &grpcCommonV1.EntityBasic{
+					Id:            validChannel.ID,
+					DomainId:      validChannel.Domain,
+					ParentGroupId: validChannel.ParentGroup,
+					Status:        uint32(validChannel.Status),
+				},
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve entity with error",
+			id:   validID,
+			resp: &grpcCommonV1.RetrieveEntityRes{},
+			err:  svcerr.ErrNotFound,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			svcCall := svc.On("RetrieveByID", mock.Anything, tc.id).Return(tc.svcRes, tc.err)
+			res, err := client.RetrieveEntity(context.Background(), &grpcCommonV1.RetrieveEntityReq{
+				Id: tc.id,
+			})
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s", tc.desc, tc.err, err))
+			assert.Equal(t, tc.resp.Entity, res.Entity)
 			svcCall.Unset()
 		})
 	}

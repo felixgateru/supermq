@@ -291,7 +291,6 @@ func TestUpdateTags(t *testing.T) {
 				assert.Equal(t, tc.channel.Tags, channel.Tags, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Tags, channel.Tags))
 			}
 		})
-
 	}
 }
 

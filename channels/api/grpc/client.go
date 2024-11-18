@@ -151,7 +151,7 @@ func (client grpcClient) RetrieveEntity(ctx context.Context, req *grpcCommonV1.R
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
-	res, err := client.retrieveEntity(ctx, req.GetId())
+	res, err := client.retrieveEntity(ctx, req)
 	if err != nil {
 		return &grpcCommonV1.RetrieveEntityRes{}, decodeError(err)
 	}
