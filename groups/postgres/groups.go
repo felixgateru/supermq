@@ -618,7 +618,7 @@ func (repo groupRepository) RetrieveChildrenGroups(ctx context.Context, domainID
 	case startLevel > 0 && endLevel > 0 && startLevel < endLevel:
 		levelCondition = fmt.Sprintf(" path ~ '%s.*{%d,%d}'::::lquery ", pGroup.Path, startLevel, endLevel)
 	default:
-		return mggroups.Page{}, fmt.Errorf("invalid level range: start level: %d end level: %d", startLevel, endLevel)
+		return mggroups.Page{}, errors.Wrap(repoerr.ErrViewEntity, fmt.Errorf("invalid level range: start level: %d end level: %d", startLevel, endLevel))
 	}
 
 	switch {
@@ -724,6 +724,7 @@ func (repo groupRepository) retrieveGroups(ctx context.Context, domainID, userID
 	page.Groups = items
 	return page, nil
 }
+
 func (repo groupRepository) userGroupsBaseQuery(domainID, userID string) string {
 	return fmt.Sprintf(`
 	WITH direct_groups AS (
@@ -826,7 +827,6 @@ func (repo groupRepository) userGroupsBaseQuery(domainID, userID string) string 
 		FROM
 			indirect_child_groups
 	)`, userID, domainID, domainID)
-
 }
 
 func buildQuery(gm mggroups.PageMeta, ids ...string) string {

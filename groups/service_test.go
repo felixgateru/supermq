@@ -11,6 +11,7 @@ import (
 
 	"github.com/0x6flab/namegenerator"
 	chmocks "github.com/absmach/magistrala/channels/mocks"
+	climocks "github.com/absmach/magistrala/clients/mocks"
 	"github.com/absmach/magistrala/groups"
 	"github.com/absmach/magistrala/groups/mocks"
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
@@ -26,7 +27,6 @@ import (
 	policymocks "github.com/absmach/magistrala/pkg/policies/mocks"
 	"github.com/absmach/magistrala/pkg/roles"
 	"github.com/absmach/magistrala/pkg/uuid"
-	climocks "github.com/absmach/magistrala/clients/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -75,7 +75,7 @@ var (
 	repo     *mocks.Repository
 	policies *policymocks.Service
 	channels *chmocks.ChannelsServiceClient
-	clients   *climocks.ClientsServiceClient
+	clients  *climocks.ClientsServiceClient
 )
 
 func newService(t *testing.T) groups.Service {
@@ -83,7 +83,11 @@ func newService(t *testing.T) groups.Service {
 	policies = new(policymocks.Service)
 	channels = new(chmocks.ChannelsServiceClient)
 	clients = new(climocks.ClientsServiceClient)
-	svc, err := groups.NewService(repo, policies, idProvider, channels, clients, idProvider)
+	availableActions := []roles.Action{}
+	builtInRoles := map[roles.BuiltInRoleName][]roles.Action{
+		groups.BuiltInRoleAdmin: availableActions,
+	}
+	svc, err := groups.NewService(repo, policies, idProvider, channels, clients, idProvider, availableActions, builtInRoles)
 	assert.Nil(t, err, fmt.Sprintf(" Unexpected error  while creating service %v", err))
 	return svc
 }
@@ -200,7 +204,7 @@ func TestCreateGroup(t *testing.T) {
 			repoCall1 := repo.On("AddRoles", context.Background(), mock.Anything).Return([]roles.Role{}, tc.addRoleErr)
 			repoCall2 := repo.On("Delete", context.Background(), mock.Anything).Return(tc.deleteErr)
 			got, err := svc.CreateGroup(context.Background(), validSession, tc.group)
-			assert.Equal(t, tc.err, err, fmt.Sprintf("expected error %v but got %v", err, tc.err))
+			assert.Equal(t, tc.err, err, fmt.Sprintf("expected error %v but got %v", tc.err, err))
 			if err == nil {
 				assert.NotEmpty(t, got.ID)
 				assert.NotEmpty(t, got.CreatedAt)
@@ -412,16 +416,15 @@ func TestListGroups(t *testing.T) {
 	svc := newService(t)
 
 	cases := []struct {
-		desc               string
-		session            mgauthn.Session
-		pageMeta           groups.PageMeta
-		listAllObjectsRes  policysvc.PolicyPage
-		listAllObjectsErr  error
-		retrieveRes        groups.Page
-		retrieveErr        error
-		listPermissionsRes policysvc.Permissions
-		listPermissionsErr error
-		err                error
+		desc                 string
+		session              mgauthn.Session
+		pageMeta             groups.PageMeta
+		retrieveAllRes       groups.Page
+		retrieveAllErr       error
+		retrieveUserGroupRes groups.Page
+		retrieveUserGroupErr error
+		resp                 groups.Page
+		err                  error
 	}{
 		{
 			desc:    "list groups as super admin successfully",
@@ -431,7 +434,13 @@ func TestListGroups(t *testing.T) {
 				Offset:   0,
 				DomainID: validID,
 			},
-			retrieveRes: groups.Page{
+			retrieveAllRes: groups.Page{
+				Groups: []groups.Group{validGroup},
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+			},
+			resp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
 					Total: 1,
@@ -447,47 +456,9 @@ func TestListGroups(t *testing.T) {
 				Offset:   0,
 				DomainID: validID,
 			},
-			retrieveErr: repoerr.ErrNotFound,
-			err:         repoerr.ErrNotFound,
-		},
-		{
-			desc:    "list groups as super admin with list permission successfully",
-			session: mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: true},
-			pageMeta: groups.PageMeta{
-				Limit:     10,
-				Offset:    0,
-				DomainID:  validID,
-				ListPerms: true,
-			},
-			retrieveRes: groups.Page{
-				Groups: []groups.Group{validGroup},
-				PageMeta: groups.PageMeta{
-					Total: 1,
-				},
-			},
-			listPermissionsRes: policysvc.Permissions{
-				policysvc.AdminPermission, policysvc.EditPermission, policysvc.ViewPermission,
-			},
-			err: nil,
-		},
-		{
-			desc:    "list groups as super admin with failed to list permission",
-			session: mgauthn.Session{UserID: validID, DomainID: validID, DomainUserID: validID, SuperAdmin: true},
-			pageMeta: groups.PageMeta{
-				Limit:     10,
-				Offset:    0,
-				DomainID:  validID,
-				ListPerms: true,
-			},
-			retrieveRes: groups.Page{
-				Groups: []groups.Group{validGroup},
-				PageMeta: groups.PageMeta{
-					Total: 1,
-				},
-			},
-			listPermissionsRes: policysvc.Permissions{},
-			listPermissionsErr: svcerr.ErrAuthorization,
-			err:                svcerr.ErrAuthorization,
+			retrieveAllErr: repoerr.ErrNotFound,
+			resp:           groups.Page{},
+			err:            repoerr.ErrNotFound,
 		},
 		{
 			desc:    "list groups as non admin successfully",
@@ -496,10 +467,13 @@ func TestListGroups(t *testing.T) {
 				Limit:  10,
 				Offset: 0,
 			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{validID},
+			retrieveUserGroupRes: groups.Page{
+				Groups: []groups.Group{validGroup},
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
 			},
-			retrieveRes: groups.Page{
+			resp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
 					Total: 1,
@@ -508,119 +482,87 @@ func TestListGroups(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:    "list groups as non admin with failed to list all objects",
+			desc:    "list groups as non admin with failed to retrieve user groups",
 			session: validSession,
 			pageMeta: groups.PageMeta{
 				Limit:  10,
 				Offset: 0,
 			},
-			listAllObjectsErr: svcerr.ErrAuthorization,
-			err:               svcerr.ErrAuthorization,
-		},
-		{
-			desc:    "list groups as non admin with failed to retrieve",
-			session: validSession,
-			pageMeta: groups.PageMeta{
-				Limit:  10,
-				Offset: 0,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{validID},
-			},
-			retrieveErr: repoerr.ErrNotFound,
-			err:         repoerr.ErrNotFound,
-		},
-		{
-			desc:    "list groups as non admin with list permission successfully",
-			session: validSession,
-			pageMeta: groups.PageMeta{
-				Limit:     10,
-				Offset:    0,
-				ListPerms: true,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{validID},
-			},
-			retrieveRes: groups.Page{
-				Groups: []groups.Group{validGroup},
-				PageMeta: groups.PageMeta{
-					Total: 1,
-				},
-			},
-			listPermissionsRes: policysvc.Permissions{
-				policysvc.AdminPermission, policysvc.EditPermission, policysvc.ViewPermission,
-			},
-			err: nil,
-		},
-		{
-			desc:    "list groups as non admin with list permission and failed to list permission",
-			session: validSession,
-			pageMeta: groups.PageMeta{
-				Limit:     10,
-				Offset:    0,
-				ListPerms: true,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{validID},
-			},
-			retrieveRes: groups.Page{
-				Groups: []groups.Group{validGroup},
-				PageMeta: groups.PageMeta{
-					Total: 1,
-				},
-			},
-			listPermissionsRes: policysvc.Permissions{},
-			listPermissionsErr: svcerr.ErrAuthorization,
-			err:                svcerr.ErrAuthorization,
-		},
-		{
-			desc:    "list groups as non admin with list permission and empty list permissions",
-			session: validSession,
-			pageMeta: groups.PageMeta{
-				Limit:     10,
-				Offset:    0,
-				ListPerms: true,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{validID},
-			},
-			retrieveRes: groups.Page{
-				Groups: []groups.Group{validGroup},
-				PageMeta: groups.PageMeta{
-					Total: 1,
-				},
-			},
-			listPermissionsRes: policysvc.Permissions{},
-			listPermissionsErr: nil,
-			err:                svcerr.ErrAuthorization,
+			retrieveUserGroupErr: repoerr.ErrNotFound,
+			resp:                 groups.Page{},
+			err:                  svcerr.ErrViewEntity,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			policyCall := policies.On("ListAllObjects", context.Background(), policysvc.Policy{
-				SubjectType: policysvc.UserType,
-				Subject:     tc.session.UserID,
-				Permission:  tc.pageMeta.Permission,
-				ObjectType:  policysvc.GroupType,
-			}).Return(tc.listAllObjectsRes, tc.listAllObjectsErr)
-			repoCall := repo.On("RetrieveByIDs", context.Background(), tc.pageMeta, mock.Anything).Return(tc.retrieveRes, tc.retrieveErr)
-			policyCall1 := policies.On("ListPermissions", mock.Anything, policysvc.Policy{
-				SubjectType: policysvc.UserType,
-				Subject:     tc.session.UserID,
-				Object:      validGroup.ID,
-				ObjectType:  policysvc.GroupType,
-			}, []string{}).Return(tc.listPermissionsRes, tc.listPermissionsErr)
+			repoCall := repo.On("RetrieveAll", context.Background(), tc.pageMeta).Return(tc.retrieveAllRes, tc.retrieveAllErr)
+			repoCall1 := repo.On("RetrieveUserGroups", context.Background(), tc.session.DomainID, tc.session.UserID, tc.pageMeta).Return(tc.retrieveUserGroupRes, tc.retrieveUserGroupErr)
 			got, err := svc.ListGroups(context.Background(), tc.session, tc.pageMeta)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
-			if err == nil {
-				assert.Equal(t, tc.retrieveRes, got)
-				ok := repo.AssertCalled(t, "RetrieveByIDs", context.Background(), tc.pageMeta, mock.Anything)
-				assert.True(t, ok, fmt.Sprintf("RetrieveByIDs was not called on %s", tc.desc))
-			}
-			policyCall.Unset()
+			assert.Equal(t, tc.resp, got)
 			repoCall.Unset()
-			policyCall1.Unset()
+			repoCall1.Unset()
+		})
+	}
+}
+
+func TestListUserGroups(t *testing.T) {
+	svc := newService(t)
+
+	cases := []struct {
+		desc                 string
+		session              mgauthn.Session
+		userID               string
+		pageMeta             groups.PageMeta
+		retrieveUserGroupRes groups.Page
+		retrieveUserGroupErr error
+		resp                 groups.Page
+		err                  error
+	}{
+		{
+			desc:    "list user groups successfully",
+			session: validSession,
+			userID:  validID,
+			pageMeta: groups.PageMeta{
+				Limit:  10,
+				Offset: 0,
+			},
+			retrieveUserGroupRes: groups.Page{
+				Groups: []groups.Group{validGroup},
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+			},
+			resp: groups.Page{
+				Groups: []groups.Group{validGroup},
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+			},
+			err: nil,
+		},
+		{
+			desc:    "list user groups with failed to retrieve",
+			session: validSession,
+			userID:  validID,
+			pageMeta: groups.PageMeta{
+				Limit:  10,
+				Offset: 0,
+			},
+			retrieveUserGroupErr: repoerr.ErrNotFound,
+			resp:                 groups.Page{},
+			err:                  svcerr.ErrViewEntity,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			repoCall := repo.On("RetrieveUserGroups", context.Background(), tc.session.DomainID, tc.userID, tc.pageMeta).Return(tc.retrieveUserGroupRes, tc.retrieveUserGroupErr)
+			got, err := svc.ListUserGroups(context.Background(), tc.session, tc.userID, tc.pageMeta)
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
+			assert.Equal(t, tc.resp, got)
+			repoCall.Unset()
 		})
 	}
 }
@@ -1186,36 +1128,38 @@ func TestRemoveAllChildrenGroups(t *testing.T) {
 	}
 }
 
-func TestListChildrenGroups(t *testing.T) {
+func TestListAllChildrenGroups(t *testing.T) {
 	svc := newService(t)
 
 	cases := []struct {
-		desc               string
-		parentID           string
-		pageMeta           groups.PageMeta
-		listAllObjectsRes  policysvc.PolicyPage
-		listAllObjectsErr  error
-		listAllObjectsRes1 policysvc.PolicyPage
-		listAllObjectsErr1 error
-		retrieveRes        groups.Page
-		retrieveErr        error
-		err                error
+		desc        string
+		session     mgauthn.Session
+		pageMeta    groups.PageMeta
+		parentID    string
+		startLevel  int64
+		endLevel    int64
+		retrieveRes groups.Page
+		retrieveErr error
+		resp        groups.Page
+		err         error
 	}{
 		{
-			desc:     "list children groups successfully",
+			desc:     "list all children groups successfully",
+			session:  validSession,
 			parentID: parentGroupID,
 			pageMeta: groups.PageMeta{
-				Limit:      10,
-				Offset:     0,
-				Permission: policysvc.ViewPermission,
+				Limit:  10,
+				Offset: 0,
 			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
-			listAllObjectsRes1: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
+			startLevel: 0,
+			endLevel:   -1,
 			retrieveRes: groups.Page{
+				Groups: []groups.Group{childGroup},
+				PageMeta: groups.PageMeta{
+					Total: 1,
+				},
+			},
+			resp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
 					Total: 1,
@@ -1224,81 +1168,27 @@ func TestListChildrenGroups(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:     "list children groups with failed to list parent group objects",
+			desc:     "list all children groups with failed to retrieve",
+			session:  validSession,
 			parentID: parentGroupID,
 			pageMeta: groups.PageMeta{
-				Limit:      10,
-				Offset:     0,
-				Permission: policysvc.ViewPermission,
+				Limit:  10,
+				Offset: 0,
 			},
-			listAllObjectsErr: svcerr.ErrAuthorization,
-			err:               svcerr.ErrAuthorization,
-		},
-		{
-			desc:     "list children groups with failed to list user objects",
-			parentID: parentGroupID,
-			pageMeta: groups.PageMeta{
-				Limit:      10,
-				Offset:     0,
-				Permission: policysvc.ViewPermission,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
-			listAllObjectsErr1: svcerr.ErrAuthorization,
-			err:                svcerr.ErrAuthorization,
-		},
-		{
-			desc:     "list children groups with user not allowed to view parent group",
-			parentID: parentGroupID,
-			pageMeta: groups.PageMeta{
-				Limit:      10,
-				Offset:     0,
-				Permission: policysvc.ViewPermission,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
-			listAllObjectsRes1: policysvc.PolicyPage{},
-			err:                nil,
-		},
-		{
-			desc: "list children groups with failed to retrieve",
-			pageMeta: groups.PageMeta{
-				Limit:      10,
-				Offset:     0,
-				Permission: policysvc.ViewPermission,
-			},
-			listAllObjectsRes: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
-			listAllObjectsRes1: policysvc.PolicyPage{
-				Policies: []string{childGroupID},
-			},
-			retrieveErr: repoerr.ErrViewEntity,
-			err:         repoerr.ErrViewEntity,
+			startLevel:  0,
+			endLevel:    -1,
+			retrieveErr: repoerr.ErrNotFound,
+			resp:        groups.Page{},
+			err:         svcerr.ErrViewEntity,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			policyCall := policies.On("ListAllObjects", context.Background(), policysvc.Policy{
-				SubjectType: policysvc.GroupType,
-				Subject:     tc.parentID,
-				Permission:  policysvc.ParentGroupRelation,
-				ObjectType:  policysvc.GroupType,
-			}).Return(tc.listAllObjectsRes, tc.listAllObjectsErr)
-			policyCall1 := policies.On("ListAllObjects", context.Background(), policysvc.Policy{
-				SubjectType: policysvc.UserType,
-				Subject:     validID,
-				Permission:  policysvc.ViewPermission,
-				ObjectType:  policysvc.GroupType,
-			}).Return(tc.listAllObjectsRes1, tc.listAllObjectsErr1)
-			repoCall := repo.On("RetrieveByIDs", context.Background(), tc.pageMeta, tc.listAllObjectsRes1.Policies).Return(tc.retrieveRes, tc.retrieveErr)
-			_, err := svc.ListChildrenGroups(context.Background(), validSession, tc.parentID, tc.pageMeta)
+			repoCall := repo.On("RetrieveChildrenGroups", context.Background(), tc.session.DomainID, tc.session.UserID, tc.parentID, tc.startLevel, tc.endLevel, tc.pageMeta).Return(tc.retrieveRes, tc.retrieveErr)
+			page, err := svc.ListChildrenGroups(context.Background(), tc.session, tc.parentID, tc.startLevel, tc.endLevel, tc.pageMeta)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
-			policyCall.Unset()
-			policyCall1.Unset()
+			assert.Equal(t, tc.resp, page)
 			repoCall.Unset()
 		})
 	}
@@ -1315,7 +1205,7 @@ func TestDeleteGroup(t *testing.T) {
 		deletePoliciesErr error
 		deleteErr         error
 		unsetFromChannels error
-		unsetFromClients   error
+		unsetFromClients  error
 		err               error
 	}{
 		{
@@ -1339,7 +1229,7 @@ func TestDeleteGroup(t *testing.T) {
 			desc:              "delete group with failed to remove parent group from clients",
 			id:                validGroup.ID,
 			unsetFromChannels: nil,
-			unsetFromClients:   svcerr.ErrRemoveEntity,
+			unsetFromClients:  svcerr.ErrRemoveEntity,
 			err:               svcerr.ErrRemoveEntity,
 		},
 		{

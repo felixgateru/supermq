@@ -1856,9 +1856,9 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 			id:       validGroupResp.ID,
 			query:    "limit=1&offset=0",
 			pageMeta: groups.PageMeta{
-				Limit:      1,
-				Offset:     0,
-				Permission: "read_permission",
+				Limit:   1,
+				Offset:  0,
+				Actions: []string{},
 			},
 			svcRes: groups.Page{
 				PageMeta: groups.PageMeta{
@@ -1878,8 +1878,9 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 			id:       validGroupResp.ID,
 			query:    "limit=1&offset=0",
 			pageMeta: groups.PageMeta{
-				Limit:  1,
-				Offset: 0,
+				Limit:   1,
+				Offset:  0,
+				Actions: []string{},
 			},
 			authnErr: svcerr.ErrAuthentication,
 			status:   http.StatusUnauthorized,
@@ -1893,8 +1894,9 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 			id:       validGroupResp.ID,
 			query:    "limit=1&offset=0",
 			pageMeta: groups.PageMeta{
-				Limit:  1,
-				Offset: 0,
+				Limit:   1,
+				Offset:  0,
+				Actions: []string{},
 			},
 			status: http.StatusUnauthorized,
 			err:    apiutil.ErrBearerToken,
@@ -1914,9 +1916,9 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 			domainID: validID,
 			query:    "limit=1&offset=0",
 			pageMeta: groups.PageMeta{
-				Limit:      1,
-				Offset:     0,
-				Permission: "read_permission",
+				Limit:   1,
+				Offset:  0,
+				Actions: []string{},
 			},
 			svcRes: groups.Page{},
 			svcErr: svcerr.ErrAuthorization,
@@ -1963,7 +1965,7 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 				tc.session = mgauthn.Session{DomainUserID: validID + "_" + validID, UserID: validID, DomainID: validID}
 			}
 			authCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
-			svcCall := svc.On("ListChildrenGroups", mock.Anything, tc.session, tc.id, tc.pageMeta).Return(tc.svcRes, tc.svcErr)
+			svcCall := svc.On("ListChildrenGroups", mock.Anything, tc.session, tc.id, int64(1), int64(0), tc.pageMeta).Return(tc.svcRes, tc.svcErr)
 			res, err := req.make()
 			assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 			var bodyRes respBody

@@ -289,7 +289,7 @@ func (_m *Repository) RetrieveByIDs(ctx context.Context, pm groups.PageMeta, ids
 }
 
 // RetrieveChildrenGroups provides a mock function with given fields: ctx, domainID, userID, groupID, startLevel, endLevel, pm
-func (_m *Repository) RetrieveChildrenGroups(ctx context.Context, domainID string, userID string, groupID string, startLevel int, endLevel int, pm groups.PageMeta) (groups.Page, error) {
+func (_m *Repository) RetrieveChildrenGroups(ctx context.Context, domainID string, userID string, groupID string, startLevel int64, endLevel int64, pm groups.PageMeta) (groups.Page, error) {
 	ret := _m.Called(ctx, domainID, userID, groupID, startLevel, endLevel, pm)
 
 	if len(ret) == 0 {
@@ -298,16 +298,16 @@ func (_m *Repository) RetrieveChildrenGroups(ctx context.Context, domainID strin
 
 	var r0 groups.Page
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int, int, groups.PageMeta) (groups.Page, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int64, int64, groups.PageMeta) (groups.Page, error)); ok {
 		return rf(ctx, domainID, userID, groupID, startLevel, endLevel, pm)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int, int, groups.PageMeta) groups.Page); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, int64, int64, groups.PageMeta) groups.Page); ok {
 		r0 = rf(ctx, domainID, userID, groupID, startLevel, endLevel, pm)
 	} else {
 		r0 = ret.Get(0).(groups.Page)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, int, int, groups.PageMeta) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, int64, int64, groups.PageMeta) error); ok {
 		r1 = rf(ctx, domainID, userID, groupID, startLevel, endLevel, pm)
 	} else {
 		r1 = ret.Error(1)

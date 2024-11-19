@@ -20,6 +20,12 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+const (
+	rolesTableNamePrefix = "groups"
+	entityTableName      = "groups"
+	entityIDColumnName   = "id"
+)
+
 var (
 	db       *sqlx.DB
 	database postgres.Database
@@ -76,11 +82,11 @@ func TestMain(m *testing.M) {
 		SSLRootCert: "",
 	}
 
-	mig, err := gpostgres.Migration()
+	gmig, err := gpostgres.Migration()
 	if err != nil {
 		log.Fatalf("Could not get groups migration : %s", err)
 	}
-	if db, err = pgclient.Setup(dbConfig, *mig); err != nil {
+	if db, err = pgclient.Setup(dbConfig, *gmig); err != nil {
 		log.Fatalf("Could not setup test DB connection: %s", err)
 	}
 

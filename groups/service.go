@@ -10,7 +10,6 @@ import (
 
 	"github.com/absmach/magistrala"
 	grpcChannelsV1 "github.com/absmach/magistrala/internal/grpc/channels/v1"
-
 	grpcClientsV1 "github.com/absmach/magistrala/internal/grpc/clients/v1"
 	"github.com/absmach/magistrala/pkg/apiutil"
 	mgauthn "github.com/absmach/magistrala/pkg/authn"
@@ -130,7 +129,6 @@ func (svc service) ListGroups(ctx context.Context, session mgauthn.Session, gm P
 		}
 		return page, nil
 	}
-
 }
 
 func (svc service) ListUserGroups(ctx context.Context, session mgauthn.Session, userID string, pm PageMeta) (Page, error) {

@@ -84,9 +84,10 @@ func TestRetrieveEntityEndpoint(t *testing.T) {
 			svcErr: nil,
 			res: &grpcCommonV1.RetrieveEntityRes{
 				Entity: &grpcCommonV1.EntityBasic{
-					Id:       validGroupResp.ID,
-					DomainId: validGroupResp.Domain,
-					Status:   uint32(validGroupResp.Status),
+					Id:            validGroupResp.ID,
+					DomainId:      validGroupResp.Domain,
+					ParentGroupId: validGroupResp.Parent,
+					Status:        uint32(validGroupResp.Status),
 				},
 			},
 			err: nil,

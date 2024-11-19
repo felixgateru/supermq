@@ -32,7 +32,8 @@ func TestDecodeListGroupsRequest(t *testing.T) {
 			header: map[string][]string{},
 			resp: listGroupsReq{
 				PageMeta: groups.PageMeta{
-					Limit: 10,
+					Limit:   10,
+					Actions: []string{},
 				},
 			},
 			err: nil,
@@ -52,6 +53,7 @@ func TestDecodeListGroupsRequest(t *testing.T) {
 					Metadata: groups.Metadata{
 						"test": "test",
 					},
+					Actions: []string{},
 				},
 			},
 			err: nil,
@@ -59,18 +61,6 @@ func TestDecodeListGroupsRequest(t *testing.T) {
 		{
 			desc: "valid request with invalid page metadata",
 			url:  "http://localhost:8080?metadata=random",
-			resp: nil,
-			err:  apiutil.ErrValidation,
-		},
-		{
-			desc: "valid request with invalid permission",
-			url:  "http://localhost:8080?permission=random&permission=random",
-			resp: nil,
-			err:  apiutil.ErrValidation,
-		},
-		{
-			desc: "valid request with invalid list permission",
-			url:  "http://localhost:8080?&list_perms=random",
 			resp: nil,
 			err:  apiutil.ErrValidation,
 		},
@@ -171,8 +161,11 @@ func TestDecodeListChildrenRequest(t *testing.T) {
 			url:    "http://localhost:8080",
 			header: map[string][]string{},
 			resp: listChildrenGroupsReq{
+				startLevel: 1,
+				endLevel:   0,
 				PageMeta: groups.PageMeta{
-					Limit: 10,
+					Limit:   10,
+					Actions: []string{},
 				},
 			},
 			err: nil,
@@ -184,6 +177,8 @@ func TestDecodeListChildrenRequest(t *testing.T) {
 				"Authorization": {"Bearer 123"},
 			},
 			resp: listChildrenGroupsReq{
+				startLevel: 1,
+				endLevel:   0,
 				PageMeta: groups.PageMeta{
 					Status: groups.EnabledStatus,
 					Offset: 10,
@@ -192,6 +187,7 @@ func TestDecodeListChildrenRequest(t *testing.T) {
 					Metadata: groups.Metadata{
 						"test": "test",
 					},
+					Actions: []string{},
 				},
 			},
 			err: nil,
@@ -199,18 +195,6 @@ func TestDecodeListChildrenRequest(t *testing.T) {
 		{
 			desc: "valid request with invalid page metadata",
 			url:  "http://localhost:8080?metadata=random",
-			resp: nil,
-			err:  apiutil.ErrValidation,
-		},
-		{
-			desc: "valid request with invalid permission",
-			url:  "http://localhost:8080?permission=random&permission=random",
-			resp: nil,
-			err:  apiutil.ErrValidation,
-		},
-		{
-			desc: "valid request with invalid list permission",
-			url:  "http://localhost:8080?&list_perms=random",
 			resp: nil,
 			err:  apiutil.ErrValidation,
 		},
@@ -241,8 +225,8 @@ func TestDecodePageMeta(t *testing.T) {
 			desc: "valid request with no parameters",
 			url:  "http://localhost:8080",
 			resp: groups.PageMeta{
-				Limit:      10,
-				Permission: api.DefPermission,
+				Limit:   10,
+				Actions: []string{},
 			},
 			err: nil,
 		},
@@ -257,7 +241,7 @@ func TestDecodePageMeta(t *testing.T) {
 				Metadata: groups.Metadata{
 					"test": "test",
 				},
-				Permission: api.DefPermission,
+				Actions: []string{},
 			},
 			err: nil,
 		},
