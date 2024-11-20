@@ -27,7 +27,6 @@ var (
 	groupRemoveChildrenGroups    = groupPrefix + "remove_children_groups"
 	groupRemoveAllChildrenGroups = groupPrefix + "remove_all_children_groups"
 	groupListChildrenGroups      = groupPrefix + "list_children_groups"
-	groupListAllChildrenGroups   = groupPrefix + "list_all_children_groups"
 )
 
 var (

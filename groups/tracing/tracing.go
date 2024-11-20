@@ -184,6 +184,8 @@ func (tm *tracingMiddleware) ListAllChildrenGroups(ctx context.Context, session 
 		attribute.String("name", pm.Name),
 		attribute.String("tag", pm.Tag),
 		attribute.String("status", pm.Status.String()),
+		attribute.Int64("start_level", startLevel),
+		attribute.Int64("end_level", endLevel),
 		attribute.Int64("offset", int64(pm.Offset)),
 		attribute.Int64("limit", int64(pm.Limit)),
 	}
