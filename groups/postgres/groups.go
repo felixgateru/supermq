@@ -626,7 +626,6 @@ func (repo groupRepository) RetrieveChildrenGroups(ctx context.Context, domainID
 		query = query + " AND " + levelCondition
 	}
 
-	fmt.Println(startLevel, endLevel)
 	return repo.retrieveGroups(ctx, domainID, userID, query, pm)
 }
 
