@@ -353,34 +353,6 @@ func (am *authorizationMiddleware) ListChildrenGroups(ctx context.Context, sessi
 	return am.svc.ListChildrenGroups(ctx, session, id, startLevel, endLevel, pm)
 }
 
-func (am *authorizationMiddleware) ListAllChildrenGroups(ctx context.Context, session authn.Session, id string, pm groups.PageMeta) (groups.Page, error) {
-	if err := am.authorize(ctx, groups.OpListAllChildrenGroups, mgauthz.PolicyReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		Subject:     session.DomainUserID,
-		Object:      id,
-		ObjectType:  policies.GroupType,
-	}); err != nil {
-		return groups.Page{}, errors.Wrap(errListChildrenGroups, err)
-	}
-
-	return am.svc.ListAllChildrenGroups(ctx, session, id, pm)
-}
-
-func (am *authorizationMiddleware) ListAllChildrenGroups(ctx context.Context, session authn.Session, id string, pm groups.PageMeta) (groups.Page, error) {
-	if err := am.authorize(ctx, groups.OpListAllChildrenGroups, mgauthz.PolicyReq{
-		Domain:      session.DomainID,
-		SubjectType: policies.UserType,
-		Subject:     session.DomainUserID,
-		Object:      id,
-		ObjectType:  policies.GroupType,
-	}); err != nil {
-		return groups.Page{}, errors.Wrap(errListChildrenGroups, err)
-	}
-
-	return am.svc.ListAllChildrenGroups(ctx, session, id, pm)
-}
-
 func (am *authorizationMiddleware) checkSuperAdmin(ctx context.Context, adminID string) error {
 	if err := am.authz.Authorize(ctx, authz.PolicyReq{
 		SubjectType: policies.UserType,

@@ -439,6 +439,135 @@ func TestRetrieveByID(t *testing.T) {
 	}
 }
 
+func TestRetrieveByIDAndUser(t *testing.T) {
+	t.Cleanup(func() {
+		_, err := db.Exec("DELETE FROM groups")
+		require.Nil(t, err, fmt.Sprintf("clean groups unexpected error: %s", err))
+	})
+
+	repo := postgres.New(database)
+
+	domainID := testsutil.GenerateUUID(t)
+	userID := testsutil.GenerateUUID(t)
+	num := 10
+	items := []groups.Group{}
+	for i := 0; i < num; i++ {
+		name := namegen.Generate()
+		group := groups.Group{
+			ID:          testsutil.GenerateUUID(t),
+			Domain:      domainID,
+			Name:        name,
+			Description: strings.Repeat("a", 64),
+			Metadata:    map[string]interface{}{"name": name},
+			CreatedAt:   validTimestamp,
+			Status:      groups.EnabledStatus,
+		}
+		grp, err := repo.Save(context.Background(), group)
+		require.Nil(t, err, fmt.Sprintf("create group unexpected error: %s", err))
+		newRolesProvision := []roles.RoleProvision{
+			{
+				Role: roles.Role{
+					ID:        testsutil.GenerateUUID(t) + "_" + grp.ID,
+					Name:      "admin",
+					EntityID:  grp.ID,
+					CreatedAt: validTimestamp,
+					CreatedBy: userID,
+				},
+				OptionalActions: availableActions,
+				OptionalMembers: []string{userID},
+			},
+		}
+		_, err = repo.AddRoles(context.Background(), newRolesProvision)
+		require.Nil(t, err, fmt.Sprintf("add roles unexpected error: %s", err))
+		ngrp := grp
+		ngrp.RoleID = newRolesProvision[0].Role.ID
+		ngrp.RoleName = newRolesProvision[0].Role.Name
+		ngrp.AccessType = "direct"
+		items = append(items, ngrp)
+	}
+
+	cases := []struct {
+		desc     string
+		groupID  string
+		userID   string
+		domainID string
+		resp     groups.Group
+		err      error
+	}{
+		{
+			desc:     "retrieve group by id and user successfully",
+			groupID:  items[0].ID,
+			userID:   userID,
+			domainID: domainID,
+			resp:     items[0],
+			err:      nil,
+		},
+		{
+			desc:     "retrieve group by id and user successfully",
+			groupID:  items[5].ID,
+			userID:   userID,
+			domainID: domainID,
+			resp:     items[5],
+			err:      nil,
+		},
+		{
+			desc:     "retrieve group by id and user with invalid group ID",
+			groupID:  invalidID,
+			userID:   userID,
+			domainID: domainID,
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve group by id and user with empty group ID",
+			groupID:  "",
+			userID:   userID,
+			domainID: domainID,
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve group by id and user with invalid user ID",
+			groupID:  items[0].ID,
+			userID:   testsutil.GenerateUUID(t),
+			domainID: domainID,
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve group by id and user with empty user ID",
+			groupID:  items[0].ID,
+			userID:   "",
+			domainID: domainID,
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve group by id and user with invalid domain ID",
+			groupID:  items[0].ID,
+			userID:   userID,
+			domainID: invalidID,
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve group by id and user with empty domain ID",
+			groupID:  items[0].ID,
+			userID:   userID,
+			domainID: "",
+			err:      repoerr.ErrNotFound,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			group, err := repo.RetrieveByIDAndUser(context.Background(), tc.domainID, tc.userID, tc.groupID)
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			if err == nil {
+				group.Actions = nil
+				group.Level = 1
+				group.AccessProviderRoleActions = nil
+				assert.Equal(t, tc.resp, group, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.resp, group))
+			}
+		})
+	}
+}
+
 func TestRetrieveAll(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM groups")

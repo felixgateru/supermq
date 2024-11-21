@@ -148,11 +148,11 @@ func (repo groupRepository) RetrieveByID(ctx context.Context, id string) (mggrou
 		ID: id,
 	}
 
-	rows, err := repo.db.NamedQueryContext(ctx, q, dbg)
+	row, err := repo.db.NamedQueryContext(ctx, q, dbg)
 	if err != nil {
 		return mggroups.Group{}, errors.Wrap(repoerr.ErrViewEntity, err)
 	}
-	defer rows.Close()
+	defer row.Close()
 
 	dbg = dbGroup{}
 	if ok := row.Next(); !ok {
