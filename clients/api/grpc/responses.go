@@ -21,10 +21,10 @@ type retrieveEntitiesRes struct {
 	total   uint64
 	limit   uint64
 	offset  uint64
-	clients []enitity
+	clients []entity
 }
 
-type retrieveEntityRes enitity
+type retrieveEntityRes entity
 
 type connectionsReq struct {
 	connections []connection

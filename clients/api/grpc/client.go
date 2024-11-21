@@ -199,7 +199,7 @@ func encodeRetrieveEntitiesRequest(_ context.Context, grpcReq interface{}) (inte
 func decodeRetrieveEntitiesResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	res := grpcRes.(*grpcCommonV1.RetrieveEntitiesRes)
 
-	clis := []enitity{}
+	clis := []entity{}
 
 	for _, e := range res.Entities {
 		clis = append(clis, enitity{
