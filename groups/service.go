@@ -108,7 +108,6 @@ func (svc service) ViewGroup(ctx context.Context, session mgauthn.Session, id st
 	if err != nil {
 		return Group{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-	group.Path = ""
 
 	return group, nil
 }
