@@ -20,12 +20,6 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-const (
-	rolesTableNamePrefix = "groups"
-	entityTableName      = "groups"
-	entityIDColumnName   = "id"
-)
-
 var (
 	db       *sqlx.DB
 	database postgres.Database

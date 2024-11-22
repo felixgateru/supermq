@@ -34,6 +34,7 @@ var (
 		CreatedAt:   time.Now().UTC().Truncate(time.Microsecond),
 		Status:      groups.EnabledStatus,
 	}
+	directAccess     = "direct"
 	availableActions = []string{
 		"update",
 		"read",
@@ -482,7 +483,7 @@ func TestRetrieveByIDAndUser(t *testing.T) {
 		ngrp := grp
 		ngrp.RoleID = newRolesProvision[0].Role.ID
 		ngrp.RoleName = newRolesProvision[0].Role.Name
-		ngrp.AccessType = "direct"
+		ngrp.AccessType = directAccess
 		items = append(items, ngrp)
 	}
 
@@ -1514,7 +1515,7 @@ func TestRetrieveAllParentGroups(t *testing.T) {
 		ngrp := grp
 		ngrp.RoleID = newRolesProvision[0].Role.ID
 		ngrp.RoleName = newRolesProvision[0].Role.Name
-		ngrp.AccessType = "direct"
+		ngrp.AccessType = directAccess
 		items = append(items, ngrp)
 	}
 
@@ -1691,7 +1692,7 @@ func TestRetrieveChildrenGroups(t *testing.T) {
 		ngrp := grp
 		ngrp.RoleID = newRolesProvision[0].Role.ID
 		ngrp.RoleName = newRolesProvision[0].Role.Name
-		ngrp.AccessType = "direct"
+		ngrp.AccessType = directAccess
 		items = append(items, ngrp)
 	}
 

@@ -230,7 +230,6 @@ func (svc service) AddParentGroup(ctx context.Context, session mgauthn.Session, 
 		return errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 
-	//ToDo: Move parent group check business logic from Repository.AssignParentGroup to here
 	var pols []policies.Policy
 	if group.Parent != "" {
 		return errors.Wrap(svcerr.ErrConflict, fmt.Errorf("%s group already have parent", group.ID))
