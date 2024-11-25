@@ -202,7 +202,7 @@ func decodeRetrieveEntitiesResponse(_ context.Context, grpcRes interface{}) (int
 	clis := []entity{}
 
 	for _, e := range res.Entities {
-		clis = append(clis, enitity{
+		clis = append(clis, entity{
 			id:          e.GetId(),
 			domain:      e.GetDomainId(),
 			parentGroup: e.GetParentGroupId(),

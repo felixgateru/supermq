@@ -5,7 +5,7 @@ package grpc
 
 import "github.com/absmach/magistrala/pkg/connections"
 
-type enitity struct {
+type entity struct {
 	id          string
 	domain      string
 	parentGroup string

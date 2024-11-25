@@ -40,17 +40,13 @@ var (
 		Metadata:    validTMetadata,
 		Status:      clients.EnabledStatus,
 	}
-	validToken        = "token"
-	valid             = "valid"
-	invalid           = "invalid"
-	validID           = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
-	wrongID           = testsutil.GenerateUUID(&testing.T{})
-	errRemovePolicies = errors.New("failed to delete policies")
+	validToken = "token"
+	validID    = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
+	wrongID    = testsutil.GenerateUUID(&testing.T{})
 )
 
 var (
 	pService     *policymocks.Service
-	pEvaluator   *policymocks.Evaluator
 	cache        *climocks.Cache
 	repo         *climocks.Repository
 	chgRPCClient *chmocks.ChannelsServiceClient
@@ -1015,7 +1011,6 @@ func TestSetParentGroup(t *testing.T) {
 		setParentGroupErr  error
 		err                error
 	}{
-
 		{
 			desc:             "set parent group successfully",
 			clientID:         client.ID,

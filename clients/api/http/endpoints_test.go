@@ -1762,11 +1762,3 @@ type respBody struct {
 	Tags        []string       `json:"tags"`
 	Status      clients.Status `json:"status"`
 }
-
-type groupReqBody struct {
-	Relation  string   `json:"relation"`
-	UserIDs   []string `json:"user_ids"`
-	GroupIDs  []string `json:"group_ids"`
-	ChannelID string   `json:"channel_id"`
-	ClientID  string   `json:"client_id"`
-}
