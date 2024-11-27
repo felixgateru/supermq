@@ -298,8 +298,6 @@ func (repo groupRepository) RetrieveByIDs(ctx context.Context, pm mggroups.PageM
 }
 
 func (repo groupRepository) RetrieveHierarchy(ctx context.Context, id string, hm mggroups.HierarchyPageMeta) (mggroups.HierarchyPage, error) {
-	// ToDo : use the query to userGroupsBaseQuery
-	// repo.userGroupsBaseQuery(domainID, userID)
 	query := ""
 	switch {
 	// ancestors
@@ -382,7 +380,6 @@ func (repo groupRepository) AssignParentGroup(ctx context.Context, parentGroupID
 		}
 	}()
 
-	//ToDo: Move this logic to service layer
 	pq := `SELECT id, path FROM groups WHERE id = $1 LIMIT 1;`
 	rows, err := tx.Queryx(pq, parentGroupID)
 	if err != nil {

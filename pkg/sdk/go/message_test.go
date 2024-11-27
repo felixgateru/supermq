@@ -394,6 +394,7 @@ func TestReadMessages(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			authCall1 := authn.On("Authenticate", mock.Anything, tc.token).Return(mgauthn.Session{UserID: validID}, tc.authnErr)
+			authzCall := channelsGRPCClient.On("Authorize", mock.Anything, mock.Anything).Return(&grpcChannelsV1.AuthzRes{Authorized: true}, tc.authzErr)
 			repoCall := repo.On("ReadAll", channelID, mock.Anything).Return(tc.repoRes, tc.repoErr)
 			response, err := mgsdk.ReadMessages(tc.messagePageMeta, tc.chanName, tc.domainID, tc.token)
 			fmt.Println(err)
@@ -404,6 +405,7 @@ func TestReadMessages(t *testing.T) {
 				assert.True(t, ok)
 			}
 			authCall1.Unset()
+			authzCall.Unset()
 			repoCall.Unset()
 		})
 	}

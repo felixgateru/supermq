@@ -136,7 +136,7 @@ func TestSetupDomainsClient(t *testing.T) {
 	registerDomainsServiceServer := func(srv *grpc.Server) {
 		grpcDomainsV1.RegisterDomainsServiceServer(srv, domainsgrpcapi.NewDomainsServer(new(domainsMocks.Service)))
 	}
-	gs := grpcserver.NewServer(ctx, cancel, "auth", server.Config{Port: "12345"}, registerDomainsServiceServer, mglog.NewMock())
+	gs := grpcserver.NewServer(ctx, cancel, "domains", server.Config{Port: "12345"}, registerDomainsServiceServer, mglog.NewMock())
 	go func() {
 		err := gs.Start()
 		assert.Nil(t, err, fmt.Sprintf("Unexpected error creating server %s", err))

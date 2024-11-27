@@ -30,10 +30,9 @@ import (
 )
 
 var (
-	channelName    = "channelName"
-	newName        = "newName"
-	newDescription = "newDescription"
-	channel        = generateTestChannel(&testing.T{})
+	channelName = "channelName"
+	newName     = "newName"
+	channel     = generateTestChannel(&testing.T{})
 )
 
 func setupChannels() (*httptest.Server, *chmocks.Service, *authnmocks.Authentication) {
