@@ -5,6 +5,7 @@ package invitations
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/absmach/magistrala"
@@ -49,7 +50,11 @@ func (svc *service) SendInvitation(ctx context.Context, session authn.Session, i
 
 	invitation.CreatedAt = time.Now()
 
-	return svc.repo.Create(ctx, invitation)
+	if err := svc.repo.Create(ctx, invitation); err != nil {
+		fmt.Println("Error creating invitation", err)
+		return err
+	}
+	return nil
 }
 
 func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation Invitation, err error) {
