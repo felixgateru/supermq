@@ -333,7 +333,7 @@ func (repo *Repository) RetrieveRoleByEntityIDAndName(ctx context.Context, entit
 
 func (repo *Repository) RetrieveAllRoles(ctx context.Context, entityID string, limit, offset uint64) (roles.RolePage, error) {
 	q := fmt.Sprintf(`SELECT id, name, entity_id, created_by, created_at, updated_by, updated_at
-    FROM %s_roles WHERE entity_id = :entity_id ORDER BY created_at LIMIT :limit OFFSET :offset;`, repo.tableNamePrefix)
+    	FROM %s_roles WHERE entity_id = :entity_id ORDER BY created_at LIMIT :limit OFFSET :offset;`, repo.tableNamePrefix)
 
 	dbp := dbPage{
 		EntityID: entityID,

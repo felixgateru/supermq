@@ -223,11 +223,6 @@ func (svc service) checkDomain(ctx context.Context, subjectType, subject, domain
 		return svcerr.ErrDomainAuthorization
 	}
 
-	// d, err := svc.domains.RetrieveByID(ctx, domainID)
-	// if err != nil {
-	// 	return errors.Wrap(svcerr.ErrViewEntity, err)
-	// }
-
 	return nil
 }
 

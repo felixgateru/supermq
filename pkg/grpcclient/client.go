@@ -53,15 +53,6 @@ func SetupDomainsClient(ctx context.Context, cfg Config) (grpcDomainsV1.DomainsS
 		return nil, nil, err
 	}
 
-	health := grpchealth.NewHealthClient(client.Connection())
-	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
-		// Health Service name is the svcName provided during gRPC server creation `grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerAuthServiceServer, logger)`
-		Service: "domains",
-	})
-	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
-		return nil, nil, ErrSvcNotServing
-	}
-
 	return domainsgrpc.NewDomainsClient(client.Connection(), cfg.Timeout), client, nil
 }
 
@@ -74,15 +65,6 @@ func SetupClientsClient(ctx context.Context, cfg Config) (grpcClientsV1.ClientsS
 	client, err := NewHandler(cfg)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	health := grpchealth.NewHealthClient(client.Connection())
-	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
-		// Health Service name is the svcName provided during gRPC server creation `grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerAuthServiceServer, logger)`
-		Service: "clients",
-	})
-	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
-		return nil, nil, ErrSvcNotServing
 	}
 
 	return clientsauth.NewClient(client.Connection(), cfg.Timeout), client, nil
@@ -99,15 +81,6 @@ func SetupChannelsClient(ctx context.Context, cfg Config) (grpcChannelsV1.Channe
 		return nil, nil, err
 	}
 
-	health := grpchealth.NewHealthClient(client.Connection())
-	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
-		// Health Service name is the svcName provided during gRPC server creation `grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerAuthServiceServer, logger)`
-		Service: "channels",
-	})
-	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
-		return nil, nil, ErrSvcNotServing
-	}
-
 	return channelsgrpc.NewClient(client.Connection(), cfg.Timeout), client, nil
 }
 
@@ -120,15 +93,6 @@ func SetupGroupsClient(ctx context.Context, cfg Config) (grpcGroupsV1.GroupsServ
 	client, err := NewHandler(cfg)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	health := grpchealth.NewHealthClient(client.Connection())
-	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
-		// Health Service name is the svcName provided during gRPC server creation `grpcserver.NewServer(ctx, cancel, svcName, grpcServerConfig, registerAuthServiceServer, logger)`
-		Service: "groups",
-	})
-	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
-		return nil, nil, ErrSvcNotServing
 	}
 
 	return groupsgrpc.NewClient(client.Connection(), cfg.Timeout), client, nil
