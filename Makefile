@@ -264,4 +264,4 @@ run_addons: check_certs
 	done
 
 run_live: check_certs
-	GOPATH=$(go env GOPATH) docker compose  -f docker/docker-compose.yml -f docker/docker-compose-live.yaml   --env-file docker/.env -p $(DOCKER_PROJECT) $(DOCKER_COMPOSE_COMMAND) $(args)
+	GOPATH=$(go env GOPATH) docker compose  -f docker/docker-compose.yml -f docker/docker-compose-live.yaml --env-file docker/.env -p $(DOCKER_PROJECT) $(DOCKER_COMPOSE_COMMAND) $(args)
