@@ -21,7 +21,7 @@ servers:
 
 tags:
   - name: Clients
-    description: CRUD operations for your Clients
+    description: CRUD operations for your clients
     externalDocs:
       description: Find out more about clients
       url: https://docs.supermq.abstractmachines.fr/
@@ -31,7 +31,10 @@ tags:
        description: Find out more about roles
        url: https://docs.supermq.abstractmachines.fr/
   - name: Health
-    description: Health check
+    description: Health check operations
+    externalDocs:
+      description: Find out more about health checks
+      url: https://docs.supermq.abstractmachines.fr/
 
 paths:
   /{domainID}/clients:
@@ -140,7 +143,7 @@ paths:
       operationId: getClient
       summary: Retrieves client info
       description: |
-        Retrieves a specific client that is identifier by the client ID.
+        Retrieves a specific client that is identified by the client ID.
       tags:
         - Clients
       parameters:
@@ -298,7 +301,7 @@ paths:
       operationId: disableClient
       summary: Disables a client
       description: |
-        Disables a specific client that is identifier by the client ID.
+        Disables a specific client that is identified by the client ID.
       tags:
         - Clients
       parameters:
@@ -329,7 +332,7 @@ paths:
       operationId: enableClient
       summary: Enables a client
       description: |
-        Enables a specific client that is identifier by the client ID.
+        Enables a specific client that is identified by the client ID.
       tags:
         - Clients
       parameters:
@@ -524,7 +527,7 @@ paths:
         - Roles
       summary: Retrieves client role.
       description: |
-        Retrieves a specific client role that is identifier by the role name.
+        Retrieves a specific client role that is identified by the role name.
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/clientID"
@@ -548,11 +551,11 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
       
-    patch:
+    put:
       operationId: updateClientRole
       summary: Updates client role.
       description: |
-        Updates a specific client role that is identifier by the role name.
+        Updates a specific client role that is identified by the role name.
       tags:
         - Roles
       parameters:
@@ -584,7 +587,7 @@ paths:
       operationId: deleteClientRole
       summary: Deletes client role.
       description: |
-        Deletes a specific client role that is identifier by the role name.
+        Deletes a specific client role that is identified by the role name.
       tags:
         - Roles
       parameters:
@@ -612,10 +615,10 @@ paths:
   
   /{domainID}/clients/{clientID}/roles/{roleName}/actions:
     post:
-      operationId: createClientRoleAction
-      summary: Creates a role action for a client role.
+      operationId: addClientRoleAction
+      summary: Adds a role action for a client role.
       description: |
-        Creates a role action for a specific client role that is identified by the role name.
+        Adds a role action for a specific client role that is identified by the role name.
       tags:
         - Roles
       parameters:
@@ -627,7 +630,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "201":
+        "200":
           $ref: "./schemas/Roles.yml#/components/responses/AddRoleActionsRes"
         "400":
           description: Failed due to malformed query parameters.
@@ -754,7 +757,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "201":
+        "200":
           $ref: "./schemas/Roles.yml#/components/responses/AddRoleMembersRes"
         "400":
           description: Failed due to malformed query parameters.
