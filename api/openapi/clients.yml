@@ -21,7 +21,7 @@ servers:
 
 tags:
   - name: Clients
-    description: CRUD operations for your Clients
+    description: CRUD operations for your clients
     externalDocs:
       description: Find out more about clients
       url: https://docs.supermq.abstractmachines.fr/
@@ -31,7 +31,10 @@ tags:
        description: Find out more about roles
        url: https://docs.supermq.abstractmachines.fr/
   - name: Health
-    description: Health check
+    description: Health check operations
+    externalDocs:
+      description: Find out more about health checks
+      url: https://docs.supermq.abstractmachines.fr/
 
 paths:
   /{domainID}/clients:
@@ -548,7 +551,7 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
       
-    patch:
+    put:
       operationId: updateClientRole
       summary: Updates client role.
       description: |
