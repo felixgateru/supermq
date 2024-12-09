@@ -278,6 +278,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
+        - $ref: "#/components/parameters/GroupID"
         - $ref: "#/components/parameters/Level"
         - $ref: "#/components/parameters/Tree"
         - $ref: "#/components/parameters/Direction"
@@ -510,12 +511,12 @@ paths:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/CreateRoleReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/CreateRoleReq"
       security:
         - bearerAuth: []
       responses:
         "201":
-            $ref: "./schemas/Roles.yml#/components/responses/CreateRoleRes"
+            $ref: "./schemas/roles.yml#/components/responses/CreateRoleRes"
         "400":
           description: Failed due to malformed group's ID.
         "401":
@@ -548,7 +549,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "./schemas/Roles.yml#/components/responses/ListRolesRes"
+          $ref: "./schemas/roles.yml#/components/responses/ListRolesRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -574,12 +575,12 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "./schemas/Roles.yml#/components/responses/GetRoleRes"
+          $ref: "./schemas/roles.yml#/components/responses/GetRoleRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -604,14 +605,14 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/UpdateRoleReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/UpdateRoleReq"
       security:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "./schemas/Roles.yml#/components/responses/GetRoleRes"
+          $ref: "./schemas/roles.yml#/components/responses/GetRoleRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -636,7 +637,7 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
@@ -658,23 +659,23 @@ paths:
   
   /{domainID}/groups/{groupID}/roles/{roleName}/actions:
     post:
-      operationId: createGroupRoleAction
-      summary: Creates a role action for a group role.
+      operationId: addGroupRoleAction
+      summary: Adds a role action for a group role.
       description: |
-        Creates a role action for a specific group role that is identified by the role name.
+        Adds a role action for a specific group role that is identified by the role name.
       tags:
         - Roles
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/AddRoleActionsReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/AddRoleActionsReq"
       security:
         - bearerAuth: []
       responses:
-        "201":
-          $ref: "./schemas/Roles.yml#/components/responses/AddRoleActionsRes"
+        "200":
+          $ref: "./schemas/roles.yml#/components/responses/AddRoleActionsRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -699,12 +700,12 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "./schemas/Roles.yml#/components/responses/ListRoleActionsRes"
+          $ref: "./schemas/roles.yml#/components/responses/ListRoleActionsRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -730,9 +731,9 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/AddRoleActionsReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/AddRoleActionsReq"
       security:
         - bearerAuth: []
       responses:
@@ -763,7 +764,7 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
@@ -794,14 +795,14 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/AddRoleMembersReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/AddRoleMembersReq"
       security:
         - bearerAuth: []
       responses:
-        "201":
-          $ref: "./schemas/Roles.yml#/components/responses/AddRoleMembersRes"
+        "200":
+          $ref: "./schemas/roles.yml#/components/responses/AddRoleMembersRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -826,12 +827,12 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "./schemas/Roles.yml#/components/responses/ListRoleMembersRes"
+          $ref: "./schemas/roles.yml#/components/responses/ListRoleMembersRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -857,9 +858,9 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       requestBody:
-        $ref: "./schemas/Roles.yml#/components/requestBodies/AddRoleMembersReq"
+        $ref: "./schemas/roles.yml#/components/requestBodies/AddRoleMembersReq"
       security:
         - bearerAuth: []
       responses:
@@ -890,12 +891,41 @@ paths:
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
         - $ref: "#/components/parameters/GroupID"
-        - $ref: "./schemas/Roles.yml#/components/parameters/RoleName"
+        - $ref: "./schemas/roles.yml#/components/parameters/RoleName"
       security:
         - bearerAuth: []
       responses:
         "204":
           description: All role members deleted.
+        "400":
+          description: Failed due to malformed query parameters.
+        "401":
+          description: |
+            Missing or invalid access token provided.
+        "403":
+          description: Failed to perform authorization over the entity.
+        "404":
+          description: A non-existent entity request.
+        "422":
+          description: Database can't process request.
+        "500":
+          $ref: "#/components/responses/ServiceError"
+
+  /{domainID}/groups/roles/available-actions:
+    get:
+      operationId: listAvailableActions
+      tags:
+        - Roles
+      summary: Retrieves available actions.
+      description: |
+        Retrieves a list of available actions. 
+      parameters:
+        - $ref: "auth.yml#/components/parameters/DomainID"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "./schemas/roles.yml#/components/responses/ListAvailableActionsRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
