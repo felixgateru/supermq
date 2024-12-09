@@ -278,6 +278,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "auth.yml#/components/parameters/DomainID"
+        - $ref: "#/components/parameters/GroupID"
         - $ref: "#/components/parameters/Level"
         - $ref: "#/components/parameters/Tree"
         - $ref: "#/components/parameters/Direction"
@@ -658,10 +659,10 @@ paths:
   
   /{domainID}/groups/{groupID}/roles/{roleName}/actions:
     post:
-      operationId: createGroupRoleAction
-      summary: Creates a role action for a group role.
+      operationId: addGroupRoleAction
+      summary: Adds a role action for a group role.
       description: |
-        Creates a role action for a specific group role that is identified by the role name.
+        Adds a role action for a specific group role that is identified by the role name.
       tags:
         - Roles
       parameters:
@@ -673,7 +674,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "201":
+        "200":
           $ref: "./schemas/Roles.yml#/components/responses/AddRoleActionsRes"
         "400":
           description: Failed due to malformed query parameters.
@@ -800,7 +801,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "201":
+        "200":
           $ref: "./schemas/Roles.yml#/components/responses/AddRoleMembersRes"
         "400":
           description: Failed due to malformed query parameters.
