@@ -748,32 +748,6 @@ components:
           example: 1970-01-01_00:00:00
 
   parameters:
-    clientID:
-      name: clientID
-      description: Unique client identifier.
-      in: path
-      schema:
-        type: string
-        format: uuid
-        minLength: 36
-        maxLength: 36
-        pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
-      required: true
-      example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-
-    MemberID:
-      name: memberID
-      description: Unique member identifier.
-      in: path
-      schema:
-        type: string
-        format: uuid
-        minLength: 36
-        maxLength: 36
-        pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
-      required: true
-      example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-
     ClientName:
       name: name
       description: Client's name.
@@ -843,26 +817,7 @@ components:
         format: uuid
       required: false
       example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-
-    Level:
-      name: level
-      description: Level of hierarchy up to which to retrieve channels from given channel id.
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 5
-      required: false
-
-    Tree:
-      name: tree
-      description: Specify type of response, JSON array or tree.
-      in: query
-      required: false
-      schema:
-        type: boolean
-        default: false
-
+      
     Metadata:
       name: metadata
       description: Metadata filter. Filtering is performed matching the parameter with metadata on top level. Parameter is json.
