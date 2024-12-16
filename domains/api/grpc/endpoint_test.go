@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/absmach/supermq/domains"
+	domains "github.com/absmach/supermq/domains/private"
 	grpcapi "github.com/absmach/supermq/domains/api/grpc"
 	grpcDomainsV1 "github.com/absmach/supermq/internal/grpc/domains/v1"
 	"github.com/absmach/supermq/pkg/apiutil"
