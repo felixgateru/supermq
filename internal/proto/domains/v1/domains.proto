@@ -4,6 +4,9 @@
 syntax = "proto3";
 
 package domains.v1;
+
+import "common/v1/common.proto";
+
 option go_package = "github.com/absmach/supermq/internal/grpc/domains/v1";
 
 
@@ -11,7 +14,7 @@ option go_package = "github.com/absmach/supermq/internal/grpc/domains/v1";
 // domains functionalities for SuperMQ services.
 service DomainsService {
   rpc DeleteUserFromDomains(DeleteUserReq) returns (DeleteUserRes) {}
-  rpc RetrieveEntity(RetrieveEntityReq) returns (RetrieveEntityRes) {}
+  rpc RetrieveEntity(common.v1.RetrieveEntityReq) returns (common.v1.RetrieveEntityRes) {}
 }
 
 message DeleteUserRes {
@@ -20,13 +23,4 @@ message DeleteUserRes {
 
 message DeleteUserReq{
   string id          = 1;
-}
-
-message RetrieveEntityReq {
-  string id          = 1;
-}
-
-message RetrieveEntityRes {
-  string id          = 1;
-  uint32 status      = 2;
 }
