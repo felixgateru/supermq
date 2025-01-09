@@ -19,7 +19,6 @@ on:
       - "http/api/**"
       - "invitations/api/**"
       - "journal/api/**"
-      - "readers/api/**"
       - "users/api/**"
 
 env:
@@ -37,8 +36,6 @@ env:
   INVITATIONS_URL: http://localhost:9020
   AUTH_URL: http://localhost:9001
   CERTS_URL: http://localhost:9019
-  POSTGRES_READER_URL: http://localhost:9009
-  TIMESCALE_READER_URL: http://localhost:9011
   JOURNAL_URL: http://localhost:9021
 
 jobs:
@@ -102,11 +99,6 @@ jobs:
               - ".github/workflows/api-tests.yml"
               - "apidocs/openapi/invitations.yml"
               - "invitations/api/**"
-
-            readers:
-              - ".github/workflows/api-tests.yml"
-              - "apidocs/openapi/readers.yml"
-              - "readers/api/**"
 
             clients:
               - ".github/workflows/api-tests.yml"

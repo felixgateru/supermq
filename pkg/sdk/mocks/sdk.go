@@ -7318,65 +7318,6 @@ func (_c *SDK_ViewCertByClient_Call) RunAndReturn(run func(string, string, strin
 	return _c
 }
 
-// ViewSubscription provides a mock function with given fields: id, token
-func (_m *SDK) ViewSubscription(id string, token string) (sdk.Subscription, errors.SDKError) {
-	ret := _m.Called(id, token)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ViewSubscription")
-	}
-
-	var r0 sdk.Subscription
-	var r1 errors.SDKError
-	if rf, ok := ret.Get(0).(func(string, string) (sdk.Subscription, errors.SDKError)); ok {
-		return rf(id, token)
-	}
-	if rf, ok := ret.Get(0).(func(string, string) sdk.Subscription); ok {
-		r0 = rf(id, token)
-	} else {
-		r0 = ret.Get(0).(sdk.Subscription)
-	}
-
-	if rf, ok := ret.Get(1).(func(string, string) errors.SDKError); ok {
-		r1 = rf(id, token)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(errors.SDKError)
-		}
-	}
-
-	return r0, r1
-}
-
-// SDK_ViewSubscription_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ViewSubscription'
-type SDK_ViewSubscription_Call struct {
-	*mock.Call
-}
-
-// ViewSubscription is a helper method to define mock.On call
-//   - id string
-//   - token string
-func (_e *SDK_Expecter) ViewSubscription(id interface{}, token interface{}) *SDK_ViewSubscription_Call {
-	return &SDK_ViewSubscription_Call{Call: _e.mock.On("ViewSubscription", id, token)}
-}
-
-func (_c *SDK_ViewSubscription_Call) Run(run func(id string, token string)) *SDK_ViewSubscription_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *SDK_ViewSubscription_Call) Return(_a0 sdk.Subscription, _a1 errors.SDKError) *SDK_ViewSubscription_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *SDK_ViewSubscription_Call) RunAndReturn(run func(string, string) (sdk.Subscription, errors.SDKError)) *SDK_ViewSubscription_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewSDK creates a new instance of SDK. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSDK(t interface {
