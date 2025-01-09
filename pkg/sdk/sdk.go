@@ -1086,38 +1086,6 @@ type SDK interface {
 	//  fmt.Println(tm)
 	RevokeCert(clientID, domainID, token string) (time.Time, errors.SDKError)
 
-	// CreateSubscription creates a new subscription
-	//
-	// example:
-	//  subscription, _ := sdk.CreateSubscription("topic", "contact", "token")
-	//  fmt.Println(subscription)
-	CreateSubscription(topic, contact, token string) (string, errors.SDKError)
-
-	// ListSubscriptions list subscriptions given list parameters.
-	//
-	// example:
-	//  pm := sdk.PageMetadata{
-	//    Offset: 0,
-	//    Limit:  10,
-	//  }
-	//  subscriptions, _ := sdk.ListSubscriptions(pm, "token")
-	//  fmt.Println(subscriptions)
-	ListSubscriptions(pm PageMetadata, token string) (SubscriptionPage, errors.SDKError)
-
-	// ViewSubscription retrieves a subscription with the provided id.
-	//
-	// example:
-	//  subscription, _ := sdk.ViewSubscription("id", "token")
-	//  fmt.Println(subscription)
-	ViewSubscription(id, token string) (Subscription, errors.SDKError)
-
-	// DeleteSubscription removes a subscription with the provided id.
-	//
-	// example:
-	//  err := sdk.DeleteSubscription("id", "token")
-	//  fmt.Println(err)
-	DeleteSubscription(id, token string) errors.SDKError
-
 	// CreateDomain creates new domain and returns its details.
 	//
 	// example:

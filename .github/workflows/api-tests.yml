@@ -14,7 +14,6 @@ on:
       - "certs/api/**"
       - "channels/api/http/**"
       - "clients/api/http/**"
-      - "consumers/notifiers/api/**"
       - "domains/api/http/**"
       - "groups/api/http/**"
       - "http/api/**"

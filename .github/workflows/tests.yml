@@ -306,11 +306,6 @@ jobs:
         run: |
           go test --race -v -count=1 -coverprofile=coverage/coap.out ./coap/...
 
-      - name: Run consumers tests
-        if: steps.changes.outputs.consumers == 'true' || steps.changes.outputs.workflow == 'true'
-        run: |
-          go test --race -v -count=1 -coverprofile=coverage/consumers.out ./consumers/...
-
       - name: Run HTTP tests
         if: steps.changes.outputs.http == 'true' || steps.changes.outputs.workflow == 'true'
         run: |
