@@ -62,7 +62,6 @@ jobs:
               - "users/emailer.go"
               - "users/hasher.go"
               - "mqtt/events/streams.go"
-              - "readers/messages.go"
               - "consumers/notifiers/notifier.go"
               - "consumers/notifiers/service.go"
               - "consumers/notifiers/subscriptions.go"

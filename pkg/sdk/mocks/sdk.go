@@ -4683,67 +4683,6 @@ func (_c *SDK_Members_Call) RunAndReturn(run func(string, string, sdk.PageMetada
 	return _c
 }
 
-// ReadMessages provides a mock function with given fields: pm, chanID, domainID, token
-func (_m *SDK) ReadMessages(pm sdk.MessagePageMetadata, chanID string, domainID string, token string) (sdk.MessagesPage, errors.SDKError) {
-	ret := _m.Called(pm, chanID, domainID, token)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ReadMessages")
-	}
-
-	var r0 sdk.MessagesPage
-	var r1 errors.SDKError
-	if rf, ok := ret.Get(0).(func(sdk.MessagePageMetadata, string, string, string) (sdk.MessagesPage, errors.SDKError)); ok {
-		return rf(pm, chanID, domainID, token)
-	}
-	if rf, ok := ret.Get(0).(func(sdk.MessagePageMetadata, string, string, string) sdk.MessagesPage); ok {
-		r0 = rf(pm, chanID, domainID, token)
-	} else {
-		r0 = ret.Get(0).(sdk.MessagesPage)
-	}
-
-	if rf, ok := ret.Get(1).(func(sdk.MessagePageMetadata, string, string, string) errors.SDKError); ok {
-		r1 = rf(pm, chanID, domainID, token)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(errors.SDKError)
-		}
-	}
-
-	return r0, r1
-}
-
-// SDK_ReadMessages_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReadMessages'
-type SDK_ReadMessages_Call struct {
-	*mock.Call
-}
-
-// ReadMessages is a helper method to define mock.On call
-//   - pm sdk.MessagePageMetadata
-//   - chanID string
-//   - domainID string
-//   - token string
-func (_e *SDK_Expecter) ReadMessages(pm interface{}, chanID interface{}, domainID interface{}, token interface{}) *SDK_ReadMessages_Call {
-	return &SDK_ReadMessages_Call{Call: _e.mock.On("ReadMessages", pm, chanID, domainID, token)}
-}
-
-func (_c *SDK_ReadMessages_Call) Run(run func(pm sdk.MessagePageMetadata, chanID string, domainID string, token string)) *SDK_ReadMessages_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(sdk.MessagePageMetadata), args[1].(string), args[2].(string), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *SDK_ReadMessages_Call) Return(_a0 sdk.MessagesPage, _a1 errors.SDKError) *SDK_ReadMessages_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *SDK_ReadMessages_Call) RunAndReturn(run func(sdk.MessagePageMetadata, string, string, string) (sdk.MessagesPage, errors.SDKError)) *SDK_ReadMessages_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RefreshToken provides a mock function with given fields: token
 func (_m *SDK) RefreshToken(token string) (sdk.Token, errors.SDKError) {
 	ret := _m.Called(token)
