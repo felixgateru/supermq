@@ -37,3 +37,23 @@ func retrieveJournalsEndpoint(svc journal.Service) endpoint.Endpoint {
 		}, nil
 	}
 }
+
+func retrieveClientTelemetryEndpoint(svc journal.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(retrieveClientTelemetryReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+
+		telemetry, err := svc.RetrieveClientTelemetry(ctx, req.clientID, req.domainID)
+		if err != nil {
+			return nil, err
+		}
+
+		return clientTelemetryRes{
+			ClientsTelemetry: telemetry,
+		}, nil
+	}
+
+}

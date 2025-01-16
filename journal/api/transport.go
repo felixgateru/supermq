@@ -55,6 +55,13 @@ func MakeHandler(svc journal.Service, authn smqauthn.Authentication, logger *slo
 		opts...,
 	), "list__entity_journals").ServeHTTP)
 
+	mux.With(api.AuthenticateMiddleware(authn, true)).Get("/{domainID}/journal/{clientID}/client-telemetry", otelhttp.NewHandler(kithttp.NewServer(
+		retrieveClientTelemetryEndpoint(svc),
+		decodeRetrieveClientTelemetryReq,
+		api.EncodeResponse,
+		opts...,
+	), "list_client_telemetry").ServeHTTP)
+
 	mux.Get("/health", supermq.Health(svcName, instanceID))
 	mux.Handle("/metrics", promhttp.Handler())
 
@@ -159,4 +166,14 @@ func decodePageQuery(r *http.Request) (journal.Page, error) {
 		WithMetadata:   metadata,
 		Direction:      dir,
 	}, nil
+}
+
+func decodeRetrieveClientTelemetryReq(_ context.Context, r *http.Request) (interface{}, error) {
+	req := retrieveClientTelemetryReq{
+		token:    apiutil.ExtractBearerToken(r),
+		clientID: chi.URLParam(r, "clientID"),
+		domainID: chi.URLParam(r, "domainID"),
+	}
+
+	return req, nil
 }

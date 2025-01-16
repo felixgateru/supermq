@@ -30,3 +30,20 @@ func (req retrieveJournalsReq) validate() error {
 
 	return nil
 }
+
+type retrieveClientTelemetryReq struct {
+	token    string
+	clientID string
+	domainID string
+}
+
+func (req retrieveClientTelemetryReq) validate () error {
+	if req.clientID == "" {
+		return apiutil.ErrMissingID
+	}
+	if req.domainID == "" {
+		return apiutil.ErrMissingID
+	}
+
+	return nil
+}

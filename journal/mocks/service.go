@@ -47,6 +47,34 @@ func (_m *Service) RetrieveAll(ctx context.Context, session authn.Session, page 
 	return r0, r1
 }
 
+// RetrieveClientTelemetry provides a mock function with given fields: ctx, clientID, domainID
+func (_m *Service) RetrieveClientTelemetry(ctx context.Context, clientID string, domainID string) (journal.ClientsTelemetry, error) {
+	ret := _m.Called(ctx, clientID, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveClientTelemetry")
+	}
+
+	var r0 journal.ClientsTelemetry
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (journal.ClientsTelemetry, error)); ok {
+		return rf(ctx, clientID, domainID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) journal.ClientsTelemetry); ok {
+		r0 = rf(ctx, clientID, domainID)
+	} else {
+		r0 = ret.Get(0).(journal.ClientsTelemetry)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, clientID, domainID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Save provides a mock function with given fields: ctx, _a1
 func (_m *Service) Save(ctx context.Context, _a1 journal.Journal) error {
 	ret := _m.Called(ctx, _a1)

@@ -62,3 +62,7 @@ func (am *authorizationMiddleware) RetrieveAll(ctx context.Context, session smqa
 
 	return am.svc.RetrieveAll(ctx, session, page)
 }
+
+func (am *authorizationMiddleware) RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (journal.ClientsTelemetry, error) {
+	return am.svc.RetrieveClientTelemetry(ctx, clientID, domainID)
+}

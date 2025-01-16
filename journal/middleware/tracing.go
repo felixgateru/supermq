@@ -45,3 +45,13 @@ func (tm *tracing) RetrieveAll(ctx context.Context, session smqauthn.Session, pa
 
 	return tm.svc.RetrieveAll(ctx, session, page)
 }
+
+func (tm *tracing) RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (j journal.ClientsTelemetry, err error) {
+	ctx, span := tm.tracer.Start(ctx, "retrieve", trace.WithAttributes(
+		attribute.String("client_id", clientID),
+		attribute.String("domain_id", domainID),
+	))
+	defer span.End()
+
+	return tm.svc.RetrieveClientTelemetry(ctx, clientID, domainID)
+}
