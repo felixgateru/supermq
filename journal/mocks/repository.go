@@ -16,24 +16,6 @@ type Repository struct {
 	mock.Mock
 }
 
-// AddClientConnection provides a mock function with given fields: ctx, clientID, domainID, connection
-func (_m *Repository) AddClientConnection(ctx context.Context, clientID string, domainID string, connection string) error {
-	ret := _m.Called(ctx, clientID, domainID, connection)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AddClientConnection")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, clientID, domainID, connection)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteClientTelemetry provides a mock function with given fields: ctx, clientID, domainID
 func (_m *Repository) DeleteClientTelemetry(ctx context.Context, clientID string, domainID string) error {
 	ret := _m.Called(ctx, clientID, domainID)
@@ -45,24 +27,6 @@ func (_m *Repository) DeleteClientTelemetry(ctx context.Context, clientID string
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, clientID, domainID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// RemoveClientConnection provides a mock function with given fields: ctx, clientID, domainID, connection
-func (_m *Repository) RemoveClientConnection(ctx context.Context, clientID string, domainID string, connection string) error {
-	ret := _m.Called(ctx, clientID, domainID, connection)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RemoveClientConnection")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, clientID, domainID, connection)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -144,17 +108,17 @@ func (_m *Repository) Save(ctx context.Context, _a1 journal.Journal) error {
 	return r0
 }
 
-// SaveClientTelemetry provides a mock function with given fields: ctx, clientID, domainID
-func (_m *Repository) SaveClientTelemetry(ctx context.Context, clientID string, domainID string) error {
-	ret := _m.Called(ctx, clientID, domainID)
+// SaveClientTelemetry provides a mock function with given fields: ctx, ct
+func (_m *Repository) SaveClientTelemetry(ctx context.Context, ct journal.ClientsTelemetry) error {
+	ret := _m.Called(ctx, ct)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveClientTelemetry")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, clientID, domainID)
+	if rf, ok := ret.Get(0).(func(context.Context, journal.ClientsTelemetry) error); ok {
+		r0 = rf(ctx, ct)
 	} else {
 		r0 = ret.Error(0)
 	}

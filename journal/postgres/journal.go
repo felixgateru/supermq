@@ -5,6 +5,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/absmach/supermq/pkg/errors"
 	repoerr "github.com/absmach/supermq/pkg/errors/repository"
 	"github.com/absmach/supermq/pkg/postgres"
+	"github.com/jackc/pgtype"
 )
 
 type repository struct {
@@ -102,16 +104,16 @@ func (repo *repository) RetrieveAll(ctx context.Context, page journal.Page) (jou
 	return journalsPage, nil
 }
 
-func (repo *repository) SaveClientTelemetry(ctx context.Context, clientID, domainID string) error {
-	q := `INSERT INTO clients_telemetry (client_id, domain_id)
-		VALUES (:client_id, :domain_id);`
+func (repo *repository) SaveClientTelemetry(ctx context.Context, ct journal.ClientsTelemetry) error {
+	q := `INSERT INTO clients_telemetry (client_id, domain_id, connections, messages, subscriptions, first_seen, last_seen)
+		VALUES (:client_id, :domain_id, :connections, :messages, :subscriptions, :first_seen, :last_seen);`
 
-	dbClientsTelemetry := dbClientsTelemetry{
-		ClientID: clientID,
-		DomainID: domainID,
+	dbct, err := toDBClientsTelemetry(ct)
+	if err != nil {
+		return errors.Wrap(repoerr.ErrCreateEntity, err)
 	}
 
-	if _, err := repo.db.NamedExecContext(ctx, q, dbClientsTelemetry); err != nil {
+	if _, err := repo.db.NamedExecContext(ctx, q, dbct); err != nil {
 		return postgres.HandleError(repoerr.ErrCreateEntity, err)
 	}
 
@@ -119,9 +121,14 @@ func (repo *repository) SaveClientTelemetry(ctx context.Context, clientID, domai
 }
 
 func (repo *repository) DeleteClientTelemetry(ctx context.Context, clientID, domainID string) error {
-	q := "DELETE FROM clients_telemetry AS ct WHERE ct.id = $1 AND ct.domain_id = $2;"
+	q := "DELETE FROM clients_telemetry AS ct WHERE ct.id = :client_id AND ct.domain_id = :domain_id;"
 
-	result, err := repo.db.ExecContext(ctx, q, clientID, domainID)
+	dbct := dbClientsTelemetry{
+		ClientID: clientID,
+		DomainID: domainID,
+	}
+
+	result, err := repo.db.NamedExecContext(ctx, q, dbct)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrRemoveEntity, err)
 	}
@@ -160,46 +167,6 @@ func (repo *repository) RetrieveClientTelemetry(ctx context.Context, clientID, d
 	}
 
 	return journal.ClientsTelemetry{}, repoerr.ErrNotFound
-}
-
-func (repo *repository) AddClientConnection(ctx context.Context, clientID, domainID, connection string) error {
-	q := `UPDATE clients_telemetry
-		SET connections = jsonb_insert(
-			connections::jsonb,
-			'{0}',
-			to_jsonb(:connection),
-			TRUE
-		)
-		WHERE client_id = :client_id AND domain_id = :domain_id;`
-
-	params := map[string]interface{}{
-		"client_id":  clientID,
-		"domain_id":  domainID,
-		"connection": connection,
-	}
-
-	if _, err := repo.db.NamedExecContext(ctx, q, params); err != nil {
-		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
-	}
-
-	return nil
-}
-
-func (repo *repository) RemoveClientConnection(ctx context.Context, clientID, domainID, connection string) error {
-	q := `UPDATE clients_telemetry
-		SET connections = connections::jsonb - :connection
-		WHERE client_id = :client_id AND domain_id = :domain_id;`
-
-	params := map[string]interface{}{
-		"client_id":  clientID,
-		"domain_id":  domainID,
-		"connection": connection,
-	}
-
-	if _, err := repo.db.NamedExecContext(ctx, q, params); err != nil {
-		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
-	}
-	return nil
 }
 
 func pageQuery(pm journal.Page) string {
@@ -292,21 +259,16 @@ func toJournal(dbj dbJournal) (journal.Journal, error) {
 }
 
 type dbClientsTelemetry struct {
-	ClientID    string `db:"client_id"`
-	DomainID    string `db:"domain_id"`
-	Connections []byte `db:"connections"`
-	Messages    []byte `db:"messages"`
+	ClientID      string           `db:"client_id"`
+	DomainID      string           `db:"domain_id"`
+	Connections   pgtype.TextArray `db:"connections"`
+	Subscriptions pgtype.TextArray `db:"subscriptions"`
+	Messages      []byte           `db:"messages"`
+	FirstSeen     time.Time        `db:"first_seen"`
+	LastSeen      sql.NullTime     `db:"last_seen"`
 }
 
 func toDBClientsTelemetry(ct journal.ClientsTelemetry) (dbClientsTelemetry, error) {
-	connections := []byte("[]")
-	if len(ct.Connections) > 0 {
-		b, err := json.Marshal(ct.Connections)
-		if err != nil {
-			return dbClientsTelemetry{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
-		}
-		connections = b
-	}
 	messages := []byte("[]")
 	if len(ct.Messages) > 0 {
 		b, err := json.Marshal(ct.Messages)
@@ -316,22 +278,33 @@ func toDBClientsTelemetry(ct journal.ClientsTelemetry) (dbClientsTelemetry, erro
 		messages = b
 	}
 
+	var conns pgtype.TextArray
+	if err := conns.Set(ct.Connections); err != nil {
+		return dbClientsTelemetry{}, err
+	}
+
+	var subs pgtype.TextArray
+	if err := subs.Set(ct.Subscriptions); err != nil {
+		return dbClientsTelemetry{}, err
+	}
+
+	var lastSeen sql.NullTime
+	if ct.LastSeen != (time.Time{}) {
+		lastSeen = sql.NullTime{Time: ct.LastSeen, Valid: true}
+	}
+
 	return dbClientsTelemetry{
-		ClientID:    ct.ClientID,
-		DomainID:    ct.DomainID,
-		Connections: connections,
-		Messages:    messages,
+		ClientID:      ct.ClientID,
+		DomainID:      ct.DomainID,
+		Connections:   conns,
+		Subscriptions: subs,
+		Messages:      messages,
+		FirstSeen:     ct.FirstSeen,
+		LastSeen:      lastSeen,
 	}, nil
 }
 
 func toClientsTelemetry(dbct dbClientsTelemetry) (journal.ClientsTelemetry, error) {
-	var connections []string
-	if dbct.Connections != nil {
-		if err := json.Unmarshal(dbct.Connections, &connections); err != nil {
-			return journal.ClientsTelemetry{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
-		}
-	}
-
 	var messages []journal.Message
 	if dbct.Messages != nil {
 		if err := json.Unmarshal(dbct.Messages, &messages); err != nil {
@@ -339,10 +312,28 @@ func toClientsTelemetry(dbct dbClientsTelemetry) (journal.ClientsTelemetry, erro
 		}
 	}
 
+	var conns []string
+	for _, e := range dbct.Connections.Elements {
+		conns = append(conns, e.String)
+	}
+
+	var subs []string
+	for _, e := range dbct.Subscriptions.Elements {
+		subs = append(subs, e.String)
+	}
+
+	var lastSeen time.Time
+	if dbct.LastSeen.Valid {
+		lastSeen = dbct.LastSeen.Time
+	}
+
 	return journal.ClientsTelemetry{
-		ClientID:    dbct.ClientID,
-		DomainID:    dbct.DomainID,
-		Connections: connections,
-		Messages:    messages,
+		ClientID:      dbct.ClientID,
+		DomainID:      dbct.DomainID,
+		Connections:   conns,
+		Subscriptions: subs,
+		Messages:      messages,
+		FirstSeen:     dbct.FirstSeen,
+		LastSeen:      lastSeen,
 	}, nil
 }

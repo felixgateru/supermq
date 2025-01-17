@@ -47,9 +47,9 @@ func (_m *Service) RetrieveAll(ctx context.Context, session authn.Session, page 
 	return r0, r1
 }
 
-// RetrieveClientTelemetry provides a mock function with given fields: ctx, clientID, domainID
-func (_m *Service) RetrieveClientTelemetry(ctx context.Context, clientID string, domainID string) (journal.ClientsTelemetry, error) {
-	ret := _m.Called(ctx, clientID, domainID)
+// RetrieveClientTelemetry provides a mock function with given fields: ctx, session, clientID
+func (_m *Service) RetrieveClientTelemetry(ctx context.Context, session authn.Session, clientID string) (journal.ClientsTelemetry, error) {
+	ret := _m.Called(ctx, session, clientID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveClientTelemetry")
@@ -57,17 +57,17 @@ func (_m *Service) RetrieveClientTelemetry(ctx context.Context, clientID string,
 
 	var r0 journal.ClientsTelemetry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (journal.ClientsTelemetry, error)); ok {
-		return rf(ctx, clientID, domainID)
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string) (journal.ClientsTelemetry, error)); ok {
+		return rf(ctx, session, clientID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) journal.ClientsTelemetry); ok {
-		r0 = rf(ctx, clientID, domainID)
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string) journal.ClientsTelemetry); ok {
+		r0 = rf(ctx, session, clientID)
 	} else {
 		r0 = ret.Get(0).(journal.ClientsTelemetry)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, clientID, domainID)
+	if rf, ok := ret.Get(1).(func(context.Context, authn.Session, string) error); ok {
+		r1 = rf(ctx, session, clientID)
 	} else {
 		r1 = ret.Error(1)
 	}

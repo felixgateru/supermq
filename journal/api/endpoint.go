@@ -45,8 +45,12 @@ func retrieveClientTelemetryEndpoint(svc journal.Service) endpoint.Endpoint {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
 
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
 
-		telemetry, err := svc.RetrieveClientTelemetry(ctx, req.clientID, req.domainID)
+		telemetry, err := svc.RetrieveClientTelemetry(ctx, session, req.clientID)
 		if err != nil {
 			return nil, err
 		}
@@ -55,5 +59,4 @@ func retrieveClientTelemetryEndpoint(svc journal.Service) endpoint.Endpoint {
 			ClientsTelemetry: telemetry,
 		}, nil
 	}
-
 }

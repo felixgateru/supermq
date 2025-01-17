@@ -32,16 +32,11 @@ func (req retrieveJournalsReq) validate() error {
 }
 
 type retrieveClientTelemetryReq struct {
-	token    string
 	clientID string
-	domainID string
 }
 
-func (req retrieveClientTelemetryReq) validate () error {
+func (req retrieveClientTelemetryReq) validate() error {
 	if req.clientID == "" {
-		return apiutil.ErrMissingID
-	}
-	if req.domainID == "" {
 		return apiutil.ErrMissingID
 	}
 

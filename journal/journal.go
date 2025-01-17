@@ -144,10 +144,13 @@ type Message struct {
 }
 
 type ClientsTelemetry struct {
-	ClientID    string    `json:"client_id"`
-	DomainID    string    `json:"domain_id"`
-	Connections []string  `json:"connections"`
-	Messages    []Message `json:"messages"`
+	ClientID      string    `json:"client_id"`
+	DomainID      string    `json:"domain_id"`
+	Connections   []string  `json:"connections"`
+	Subscriptions []string  `json:"subscriptions"`
+	Messages      []Message `json:"messages"`
+	FirstSeen     time.Time `json:"first_seen"`
+	LastSeen      time.Time `json:"last_seen"`
 }
 
 // Service provides access to the journal log service.
@@ -160,7 +163,8 @@ type Service interface {
 	// RetrieveAll retrieves all journals from the database with the given page.
 	RetrieveAll(ctx context.Context, session smqauthn.Session, page Page) (JournalsPage, error)
 
-	RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (ClientsTelemetry, error)
+	// RetrieveClientTelemetry retrieves telemetry data for a client.
+	RetrieveClientTelemetry(ctx context.Context, session smqauthn.Session, clientID string) (ClientsTelemetry, error)
 }
 
 // Repository provides access to the journal log database.
@@ -173,16 +177,12 @@ type Repository interface {
 	// RetrieveAll retrieves all journals from the database with the given page.
 	RetrieveAll(ctx context.Context, page Page) (JournalsPage, error)
 
-	// SaveClientTelemetry adds telemetry data for a client.
-	SaveClientTelemetry(ctx context.Context, clientID, domainID string) error
+	// SaveClientTelemetry persists telemetry data for a client to the database.
+	SaveClientTelemetry(ctx context.Context, ct ClientsTelemetry) error
 
-	// RetrieveClientTelemetry retrieves telemetry data for a client.
+	// RetrieveClientTelemetry retrieves telemetry data for a client from the database.
 	RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (ClientsTelemetry, error)
 
-	// DeleteClientTelemetry removes telemetry data for a client.
+	// DeleteClientTelemetry removes telemetry data for a client from the database.
 	DeleteClientTelemetry(ctx context.Context, clientID, domainID string) error
-
-	AddClientConnection(ctx context.Context, clientID, domainID, connection string) error
-
-	RemoveClientConnection(ctx context.Context, clientID, domainID, connection string) error
 }
