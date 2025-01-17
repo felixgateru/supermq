@@ -12,11 +12,6 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 )
 
-var (
-	ErrMissingDomainID = errors.New("missing domain_id")
-	ErrMissingClientID = errors.New("missing client_id")
-)
-
 type service struct {
 	idProvider supermq.IDProvider
 	repository Repository
