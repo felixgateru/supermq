@@ -121,7 +121,7 @@ func (repo *repository) SaveClientTelemetry(ctx context.Context, ct journal.Clie
 }
 
 func (repo *repository) DeleteClientTelemetry(ctx context.Context, clientID, domainID string) error {
-	q := "DELETE FROM clients_telemetry AS ct WHERE ct.id = :client_id AND ct.domain_id = :domain_id;"
+	q := "DELETE FROM clients_telemetry AS ct WHERE ct.client_id = :client_id AND ct.domain_id = :domain_id;"
 
 	dbct := dbClientsTelemetry{
 		ClientID: clientID,
@@ -259,25 +259,17 @@ func toJournal(dbj dbJournal) (journal.Journal, error) {
 }
 
 type dbClientsTelemetry struct {
-	ClientID      string           `db:"client_id"`
-	DomainID      string           `db:"domain_id"`
-	Connections   pgtype.TextArray `db:"connections"`
-	Subscriptions pgtype.TextArray `db:"subscriptions"`
-	Messages      []byte           `db:"messages"`
-	FirstSeen     time.Time        `db:"first_seen"`
-	LastSeen      sql.NullTime     `db:"last_seen"`
+	ClientID         string           `db:"client_id"`
+	DomainID         string           `db:"domain_id"`
+	Connections      pgtype.TextArray `db:"connections"`
+	Subscriptions    pgtype.TextArray `db:"subscriptions"`
+	InboundMessages  uint64           `db:"inbound_messages"`
+	OutboundMessages uint64           `db:"outbound_messages"`
+	FirstSeen        time.Time        `db:"first_seen"`
+	LastSeen         sql.NullTime     `db:"last_seen"`
 }
 
 func toDBClientsTelemetry(ct journal.ClientsTelemetry) (dbClientsTelemetry, error) {
-	messages := []byte("[]")
-	if len(ct.Messages) > 0 {
-		b, err := json.Marshal(ct.Messages)
-		if err != nil {
-			return dbClientsTelemetry{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
-		}
-		messages = b
-	}
-
 	var conns pgtype.TextArray
 	if err := conns.Set(ct.Connections); err != nil {
 		return dbClientsTelemetry{}, err
@@ -294,24 +286,18 @@ func toDBClientsTelemetry(ct journal.ClientsTelemetry) (dbClientsTelemetry, erro
 	}
 
 	return dbClientsTelemetry{
-		ClientID:      ct.ClientID,
-		DomainID:      ct.DomainID,
-		Connections:   conns,
-		Subscriptions: subs,
-		Messages:      messages,
-		FirstSeen:     ct.FirstSeen,
-		LastSeen:      lastSeen,
+		ClientID:         ct.ClientID,
+		DomainID:         ct.DomainID,
+		Connections:      conns,
+		Subscriptions:    subs,
+		InboundMessages:  ct.InboundMessages,
+		OutboundMessages: ct.OutboundMessages,
+		FirstSeen:        ct.FirstSeen,
+		LastSeen:         lastSeen,
 	}, nil
 }
 
 func toClientsTelemetry(dbct dbClientsTelemetry) (journal.ClientsTelemetry, error) {
-	var messages []journal.Message
-	if dbct.Messages != nil {
-		if err := json.Unmarshal(dbct.Messages, &messages); err != nil {
-			return journal.ClientsTelemetry{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
-		}
-	}
-
 	var conns []string
 	for _, e := range dbct.Connections.Elements {
 		conns = append(conns, e.String)
@@ -328,12 +314,13 @@ func toClientsTelemetry(dbct dbClientsTelemetry) (journal.ClientsTelemetry, erro
 	}
 
 	return journal.ClientsTelemetry{
-		ClientID:      dbct.ClientID,
-		DomainID:      dbct.DomainID,
-		Connections:   conns,
-		Subscriptions: subs,
-		Messages:      messages,
-		FirstSeen:     dbct.FirstSeen,
-		LastSeen:      lastSeen,
+		ClientID:         dbct.ClientID,
+		DomainID:         dbct.DomainID,
+		Connections:      conns,
+		Subscriptions:    subs,
+		InboundMessages:  dbct.InboundMessages,
+		OutboundMessages: dbct.OutboundMessages,
+		FirstSeen:        dbct.FirstSeen,
+		LastSeen:         lastSeen,
 	}, nil
 }

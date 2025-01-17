@@ -137,20 +137,15 @@ func (page JournalsPage) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
-type Message struct {
-	ID        string `json:"id"`
-	ChannelID string `json:"channel_id"`
-	Protocol  string `json:"protocol"`
-}
-
 type ClientsTelemetry struct {
-	ClientID      string    `json:"client_id"`
-	DomainID      string    `json:"domain_id"`
-	Connections   []string  `json:"connections"`
-	Subscriptions []string  `json:"subscriptions"`
-	Messages      []Message `json:"messages"`
-	FirstSeen     time.Time `json:"first_seen"`
-	LastSeen      time.Time `json:"last_seen"`
+	ClientID         string    `json:"client_id"`
+	DomainID         string    `json:"domain_id"`
+	Connections      []string  `json:"connections"`
+	Subscriptions    []string  `json:"subscriptions"`
+	InboundMessages  uint64    `json:"inbound_messages"`
+	OutboundMessages uint64    `json:"outbound_messages"`
+	FirstSeen        time.Time `json:"first_seen"`
+	LastSeen         time.Time `json:"last_seen"`
 }
 
 // Service provides access to the journal log service.
