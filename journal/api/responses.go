@@ -29,5 +29,5 @@ func (res pageRes) Empty() bool {
 }
 
 type clientTelemetryRes struct {
-	journal.ClientsTelemetry `json:",inline"`
+	journal.ClientTelemetry `json:",inline"`
 }

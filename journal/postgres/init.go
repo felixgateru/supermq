@@ -30,7 +30,6 @@ func Migration() *migrate.MemoryMigrationSource {
 					`CREATE TABLE IF NOT EXISTS clients_telemetry (
 						client_id         VARCHAR(36) NOT NULL,
 						domain_id         VARCHAR(36) NOT NULL,
-						connections       TEXT[],
 						subscriptions     TEXT[],
 						inbound_messages  BIGINT DEFAULT 0,
 						outbound_messages BIGINT DEFAULT 0,

@@ -469,7 +469,7 @@ func TestRetrieveClientTelemetryEndpoint(t *testing.T) {
 				}
 			}
 			authCall := authn.On("Authenticate", mock.Anything, c.token).Return(c.session, c.authnErr)
-			svcCall := svc.On("RetrieveClientTelemetry", mock.Anything, c.session, c.clientID).Return(journal.ClientsTelemetry{}, c.svcErr)
+			svcCall := svc.On("RetrieveClientTelemetry", mock.Anything, c.session, c.clientID).Return(journal.ClientTelemetry{}, c.svcErr)
 			req := testRequest{
 				client: es.Client(),
 				method: http.MethodGet,

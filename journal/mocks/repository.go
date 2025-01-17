@@ -63,22 +63,22 @@ func (_m *Repository) RetrieveAll(ctx context.Context, page journal.Page) (journ
 }
 
 // RetrieveClientTelemetry provides a mock function with given fields: ctx, clientID, domainID
-func (_m *Repository) RetrieveClientTelemetry(ctx context.Context, clientID string, domainID string) (journal.ClientsTelemetry, error) {
+func (_m *Repository) RetrieveClientTelemetry(ctx context.Context, clientID string, domainID string) (journal.ClientTelemetry, error) {
 	ret := _m.Called(ctx, clientID, domainID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveClientTelemetry")
 	}
 
-	var r0 journal.ClientsTelemetry
+	var r0 journal.ClientTelemetry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (journal.ClientsTelemetry, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (journal.ClientTelemetry, error)); ok {
 		return rf(ctx, clientID, domainID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) journal.ClientsTelemetry); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) journal.ClientTelemetry); ok {
 		r0 = rf(ctx, clientID, domainID)
 	} else {
-		r0 = ret.Get(0).(journal.ClientsTelemetry)
+		r0 = ret.Get(0).(journal.ClientTelemetry)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
@@ -109,7 +109,7 @@ func (_m *Repository) Save(ctx context.Context, _a1 journal.Journal) error {
 }
 
 // SaveClientTelemetry provides a mock function with given fields: ctx, ct
-func (_m *Repository) SaveClientTelemetry(ctx context.Context, ct journal.ClientsTelemetry) error {
+func (_m *Repository) SaveClientTelemetry(ctx context.Context, ct journal.ClientTelemetry) error {
 	ret := _m.Called(ctx, ct)
 
 	if len(ret) == 0 {
@@ -117,7 +117,7 @@ func (_m *Repository) SaveClientTelemetry(ctx context.Context, ct journal.Client
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, journal.ClientsTelemetry) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, journal.ClientTelemetry) error); ok {
 		r0 = rf(ctx, ct)
 	} else {
 		r0 = ret.Error(0)

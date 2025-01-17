@@ -137,10 +137,9 @@ func (page JournalsPage) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
-type ClientsTelemetry struct {
+type ClientTelemetry struct {
 	ClientID         string    `json:"client_id"`
 	DomainID         string    `json:"domain_id"`
-	Connections      []string  `json:"connections"`
 	Subscriptions    []string  `json:"subscriptions"`
 	InboundMessages  uint64    `json:"inbound_messages"`
 	OutboundMessages uint64    `json:"outbound_messages"`
@@ -159,7 +158,7 @@ type Service interface {
 	RetrieveAll(ctx context.Context, session smqauthn.Session, page Page) (JournalsPage, error)
 
 	// RetrieveClientTelemetry retrieves telemetry data for a client.
-	RetrieveClientTelemetry(ctx context.Context, session smqauthn.Session, clientID string) (ClientsTelemetry, error)
+	RetrieveClientTelemetry(ctx context.Context, session smqauthn.Session, clientID string) (ClientTelemetry, error)
 }
 
 // Repository provides access to the journal log database.
@@ -173,10 +172,10 @@ type Repository interface {
 	RetrieveAll(ctx context.Context, page Page) (JournalsPage, error)
 
 	// SaveClientTelemetry persists telemetry data for a client to the database.
-	SaveClientTelemetry(ctx context.Context, ct ClientsTelemetry) error
+	SaveClientTelemetry(ctx context.Context, ct ClientTelemetry) error
 
 	// RetrieveClientTelemetry retrieves telemetry data for a client from the database.
-	RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (ClientsTelemetry, error)
+	RetrieveClientTelemetry(ctx context.Context, clientID, domainID string) (ClientTelemetry, error)
 
 	// DeleteClientTelemetry removes telemetry data for a client from the database.
 	DeleteClientTelemetry(ctx context.Context, clientID, domainID string) error

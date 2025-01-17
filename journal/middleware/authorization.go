@@ -65,7 +65,7 @@ func (am *authorizationMiddleware) RetrieveAll(ctx context.Context, session smqa
 	return am.svc.RetrieveAll(ctx, session, page)
 }
 
-func (am *authorizationMiddleware) RetrieveClientTelemetry(ctx context.Context, session smqauthn.Session, clientID string) (journal.ClientsTelemetry, error) {
+func (am *authorizationMiddleware) RetrieveClientTelemetry(ctx context.Context, session smqauthn.Session, clientID string) (journal.ClientTelemetry, error) {
 	req := smqauthz.PolicyReq{
 		Domain:      session.DomainID,
 		SubjectType: policies.UserType,
@@ -77,7 +77,7 @@ func (am *authorizationMiddleware) RetrieveClientTelemetry(ctx context.Context, 
 	}
 
 	if err := am.authz.Authorize(ctx, req); err != nil {
-		return journal.ClientsTelemetry{}, err
+		return journal.ClientTelemetry{}, err
 	}
 
 	return am.svc.RetrieveClientTelemetry(ctx, session, clientID)

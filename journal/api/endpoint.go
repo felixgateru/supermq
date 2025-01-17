@@ -56,7 +56,7 @@ func retrieveClientTelemetryEndpoint(svc journal.Service) endpoint.Endpoint {
 		}
 
 		return clientTelemetryRes{
-			ClientsTelemetry: telemetry,
+			ClientTelemetry: telemetry,
 		}, nil
 	}
 }
