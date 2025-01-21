@@ -61,7 +61,7 @@ func (es *eventStore) AuthConnect(ctx context.Context) error {
 		instance:     es.instance,
 	}
 
-	return es.ep.Publish(ctx, ev)
+	return es.publisher.Publish(ctx, ev)
 }
 
 func (es *eventStore) AuthPublish(ctx context.Context, topic *string, payload *[]byte) error {
@@ -132,7 +132,7 @@ func (es *eventStore) Disconnect(ctx context.Context) error {
 		instance:     es.instance,
 	}
 
-	return es.ep.Publish(ctx, ev)
+	return es.publisher.Publish(ctx, ev)
 }
 
 func parseTopic(topic string) (string, string, error) {
