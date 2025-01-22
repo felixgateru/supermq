@@ -472,6 +472,7 @@ func TestUnsubscribe(t *testing.T) {
 			topic:     topics,
 			channelID: chanID,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
+			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
 			err:       errors.Wrap(mqtt.ErrFailedUnsubscribe, mqtt.ErrClientNotInitialized),
 		},
 		{
@@ -479,6 +480,7 @@ func TestUnsubscribe(t *testing.T) {
 			session:   &sessionClient,
 			topic:     topics,
 			channelID: chanID,
+			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
 			logMsg:    fmt.Sprintf(mqtt.LogInfoUnsubscribed, clientID, topics[0]),
 		},
@@ -489,7 +491,7 @@ func TestUnsubscribe(t *testing.T) {
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)
 		}
-		eventsCall := eventStore.On("Unsubscribe", mock.Anything, clientID, mock.Anything, mock.Anything).Return(nil)
+		eventsCall := eventStore.On("Unsubscribe", mock.Anything, clientID, mock.Anything, clientID, mock.Anything).Return(nil)
 		channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 			ChannelId:  tc.channelID,
 			ClientId:   clientID,
