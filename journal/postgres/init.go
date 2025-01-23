@@ -43,6 +43,7 @@ func Migration() *migrate.MemoryMigrationSource {
 						client_id       VARCHAR(36),
 						FOREIGN KEY (client_id) REFERENCES clients_telemetry(client_id) ON DELETE CASCADE ON UPDATE CASCADE
 					)`,
+					`CREATE INDEX idx_subscriptions_gin ON clients_telemetry USING GIN (subscriptions);`,
 				},
 				Down: []string{
 					`DROP TABLE IF EXISTS clients_telemetry`,
