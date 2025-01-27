@@ -29,6 +29,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	validToken   = "validToken"
+	invalidToken = "invalidToken"
+	contentType  = "application/json"
+)
+
 var (
 	validGroupResp = groups.Group{
 		ID:          testsutil.GenerateUUID(&testing.T{}),
@@ -45,10 +51,7 @@ var (
 		UpdatedBy: testsutil.GenerateUUID(&testing.T{}),
 		Status:    groups.EnabledStatus,
 	}
-	validID      = testsutil.GenerateUUID(&testing.T{})
-	validToken   = "validToken"
-	invalidToken = "invalidToken"
-	contentType  = "application/json"
+	validID = testsutil.GenerateUUID(&testing.T{})
 )
 
 func newGroupsServer() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
@@ -199,7 +202,7 @@ func TestCreateGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/groups/", gs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/groups/", gs.URL+versionPrefix, tc.domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -298,7 +301,7 @@ func TestViewGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/groups/%s", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -441,7 +444,7 @@ func TestUpdateGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPut,
-				url:         fmt.Sprintf("%s/%s/groups/%s", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/groups/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -546,7 +549,7 @@ func TestEnableGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodPost,
-				url:    fmt.Sprintf("%s/%s/groups/%s/enable", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s/enable", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -649,7 +652,7 @@ func TestDisableGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodPost,
-				url:    fmt.Sprintf("%s/%s/groups/%s/disable", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s/disable", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -955,7 +958,7 @@ func TestListGroups(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodGet,
-				url:         gs.URL + "/" + tc.domainID + "/groups?" + tc.query,
+				url:         gs.URL + versionPrefix + "/" + tc.domainID + "/groups?" + tc.query,
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -1046,7 +1049,7 @@ func TestDeleteGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/groups/%s", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1215,7 +1218,7 @@ func TestRetrieveGroupHierarchyEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/groups/%s/hierarchy?%s", gs.URL, tc.domainID, tc.groupID, tc.query),
+				url:    fmt.Sprintf("%s/%s/groups/%s/hierarchy?%s", gs.URL+versionPrefix, tc.domainID, tc.groupID, tc.query),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1362,7 +1365,7 @@ func TestAddParentGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/groups/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/groups/%s/parent", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(data),
@@ -1455,7 +1458,7 @@ func TestRemoveParentGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/groups/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s/parent", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1605,7 +1608,7 @@ func TestAddChildrenGroupsEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/groups/%s/children", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/groups/%s/children", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(data),
@@ -1747,7 +1750,7 @@ func TestRemoveChildrenGroupsEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodDelete,
-				url:         fmt.Sprintf("%s/%s/groups/%s/children", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/groups/%s/children", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(data),
@@ -1840,7 +1843,7 @@ func TestRemoveAllChildrenGroupsEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/groups/%s/children/all", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/groups/%s/children/all", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1984,7 +1987,7 @@ func TestListChildrenGroupsEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/groups/%s/children?%s", gs.URL, tc.domainID, tc.id, tc.query),
+				url:    fmt.Sprintf("%s/%s/groups/%s/children?%s", gs.URL+versionPrefix, tc.domainID, tc.id, tc.query),
 				token:  tc.token,
 			}
 			if tc.token == validToken {

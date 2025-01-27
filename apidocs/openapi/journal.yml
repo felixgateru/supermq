@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9021
-  - url: https://localhost:9021
+  - url: http://localhost:9021/v1
+  - url: https://localhost:9021/v1
 
 tags:
   - name: journal-log

@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+const versionPrefix = "/v1"
+
 // MakeHandler returns a HTTP handler for Channels API endpoints.
 func MakeHandler(svc channels.Service, authn smqauthn.Authentication, mux *chi.Mux, logger *slog.Logger, instanceID string) *chi.Mux {
 	opts := []kithttp.ServerOption{
@@ -26,7 +28,7 @@ func MakeHandler(svc channels.Service, authn smqauthn.Authentication, mux *chi.M
 
 	d := roleManagerHttp.NewDecoder("channelID")
 
-	mux.Route("/{domainID}/channels", func(r chi.Router) {
+	mux.Route(versionPrefix+"/{domainID}/channels", func(r chi.Router) {
 		r.Use(api.AuthenticateMiddleware(authn, true))
 
 		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
@@ -141,8 +143,8 @@ func MakeHandler(svc channels.Service, authn smqauthn.Authentication, mux *chi.M
 		})
 	})
 
-	mux.Get("/health", supermq.Health("channels", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("channels", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

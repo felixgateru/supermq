@@ -43,7 +43,7 @@ func (sdk mgSDK) Journal(entityType, entityID, domainID string, pm PageMetadata,
 		reqUrl = fmt.Sprintf("%s/%s/%s", journalEndpoint, entityType, entityID)
 	}
 
-	url, err := sdk.withQueryParams(sdk.journalURL, reqUrl, pm)
+	url, err := sdk.withQueryParams(sdk.journalURL+versionPrefix, reqUrl, pm)
 	if err != nil {
 		return JournalsPage{}, errors.NewSDKError(err)
 	}

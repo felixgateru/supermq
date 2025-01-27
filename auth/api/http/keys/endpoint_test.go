@@ -188,7 +188,7 @@ func TestIssue(t *testing.T) {
 		req := testRequest{
 			client:      client,
 			method:      http.MethodPost,
-			url:         fmt.Sprintf("%s/keys", ts.URL),
+			url:         fmt.Sprintf("%s/v1/keys", ts.URL),
 			contentType: tc.ct,
 			token:       tc.token,
 			body:        strings.NewReader(tc.req),
@@ -264,7 +264,7 @@ func TestRetrieve(t *testing.T) {
 		req := testRequest{
 			client: client,
 			method: http.MethodGet,
-			url:    fmt.Sprintf("%s/keys/%s", ts.URL, tc.id),
+			url:    fmt.Sprintf("%s/v1/keys/%s", ts.URL, tc.id),
 			token:  tc.token,
 		}
 		repocall := krepo.On("Retrieve", mock.Anything, mock.Anything, mock.Anything).Return(tc.key, tc.err)
@@ -326,7 +326,7 @@ func TestRevoke(t *testing.T) {
 		req := testRequest{
 			client: client,
 			method: http.MethodDelete,
-			url:    fmt.Sprintf("%s/keys/%s", ts.URL, tc.id),
+			url:    fmt.Sprintf("%s/v1/keys/%s", ts.URL, tc.id),
 			token:  tc.token,
 		}
 		repocall := krepo.On("Remove", mock.Anything, mock.Anything, mock.Anything).Return(nil)

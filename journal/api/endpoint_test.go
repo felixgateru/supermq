@@ -25,7 +25,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var validToken = "valid"
+const (
+	validToken    = "valid"
+	versionPrefix = "/v1"
+)
 
 type testRequest struct {
 	client *http.Client
@@ -265,7 +268,7 @@ func TestListUserJournalsEndpoint(t *testing.T) {
 			req := testRequest{
 				client: es.Client(),
 				method: http.MethodGet,
-				url:    es.URL + "/journal" + c.url,
+				url:    es.URL + versionPrefix + "/journal" + c.url,
 				token:  c.token,
 			}
 
@@ -390,7 +393,7 @@ func TestListEntityJournalsEndpoint(t *testing.T) {
 			req := testRequest{
 				client: es.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/journal%s", es.URL, c.domainID, c.url),
+				url:    fmt.Sprintf("%s/%s/journal%s", es.URL+versionPrefix, c.domainID, c.url),
 				token:  c.token,
 			}
 			resp, err := req.make()
@@ -473,7 +476,7 @@ func TestRetrieveClientTelemetryEndpoint(t *testing.T) {
 			req := testRequest{
 				client: es.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/journal%s", es.URL, c.domainID, c.url),
+				url:    fmt.Sprintf("%s/%s/journal%s", es.URL+versionPrefix, c.domainID, c.url),
 				token:  c.token,
 			}
 			resp, err := req.make()

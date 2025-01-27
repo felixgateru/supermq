@@ -24,11 +24,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var (
+const (
 	validToken      = "valid"
 	validContenType = "application/json"
-	validID         = testsutil.GenerateUUID(&testing.T{})
-	domainID        = testsutil.GenerateUUID(&testing.T{})
+	versionPrefix   = "/v1"
+)
+
+var (
+	validID  = testsutil.GenerateUUID(&testing.T{})
+	domainID = testsutil.GenerateUUID(&testing.T{})
 )
 
 type testRequest struct {
@@ -139,7 +143,7 @@ func TestSendInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodPost,
-				url:         is.URL + "/invitations",
+				url:         is.URL + versionPrefix + "/invitations",
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
@@ -312,7 +316,7 @@ func TestListInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,
-				url:         is.URL + "/invitations?" + tc.query,
+				url:         is.URL + versionPrefix + "/invitations?" + tc.query,
 				token:       tc.token,
 				contentType: tc.contentType,
 			}
@@ -404,7 +408,7 @@ func TestViewInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,
-				url:         is.URL + "/invitations/" + tc.userID + "/" + tc.domainID,
+				url:         is.URL + versionPrefix + "/invitations/" + tc.userID + "/" + tc.domainID,
 				token:       tc.token,
 				contentType: tc.contentType,
 			}
@@ -498,7 +502,7 @@ func TestDeleteInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodDelete,
-				url:         is.URL + "/invitations/" + tc.userID + "/" + tc.domainID,
+				url:         is.URL + versionPrefix + "/invitations/" + tc.userID + "/" + tc.domainID,
 				token:       tc.token,
 				contentType: tc.contentType,
 			}
@@ -576,7 +580,7 @@ func TestAcceptInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodPost,
-				url:         is.URL + "/invitations/accept",
+				url:         is.URL + versionPrefix + "/invitations/accept",
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
@@ -656,7 +660,7 @@ func TestRejectInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodPost,
-				url:         is.URL + "/invitations/reject",
+				url:         is.URL + versionPrefix + "/invitations/reject",
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),

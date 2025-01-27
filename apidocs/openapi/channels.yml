@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9005
-  - url: https://localhost:9005
+  - url: http://localhost:9005/v1
+  - url: https://localhost:9005/v1
 
 tags:
   - name: Channels
@@ -454,7 +454,7 @@ paths:
           description: Database can't process request.
         "500":
           $ref: "#/components/responses/ServiceError"
- 
+
   /{domainID}/channels/{chanID}/connect:
     post:
       operationId: connectClientsToChannel
@@ -557,7 +557,7 @@ components:
     ParentGroupReqObj:
       type: object
       properties:
-         parent_group_id:
+        parent_group_id:
           type: string
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
@@ -667,7 +667,7 @@ components:
         - name
         - metadata
         - description
-    
+
     ChannelUpdateTags:
       type: object
       properties:
@@ -817,7 +817,7 @@ components:
         format: uuid
       required: false
       example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-      
+
     Metadata:
       name: metadata
       description: Metadata filter. Filtering is performed matching the parameter with metadata on top level. Parameter is json.
@@ -867,7 +867,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ChannelReqObj"
-    
+
     ChannelsCreateReq:
       description: JSON-formatted document describing the new channels to be registered
       required: true
@@ -885,7 +885,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ChannelUpdate"
-    
+
     ChannelUpdateTagsReq:
       description: JSON-formated document describing the tags of channel to be updated.
       required: true
@@ -893,7 +893,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ChannelUpdate"
-    
+
     ChannelParentGroupReq:
       description: JSON-formated document describing the parent group to be set to or removed from a channel.
       required: true
@@ -909,7 +909,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ConnectionReqSchema"
-    
+
     ChannelConnReq:
       description: JSON-formatted document describing the new connection.
       required: true
@@ -976,7 +976,7 @@ components:
           operationId: unassignGroupsFromChannel
           parameters:
             chanID: $response.body#/id
-    
+
     ChannelsCreateRes:
       description: Registered new channels.
       headers:

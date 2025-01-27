@@ -18,13 +18,15 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+const versionPrefix = "/v1"
+
 func MakeHandler(svc domains.Service, authn authn.Authentication, mux *chi.Mux, logger *slog.Logger, instanceID string) *chi.Mux {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
 
 	d := roleManagerHttp.NewDecoder("domainID")
-	mux.Route("/domains", func(r chi.Router) {
+	mux.Route(versionPrefix+"/domains", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(api.AuthenticateMiddleware(authn, false))
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
@@ -84,8 +86,8 @@ func MakeHandler(svc domains.Service, authn authn.Authentication, mux *chi.Mux, 
 		})
 	})
 
-	mux.Get("/health", supermq.Health("auth", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("auth", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

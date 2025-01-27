@@ -39,6 +39,8 @@ const (
 	BearerPrefix = "Bearer "
 
 	ClientPrefix = "Client "
+
+	versionPrefix = "/v1"
 )
 
 // ContentType represents all possible content types.

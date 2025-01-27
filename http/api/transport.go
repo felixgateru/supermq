@@ -21,9 +21,10 @@ import (
 )
 
 const (
-	ctSenmlJSON = "application/senml+json"
-	ctSenmlCBOR = "application/senml+cbor"
-	contentType = "application/json"
+	ctSenmlJSON   = "application/senml+json"
+	ctSenmlCBOR   = "application/senml+cbor"
+	contentType   = "application/json"
+	versionPrefix = "/v1"
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
@@ -46,6 +47,7 @@ func MakeHandler(logger *slog.Logger, instanceID string) http.Handler {
 		api.EncodeResponse,
 		opts...,
 	), "publish").ServeHTTP)
+
 	r.Get("/health", supermq.Health("http", instanceID))
 	r.Handle("/metrics", promhttp.Handler())
 

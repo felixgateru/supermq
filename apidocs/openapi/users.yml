@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9002
-  - url: https://localhost:9002
+  - url: http://localhost:9002/v1
+  - url: https://localhost:9002/v1
 
 tags:
   - name: Users
@@ -666,7 +666,7 @@ paths:
           description: Database can't process request.
         "500":
           $ref: "#/components/responses/ServiceError"
-  
+
   /{domainID}/users:
     get:
       summary: List users assigned to domain
@@ -1310,7 +1310,7 @@ components:
         pattern: "^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$"
       required: true
       example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-    
+
     ClientID:
       name: clientID
       description: Unique client identifier.

@@ -32,8 +32,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	contentType   = "application/json"
+	secret        = "strongsecret"
+	validToken    = "valid"
+	inValidToken  = "invalid"
+	inValid       = "invalid"
+	validID       = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
+	versionPrefix = "/v1"
+)
+
 var (
-	secret         = "strongsecret"
 	validCMetadata = users.Metadata{"role": "user"}
 	user           = users.User{
 		ID:          testsutil.GenerateUUID(&testing.T{}),
@@ -45,16 +54,11 @@ var (
 		Metadata:    validCMetadata,
 		Status:      users.EnabledStatus,
 	}
-	validToken   = "valid"
-	inValidToken = "invalid"
-	inValid      = "invalid"
-	validID      = "d4ebb847-5d0e-4e46-bdd9-b6aceaaa3a22"
-	passRegex    = regexp.MustCompile("^.{8,}$")
-	testReferer  = "http://localhost"
-	domainID     = testsutil.GenerateUUID(&testing.T{})
-)
 
-const contentType = "application/json"
+	passRegex   = regexp.MustCompile("^.{8,}$")
+	testReferer = "http://localhost"
+	domainID    = testsutil.GenerateUUID(&testing.T{})
+)
 
 type testRequest struct {
 	user        *http.Client
@@ -228,7 +232,7 @@ func TestRegister(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/users/", us.URL),
+				url:         fmt.Sprintf("%s/users/", us.URL+versionPrefix),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -314,7 +318,7 @@ func TestView(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/users/%s", us.URL, tc.id),
+				url:    fmt.Sprintf("%s/users/%s", us.URL+versionPrefix, tc.id),
 				token:  tc.token,
 			}
 
@@ -392,7 +396,7 @@ func TestViewProfile(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/users/profile", us.URL),
+				url:    fmt.Sprintf("%s/users/profile", us.URL+versionPrefix),
 				token:  tc.token,
 			}
 
@@ -760,7 +764,7 @@ func TestListUsers(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodGet,
-				url:         us.URL + "/users?" + tc.query,
+				url:         us.URL + versionPrefix + "/users?" + tc.query,
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -898,7 +902,7 @@ func TestSearchUsers(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/users/search?", us.URL) + tc.query,
+				url:    fmt.Sprintf("%s/users/search?", us.URL+versionPrefix) + tc.query,
 				token:  tc.token,
 			}
 
@@ -1034,7 +1038,7 @@ func TestUpdate(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/users/%s", us.URL, tc.id),
+				url:         fmt.Sprintf("%s/users/%s", us.URL+versionPrefix, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1171,7 +1175,7 @@ func TestUpdateTags(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/users/%s/tags", us.URL, tc.id),
+				url:         fmt.Sprintf("%s/users/%s/tags", us.URL+versionPrefix, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1346,7 +1350,7 @@ func TestUpdateEmail(t *testing.T) {
 		req := testRequest{
 			user:        us.Client(),
 			method:      http.MethodPatch,
-			url:         fmt.Sprintf("%s/users/%s/email", us.URL, tc.user.ID),
+			url:         fmt.Sprintf("%s/users/%s/email", us.URL+versionPrefix, tc.user.ID),
 			contentType: tc.contentType,
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
@@ -1494,7 +1498,7 @@ func TestUpdateUsername(t *testing.T) {
 		req := testRequest{
 			user:        us.Client(),
 			method:      http.MethodPatch,
-			url:         fmt.Sprintf("%s/users/%s/username", us.URL, tc.user.ID),
+			url:         fmt.Sprintf("%s/users/%s/username", us.URL+versionPrefix, tc.user.ID),
 			contentType: tc.contentType,
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
@@ -1620,7 +1624,7 @@ func TestUpdateProfilePicture(t *testing.T) {
 		req := testRequest{
 			user:        us.Client(),
 			method:      http.MethodPatch,
-			url:         fmt.Sprintf("%s/users/%s/picture", us.URL, tc.user.ID),
+			url:         fmt.Sprintf("%s/users/%s/picture", us.URL+versionPrefix, tc.user.ID),
 			contentType: tc.contentType,
 			token:       tc.token,
 			body:        strings.NewReader(tc.data),
@@ -1725,7 +1729,7 @@ func TestPasswordResetRequest(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/password/reset-request", us.URL),
+				url:         fmt.Sprintf("%s/password/reset-request", us.URL+versionPrefix),
 				contentType: tc.contentType,
 				referer:     tc.referer,
 				body:        strings.NewReader(tc.data),
@@ -1830,7 +1834,7 @@ func TestPasswordReset(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPut,
-				url:         fmt.Sprintf("%s/password/reset", us.URL),
+				url:         fmt.Sprintf("%s/password/reset", us.URL+versionPrefix),
 				contentType: tc.contentType,
 				referer:     testReferer,
 				token:       tc.token,
@@ -1951,7 +1955,7 @@ func TestUpdateRole(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/users/%s/role", us.URL, tc.userID),
+				url:         fmt.Sprintf("%s/users/%s/role", us.URL+versionPrefix, tc.userID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -2090,7 +2094,7 @@ func TestUpdateSecret(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/users/secret", us.URL),
+				url:         fmt.Sprintf("%s/users/secret", us.URL+versionPrefix),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -2177,7 +2181,7 @@ func TestIssueToken(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/users/tokens/issue", us.URL),
+				url:         fmt.Sprintf("%s/users/tokens/issue", us.URL+versionPrefix),
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
 			}
@@ -2274,7 +2278,7 @@ func TestRefreshToken(t *testing.T) {
 		req := testRequest{
 			user:        us.Client(),
 			method:      http.MethodPost,
-			url:         fmt.Sprintf("%s/users/tokens/refresh", us.URL),
+			url:         fmt.Sprintf("%s/users/tokens/refresh", us.URL+versionPrefix),
 			contentType: tc.contentType,
 			body:        strings.NewReader(tc.data),
 			token:       tc.token,
@@ -2371,7 +2375,7 @@ func TestEnable(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/users/%s/enable", us.URL, tc.user.ID),
+				url:         fmt.Sprintf("%s/users/%s/enable", us.URL+versionPrefix, tc.user.ID),
 				contentType: contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -2471,7 +2475,7 @@ func TestDisable(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/users/%s/disable", us.URL, tc.user.ID),
+				url:         fmt.Sprintf("%s/users/%s/disable", us.URL+versionPrefix, tc.user.ID),
 				contentType: contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -2549,7 +2553,7 @@ func TestDelete(t *testing.T) {
 			req := testRequest{
 				user:        us.Client(),
 				method:      http.MethodDelete,
-				url:         fmt.Sprintf("%s/users/%s", us.URL, tc.user.ID),
+				url:         fmt.Sprintf("%s/users/%s", us.URL+versionPrefix, tc.user.ID),
 				contentType: contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -2873,7 +2877,7 @@ func TestListUsersByUserGroupId(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/groups/%s/users?", us.URL, validID, tc.groupID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/groups/%s/users?", us.URL+versionPrefix, validID, tc.groupID) + tc.query,
 				token:  tc.token,
 			}
 			authnCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.authnRes, tc.authnErr)
@@ -3210,7 +3214,7 @@ func TestListUsersByChannelID(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/channels/%s/users?", us.URL, validID, validID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/channels/%s/users?", us.URL+versionPrefix, validID, validID) + tc.query,
 				token:  tc.token,
 			}
 
@@ -3554,7 +3558,7 @@ func TestListUsersByDomainID(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/users?", us.URL, validID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/users?", us.URL+versionPrefix, validID) + tc.query,
 				token:  tc.token,
 			}
 
@@ -3868,7 +3872,7 @@ func TestListUsersByClientID(t *testing.T) {
 			req := testRequest{
 				user:   us.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/clients/%s/users?", us.URL, validID, validID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/clients/%s/users?", us.URL+versionPrefix, validID, validID) + tc.query,
 				token:  tc.token,
 			}
 

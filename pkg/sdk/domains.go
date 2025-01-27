@@ -40,7 +40,7 @@ func (sdk mgSDK) CreateDomain(domain Domain, token string) (Domain, errors.SDKEr
 		return Domain{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s", sdk.domainsURL, domainsEndpoint)
+	url := fmt.Sprintf("%s/%s", sdk.domainsURL+versionPrefix, domainsEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -55,7 +55,7 @@ func (sdk mgSDK) CreateDomain(domain Domain, token string) (Domain, errors.SDKEr
 }
 
 func (sdk mgSDK) Domains(pm PageMetadata, token string) (DomainsPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.domainsURL, domainsEndpoint, pm)
+	url, err := sdk.withQueryParams(sdk.domainsURL+versionPrefix, domainsEndpoint, pm)
 	if err != nil {
 		return DomainsPage{}, errors.NewSDKError(err)
 	}
@@ -77,7 +77,7 @@ func (sdk mgSDK) Domain(domainID, token string) (Domain, errors.SDKError) {
 	if domainID == "" {
 		return Domain{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.domainsURL, domainsEndpoint, domainID)
+	url := fmt.Sprintf("%s/%s/%s", sdk.domainsURL+versionPrefix, domainsEndpoint, domainID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -96,7 +96,7 @@ func (sdk mgSDK) UpdateDomain(domain Domain, token string) (Domain, errors.SDKEr
 	if domain.ID == "" {
 		return Domain{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.domainsURL, domainsEndpoint, domain.ID)
+	url := fmt.Sprintf("%s/%s/%s", sdk.domainsURL+versionPrefix, domainsEndpoint, domain.ID)
 
 	data, err := json.Marshal(domain)
 	if err != nil {
@@ -128,63 +128,63 @@ func (sdk mgSDK) FreezeDomain(domainID, token string) errors.SDKError {
 }
 
 func (sdk mgSDK) changeDomainStatus(token, id, status string) errors.SDKError {
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.domainsURL, domainsEndpoint, id, status)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.domainsURL+versionPrefix, domainsEndpoint, id, status)
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, nil, nil, http.StatusOK)
 	return sdkerr
 }
 
 func (sdk mgSDK) CreateDomainRole(id string, rq RoleReq, token string) (Role, errors.SDKError) {
-	return sdk.createRole(sdk.domainsURL, domainsEndpoint, id, "", rq, token)
+	return sdk.createRole(sdk.domainsURL+versionPrefix, domainsEndpoint, id, "", rq, token)
 }
 
 func (sdk mgSDK) DomainRoles(id string, pm PageMetadata, token string) (RolesPage, errors.SDKError) {
-	return sdk.listRoles(sdk.domainsURL, domainsEndpoint, id, "", pm, token)
+	return sdk.listRoles(sdk.domainsURL+versionPrefix, domainsEndpoint, id, "", pm, token)
 }
 
 func (sdk mgSDK) DomainRole(id, roleID, token string) (Role, errors.SDKError) {
-	return sdk.viewRole(sdk.domainsURL, domainsEndpoint, id, roleID, "", token)
+	return sdk.viewRole(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", token)
 }
 
 func (sdk mgSDK) UpdateDomainRole(id, roleID, newName string, token string) (Role, errors.SDKError) {
-	return sdk.updateRole(sdk.domainsURL, domainsEndpoint, id, roleID, newName, "", token)
+	return sdk.updateRole(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, newName, "", token)
 }
 
 func (sdk mgSDK) DeleteDomainRole(id, roleID, token string) errors.SDKError {
-	return sdk.deleteRole(sdk.domainsURL, domainsEndpoint, id, roleID, "", token)
+	return sdk.deleteRole(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", token)
 }
 
 func (sdk mgSDK) AddDomainRoleActions(id, roleID string, actions []string, token string) ([]string, errors.SDKError) {
-	return sdk.addRoleActions(sdk.domainsURL, domainsEndpoint, id, roleID, "", actions, token)
+	return sdk.addRoleActions(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", actions, token)
 }
 
 func (sdk mgSDK) DomainRoleActions(id, roleID string, token string) ([]string, errors.SDKError) {
-	return sdk.listRoleActions(sdk.domainsURL, domainsEndpoint, id, roleID, "", token)
+	return sdk.listRoleActions(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", token)
 }
 
 func (sdk mgSDK) RemoveDomainRoleActions(id, roleID string, actions []string, token string) errors.SDKError {
-	return sdk.removeRoleActions(sdk.domainsURL, domainsEndpoint, id, roleID, "", actions, token)
+	return sdk.removeRoleActions(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", actions, token)
 }
 
 func (sdk mgSDK) RemoveAllDomainRoleActions(id, roleID, token string) errors.SDKError {
-	return sdk.removeAllRoleActions(sdk.domainsURL, domainsEndpoint, id, roleID, "", token)
+	return sdk.removeAllRoleActions(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", token)
 }
 
 func (sdk mgSDK) AddDomainRoleMembers(id, roleID string, members []string, token string) ([]string, errors.SDKError) {
-	return sdk.addRoleMembers(sdk.domainsURL, domainsEndpoint, id, roleID, "", members, token)
+	return sdk.addRoleMembers(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", members, token)
 }
 
 func (sdk mgSDK) DomainRoleMembers(id, roleID string, pm PageMetadata, token string) (RoleMembersPage, errors.SDKError) {
-	return sdk.listRoleMembers(sdk.domainsURL, domainsEndpoint, id, roleID, "", pm, token)
+	return sdk.listRoleMembers(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", pm, token)
 }
 
 func (sdk mgSDK) RemoveDomainRoleMembers(id, roleID string, members []string, token string) errors.SDKError {
-	return sdk.removeRoleMembers(sdk.domainsURL, domainsEndpoint, id, roleID, "", members, token)
+	return sdk.removeRoleMembers(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", members, token)
 }
 
 func (sdk mgSDK) RemoveAllDomainRoleMembers(id, roleID, token string) errors.SDKError {
-	return sdk.removeAllRoleMembers(sdk.domainsURL, domainsEndpoint, id, roleID, "", token)
+	return sdk.removeAllRoleMembers(sdk.domainsURL+versionPrefix, domainsEndpoint, id, roleID, "", token)
 }
 
 func (sdk mgSDK) AvailableDomainRoleActions(token string) ([]string, errors.SDKError) {
-	return sdk.listAvailableRoleActions(sdk.domainsURL, domainsEndpoint, "", token)
+	return sdk.listAvailableRoleActions(sdk.domainsURL+versionPrefix, domainsEndpoint, "", token)
 }

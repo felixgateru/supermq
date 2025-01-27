@@ -21,8 +21,8 @@ import (
 func MakeHandler(cls users.Service, authn smqauthn.Authentication, tokensvc grpcTokenV1.TokenServiceClient, selfRegister bool, mux *chi.Mux, logger *slog.Logger, instanceID string, pr *regexp.Regexp, providers ...oauth2.Provider) http.Handler {
 	mux = usersHandler(cls, authn, tokensvc, selfRegister, mux, logger, pr, providers...)
 
-	mux.Get("/health", supermq.Health("users", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("users", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

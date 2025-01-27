@@ -53,7 +53,7 @@ func (sdk mgSDK) CreateGroup(g Group, domainID, token string) (Group, errors.SDK
 	if err != nil {
 		return Group{}, errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint)
+	url := fmt.Sprintf("%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -70,7 +70,7 @@ func (sdk mgSDK) CreateGroup(g Group, domainID, token string) (Group, errors.SDK
 
 func (sdk mgSDK) Groups(pm PageMetadata, domainID, token string) (GroupsPage, errors.SDKError) {
 	endpoint := fmt.Sprintf("%s/%s", domainID, groupsEndpoint)
-	url, err := sdk.withQueryParams(sdk.groupsURL, endpoint, pm)
+	url, err := sdk.withQueryParams(sdk.groupsURL+versionPrefix, endpoint, pm)
 	if err != nil {
 		return GroupsPage{}, errors.NewSDKError(err)
 	}
@@ -93,7 +93,7 @@ func (sdk mgSDK) Group(id, domainID, token string) (Group, errors.SDKError) {
 		return Group{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -117,7 +117,7 @@ func (sdk mgSDK) UpdateGroup(g Group, domainID, token string) (Group, errors.SDK
 	if g.ID == "" {
 		return Group{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, g.ID)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, g.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -139,7 +139,7 @@ func (sdk mgSDK) SetGroupParent(id, domainID, groupID, token string) errors.SDKE
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, parentEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, parentEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusOK)
 
 	return sdkerr
@@ -152,7 +152,7 @@ func (sdk mgSDK) RemoveGroupParent(id, domainID, groupID, token string) errors.S
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, parentEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, parentEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, data, nil, http.StatusNoContent)
 
 	return sdkerr
@@ -165,7 +165,7 @@ func (sdk mgSDK) AddChildren(id, domainID string, groupIDs []string, token strin
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, childrenEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, childrenEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusOK)
 
 	return sdkerr
@@ -178,14 +178,14 @@ func (sdk mgSDK) RemoveChildren(id, domainID string, groupIDs []string, token st
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, childrenEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, childrenEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, data, nil, http.StatusNoContent)
 
 	return sdkerr
 }
 
 func (sdk mgSDK) RemoveAllChildren(id, domainID, token string) errors.SDKError {
-	url := fmt.Sprintf("%s/%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, childrenEndpoint, "all")
+	url := fmt.Sprintf("%s/%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, childrenEndpoint, "all")
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 
 	return sdkerr
@@ -193,7 +193,7 @@ func (sdk mgSDK) RemoveAllChildren(id, domainID, token string) errors.SDKError {
 
 func (sdk mgSDK) Children(id, domainID string, pm PageMetadata, token string) (GroupsPage, errors.SDKError) {
 	endpoint := fmt.Sprintf("%s/%s/%s/%s", domainID, groupsEndpoint, id, childrenEndpoint)
-	url, err := sdk.withQueryParams(sdk.groupsURL, endpoint, pm)
+	url, err := sdk.withQueryParams(sdk.groupsURL+versionPrefix, endpoint, pm)
 	if err != nil {
 		return GroupsPage{}, errors.NewSDKError(err)
 	}
@@ -220,7 +220,7 @@ func (sdk mgSDK) DisableGroup(id, domainID, token string) (Group, errors.SDKErro
 }
 
 func (sdk mgSDK) changeGroupStatus(id, status, domainID, token string) (Group, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id, status)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id, status)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -238,14 +238,14 @@ func (sdk mgSDK) DeleteGroup(id, domainID, token string) errors.SDKError {
 	if id == "" {
 		return errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL, domainID, groupsEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.groupsURL+versionPrefix, domainID, groupsEndpoint, id)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 	return sdkerr
 }
 
 func (sdk mgSDK) Hierarchy(id, domainID string, pm PageMetadata, token string) (GroupsHierarchyPage, errors.SDKError) {
 	endpoint := fmt.Sprintf("%s/%s/%s/hierarchy", domainID, groupsEndpoint, id)
-	url, err := sdk.withQueryParams(sdk.groupsURL, endpoint, pm)
+	url, err := sdk.withQueryParams(sdk.groupsURL+versionPrefix, endpoint, pm)
 	if err != nil {
 		return GroupsHierarchyPage{}, errors.NewSDKError(err)
 	}
@@ -264,57 +264,57 @@ func (sdk mgSDK) Hierarchy(id, domainID string, pm PageMetadata, token string) (
 }
 
 func (sdk mgSDK) CreateGroupRole(id, domainID string, rq RoleReq, token string) (Role, errors.SDKError) {
-	return sdk.createRole(sdk.groupsURL, groupsEndpoint, id, domainID, rq, token)
+	return sdk.createRole(sdk.groupsURL+versionPrefix, groupsEndpoint, id, domainID, rq, token)
 }
 
 func (sdk mgSDK) GroupRoles(id, domainID string, pm PageMetadata, token string) (RolesPage, errors.SDKError) {
-	return sdk.listRoles(sdk.groupsURL, groupsEndpoint, id, domainID, pm, token)
+	return sdk.listRoles(sdk.groupsURL+versionPrefix, groupsEndpoint, id, domainID, pm, token)
 }
 
 func (sdk mgSDK) GroupRole(id, roleID, domainID, token string) (Role, errors.SDKError) {
-	return sdk.viewRole(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, token)
+	return sdk.viewRole(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, token)
 }
 
 func (sdk mgSDK) UpdateGroupRole(id, roleID, newName, domainID string, token string) (Role, errors.SDKError) {
-	return sdk.updateRole(sdk.groupsURL, groupsEndpoint, id, roleID, newName, domainID, token)
+	return sdk.updateRole(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, newName, domainID, token)
 }
 
 func (sdk mgSDK) DeleteGroupRole(id, roleID, domainID, token string) errors.SDKError {
-	return sdk.deleteRole(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, token)
+	return sdk.deleteRole(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, token)
 }
 
 func (sdk mgSDK) AddGroupRoleActions(id, roleID, domainID string, actions []string, token string) ([]string, errors.SDKError) {
-	return sdk.addRoleActions(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, actions, token)
+	return sdk.addRoleActions(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, actions, token)
 }
 
 func (sdk mgSDK) GroupRoleActions(id, roleID, domainID string, token string) ([]string, errors.SDKError) {
-	return sdk.listRoleActions(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, token)
+	return sdk.listRoleActions(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, token)
 }
 
 func (sdk mgSDK) RemoveGroupRoleActions(id, roleID, domainID string, actions []string, token string) errors.SDKError {
-	return sdk.removeRoleActions(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, actions, token)
+	return sdk.removeRoleActions(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, actions, token)
 }
 
 func (sdk mgSDK) RemoveAllGroupRoleActions(id, roleID, domainID, token string) errors.SDKError {
-	return sdk.removeAllRoleActions(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, token)
+	return sdk.removeAllRoleActions(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, token)
 }
 
 func (sdk mgSDK) AddGroupRoleMembers(id, roleID, domainID string, members []string, token string) ([]string, errors.SDKError) {
-	return sdk.addRoleMembers(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, members, token)
+	return sdk.addRoleMembers(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, members, token)
 }
 
 func (sdk mgSDK) GroupRoleMembers(id, roleID, domainID string, pm PageMetadata, token string) (RoleMembersPage, errors.SDKError) {
-	return sdk.listRoleMembers(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, pm, token)
+	return sdk.listRoleMembers(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, pm, token)
 }
 
 func (sdk mgSDK) RemoveGroupRoleMembers(id, roleID, domainID string, members []string, token string) errors.SDKError {
-	return sdk.removeRoleMembers(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, members, token)
+	return sdk.removeRoleMembers(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, members, token)
 }
 
 func (sdk mgSDK) RemoveAllGroupRoleMembers(id, roleID, domainID, token string) errors.SDKError {
-	return sdk.removeAllRoleMembers(sdk.groupsURL, groupsEndpoint, id, roleID, domainID, token)
+	return sdk.removeAllRoleMembers(sdk.groupsURL+versionPrefix, groupsEndpoint, id, roleID, domainID, token)
 }
 
 func (sdk mgSDK) AvailableGroupRoleActions(domainID, token string) ([]string, errors.SDKError) {
-	return sdk.listAvailableRoleActions(sdk.groupsURL, groupsEndpoint, domainID, token)
+	return sdk.listAvailableRoleActions(sdk.groupsURL+versionPrefix, groupsEndpoint, domainID, token)
 }

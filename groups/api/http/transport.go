@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+const versionPrefix = "/v1"
+
 // MakeHandler returns a HTTP handler for Groups API endpoints.
 func MakeHandler(svc groups.Service, authn authn.Authentication, mux *chi.Mux, logger *slog.Logger, instanceID string) *chi.Mux {
 	opts := []kithttp.ServerOption{
@@ -25,7 +27,7 @@ func MakeHandler(svc groups.Service, authn authn.Authentication, mux *chi.Mux, l
 	}
 	d := roleManagerHttp.NewDecoder("groupID")
 
-	mux.Route("/{domainID}/groups", func(r chi.Router) {
+	mux.Route(versionPrefix+"/{domainID}/groups", func(r chi.Router) {
 		r.Use(api.AuthenticateMiddleware(authn, true))
 		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 			CreateGroupEndpoint(svc),
@@ -135,8 +137,8 @@ func MakeHandler(svc groups.Service, authn authn.Authentication, mux *chi.Mux, l
 		})
 	})
 
-	mux.Get("/health", supermq.Health("groups", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("groups", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

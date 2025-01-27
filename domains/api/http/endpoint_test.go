@@ -30,6 +30,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	contentType     = "application/json"
+	refreshDuration = 24 * time.Hour
+	invalidDuration = 7 * 24 * time.Hour
+	versionPrefix   = "/v1"
+)
+
 var (
 	validMetadata = domains.Metadata{"role": "client"}
 	ID            = testsutil.GenerateUUID(&testing.T{})
@@ -45,12 +52,6 @@ var (
 	inValidToken = "invalid"
 	invalid      = "invalid"
 	userID       = testsutil.GenerateUUID(&testing.T{})
-)
-
-const (
-	contentType     = "application/json"
-	refreshDuration = 24 * time.Hour
-	invalidDuration = 7 * 24 * time.Hour
 )
 
 type testRequest struct {
@@ -229,7 +230,7 @@ func TestCreateDomain(t *testing.T) {
 			req := testRequest{
 				client:      ds.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/domains", ds.URL),
+				url:         fmt.Sprintf("%s/domains", ds.URL+versionPrefix),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -591,7 +592,7 @@ func TestListDomains(t *testing.T) {
 			req := testRequest{
 				client: ds.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/domains?", ds.URL) + tc.query,
+				url:    fmt.Sprintf("%s/domains?", ds.URL+versionPrefix) + tc.query,
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -660,7 +661,7 @@ func TestViewDomain(t *testing.T) {
 			req := testRequest{
 				client: ds.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/domains/%s", ds.URL, tc.domainID),
+				url:    fmt.Sprintf("%s/domains/%s", ds.URL+versionPrefix, tc.domainID),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -811,7 +812,7 @@ func TestUpdateDomain(t *testing.T) {
 			req := testRequest{
 				client:      ds.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/domains/%s", ds.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/domains/%s", ds.URL+versionPrefix, tc.domainID),
 				body:        strings.NewReader(data),
 				contentType: tc.contentType,
 				token:       tc.token,
@@ -898,7 +899,7 @@ func TestEnableDomain(t *testing.T) {
 			req := testRequest{
 				client:      ds.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/domains/%s/enable", ds.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/domains/%s/enable", ds.URL+versionPrefix, tc.domainID),
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -976,7 +977,7 @@ func TestDisableDomain(t *testing.T) {
 			req := testRequest{
 				client:      ds.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/domains/%s/disable", ds.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/domains/%s/disable", ds.URL+versionPrefix, tc.domainID),
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -1054,7 +1055,7 @@ func TestFreezeDomain(t *testing.T) {
 			req := testRequest{
 				client:      ds.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/domains/%s/freeze", ds.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/domains/%s/freeze", ds.URL+versionPrefix, tc.domainID),
 				contentType: contentType,
 				token:       tc.token,
 			}

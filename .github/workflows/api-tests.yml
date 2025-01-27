@@ -23,20 +23,20 @@ on:
 
 env:
   TOKENS_URL: http://localhost:9002/users/tokens/issue
-  CREATE_DOMAINS_URL: http://localhost:9003/domains
+  CREATE_DOMAINS_URL: http://localhost:9003/v1/domains
   USER_IDENTITY: admin@example.com
   USER_SECRET: 12345678
   DOMAIN_NAME: demo-test
-  USERS_URL: http://localhost:9002
-  DOMAIN_URL: http://localhost:9003
-  CLIENTS_URL: http://localhost:9006
-  CHANNELS_URL: http://localhost:9005
-  GROUPS_URL: http://localhost:9004
+  USERS_URL: http://localhost:9002/v1
+  DOMAIN_URL: http://localhost:9003/v1
+  CLIENTS_URL: http://localhost:9006/v1
+  CHANNELS_URL: http://localhost:9005/v1
+  GROUPS_URL: http://localhost:9004/v1
   HTTP_ADAPTER_URL: http://localhost:8008
-  INVITATIONS_URL: http://localhost:9020
-  AUTH_URL: http://localhost:9001
-  CERTS_URL: http://localhost:9019
-  JOURNAL_URL: http://localhost:9021
+  INVITATIONS_URL: http://localhost:9020/v1
+  AUTH_URL: http://localhost:9001/v1
+  CERTS_URL: http://localhost:9019/v1
+  JOURNAL_URL: http://localhost:9021/v1
 
 jobs:
   api-test:

@@ -23,11 +23,12 @@ import (
 )
 
 const (
-	userIDKey    = "user_id"
-	domainIDKey  = "domain_id"
-	invitedByKey = "invited_by"
-	relationKey  = "relation"
-	stateKey     = "state"
+	userIDKey     = "user_id"
+	domainIDKey   = "domain_id"
+	invitedByKey  = "invited_by"
+	relationKey   = "relation"
+	stateKey      = "state"
+	versionPrefix = "/v1"
 )
 
 func MakeHandler(svc invitations.Service, logger *slog.Logger, authn smqauthn.Authentication, instanceID string) http.Handler {
@@ -40,7 +41,7 @@ func MakeHandler(svc invitations.Service, logger *slog.Logger, authn smqauthn.Au
 	mux.Group(func(r chi.Router) {
 		r.Use(api.AuthenticateMiddleware(authn, false))
 
-		r.Route("/invitations", func(r chi.Router) {
+		r.Route(versionPrefix+"/invitations", func(r chi.Router) {
 			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 				sendInvitationEndpoint(svc),
 				decodeSendInvitationReq,
@@ -82,8 +83,8 @@ func MakeHandler(svc invitations.Service, logger *slog.Logger, authn smqauthn.Au
 		})
 	})
 
-	mux.Get("/health", supermq.Health("invitations", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("invitations", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

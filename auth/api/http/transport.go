@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const versionPrefix = "/v1"
+
 // MakeHandler returns a HTTP handler for API endpoints.
 func MakeHandler(svc auth.Service, logger *slog.Logger, instanceID string) http.Handler {
 	mux := chi.NewRouter()
@@ -21,8 +23,8 @@ func MakeHandler(svc auth.Service, logger *slog.Logger, instanceID string) http.
 	mux = keys.MakeHandler(svc, mux, logger)
 	mux = pats.MakeHandler(svc, mux, logger)
 
-	mux.Get("/health", supermq.Health("auth", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health("auth", instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

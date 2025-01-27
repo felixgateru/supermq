@@ -30,7 +30,7 @@ func (sdk mgSDK) CreateToken(lt Login) (Token, errors.SDKError) {
 		return Token{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL, usersEndpoint, issueTokenEndpoint)
+	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, issueTokenEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, "", data, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -45,7 +45,7 @@ func (sdk mgSDK) CreateToken(lt Login) (Token, errors.SDKError) {
 }
 
 func (sdk mgSDK) RefreshToken(token string) (Token, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL, usersEndpoint, refreshTokenEndpoint)
+	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, refreshTokenEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, nil, nil, http.StatusCreated)
 	if sdkerr != nil {

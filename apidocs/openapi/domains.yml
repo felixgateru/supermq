@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9003
-  - url: https://localhost:9003
+  - url: http://localhost:9003/v1
+  - url: https://localhost:9003/v1
 
 tags:
   - name: Domains
@@ -28,8 +28,8 @@ tags:
   - name: Roles
     description: All operations involving roles for clients
     externalDocs:
-       description: Find out more about roles
-       url: https://docs.supermq.abstractmachines.fr/
+      description: Find out more about roles
+      url: https://docs.supermq.abstractmachines.fr/
   - name: Health
     description: Service health check endpoint.
     externalDocs:
@@ -242,7 +242,7 @@ paths:
         - bearerAuth: []
       responses:
         "201":
-            $ref: "./schemas/roles.yml#/components/responses/CreateRoleRes"
+          $ref: "./schemas/roles.yml#/components/responses/CreateRoleRes"
         "400":
           description: Failed due to malformed domain's ID.
         "401":

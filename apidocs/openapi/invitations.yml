@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9020
-  - url: https://localhost:9020
+  - url: http://localhost:9020/v1
+  - url: https://localhost:9020/v1
 
 tags:
   - name: Invitations
@@ -201,7 +201,6 @@ paths:
   /health:
     get:
       summary: Retrieves service health check info.
-      tags:
         - health
       security: []
       responses:

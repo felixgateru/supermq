@@ -16,8 +16,8 @@ info:
   version: 0.15.1
 
 servers:
-  - url: http://localhost:9019
-  - url: https://localhost:9019
+  - url: http://localhost:9019/v1
+  - url: https://localhost:9019/v1
 
 tags:
   - name: certs

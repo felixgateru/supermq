@@ -22,13 +22,14 @@ import (
 )
 
 const (
-	contentType = "application/json"
-	offsetKey   = "offset"
-	limitKey    = "limit"
-	revokeKey   = "revoked"
-	defRevoke   = "false"
-	defOffset   = 0
-	defLimit    = 10
+	contentType   = "application/json"
+	offsetKey     = "offset"
+	limitKey      = "limit"
+	revokeKey     = "revoked"
+	defRevoke     = "false"
+	defOffset     = 0
+	defLimit      = 10
+	versionPrefix = "/v1"
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
@@ -41,7 +42,7 @@ func MakeHandler(svc certs.Service, authn smqauthn.Authentication, logger *slog.
 
 	r.Group(func(r chi.Router) {
 		r.Use(api.AuthenticateMiddleware(authn, true))
-		r.Route("/{domainID}", func(r chi.Router) {
+		r.Route(versionPrefix+"/{domainID}", func(r chi.Router) {
 			r.Route("/certs", func(r chi.Router) {
 				r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
 					issueCert(svc),
@@ -70,8 +71,8 @@ func MakeHandler(svc certs.Service, authn smqauthn.Authentication, logger *slog.
 			), "list_serials").ServeHTTP)
 		})
 	})
-	r.Handle("/metrics", promhttp.Handler())
-	r.Get("/health", supermq.Health("certs", instanceID))
+	r.Handle(versionPrefix+"/metrics", promhttp.Handler())
+	r.Get(versionPrefix+"/health", supermq.Health("certs", instanceID))
 
 	return r
 }

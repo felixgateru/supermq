@@ -168,7 +168,7 @@ func TestCreateChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/", gs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/channels/", gs.URL+versionPrefix, tc.domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -304,7 +304,7 @@ func TestCreateChannelsEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/bulk", gs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/channels/bulk", gs.URL+versionPrefix, tc.domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -403,7 +403,7 @@ func TestViewChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/channels/%s", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/channels/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -709,7 +709,7 @@ func TestListChannels(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodGet,
-				url:         gs.URL + "/" + tc.domainID + "/channels?" + tc.query,
+				url:         gs.URL + versionPrefix + "/" + tc.domainID + "/channels?" + tc.query,
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -851,7 +851,7 @@ func TestUpdateChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/%s/channels/%s", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/channels/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -991,7 +991,7 @@ func TestUpdateChannelTagsEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/%s/channels/%s/tags", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/channels/%s/tags", gs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1133,7 +1133,7 @@ func TestSetChannelParentGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/channels/%s/parent", gs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1223,7 +1223,7 @@ func TestRemoveChannelParentGroupEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/channels/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/channels/%s/parent", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1319,7 +1319,7 @@ func TestEnableChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodPost,
-				url:    fmt.Sprintf("%s/%s/channels/%s/enable", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/channels/%s/enable", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1422,7 +1422,7 @@ func TestDisableChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodPost,
-				url:    fmt.Sprintf("%s/%s/channels/%s/disable", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/channels/%s/disable", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {
@@ -1529,7 +1529,7 @@ func TestConnectChannelClientEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/%s/connect", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/channels/%s/connect", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
@@ -1631,7 +1631,7 @@ func TestDisconnectChannelClientEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/%s/disconnect", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/channels/%s/disconnect", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
@@ -1757,7 +1757,7 @@ func TestConnectEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/connect", gs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/channels/connect", gs.URL+versionPrefix, tc.domainID),
 				token:       tc.token,
 				contentType: contentType,
 				body: strings.NewReader(toJSON(map[string]interface{}{
@@ -1887,7 +1887,7 @@ func TestDisconnectEndpoint(t *testing.T) {
 			req := testRequest{
 				client:      gs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/channels/disconnect", gs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/channels/disconnect", gs.URL+versionPrefix, tc.domainID),
 				token:       tc.token,
 				contentType: contentType,
 				body: strings.NewReader(toJSON(map[string]interface{}{
@@ -1976,7 +1976,7 @@ func TestDeleteChannelEndpoint(t *testing.T) {
 			req := testRequest{
 				client: gs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/channels/%s", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/channels/%s", gs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {

@@ -149,6 +149,7 @@ func TestSendMessage(t *testing.T) {
 			svcCall := pub.On("Publish", mock.Anything, channelID, mock.Anything).Return(tc.svcErr)
 			err := mgsdk.SendMessage(tc.chanName, tc.msg, tc.clientKey)
 			assert.Equal(t, tc.err, err)
+			fmt.Println(err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Publish", mock.Anything, channelID, mock.Anything)
 				assert.True(t, ok)

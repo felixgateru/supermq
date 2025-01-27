@@ -38,7 +38,7 @@ func (sdk mgSDK) CreateChannel(c Channel, domainID, token string) (Channel, erro
 	if err != nil {
 		return Channel{}, errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint)
+	url := fmt.Sprintf("%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -59,7 +59,7 @@ func (sdk mgSDK) CreateChannels(channels []Channel, domainID, token string) ([]C
 		return []Channel{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, "bulk")
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, "bulk")
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -76,7 +76,7 @@ func (sdk mgSDK) CreateChannels(channels []Channel, domainID, token string) ([]C
 
 func (sdk mgSDK) Channels(pm PageMetadata, domainID, token string) (ChannelsPage, errors.SDKError) {
 	endpoint := fmt.Sprintf("%s/%s", domainID, channelsEndpoint)
-	url, err := sdk.withQueryParams(sdk.channelsURL, endpoint, pm)
+	url, err := sdk.withQueryParams(sdk.channelsURL+versionPrefix, endpoint, pm)
 	if err != nil {
 		return ChannelsPage{}, errors.NewSDKError(err)
 	}
@@ -98,7 +98,7 @@ func (sdk mgSDK) Channel(id, domainID, token string) (Channel, errors.SDKError) 
 	if id == "" {
 		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, id)
 
 	_, body, err := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if err != nil {
@@ -117,7 +117,7 @@ func (sdk mgSDK) UpdateChannel(c Channel, domainID, token string) (Channel, erro
 	if c.ID == "" {
 		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, c.ID)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, c.ID)
 
 	data, err := json.Marshal(c)
 	if err != nil {
@@ -141,7 +141,7 @@ func (sdk mgSDK) UpdateChannelTags(c Channel, domainID, token string) (Channel, 
 	if c.ID == "" {
 		return Channel{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/tags", sdk.channelsURL, domainID, channelsEndpoint, c.ID)
+	url := fmt.Sprintf("%s/%s/%s/%s/tags", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, c.ID)
 
 	data, err := json.Marshal(c)
 	if err != nil {
@@ -167,7 +167,7 @@ func (sdk mgSDK) Connect(conn Connection, domainID, token string) errors.SDKErro
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, connectEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, connectEndpoint)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 
@@ -180,7 +180,7 @@ func (sdk mgSDK) Disconnect(conn Connection, domainID, token string) errors.SDKE
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, disconnectEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, disconnectEndpoint)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusNoContent)
 
@@ -196,7 +196,7 @@ func (sdk mgSDK) ConnectClients(channelID string, clientIDs, connTypes []string,
 	if err != nil {
 		return errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, channelID, connectEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, channelID, connectEndpoint)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 
@@ -212,7 +212,7 @@ func (sdk mgSDK) DisconnectClients(channelID string, clientIDs, connTypes []stri
 	if err != nil {
 		return errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, channelID, disconnectEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, channelID, disconnectEndpoint)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusNoContent)
 
@@ -231,13 +231,13 @@ func (sdk mgSDK) DeleteChannel(id, domainID, token string) errors.SDKError {
 	if id == "" {
 		return errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, id)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 	return sdkerr
 }
 
 func (sdk mgSDK) changeChannelStatus(id, status, domainID, token string) (Channel, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, id, status)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, id, status)
 
 	_, body, err := sdk.processRequest(http.MethodPost, url, token, nil, nil, http.StatusOK)
 	if err != nil {
@@ -258,7 +258,7 @@ func (sdk mgSDK) SetChannelParent(id, domainID, groupID, token string) errors.SD
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, id, parentEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, id, parentEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusOK)
 
 	return sdkerr
@@ -271,7 +271,7 @@ func (sdk mgSDK) RemoveChannelParent(id, domainID, groupID, token string) errors
 		return errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL, domainID, channelsEndpoint, id, parentEndpoint)
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", sdk.channelsURL+versionPrefix, domainID, channelsEndpoint, id, parentEndpoint)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, data, nil, http.StatusNoContent)
 
 	return sdkerr

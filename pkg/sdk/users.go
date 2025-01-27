@@ -47,7 +47,7 @@ func (sdk mgSDK) CreateUser(user User, token string) (User, errors.SDKError) {
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s", sdk.usersURL, usersEndpoint)
+	url := fmt.Sprintf("%s/%s", sdk.usersURL+versionPrefix, usersEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 	if sdkerr != nil {
@@ -63,7 +63,7 @@ func (sdk mgSDK) CreateUser(user User, token string) (User, errors.SDKError) {
 }
 
 func (sdk mgSDK) Users(pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, usersEndpoint, pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, usersEndpoint, pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}
@@ -82,7 +82,7 @@ func (sdk mgSDK) Users(pm PageMetadata, token string) (UsersPage, errors.SDKErro
 }
 
 func (sdk mgSDK) Members(groupID, domainID string, pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, fmt.Sprintf("%s/%s/%s/%s", domainID, groupsEndpoint, groupID, usersEndpoint), pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, fmt.Sprintf("%s/%s/%s/%s", domainID, groupsEndpoint, groupID, usersEndpoint), pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}
@@ -104,7 +104,7 @@ func (sdk mgSDK) User(id, token string) (User, errors.SDKError) {
 	if id == "" {
 		return User{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL, usersEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, id)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -120,7 +120,7 @@ func (sdk mgSDK) User(id, token string) (User, errors.SDKError) {
 }
 
 func (sdk mgSDK) UserProfile(token string) (User, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/profile", sdk.usersURL, usersEndpoint)
+	url := fmt.Sprintf("%s/%s/profile", sdk.usersURL+versionPrefix, usersEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -139,7 +139,7 @@ func (sdk mgSDK) UpdateUser(user User, token string) (User, errors.SDKError) {
 	if user.ID == "" {
 		return User{}, errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	data, err := json.Marshal(user)
 	if err != nil {
@@ -165,7 +165,7 @@ func (sdk mgSDK) UpdateUserTags(user User, token string) (User, errors.SDKError)
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/tags", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s/tags", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -188,7 +188,7 @@ func (sdk mgSDK) UpdateUserEmail(user User, token string) (User, errors.SDKError
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/email", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s/email", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -210,7 +210,7 @@ func (sdk mgSDK) ResetPasswordRequest(email string) errors.SDKError {
 	if err != nil {
 		return errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/reset-request", sdk.usersURL, PasswordResetEndpoint)
+	url := fmt.Sprintf("%s/%s/reset-request", sdk.usersURL+versionPrefix, PasswordResetEndpoint)
 
 	header := make(map[string]string)
 	header["Referer"] = sdk.HostURL
@@ -227,7 +227,7 @@ func (sdk mgSDK) ResetPassword(password, confPass, token string) errors.SDKError
 	if err != nil {
 		return errors.NewSDKError(err)
 	}
-	url := fmt.Sprintf("%s/%s/reset", sdk.usersURL, PasswordResetEndpoint)
+	url := fmt.Sprintf("%s/%s/reset", sdk.usersURL+versionPrefix, PasswordResetEndpoint)
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPut, url, token, data, nil, http.StatusCreated)
 
@@ -242,7 +242,7 @@ func (sdk mgSDK) UpdatePassword(oldPass, newPass, token string) (User, errors.SD
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/secret", sdk.usersURL, usersEndpoint)
+	url := fmt.Sprintf("%s/%s/secret", sdk.usersURL+versionPrefix, usersEndpoint)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -263,7 +263,7 @@ func (sdk mgSDK) UpdateUserRole(user User, token string) (User, errors.SDKError)
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/role", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s/role", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -285,7 +285,7 @@ func (sdk mgSDK) UpdateUsername(user User, token string) (User, errors.SDKError)
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/username", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s/username", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -306,7 +306,7 @@ func (sdk mgSDK) UpdateProfilePicture(user User, token string) (User, errors.SDK
 		return User{}, errors.NewSDKError(err)
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/picture", sdk.usersURL, usersEndpoint, user.ID)
+	url := fmt.Sprintf("%s/%s/%s/picture", sdk.usersURL+versionPrefix, usersEndpoint, user.ID)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPatch, url, token, data, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -322,7 +322,7 @@ func (sdk mgSDK) UpdateProfilePicture(user User, token string) (User, errors.SDK
 }
 
 func (sdk mgSDK) SearchUsers(pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, fmt.Sprintf("%s/search", usersEndpoint), pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, fmt.Sprintf("%s/search", usersEndpoint), pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}
@@ -349,7 +349,7 @@ func (sdk mgSDK) DisableUser(id, token string) (User, errors.SDKError) {
 }
 
 func (sdk mgSDK) changeUserStatus(token, id, status string) (User, errors.SDKError) {
-	url := fmt.Sprintf("%s/%s/%s/%s", sdk.usersURL, usersEndpoint, id, status)
+	url := fmt.Sprintf("%s/%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, id, status)
 
 	_, body, sdkerr := sdk.processRequest(http.MethodPost, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -368,13 +368,13 @@ func (sdk mgSDK) DeleteUser(id, token string) errors.SDKError {
 	if id == "" {
 		return errors.NewSDKError(apiutil.ErrMissingID)
 	}
-	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL, usersEndpoint, id)
+	url := fmt.Sprintf("%s/%s/%s", sdk.usersURL+versionPrefix, usersEndpoint, id)
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 	return sdkerr
 }
 
 func (sdk mgSDK) ListClientUsers(clientID, domainID string, pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, fmt.Sprintf("%s/%s/%s/%s", domainID, clientsEndpoint, clientID, usersEndpoint), pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, fmt.Sprintf("%s/%s/%s/%s", domainID, clientsEndpoint, clientID, usersEndpoint), pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}
@@ -392,7 +392,7 @@ func (sdk mgSDK) ListClientUsers(clientID, domainID string, pm PageMetadata, tok
 }
 
 func (sdk mgSDK) ListDomainUsers(domainID string, pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, fmt.Sprintf("%s/%s", domainID, usersEndpoint), pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, fmt.Sprintf("%s/%s", domainID, usersEndpoint), pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}
@@ -409,7 +409,7 @@ func (sdk mgSDK) ListDomainUsers(domainID string, pm PageMetadata, token string)
 }
 
 func (sdk mgSDK) ListChannelUsers(channelID, domainID string, pm PageMetadata, token string) (UsersPage, errors.SDKError) {
-	url, err := sdk.withQueryParams(sdk.usersURL, fmt.Sprintf("%s/%s/%s/%s", domainID, channelsEndpoint, channelID, usersEndpoint), pm)
+	url, err := sdk.withQueryParams(sdk.usersURL+versionPrefix, fmt.Sprintf("%s/%s/%s/%s", domainID, channelsEndpoint, channelID, usersEndpoint), pm)
 	if err != nil {
 		return UsersPage{}, errors.NewSDKError(err)
 	}

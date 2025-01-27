@@ -18,14 +18,17 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 )
 
-const contentType = "application/json"
+const (
+	contentType   = "application/json"
+	versionPrefix = "/v1"
+)
 
 // MakeHandler returns a HTTP handler for API endpoints.
 func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger) *chi.Mux {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
-	mux.Route("/keys", func(r chi.Router) {
+	mux.Route(versionPrefix+"/keys", func(r chi.Router) {
 		r.Post("/", kithttp.NewServer(
 			issueEndpoint(svc),
 			decodeIssue,

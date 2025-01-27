@@ -31,6 +31,7 @@ const (
 	metadataKey   = "with_metadata"
 	entityIDKey   = "id"
 	entityTypeKey = "entity_type"
+	versionPrefix = "/v1"
 )
 
 // MakeHandler returns a HTTP API handler with health check and metrics.
@@ -41,33 +42,35 @@ func MakeHandler(svc journal.Service, authn smqauthn.Authentication, logger *slo
 
 	mux := chi.NewRouter()
 
-	mux.With(api.AuthenticateMiddleware(authn, false)).Get("/journal/user/{userID}", otelhttp.NewHandler(kithttp.NewServer(
-		retrieveJournalsEndpoint(svc),
-		decodeRetrieveUserJournalReq,
-		api.EncodeResponse,
-		opts...,
-	), "list_user_journals").ServeHTTP)
-
-	mux.Route("/{domainID}/journal", func(r chi.Router) {
-		r.Use(api.AuthenticateMiddleware(authn, true))
-
-		r.Get("/{entityType}/{entityID}", otelhttp.NewHandler(kithttp.NewServer(
+	mux.Route(versionPrefix, func(r chi.Router) {
+		r.With(api.AuthenticateMiddleware(authn, false)).Get("/journal/user/{userID}", otelhttp.NewHandler(kithttp.NewServer(
 			retrieveJournalsEndpoint(svc),
-			decodeRetrieveEntityJournalReq,
+			decodeRetrieveUserJournalReq,
 			api.EncodeResponse,
 			opts...,
-		), "list__entity_journals").ServeHTTP)
+		), "list_user_journals").ServeHTTP)
 
-		r.Get("/client/{clientID}/telemetry", otelhttp.NewHandler(kithttp.NewServer(
-			retrieveClientTelemetryEndpoint(svc),
-			decodeRetrieveClientTelemetryReq,
-			api.EncodeResponse,
-			opts...,
-		), "view_client_telemetry").ServeHTTP)
+		r.Route("/{domainID}/journal", func(r chi.Router) {
+			r.Use(api.AuthenticateMiddleware(authn, true))
+
+			r.Get("/{entityType}/{entityID}", otelhttp.NewHandler(kithttp.NewServer(
+				retrieveJournalsEndpoint(svc),
+				decodeRetrieveEntityJournalReq,
+				api.EncodeResponse,
+				opts...,
+			), "list__entity_journals").ServeHTTP)
+
+			r.Get("/client/{clientID}/telemetry", otelhttp.NewHandler(kithttp.NewServer(
+				retrieveClientTelemetryEndpoint(svc),
+				decodeRetrieveClientTelemetryReq,
+				api.EncodeResponse,
+				opts...,
+			), "view_client_telemetry").ServeHTTP)
+		})
 	})
 
-	mux.Get("/health", supermq.Health(svcName, instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
+	mux.Get(versionPrefix+"/health", supermq.Health(svcName, instanceID))
+	mux.Handle(versionPrefix+"/metrics", promhttp.Handler())
 
 	return mux
 }

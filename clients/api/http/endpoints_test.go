@@ -30,8 +30,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	contentType   = "application/json"
+	validToken    = "token"
+	inValidToken  = "invalid"
+	inValid       = "invalid"
+	secret        = "strongsecret"
+	versionPrefix = "/v1"
+)
+
 var (
-	secret         = "strongsecret"
 	validCMetadata = clients.Metadata{"role": "client"}
 	ID             = testsutil.GenerateUUID(&testing.T{})
 	client         = clients.Client{
@@ -42,15 +50,11 @@ var (
 		Metadata:    validCMetadata,
 		Status:      clients.EnabledStatus,
 	}
-	validToken   = "token"
-	inValidToken = "invalid"
-	inValid      = "invalid"
-	validID      = testsutil.GenerateUUID(&testing.T{})
-	domainID     = testsutil.GenerateUUID(&testing.T{})
-	namesgen     = namegenerator.NewGenerator()
-)
 
-const contentType = "application/json"
+	validID  = testsutil.GenerateUUID(&testing.T{})
+	domainID = testsutil.GenerateUUID(&testing.T{})
+	namesgen = namegenerator.NewGenerator()
+)
 
 type testRequest struct {
 	client      *http.Client
@@ -100,8 +104,8 @@ func newClientsServer() (*httptest.Server, *mocks.Service, *authnmocks.Authentic
 }
 
 func TestCreateClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc        string
@@ -217,9 +221,9 @@ func TestCreateClient(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			data := toJSON(tc.client)
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/clients/", ts.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/clients/", cs.URL+versionPrefix, tc.domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -244,8 +248,8 @@ func TestCreateClient(t *testing.T) {
 }
 
 func TestCreateClients(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	num := 3
 	var items []clients.Client
@@ -387,9 +391,9 @@ func TestCreateClients(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			data := toJSON(tc.client)
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/clients/bulk", ts.URL, domainID),
+				url:         fmt.Sprintf("%s/%s/clients/bulk", cs.URL+versionPrefix, domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -416,8 +420,8 @@ func TestCreateClients(t *testing.T) {
 }
 
 func TestListClients(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc                string
@@ -735,9 +739,9 @@ func TestListClients(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodGet,
-				url:         ts.URL + "/" + tc.domainID + "/clients?" + tc.query,
+				url:         cs.URL + versionPrefix + "/" + tc.domainID + "/clients?" + tc.query,
 				contentType: contentType,
 				token:       tc.token,
 			}
@@ -762,8 +766,8 @@ func TestListClients(t *testing.T) {
 }
 
 func TestViewClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc     string
@@ -817,9 +821,9 @@ func TestViewClient(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client: ts.Client(),
+				client: cs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/clients/%s", ts.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/clients/%s", cs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 
@@ -842,8 +846,8 @@ func TestViewClient(t *testing.T) {
 }
 
 func TestUpdateClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	newName := "newname"
 	newTag := "newtag"
@@ -954,9 +958,9 @@ func TestUpdateClient(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/%s/clients/%s", ts.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/clients/%s", cs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -986,8 +990,8 @@ func TestUpdateClient(t *testing.T) {
 }
 
 func TestUpdateClientsTags(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	newTag := "newtag"
 
@@ -1093,9 +1097,9 @@ func TestUpdateClientsTags(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/%s/clients/%s/tags", ts.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/clients/%s/tags", cs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1120,8 +1124,8 @@ func TestUpdateClientsTags(t *testing.T) {
 }
 
 func TestUpdateClientSecret(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc        string
@@ -1261,9 +1265,9 @@ func TestUpdateClientSecret(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPatch,
-				url:         fmt.Sprintf("%s/%s/clients/%s/secret", ts.URL, tc.domainID, tc.client.ID),
+				url:         fmt.Sprintf("%s/%s/clients/%s/secret", cs.URL+versionPrefix, tc.domainID, tc.client.ID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1288,8 +1292,8 @@ func TestUpdateClientSecret(t *testing.T) {
 }
 
 func TestEnableClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc     string
@@ -1343,9 +1347,9 @@ func TestEnableClient(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			data := toJSON(tc.client)
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/clients/%s/enable", ts.URL, tc.domainID, tc.client.ID),
+				url:         fmt.Sprintf("%s/%s/clients/%s/enable", cs.URL+versionPrefix, tc.domainID, tc.client.ID),
 				contentType: contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -1373,8 +1377,8 @@ func TestEnableClient(t *testing.T) {
 }
 
 func TestDisableClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc     string
@@ -1428,9 +1432,9 @@ func TestDisableClient(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			data := toJSON(tc.client)
 			req := testRequest{
-				client:      ts.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/clients/%s/disable", ts.URL, tc.domainID, tc.client.ID),
+				url:         fmt.Sprintf("%s/%s/clients/%s/disable", cs.URL+versionPrefix, tc.domainID, tc.client.ID),
 				contentType: contentType,
 				token:       tc.token,
 				body:        strings.NewReader(data),
@@ -1458,8 +1462,8 @@ func TestDisableClient(t *testing.T) {
 }
 
 func TestDeleteClient(t *testing.T) {
-	ts, svc, authn := newClientsServer()
-	defer ts.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc     string
@@ -1514,9 +1518,9 @@ func TestDeleteClient(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client: ts.Client(),
+				client: cs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/clients/%s", ts.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/clients/%s", cs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 
@@ -1532,8 +1536,8 @@ func TestDeleteClient(t *testing.T) {
 }
 
 func TestSetClientParentGroupEndpoint(t *testing.T) {
-	gs, svc, authn := newClientsServer()
-	defer gs.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc        string
@@ -1645,9 +1649,9 @@ func TestSetClientParentGroupEndpoint(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client:      gs.Client(),
+				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/clients/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:         fmt.Sprintf("%s/%s/clients/%s/parent", cs.URL+versionPrefix, tc.domainID, tc.id),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.data),
@@ -1667,8 +1671,8 @@ func TestSetClientParentGroupEndpoint(t *testing.T) {
 }
 
 func TestRemoveClientParentGroupEndpoint(t *testing.T) {
-	gs, svc, authn := newClientsServer()
-	defer gs.Close()
+	cs, svc, authn := newClientsServer()
+	defer cs.Close()
 
 	cases := []struct {
 		desc     string
@@ -1735,9 +1739,9 @@ func TestRemoveClientParentGroupEndpoint(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			req := testRequest{
-				client: gs.Client(),
+				client: cs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/clients/%s/parent", gs.URL, tc.domainID, tc.id),
+				url:    fmt.Sprintf("%s/%s/clients/%s/parent", cs.URL+versionPrefix, tc.domainID, tc.id),
 				token:  tc.token,
 			}
 			if tc.token == validToken {

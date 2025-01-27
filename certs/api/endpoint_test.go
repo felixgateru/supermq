@@ -27,14 +27,18 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+const (
+	versionPrefix = "/v1"
+	contentType   = "application/json"
+	valid         = "valid"
+	invalid       = "invalid"
+	ttl           = "1h"
+)
+
 var (
-	contentType = "application/json"
-	valid       = "valid"
-	invalid     = "invalid"
-	clientID    = testsutil.GenerateUUID(&testing.T{})
-	serial      = testsutil.GenerateUUID(&testing.T{})
-	ttl         = "1h"
-	cert        = certs.Cert{
+	clientID = testsutil.GenerateUUID(&testing.T{})
+	serial   = testsutil.GenerateUUID(&testing.T{})
+	cert     = certs.Cert{
 		ClientID:     clientID,
 		SerialNumber: serial,
 		ExpiryTime:   time.Now().Add(time.Hour),
@@ -218,7 +222,7 @@ func TestIssueCert(t *testing.T) {
 			req := testRequest{
 				client:      cs.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/certs", cs.URL, tc.domainID),
+				url:         fmt.Sprintf("%s/%s/certs", cs.URL+versionPrefix, tc.domainID),
 				contentType: tc.contentType,
 				token:       tc.token,
 				body:        strings.NewReader(tc.request),
@@ -306,7 +310,7 @@ func TestViewCert(t *testing.T) {
 			req := testRequest{
 				client: cs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/certs/%s", cs.URL, tc.domainID, tc.serialID),
+				url:    fmt.Sprintf("%s/%s/certs/%s", cs.URL+versionPrefix, tc.domainID, tc.serialID),
 				token:  tc.token,
 			}
 			if tc.token == valid {
@@ -399,7 +403,7 @@ func TestRevokeCert(t *testing.T) {
 			req := testRequest{
 				client: cs.Client(),
 				method: http.MethodDelete,
-				url:    fmt.Sprintf("%s/%s/certs/%s", cs.URL, tc.domainID, tc.serialID),
+				url:    fmt.Sprintf("%s/%s/certs/%s", cs.URL+versionPrefix, tc.domainID, tc.serialID),
 				token:  tc.token,
 			}
 			if tc.token == valid {
@@ -642,7 +646,7 @@ func TestListSerials(t *testing.T) {
 			req := testRequest{
 				client: cs.Client(),
 				method: http.MethodGet,
-				url:    fmt.Sprintf("%s/%s/serials/%s", cs.URL, tc.domainID, tc.clientID) + tc.query,
+				url:    fmt.Sprintf("%s/%s/serials/%s", cs.URL+versionPrefix, tc.domainID, tc.clientID) + tc.query,
 				token:  tc.token,
 			}
 			if tc.token == valid {

@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	contentType = "application/json"
-	defInterval = "30d"
-	patPrefix   = "pat_"
+	contentType   = "application/json"
+	defInterval   = "30d"
+	patPrefix     = "pat_"
+	versionPrefix = "/v1"
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
@@ -29,7 +30,7 @@ func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger) *chi.Mux {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
-	mux.Route("/pats", func(r chi.Router) {
+	mux.Route(versionPrefix+"/pats", func(r chi.Router) {
 		r.Post("/", kithttp.NewServer(
 			createPATEndpoint(svc),
 			decodeCreatePATRequest,
