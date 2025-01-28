@@ -25,13 +25,13 @@ import (
 	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/messaging/brokers"
 	brokerstracing "github.com/absmach/supermq/pkg/messaging/brokers/tracing"
+	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/prometheus"
 	"github.com/absmach/supermq/pkg/server"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
 	"github.com/absmach/supermq/pkg/uuid"
 	"github.com/absmach/supermq/ws"
 	httpapi "github.com/absmach/supermq/ws/api"
-	"github.com/absmach/supermq/ws/events"
 	"github.com/absmach/supermq/ws/tracing"
 	"github.com/caarlos0/env/v11"
 	"go.opentelemetry.io/otel/trace"
@@ -145,13 +145,6 @@ func main() {
 	defer authnHandler.Close()
 	logger.Info("authn successfully connected to auth gRPC server " + authnHandler.Secure())
 
-	eventStore, err := events.NewEventStore(ctx, cfg.ESURL, cfg.InstanceID)
-	if err != nil {
-		logger.Error(fmt.Sprintf("failed to create %s event store : %s", svcName, err))
-		exitCode = 1
-		return
-	}
-
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to init Jaeger: %s", err))
@@ -174,6 +167,13 @@ func main() {
 	defer nps.Close()
 	nps = brokerstracing.NewPubSub(targetServerConfig, tracer, nps)
 
+	nps, err = msgevents.NewPubSubMiddleware(ctx, nps, cfg.ESURL)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to create event store middleware: %s", err))
+		exitCode = 1
+		return
+	}
+
 	svc := newService(clientsClient, channelsClient, nps, logger, tracer)
 
 	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerConfig, httpapi.MakeHandler(ctx, svc, logger, cfg.InstanceID), logger)
@@ -187,7 +187,7 @@ func main() {
 		g.Go(func() error {
 			return hs.Start()
 		})
-		handler := ws.NewHandler(nps, eventStore, logger, authn, clientsClient, channelsClient)
+		handler := ws.NewHandler(nps, logger, authn, clientsClient, channelsClient)
 		return proxyWS(ctx, httpServerConfig, targetServerConfig, logger, handler)
 	})
 
