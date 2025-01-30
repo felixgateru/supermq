@@ -52,7 +52,6 @@ var (
 	ErrFailedParseSubtopic          = errors.New("failed to parse subtopic")
 	ErrFailedPublishConnectEvent    = errors.New("failed to publish connect event")
 	ErrFailedSubscribeEvent         = errors.New("failed to publish subscribe event")
-	ErrFailedSubscribeEvent         = errors.New("failed to publish subscribe event")
 	ErrFailedPublishToMsgBroker     = errors.New("failed to publish to supermq message broker")
 )
 
