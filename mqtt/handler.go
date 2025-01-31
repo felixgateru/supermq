@@ -197,6 +197,7 @@ func (h *handler) Subscribe(ctx context.Context, topics *[]string) error {
 		return errors.Wrap(ErrFailedSubscribe, ErrClientNotInitialized)
 	}
 	h.logger.Info(fmt.Sprintf(LogInfoSubscribed, s.ID, strings.Join(*topics, ",")))
+
 	return nil
 }
 
