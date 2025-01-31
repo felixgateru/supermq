@@ -10,22 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/absmach/supermq/invitations"
+	"github.com/absmach/supermq/domains"
 	repoerr "github.com/absmach/supermq/pkg/errors/repository"
 	"github.com/absmach/supermq/pkg/postgres"
 )
 
-type repository struct {
-	db postgres.Database
-}
-
-func NewRepository(db postgres.Database) invitations.Repository {
-	return &repository{db: db}
-}
-
-func (repo *repository) Create(ctx context.Context, invitation invitations.Invitation) (err error) {
-	q := `INSERT INTO invitations (invited_by, user_id, domain_id, token, relation, created_at)
-		VALUES (:invited_by, :user_id, :domain_id, :token, :relation, :created_at)`
+func (repo domainRepo) SaveInvitation(ctx context.Context, invitation domains.Invitation) (err error) {
+	q := `INSERT INTO invitations (invited_by, user_id, domain_id, role_id, role_name, created_at)
+		VALUES (:invited_by, :user_id, :domain_id, :role_id, :role_name, :created_at)`
 
 	dbInv := toDBInvitation(invitation)
 	if _, err = repo.db.NamedExecContext(ctx, q, dbInv); err != nil {
@@ -35,8 +27,8 @@ func (repo *repository) Create(ctx context.Context, invitation invitations.Invit
 	return nil
 }
 
-func (repo *repository) Retrieve(ctx context.Context, userID, domainID string) (invitations.Invitation, error) {
-	q := `SELECT invited_by, user_id, domain_id, token, relation, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE user_id = :user_id AND domain_id = :domain_id;`
+func (repo domainRepo) RetrieveInvitation(ctx context.Context, userID, domainID string) (domains.Invitation, error) {
+	q := `SELECT invited_by, user_id, domain_id, role_id, role_name, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE user_id = :user_id AND domain_id = :domain_id;`
 
 	dbinv := dbInvitation{
 		UserID:   userID,
@@ -44,75 +36,60 @@ func (repo *repository) Retrieve(ctx context.Context, userID, domainID string) (
 	}
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbinv)
 	if err != nil {
-		return invitations.Invitation{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+		return domains.Invitation{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
 	defer rows.Close()
 
 	dbinv = dbInvitation{}
 	if rows.Next() {
 		if err = rows.StructScan(&dbinv); err != nil {
-			return invitations.Invitation{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+			return domains.Invitation{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 		}
 
 		return toInvitation(dbinv), nil
 	}
 
-	return invitations.Invitation{}, repoerr.ErrNotFound
+	return domains.Invitation{}, repoerr.ErrNotFound
 }
 
-func (repo *repository) RetrieveAll(ctx context.Context, page invitations.Page) (invitations.InvitationPage, error) {
-	query := pageQuery(page)
+func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
+	query := pageQuery(pm)
 
-	q := fmt.Sprintf("SELECT invited_by, user_id, domain_id, relation, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
+	q := fmt.Sprintf("SELECT invited_by, user_id, domain_id, role_id, role_name, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
 
-	rows, err := repo.db.NamedQueryContext(ctx, q, page)
+	rows, err := repo.db.NamedQueryContext(ctx, q, pm)
 	if err != nil {
-		return invitations.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+		return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
 	defer rows.Close()
 
-	var items []invitations.Invitation
+	var items []domains.Invitation
 	for rows.Next() {
 		var dbinv dbInvitation
 		if err = rows.StructScan(&dbinv); err != nil {
-			return invitations.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+			return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 		}
 		items = append(items, toInvitation(dbinv))
 	}
 
 	tq := fmt.Sprintf(`SELECT COUNT(*) FROM invitations %s`, query)
 
-	total, err := postgres.Total(ctx, repo.db, tq, page)
+	total, err := postgres.Total(ctx, repo.db, tq, pm)
 	if err != nil {
-		return invitations.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+		return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
 
-	invPage := invitations.InvitationPage{
+	invPage := domains.InvitationPage{
 		Total:       total,
-		Offset:      page.Offset,
-		Limit:       page.Limit,
+		Offset:      pm.Offset,
+		Limit:       pm.Limit,
 		Invitations: items,
 	}
 
 	return invPage, nil
 }
 
-func (repo *repository) UpdateToken(ctx context.Context, invitation invitations.Invitation) (err error) {
-	q := `UPDATE invitations SET token = :token, updated_at = :updated_at WHERE user_id = :user_id AND domain_id = :domain_id`
-
-	dbinv := toDBInvitation(invitation)
-	result, err := repo.db.NamedExecContext(ctx, q, dbinv)
-	if err != nil {
-		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
-	}
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		return repoerr.ErrNotFound
-	}
-
-	return nil
-}
-
-func (repo *repository) UpdateConfirmation(ctx context.Context, invitation invitations.Invitation) (err error) {
+func (repo domainRepo) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) (err error) {
 	q := `UPDATE invitations SET confirmed_at = :confirmed_at, updated_at = :updated_at WHERE user_id = :user_id AND domain_id = :domain_id`
 
 	dbinv := toDBInvitation(invitation)
@@ -127,7 +104,7 @@ func (repo *repository) UpdateConfirmation(ctx context.Context, invitation invit
 	return nil
 }
 
-func (repo *repository) UpdateRejection(ctx context.Context, invitation invitations.Invitation) (err error) {
+func (repo domainRepo) UpdateRejection(ctx context.Context, invitation domains.Invitation) (err error) {
 	q := `UPDATE invitations SET rejected_at = :rejected_at, updated_at = :updated_at WHERE user_id = :user_id AND domain_id = :domain_id`
 
 	dbInv := toDBInvitation(invitation)
@@ -142,7 +119,7 @@ func (repo *repository) UpdateRejection(ctx context.Context, invitation invitati
 	return nil
 }
 
-func (repo *repository) Delete(ctx context.Context, userID, domain string) (err error) {
+func (repo domainRepo) DeleteInvitation(ctx context.Context, userID, domain string) (err error) {
 	q := `DELETE FROM invitations WHERE user_id = $1 AND domain_id = $2`
 
 	result, err := repo.db.ExecContext(ctx, q, userID, domain)
@@ -156,7 +133,7 @@ func (repo *repository) Delete(ctx context.Context, userID, domain string) (err 
 	return nil
 }
 
-func pageQuery(pm invitations.Page) string {
+func pageQuery(pm domains.InvitationPageMeta) string {
 	var query []string
 	var emq string
 	if pm.DomainID != "" {
@@ -168,19 +145,22 @@ func pageQuery(pm invitations.Page) string {
 	if pm.InvitedBy != "" {
 		query = append(query, "invited_by = :invited_by")
 	}
-	if pm.Relation != "" {
-		query = append(query, "relation = :relation")
+	if pm.RoleID != "" {
+		query = append(query, "role_id = :role_id")
+	}
+	if pm.RoleName != "" {
+		query = append(query, "role_name = :role_name")
 	}
 	if pm.InvitedByOrUserID != "" {
 		query = append(query, "(invited_by = :invited_by_or_user_id OR user_id = :invited_by_or_user_id)")
 	}
-	if pm.State == invitations.Accepted {
+	if pm.State == domains.Accepted {
 		query = append(query, "confirmed_at IS NOT NULL")
 	}
-	if pm.State == invitations.Pending {
+	if pm.State == domains.Pending {
 		query = append(query, "confirmed_at IS NULL AND rejected_at IS NULL")
 	}
-	if pm.State == invitations.Rejected {
+	if pm.State == domains.Rejected {
 		query = append(query, "rejected_at IS NOT NULL")
 	}
 
@@ -195,7 +175,8 @@ type dbInvitation struct {
 	InvitedBy   string       `db:"invited_by"`
 	UserID      string       `db:"user_id"`
 	DomainID    string       `db:"domain_id"`
-	Token       string       `db:"token,omitempty"`
+	RoleID      string       `db:"role_id,omitempty"`
+	RoleName    string       `db:"role_name,omitempty"`
 	Relation    string       `db:"relation"`
 	CreatedAt   time.Time    `db:"created_at"`
 	UpdatedAt   sql.NullTime `db:"updated_at,omitempty"`
@@ -203,7 +184,7 @@ type dbInvitation struct {
 	RejectedAt  sql.NullTime `db:"rejected_at,omitempty"`
 }
 
-func toDBInvitation(inv invitations.Invitation) dbInvitation {
+func toDBInvitation(inv domains.Invitation) dbInvitation {
 	var updatedAt, confirmedAt, rejectedAt sql.NullTime
 	if inv.UpdatedAt != (time.Time{}) {
 		updatedAt = sql.NullTime{Time: inv.UpdatedAt, Valid: true}
@@ -219,8 +200,8 @@ func toDBInvitation(inv invitations.Invitation) dbInvitation {
 		InvitedBy:   inv.InvitedBy,
 		UserID:      inv.UserID,
 		DomainID:    inv.DomainID,
-		Token:       inv.Token,
-		Relation:    inv.Relation,
+		RoleID:      inv.RoleID,
+		RoleName:    inv.RoleName,
 		CreatedAt:   inv.CreatedAt,
 		UpdatedAt:   updatedAt,
 		ConfirmedAt: confirmedAt,
@@ -228,7 +209,7 @@ func toDBInvitation(inv invitations.Invitation) dbInvitation {
 	}
 }
 
-func toInvitation(dbinv dbInvitation) invitations.Invitation {
+func toInvitation(dbinv dbInvitation) domains.Invitation {
 	var updatedAt, confirmedAt, rejectedAt time.Time
 	if dbinv.UpdatedAt.Valid {
 		updatedAt = dbinv.UpdatedAt.Time
@@ -240,12 +221,12 @@ func toInvitation(dbinv dbInvitation) invitations.Invitation {
 		rejectedAt = dbinv.RejectedAt.Time
 	}
 
-	return invitations.Invitation{
+	return domains.Invitation{
 		InvitedBy:   dbinv.InvitedBy,
 		UserID:      dbinv.UserID,
 		DomainID:    dbinv.DomainID,
-		Token:       dbinv.Token,
-		Relation:    dbinv.Relation,
+		RoleID:      dbinv.RoleID,
+		RoleName:    dbinv.RoleName,
 		CreatedAt:   dbinv.CreatedAt,
 		UpdatedAt:   updatedAt,
 		ConfirmedAt: confirmedAt,

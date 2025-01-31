@@ -197,7 +197,7 @@ func (es *eventHandler) deleteDomainHandler(ctx context.Context, data map[string
 		return errors.Wrap(errDeleteDomainEvent, err)
 	}
 
-	if err := es.repo.Delete(ctx, d.ID); err != nil {
+	if err := es.repo.DeleteDomain(ctx, d.ID); err != nil {
 		return errors.Wrap(errDeleteDomainEvent, err)
 	}
 

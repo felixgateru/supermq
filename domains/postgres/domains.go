@@ -36,7 +36,7 @@ type domainRepo struct {
 	rolesPostgres.Repository
 }
 
-// New instantiates a PostgreSQL
+// NewRepository instantiates a PostgreSQL
 // implementation of Domain repository.
 func New(db postgres.Database) domains.Repository {
 	rmsvcRepo := rolesPostgres.NewRepository(db, policies.DomainType, rolesTableNamePrefix, entityTableName, entityIDColumnName)
@@ -170,7 +170,7 @@ func (repo domainRepo) RetrieveAllByIDs(ctx context.Context, pm domains.Page) (d
 	FROM domains d`
 	q = fmt.Sprintf("%s %s  LIMIT %d OFFSET %d;", q, query, pm.Limit, pm.Offset)
 
-	dbPage, err := toDBClientsPage(pm)
+	dbPage, err := toDBDomainsPage(pm)
 	if err != nil {
 		return domains.DomainsPage{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
 	}
@@ -254,7 +254,7 @@ func (repo domainRepo) ListDomains(ctx context.Context, pm domains.Page) (domain
 
 	q = fmt.Sprintf(q, squery)
 
-	dbPage, err := toDBClientsPage(pm)
+	dbPage, err := toDBDomainsPage(pm)
 	if err != nil {
 		return domains.DomainsPage{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
 	}
@@ -361,7 +361,7 @@ func (repo domainRepo) Update(ctx context.Context, id string, dr domains.DomainR
 }
 
 // Delete delete domain from database.
-func (repo domainRepo) Delete(ctx context.Context, id string) error {
+func (repo domainRepo) DeleteDomain(ctx context.Context, id string) error {
 	q := "DELETE FROM domains WHERE id = $1;"
 
 	res, err := repo.db.ExecContext(ctx, q, id)
@@ -553,7 +553,7 @@ type dbDomainsPage struct {
 	UserID   string         `db:"member_id"`
 }
 
-func toDBClientsPage(pm domains.Page) (dbDomainsPage, error) {
+func toDBDomainsPage(pm domains.Page) (dbDomainsPage, error) {
 	_, data, err := postgres.CreateMetadataQuery("", pm.Metadata)
 	if err != nil {
 		return dbDomainsPage{}, errors.Wrap(repoerr.ErrViewEntity, err)

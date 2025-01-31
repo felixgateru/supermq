@@ -33,7 +33,7 @@ func TestSave(t *testing.T) {
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
 	})
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	cases := []struct {
 		desc   string
@@ -149,7 +149,7 @@ func TestRetrieveByID(t *testing.T) {
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
 	})
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	domain := domains.Domain{
 		ID:    domainID,
@@ -210,7 +210,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
 	})
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	items := []domains.Domain{}
 	for i := 0; i < 10; i++ {
@@ -455,7 +455,7 @@ func TestUpdate(t *testing.T) {
 	updatedStatus := domains.DisabledStatus
 	updatedAlias := "test1"
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	domain := domains.Domain{
 		ID:    domainID,
@@ -575,7 +575,7 @@ func TestDelete(t *testing.T) {
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
 	})
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	domain := domains.Domain{
 		ID:    domainID,
@@ -617,7 +617,7 @@ func TestDelete(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := repo.Delete(context.Background(), tc.domainID)
+			err := repo.DeleteDomain(context.Background(), tc.domainID)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		})
 	}
@@ -629,7 +629,7 @@ func TestListDomains(t *testing.T) {
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
 	})
 
-	repo := postgres.New(database)
+	repo := postgres.NewRepository(database)
 
 	items := []domains.Domain{}
 	for i := 0; i < 10; i++ {

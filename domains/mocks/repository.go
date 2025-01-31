@@ -48,17 +48,35 @@ func (_m *Repository) AddRoles(ctx context.Context, rps []roles.RoleProvision) (
 	return r0, r1
 }
 
-// Delete provides a mock function with given fields: ctx, id
-func (_m *Repository) Delete(ctx context.Context, id string) error {
+// DeleteDomain provides a mock function with given fields: ctx, id
+func (_m *Repository) DeleteDomain(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Delete")
+		panic("no return value specified for DeleteDomain")
 	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteInvitation provides a mock function with given fields: ctx, userID, domainID
+func (_m *Repository) DeleteInvitation(ctx context.Context, userID string, domainID string) error {
+	ret := _m.Called(ctx, userID, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteInvitation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, userID, domainID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -197,6 +215,34 @@ func (_m *Repository) RetrieveAllByIDs(ctx context.Context, pm domains.Page) (do
 
 	if rf, ok := ret.Get(1).(func(context.Context, domains.Page) error); ok {
 		r1 = rf(ctx, pm)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RetrieveAllInvitations provides a mock function with given fields: ctx, page
+func (_m *Repository) RetrieveAllInvitations(ctx context.Context, page domains.InvitationPageMeta) (domains.InvitationPage, error) {
+	ret := _m.Called(ctx, page)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveAllInvitations")
+	}
+
+	var r0 domains.InvitationPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, domains.InvitationPageMeta) (domains.InvitationPage, error)); ok {
+		return rf(ctx, page)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, domains.InvitationPageMeta) domains.InvitationPage); ok {
+		r0 = rf(ctx, page)
+	} else {
+		r0 = ret.Get(0).(domains.InvitationPage)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, domains.InvitationPageMeta) error); ok {
+		r1 = rf(ctx, page)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -348,6 +394,34 @@ func (_m *Repository) RetrieveEntityRole(ctx context.Context, entityID string, r
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, entityID, roleID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RetrieveInvitation provides a mock function with given fields: ctx, userID, domainID
+func (_m *Repository) RetrieveInvitation(ctx context.Context, userID string, domainID string) (domains.Invitation, error) {
+	ret := _m.Called(ctx, userID, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveInvitation")
+	}
+
+	var r0 domains.Invitation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (domains.Invitation, error)); ok {
+		return rf(ctx, userID, domainID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) domains.Invitation); ok {
+		r0 = rf(ctx, userID, domainID)
+	} else {
+		r0 = ret.Get(0).(domains.Invitation)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, userID, domainID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -657,6 +731,24 @@ func (_m *Repository) Save(ctx context.Context, d domains.Domain) (domains.Domai
 	return r0, r1
 }
 
+// SaveInvitation provides a mock function with given fields: ctx, invitation
+func (_m *Repository) SaveInvitation(ctx context.Context, invitation domains.Invitation) error {
+	ret := _m.Called(ctx, invitation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SaveInvitation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domains.Invitation) error); ok {
+		r0 = rf(ctx, invitation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, id, d
 func (_m *Repository) Update(ctx context.Context, id string, d domains.DomainReq) (domains.Domain, error) {
 	ret := _m.Called(ctx, id, d)
@@ -683,6 +775,42 @@ func (_m *Repository) Update(ctx context.Context, id string, d domains.DomainReq
 	}
 
 	return r0, r1
+}
+
+// UpdateConfirmation provides a mock function with given fields: ctx, invitation
+func (_m *Repository) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) error {
+	ret := _m.Called(ctx, invitation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateConfirmation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domains.Invitation) error); ok {
+		r0 = rf(ctx, invitation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateRejection provides a mock function with given fields: ctx, invitation
+func (_m *Repository) UpdateRejection(ctx context.Context, invitation domains.Invitation) error {
+	ret := _m.Called(ctx, invitation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRejection")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domains.Invitation) error); ok {
+		r0 = rf(ctx, invitation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // UpdateRole provides a mock function with given fields: ctx, ro

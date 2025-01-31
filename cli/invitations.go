@@ -10,11 +10,11 @@ import (
 
 var cmdInvitations = []cobra.Command{
 	{
-		Use:   "send <user_id> <domain_id> <relation> <user_auth_token>",
+		Use:   "send <user_id> <domain_id> <role_id> <user_auth_token>",
 		Short: "Send invitation",
 		Long: "Send invitation to user\n" +
 			"For example:\n" +
-			"\tsupermq-cli invitations send 39f97daf-d6b6-40f4-b229-2697be8006ef 4ef09eff-d500-4d56-b04f-d23a512d6f2a administrator $USER_AUTH_TOKEN\n",
+			"\tsupermq-cli invitations send 39f97daf-d6b6-40f4-b229-2697be8006ef 4ef09eff-d500-4d56-b04f-d23a512d6f2a ba4c904c-e6d4-4978-9417-1694aac6793e $USER_AUTH_TOKEN\n",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) != 4 {
 				logUsageCmd(*cmd, cmd.Use)
@@ -23,7 +23,7 @@ var cmdInvitations = []cobra.Command{
 			inv := smqsdk.Invitation{
 				UserID:   args[0],
 				DomainID: args[1],
-				Relation: args[2],
+				RoleID:   args[2],
 			}
 			if err := sdk.SendInvitation(inv, args[3]); err != nil {
 				logErrorCmd(*cmd, err)

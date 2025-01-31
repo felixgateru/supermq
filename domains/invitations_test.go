@@ -1,37 +1,36 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-package invitations_test
+package domains_test
 
 import (
 	"fmt"
 	"testing"
 
-	apiutil "github.com/absmach/supermq/api/http/util"
-	"github.com/absmach/supermq/invitations"
+	"github.com/absmach/supermq/domains"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInvitation_MarshalJSON(t *testing.T) {
 	cases := []struct {
 		desc string
-		page invitations.InvitationPage
+		page domains.InvitationPage
 		res  string
 	}{
 		{
 			desc: "empty page",
-			page: invitations.InvitationPage{
-				Invitations: []invitations.Invitation(nil),
+			page: domains.InvitationPage{
+				Invitations: []domains.Invitation(nil),
 			},
 			res: `{"total":0,"offset":0,"limit":0,"invitations":[]}`,
 		},
 		{
 			desc: "page with invitations",
-			page: invitations.InvitationPage{
+			page: domains.InvitationPage{
 				Total:  1,
 				Offset: 0,
 				Limit:  0,
-				Invitations: []invitations.Invitation{
+				Invitations: []domains.Invitation{
 					{
 						InvitedBy: "John",
 						UserID:    "123",
@@ -47,29 +46,5 @@ func TestInvitation_MarshalJSON(t *testing.T) {
 		data, err := tc.page.MarshalJSON()
 		assert.NoError(t, err, "Unexpected error: %v", err)
 		assert.Equal(t, tc.res, string(data), fmt.Sprintf("%s: expected %s, got %s", tc.desc, tc.res, string(data)))
-	}
-}
-
-func TestCheckRelation(t *testing.T) {
-	cases := []struct {
-		relation string
-		err      error
-	}{
-		{"", apiutil.ErrMissingRelation},
-		{"admin", apiutil.ErrInvalidRelation},
-		{"editor", nil},
-		{"contributor", nil},
-		{"member", nil},
-		{"guest", nil},
-		{"domain", nil},
-		{"parent_group", nil},
-		{"role_group", nil},
-		{"group", nil},
-		{"platform", nil},
-	}
-
-	for _, tc := range cases {
-		err := invitations.CheckRelation(tc.relation)
-		assert.Equal(t, tc.err, err, "CheckRelation(%q) expected %v, got %v", tc.relation, tc.err, err)
 	}
 }

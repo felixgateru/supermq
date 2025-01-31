@@ -14,6 +14,15 @@ var (
 	_ supermq.Response = (*createDomainRes)(nil)
 	_ supermq.Response = (*retrieveDomainRes)(nil)
 	_ supermq.Response = (*listDomainsRes)(nil)
+	_ supermq.Response = (*enableDomainRes)(nil)
+	_ supermq.Response = (*disableDomainRes)(nil)
+	_ supermq.Response = (*freezeDomainRes)(nil)
+	_ supermq.Response = (*sendInvitationRes)(nil)
+	_ supermq.Response = (*viewInvitationRes)(nil)
+	_ supermq.Response = (*listInvitationsRes)(nil)
+	_ supermq.Response = (*acceptInvitationRes)(nil)
+	_ supermq.Response = (*rejectInvitationRes)(nil)
+	_ supermq.Response = (*deleteInvitationRes)(nil)
 )
 
 type createDomainRes struct {

@@ -6,21 +6,15 @@ package sdk_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	apiutil "github.com/absmach/supermq/api/http/util"
+	"github.com/absmach/supermq/domains"
 	"github.com/absmach/supermq/internal/testsutil"
-	"github.com/absmach/supermq/invitations"
-	"github.com/absmach/supermq/invitations/api"
-	"github.com/absmach/supermq/invitations/mocks"
-	smqlog "github.com/absmach/supermq/logger"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
-	authnmocks "github.com/absmach/supermq/pkg/authn/mocks"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
-	policies "github.com/absmach/supermq/pkg/policies"
 	sdk "github.com/absmach/supermq/pkg/sdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,29 +25,19 @@ var (
 	invitation    = convertInvitation(sdkInvitation)
 )
 
-func setupInvitations() (*httptest.Server, *mocks.Service, *authnmocks.Authentication) {
-	svc := new(mocks.Service)
-	logger := smqlog.NewMock()
-	authn := new(authnmocks.Authentication)
-	mux := api.MakeHandler(svc, logger, authn, "test")
-
-	return httptest.NewServer(mux), svc, authn
-}
-
 func TestSendInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
 	sendInvitationReq := sdk.Invitation{
 		UserID:   invitation.UserID,
 		DomainID: invitation.DomainID,
-		Relation: invitation.Relation,
-		Resend:   invitation.Resend,
+		RoleID:   invitation.RoleID,
 	}
 
 	cases := []struct {
@@ -61,7 +45,7 @@ func TestSendInvitation(t *testing.T) {
 		token             string
 		session           smqauthn.Session
 		sendInvitationReq sdk.Invitation
-		svcReq            invitations.Invitation
+		svcReq            domains.Invitation
 		authenticateErr   error
 		svcErr            error
 		err               error
@@ -86,7 +70,7 @@ func TestSendInvitation(t *testing.T) {
 			desc:              "send invitation with empty token",
 			token:             "",
 			sendInvitationReq: sendInvitationReq,
-			svcReq:            invitations.Invitation{},
+			svcReq:            domains.Invitation{},
 			svcErr:            nil,
 			err:               errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
@@ -96,25 +80,23 @@ func TestSendInvitation(t *testing.T) {
 			sendInvitationReq: sdk.Invitation{
 				UserID:   "",
 				DomainID: invitation.DomainID,
-				Relation: invitation.Relation,
-				Resend:   invitation.Resend,
+				RoleID:   invitation.RoleID,
 			},
-			svcReq: invitations.Invitation{},
+			svcReq: domains.Invitation{},
 			svcErr: nil,
 			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
 		},
 		{
-			desc:  "send invitation with invalid relation",
+			desc:  "send invitation with empty role ID",
 			token: validToken,
 			sendInvitationReq: sdk.Invitation{
 				UserID:   invitation.UserID,
 				DomainID: invitation.DomainID,
-				Relation: "invalid",
-				Resend:   invitation.Resend,
+				RoleID:   "",
 			},
-			svcReq: invitations.Invitation{},
+			svcReq: domains.Invitation{},
 			svcErr: nil,
-			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrInvalidRelation), http.StatusInternalServerError),
+			err:    errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
 		},
 		{
 			desc:  "send inviation with invalid domainID",
@@ -122,14 +104,12 @@ func TestSendInvitation(t *testing.T) {
 			sendInvitationReq: sdk.Invitation{
 				UserID:   invitation.UserID,
 				DomainID: wrongID,
-				Relation: invitation.Relation,
-				Resend:   invitation.Resend,
+				RoleID:   invitation.RoleID,
 			},
-			svcReq: invitations.Invitation{
+			svcReq: domains.Invitation{
 				UserID:   invitation.UserID,
 				DomainID: wrongID,
-				Relation: invitation.Relation,
-				Resend:   invitation.Resend,
+				RoleID:   invitation.RoleID,
 			},
 			svcErr: svcerr.ErrCreateEntity,
 			err:    errors.NewSDKErrorWithStatus(svcerr.ErrCreateEntity, http.StatusUnprocessableEntity),
@@ -155,11 +135,11 @@ func TestSendInvitation(t *testing.T) {
 }
 
 func TestViewInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
@@ -169,7 +149,7 @@ func TestViewInvitation(t *testing.T) {
 		session         smqauthn.Session
 		userID          string
 		domainID        string
-		svcRes          invitations.Invitation
+		svcRes          domains.Invitation
 		svcErr          error
 		authenticateErr error
 		response        sdk.Invitation
@@ -190,7 +170,7 @@ func TestViewInvitation(t *testing.T) {
 			token:           invalidToken,
 			userID:          invitation.UserID,
 			domainID:        invitation.DomainID,
-			svcRes:          invitations.Invitation{},
+			svcRes:          domains.Invitation{},
 			authenticateErr: svcerr.ErrAuthentication,
 			response:        sdk.Invitation{},
 			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -200,7 +180,7 @@ func TestViewInvitation(t *testing.T) {
 			token:    "",
 			userID:   invitation.UserID,
 			domainID: invitation.DomainID,
-			svcRes:   invitations.Invitation{},
+			svcRes:   domains.Invitation{},
 			svcErr:   nil,
 			response: sdk.Invitation{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -210,7 +190,7 @@ func TestViewInvitation(t *testing.T) {
 			token:    validToken,
 			userID:   "",
 			domainID: invitation.DomainID,
-			svcRes:   invitations.Invitation{},
+			svcRes:   domains.Invitation{},
 			svcErr:   nil,
 			response: sdk.Invitation{},
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
@@ -220,7 +200,7 @@ func TestViewInvitation(t *testing.T) {
 			token:    validToken,
 			userID:   invitation.UserID,
 			domainID: wrongID,
-			svcRes:   invitations.Invitation{},
+			svcRes:   domains.Invitation{},
 			svcErr:   svcerr.ErrNotFound,
 			response: sdk.Invitation{},
 			err:      errors.NewSDKErrorWithStatus(svcerr.ErrNotFound, http.StatusNotFound),
@@ -247,11 +227,11 @@ func TestViewInvitation(t *testing.T) {
 }
 
 func TestListInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
@@ -260,8 +240,8 @@ func TestListInvitation(t *testing.T) {
 		token           string
 		session         smqauthn.Session
 		pageMeta        sdk.PageMetadata
-		svcReq          invitations.Page
-		svcRes          invitations.InvitationPage
+		svcReq          domains.InvitationPageMeta
+		svcRes          domains.InvitationPage
 		svcErr          error
 		authenticateErr error
 		response        sdk.InvitationPage
@@ -274,13 +254,13 @@ func TestListInvitation(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: invitations.Page{
+			svcReq: domains.InvitationPageMeta{
 				Offset: 0,
 				Limit:  10,
 			},
-			svcRes: invitations.InvitationPage{
+			svcRes: domains.InvitationPage{
 				Total:       1,
-				Invitations: []invitations.Invitation{invitation},
+				Invitations: []domains.Invitation{invitation},
 			},
 			svcErr: nil,
 			response: sdk.InvitationPage{
@@ -296,11 +276,11 @@ func TestListInvitation(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 			},
-			svcReq: invitations.Page{
+			svcReq: domains.InvitationPageMeta{
 				Offset: 0,
 				Limit:  10,
 			},
-			svcRes:          invitations.InvitationPage{},
+			svcRes:          domains.InvitationPage{},
 			authenticateErr: svcerr.ErrAuthentication,
 			response:        sdk.InvitationPage{},
 			err:             errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
@@ -309,7 +289,7 @@ func TestListInvitation(t *testing.T) {
 			desc:     "list invitations with empty token",
 			token:    "",
 			pageMeta: sdk.PageMetadata{},
-			svcRes:   invitations.InvitationPage{},
+			svcRes:   domains.InvitationPage{},
 			svcErr:   nil,
 			response: sdk.InvitationPage{},
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
@@ -321,8 +301,8 @@ func TestListInvitation(t *testing.T) {
 				Offset: 0,
 				Limit:  101,
 			},
-			svcReq:   invitations.Page{},
-			svcRes:   invitations.InvitationPage{},
+			svcReq:   domains.InvitationPageMeta{},
+			svcRes:   domains.InvitationPage{},
 			svcErr:   nil,
 			response: sdk.InvitationPage{},
 			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrLimitSize), http.StatusBadRequest),
@@ -349,11 +329,11 @@ func TestListInvitation(t *testing.T) {
 }
 
 func TestAcceptInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
@@ -415,11 +395,11 @@ func TestAcceptInvitation(t *testing.T) {
 }
 
 func TestRejectInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
@@ -481,11 +461,11 @@ func TestRejectInvitation(t *testing.T) {
 }
 
 func TestDeleteInvitation(t *testing.T) {
-	is, svc, auth := setupInvitations()
+	is, svc, auth := setupDomains()
 	defer is.Close()
 
 	conf := sdk.Config{
-		InvitationsURL: is.URL,
+		DomainsURL: is.URL,
 	}
 	mgsdk := sdk.NewSDK(conf)
 
@@ -566,10 +546,10 @@ func generateTestInvitation(t *testing.T) sdk.Invitation {
 		InvitedBy: testsutil.GenerateUUID(t),
 		UserID:    testsutil.GenerateUUID(t),
 		DomainID:  testsutil.GenerateUUID(t),
-		Token:     validToken,
-		Relation:  policies.MemberRelation,
+		RoleID:    testsutil.GenerateUUID(t),
+		RoleName:  "admin",
+		Actions:   []string{"read", "update"},
 		CreatedAt: createdAt,
 		UpdatedAt: createdAt,
-		Resend:    false,
 	}
 }

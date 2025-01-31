@@ -33,7 +33,7 @@ env:
   CHANNELS_URL: http://localhost:9005
   GROUPS_URL: http://localhost:9004
   HTTP_ADAPTER_URL: http://localhost:8008
-  INVITATIONS_URL: http://localhost:9020
+  INVITATIONS_URL: http://localhost:9003
   AUTH_URL: http://localhost:9001
   CERTS_URL: http://localhost:9019
   JOURNAL_URL: http://localhost:9021
@@ -98,7 +98,7 @@ jobs:
             invitations:
               - ".github/workflows/api-tests.yml"
               - "apidocs/openapi/invitations.yml"
-              - "invitations/api/**"
+              - "domains/api/**"
 
             clients:
               - ".github/workflows/api-tests.yml"

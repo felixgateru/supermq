@@ -1,7 +1,7 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-package api
+package http
 
 import (
 	"context"
@@ -10,15 +10,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/absmach/supermq"
 	api "github.com/absmach/supermq/api/http"
 	apiutil "github.com/absmach/supermq/api/http/util"
-	"github.com/absmach/supermq/invitations"
-	smqauthn "github.com/absmach/supermq/pkg/authn"
+	"github.com/absmach/supermq/domains"
+	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/go-chi/chi/v5"
 	kithttp "github.com/go-kit/kit/transport/http"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -26,16 +24,15 @@ const (
 	userIDKey    = "user_id"
 	domainIDKey  = "domain_id"
 	invitedByKey = "invited_by"
-	relationKey  = "relation"
+	roleIDKey    = "role_id"
+	roleNameKey  = "role_name"
 	stateKey     = "state"
 )
 
-func MakeHandler(svc invitations.Service, logger *slog.Logger, authn smqauthn.Authentication, instanceID string) http.Handler {
+func invitationsHandler(svc domains.Service, authn authn.Authentication, mux *chi.Mux, logger *slog.Logger) *chi.Mux {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
-
-	mux := chi.NewRouter()
 
 	mux.Group(func(r chi.Router) {
 		r.Use(api.AuthenticateMiddleware(authn, false))
@@ -82,9 +79,6 @@ func MakeHandler(svc invitations.Service, logger *slog.Logger, authn smqauthn.Au
 		})
 	})
 
-	mux.Get("/health", supermq.Health("invitations", instanceID))
-	mux.Handle("/metrics", promhttp.Handler())
-
 	return mux
 }
 
@@ -118,7 +112,11 @@ func decodeListInvitationsReq(_ context.Context, r *http.Request) (interface{}, 
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	relation, err := apiutil.ReadStringQuery(r, relationKey, "")
+	roleID, err := apiutil.ReadStringQuery(r, roleIDKey, "")
+	if err != nil {
+		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+	roleName, err := apiutil.ReadStringQuery(r, roleNameKey, "")
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
@@ -126,21 +124,22 @@ func decodeListInvitationsReq(_ context.Context, r *http.Request) (interface{}, 
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	st, err := apiutil.ReadStringQuery(r, stateKey, invitations.All.String())
+	st, err := apiutil.ReadStringQuery(r, stateKey, domains.AllState.String())
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	state, err := invitations.ToState(st)
+	state, err := domains.ToState(st)
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
 	req := listInvitationsReq{
-		Page: invitations.Page{
+		InvitationPageMeta: domains.InvitationPageMeta{
 			Offset:    offset,
 			Limit:     limit,
 			InvitedBy: invitedBy,
 			UserID:    userID,
-			Relation:  relation,
+			RoleID:    roleID,
+			RoleName:  roleName,
 			DomainID:  domainID,
 			State:     state,
 		},
