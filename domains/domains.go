@@ -165,12 +165,27 @@ func (page DomainsPage) MarshalJSON() ([]byte, error) {
 
 //go:generate mockery --name Service --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
+	// CreateDomain creates a new domain.
 	CreateDomain(ctx context.Context, sesssion authn.Session, d Domain) (Domain, []roles.RoleProvision, error)
+
+	// RetrieveDomain retrieves a domain specified by the provided ID.
 	RetrieveDomain(ctx context.Context, sesssion authn.Session, id string) (Domain, error)
+
+	// UpdateDomain updates the domain specified by the provided ID.
 	UpdateDomain(ctx context.Context, sesssion authn.Session, id string, d DomainReq) (Domain, error)
+
+	// EnableDomain enables the domain specified by the provided ID.
 	EnableDomain(ctx context.Context, sesssion authn.Session, id string) (Domain, error)
+
+	// DisableDomain disables the domain specified by the provided ID.
+	// Only platform administrators and domain admins can disable domains.
 	DisableDomain(ctx context.Context, sesssion authn.Session, id string) (Domain, error)
+
+	// FreezeDomain freezes the domain specified by the provided ID.
+	// Only platform administrators can freeze domains.
 	FreezeDomain(ctx context.Context, sesssion authn.Session, id string) (Domain, error)
+
+	// ListDomains returns a list of domains.
 	ListDomains(ctx context.Context, sesssion authn.Session, page Page) (DomainsPage, error)
 
 	// SendInvitation sends an invitation to the given user.
@@ -215,19 +230,20 @@ type Service interface {
 //
 //go:generate mockery --name Repository --output=./mocks --filename repository.go  --quiet --note "Copyright (c) Abstract Machines"
 type Repository interface {
-	// Save creates db insert transaction for the given domain.
-	Save(ctx context.Context, d Domain) (Domain, error)
+	// SaveDomain creates db insert transaction for the given domain.
+	SaveDomain(ctx context.Context, d Domain) (Domain, error)
 
-	// RetrieveByID retrieves Domain by its unique ID.
-	RetrieveByID(ctx context.Context, id string) (Domain, error)
+	// RetrieveDomainByID retrieves a domain by its unique ID.
+	RetrieveDomainByID(ctx context.Context, id string) (Domain, error)
 
-	RetrieveByUserAndID(ctx context.Context, userID, id string) (Domain, error)
+	// RetrieveDomainByUserAndID retrieves a domain by its unique ID and user ID.
+	RetrieveDomainByUserAndID(ctx context.Context, userID, id string) (Domain, error)
 
-	// RetrieveAllByIDs retrieves for given Domain IDs.
-	RetrieveAllByIDs(ctx context.Context, pm Page) (DomainsPage, error)
+	// RetrieveAllDomainsByIDs retrieves for given Domain IDs.
+	RetrieveAllDomainsByIDs(ctx context.Context, pm Page) (DomainsPage, error)
 
-	// Update updates the client name and metadata.
-	Update(ctx context.Context, id string, d DomainReq) (Domain, error)
+	// UpdateDomain updates the domain name and metadata.
+	UpdateDomain(ctx context.Context, id string, d DomainReq) (Domain, error)
 
 	// DeleteDomain deletes the domain.
 	DeleteDomain(ctx context.Context, id string) error

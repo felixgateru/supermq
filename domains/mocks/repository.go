@@ -194,12 +194,12 @@ func (_m *Repository) RemoveRoles(ctx context.Context, roleIDs []string) error {
 	return r0
 }
 
-// RetrieveAllByIDs provides a mock function with given fields: ctx, pm
-func (_m *Repository) RetrieveAllByIDs(ctx context.Context, pm domains.Page) (domains.DomainsPage, error) {
+// RetrieveAllDomainsByIDs provides a mock function with given fields: ctx, pm
+func (_m *Repository) RetrieveAllDomainsByIDs(ctx context.Context, pm domains.Page) (domains.DomainsPage, error) {
 	ret := _m.Called(ctx, pm)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveAllByIDs")
+		panic("no return value specified for RetrieveAllDomainsByIDs")
 	}
 
 	var r0 domains.DomainsPage
@@ -278,12 +278,12 @@ func (_m *Repository) RetrieveAllRoles(ctx context.Context, entityID string, lim
 	return r0, r1
 }
 
-// RetrieveByID provides a mock function with given fields: ctx, id
-func (_m *Repository) RetrieveByID(ctx context.Context, id string) (domains.Domain, error) {
+// RetrieveDomainByID provides a mock function with given fields: ctx, id
+func (_m *Repository) RetrieveDomainByID(ctx context.Context, id string) (domains.Domain, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByID")
+		panic("no return value specified for RetrieveDomainByID")
 	}
 
 	var r0 domains.Domain
@@ -306,12 +306,12 @@ func (_m *Repository) RetrieveByID(ctx context.Context, id string) (domains.Doma
 	return r0, r1
 }
 
-// RetrieveByUserAndID provides a mock function with given fields: ctx, userID, id
-func (_m *Repository) RetrieveByUserAndID(ctx context.Context, userID string, id string) (domains.Domain, error) {
+// RetrieveDomainByUserAndID provides a mock function with given fields: ctx, userID, id
+func (_m *Repository) RetrieveDomainByUserAndID(ctx context.Context, userID string, id string) (domains.Domain, error) {
 	ret := _m.Called(ctx, userID, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByUserAndID")
+		panic("no return value specified for RetrieveDomainByUserAndID")
 	}
 
 	var r0 domains.Domain
@@ -703,12 +703,12 @@ func (_m *Repository) RoleRemoveMembers(ctx context.Context, role roles.Role, me
 	return r0
 }
 
-// Save provides a mock function with given fields: ctx, d
-func (_m *Repository) Save(ctx context.Context, d domains.Domain) (domains.Domain, error) {
+// SaveDomain provides a mock function with given fields: ctx, d
+func (_m *Repository) SaveDomain(ctx context.Context, d domains.Domain) (domains.Domain, error) {
 	ret := _m.Called(ctx, d)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Save")
+		panic("no return value specified for SaveDomain")
 	}
 
 	var r0 domains.Domain
@@ -749,12 +749,30 @@ func (_m *Repository) SaveInvitation(ctx context.Context, invitation domains.Inv
 	return r0
 }
 
-// Update provides a mock function with given fields: ctx, id, d
-func (_m *Repository) Update(ctx context.Context, id string, d domains.DomainReq) (domains.Domain, error) {
+// UpdateConfirmation provides a mock function with given fields: ctx, invitation
+func (_m *Repository) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) error {
+	ret := _m.Called(ctx, invitation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateConfirmation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domains.Invitation) error); ok {
+		r0 = rf(ctx, invitation)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateDomain provides a mock function with given fields: ctx, id, d
+func (_m *Repository) UpdateDomain(ctx context.Context, id string, d domains.DomainReq) (domains.Domain, error) {
 	ret := _m.Called(ctx, id, d)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Update")
+		panic("no return value specified for UpdateDomain")
 	}
 
 	var r0 domains.Domain
@@ -775,24 +793,6 @@ func (_m *Repository) Update(ctx context.Context, id string, d domains.DomainReq
 	}
 
 	return r0, r1
-}
-
-// UpdateConfirmation provides a mock function with given fields: ctx, invitation
-func (_m *Repository) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) error {
-	ret := _m.Called(ctx, invitation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateConfirmation")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, domains.Invitation) error); ok {
-		r0 = rf(ctx, invitation)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // UpdateRejection provides a mock function with given fields: ctx, invitation

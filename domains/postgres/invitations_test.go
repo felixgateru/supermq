@@ -852,7 +852,7 @@ func saveDomain(t *testing.T, repo domains.Repository) string {
 		Status:    domains.EnabledStatus,
 	}
 
-	_, err := repo.Save(context.Background(), domain)
+	_, err := repo.SaveDomain(context.Background(), domain)
 	require.Nil(t, err, fmt.Sprintf("failed to save domain %s", domain.ID))
 
 	return domain.ID

@@ -61,7 +61,7 @@ func (svc service) CreateDomain(ctx context.Context, session authn.Session, d Do
 	d.CreatedAt = time.Now()
 
 	// Domain is created in repo first, because Roles table have foreign key relation with Domain ID
-	dom, err := svc.repo.Save(ctx, d)
+	dom, err := svc.repo.SaveDomain(ctx, d)
 	if err != nil {
 		return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
 	}
@@ -100,9 +100,9 @@ func (svc service) RetrieveDomain(ctx context.Context, session authn.Session, id
 	var err error
 	switch session.SuperAdmin {
 	case true:
-		domain, err = svc.repo.RetrieveByID(ctx, id)
+		domain, err = svc.repo.RetrieveDomainByID(ctx, id)
 	default:
-		domain, err = svc.repo.RetrieveByUserAndID(ctx, session.UserID, id)
+		domain, err = svc.repo.RetrieveDomainByUserAndID(ctx, session.UserID, id)
 	}
 	if err != nil {
 		return Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
@@ -114,7 +114,7 @@ func (svc service) UpdateDomain(ctx context.Context, session authn.Session, id s
 	updatedAt := time.Now()
 	d.UpdatedAt = &updatedAt
 	d.UpdatedBy = &session.UserID
-	dom, err := svc.repo.Update(ctx, id, d)
+	dom, err := svc.repo.UpdateDomain(ctx, id, d)
 	if err != nil {
 		return Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
@@ -124,7 +124,7 @@ func (svc service) UpdateDomain(ctx context.Context, session authn.Session, id s
 func (svc service) EnableDomain(ctx context.Context, session authn.Session, id string) (Domain, error) {
 	status := EnabledStatus
 	updatedAt := time.Now()
-	dom, err := svc.repo.Update(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
+	dom, err := svc.repo.UpdateDomain(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
 	if err != nil {
 		return Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
@@ -138,7 +138,7 @@ func (svc service) EnableDomain(ctx context.Context, session authn.Session, id s
 func (svc service) DisableDomain(ctx context.Context, session authn.Session, id string) (Domain, error) {
 	status := DisabledStatus
 	updatedAt := time.Now()
-	dom, err := svc.repo.Update(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
+	dom, err := svc.repo.UpdateDomain(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
 	if err != nil {
 		return Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
@@ -153,7 +153,7 @@ func (svc service) DisableDomain(ctx context.Context, session authn.Session, id 
 func (svc service) FreezeDomain(ctx context.Context, session authn.Session, id string) (Domain, error) {
 	status := FreezeStatus
 	updatedAt := time.Now()
-	dom, err := svc.repo.Update(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
+	dom, err := svc.repo.UpdateDomain(ctx, id, DomainReq{Status: &status, UpdatedBy: &session.UserID, UpdatedAt: &updatedAt})
 	if err != nil {
 		return Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}

@@ -27,7 +27,7 @@ var (
 	userID   = testsutil.GenerateUUID(&testing.T{})
 )
 
-func TestSave(t *testing.T) {
+func TestSaveDomain(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM domains")
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
@@ -134,7 +134,7 @@ func TestSave(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			domain, err := repo.Save(context.Background(), tc.domain)
+			domain, err := repo.SaveDomain(context.Background(), tc.domain)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 			if err == nil {
 				assert.Equal(t, tc.domain, domain, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.domain, domain))
@@ -166,7 +166,7 @@ func TestRetrieveByID(t *testing.T) {
 		Status:    domains.EnabledStatus,
 	}
 
-	_, err := repo.Save(context.Background(), domain)
+	_, err := repo.SaveDomain(context.Background(), domain)
 	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
 
 	cases := []struct {
@@ -197,7 +197,7 @@ func TestRetrieveByID(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			d, err := repo.RetrieveByID(context.Background(), tc.domainID)
+			d, err := repo.RetrieveDomainByID(context.Background(), tc.domainID)
 			assert.Equal(t, tc.response, d, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, d))
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.err, err))
 		})
@@ -233,7 +233,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				"test1": "test1",
 			}
 		}
-		_, err := repo.Save(context.Background(), domain)
+		_, err := repo.SaveDomain(context.Background(), domain)
 		require.Nil(t, err, fmt.Sprintf("save domain unexpected error: %s", err))
 		items = append(items, domain)
 	}
@@ -434,7 +434,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			dp, err := repo.RetrieveAllByIDs(context.Background(), tc.pm)
+			dp, err := repo.RetrieveAllDomainsByIDs(context.Background(), tc.pm)
 			assert.Equal(t, tc.response, dp, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, dp))
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.err, err))
 		})
@@ -470,7 +470,7 @@ func TestUpdate(t *testing.T) {
 		Status:    domains.EnabledStatus,
 	}
 
-	_, err := repo.Save(context.Background(), domain)
+	_, err := repo.SaveDomain(context.Background(), domain)
 	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
 
 	cases := []struct {
@@ -561,7 +561,7 @@ func TestUpdate(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			d, err := repo.Update(context.Background(), tc.domainID, tc.d)
+			d, err := repo.UpdateDomain(context.Background(), tc.domainID, tc.d)
 			d.UpdatedAt = tc.response.UpdatedAt
 			assert.Equal(t, tc.response, d, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, d))
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -590,7 +590,7 @@ func TestDelete(t *testing.T) {
 		Status:    domains.EnabledStatus,
 	}
 
-	_, err := repo.Save(context.Background(), domain)
+	_, err := repo.SaveDomain(context.Background(), domain)
 	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
 
 	cases := []struct {
@@ -652,7 +652,7 @@ func TestListDomains(t *testing.T) {
 				"test1": "test1",
 			}
 		}
-		_, err := repo.Save(context.Background(), domain)
+		_, err := repo.SaveDomain(context.Background(), domain)
 		require.Nil(t, err, fmt.Sprintf("save domain unexpected error: %s", err))
 		items = append(items, domain)
 	}
