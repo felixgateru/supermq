@@ -19,7 +19,6 @@ volumes:
   supermq-pat-db-volume:
   supermq-domains-db-volume:
   supermq-domains-redis-volume:
-  supermq-invitations-db-volume:
   supermq-ui-db-volume:
 
 services:
@@ -292,23 +291,6 @@ services:
         target: /auth-grpc-server-ca${SMQ_AUTH_GRPC_SERVER_CA_CERTS:+.crt}
         bind:
           create_host_path: true
-
-  invitations-db:
-    image: postgres:16.2-alpine
-    container_name: supermq-invitations-db
-    restart: on-failure
-    command: postgres -c "max_connections=${SMQ_POSTGRES_MAX_CONNECTIONS}"
-    environment:
-      POSTGRES_USER: ${SMQ_INVITATIONS_DB_USER}
-      POSTGRES_PASSWORD: ${SMQ_INVITATIONS_DB_PASS}
-      POSTGRES_DB: ${SMQ_INVITATIONS_DB_NAME}
-      SMQ_POSTGRES_MAX_CONNECTIONS: ${SMQ_POSTGRES_MAX_CONNECTIONS}
-    ports:
-      - 6021:5432
-    networks:
-      - supermq-base-net
-    volumes:
-      - supermq-invitations-db-volume:/var/lib/postgresql/data
 
   nginx:
     image: nginx:1.25.4-alpine

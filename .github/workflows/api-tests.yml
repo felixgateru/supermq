@@ -17,7 +17,6 @@ on:
       - "domains/api/http/**"
       - "groups/api/http/**"
       - "http/api/**"
-      - "invitations/api/**"
       - "journal/api/**"
       - "users/api/**"
 
