@@ -292,6 +292,52 @@ func (_m *Service) ListEntityMembers(ctx context.Context, session authn.Session,
 	return r0, r1
 }
 
+// ListInvitations provides a mock function with given fields: ctx, session, page
+func (_m *Service) ListInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (domains.InvitationPage, error) {
+	ret := _m.Called(ctx, session, page)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListInvitations")
+	}
+
+	var r0 domains.InvitationPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, domains.InvitationPageMeta) (domains.InvitationPage, error)); ok {
+		return rf(ctx, session, page)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, domains.InvitationPageMeta) domains.InvitationPage); ok {
+		r0 = rf(ctx, session, page)
+	} else {
+		r0 = ret.Get(0).(domains.InvitationPage)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, authn.Session, domains.InvitationPageMeta) error); ok {
+		r1 = rf(ctx, session, page)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RejectInvitation provides a mock function with given fields: ctx, session, domainID
+func (_m *Service) RejectInvitation(ctx context.Context, session authn.Session, domainID string) error {
+	ret := _m.Called(ctx, session, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RejectInvitation")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string) error); ok {
+		r0 = rf(ctx, session, domainID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RemoveEntityMembers provides a mock function with given fields: ctx, session, entityID, members
 func (_m *Service) RemoveEntityMembers(ctx context.Context, session authn.Session, entityID string, members []string) error {
 	ret := _m.Called(ctx, session, entityID, members)

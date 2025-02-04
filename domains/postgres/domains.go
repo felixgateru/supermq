@@ -38,7 +38,7 @@ type domainRepo struct {
 
 // NewRepository instantiates a PostgreSQL
 // implementation of Domain repository.
-func New(db postgres.Database) domains.Repository {
+func NewRepository(db postgres.Database) domains.Repository {
 	rmsvcRepo := rolesPostgres.NewRepository(db, policies.DomainType, rolesTableNamePrefix, entityTableName, entityIDColumnName)
 	return &domainRepo{
 		db:         db,
