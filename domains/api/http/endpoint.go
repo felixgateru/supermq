@@ -196,10 +196,10 @@ func sendInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, svcerr.ErrAuthorization
 		}
-		session.DomainID = req.DomainID
+
 		invitation := domains.Invitation{
 			UserID:   req.UserID,
-			DomainID: req.DomainID,
+			DomainID: session.DomainID,
 			RoleID:   req.RoleID,
 		}
 
@@ -235,7 +235,31 @@ func viewInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 	}
 }
 
-func listInvitationsEndpoint(svc domains.Service) endpoint.Endpoint {
+func listDomainInvitationsEndpoint(svc domains.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listInvitationsReq)
+		if err := req.validate(); err != nil {
+			return nil, errors.Wrap(apiutil.ErrValidation, err)
+		}
+
+		session, ok := ctx.Value(api.SessionKey).(authn.Session)
+		if !ok {
+			return nil, svcerr.ErrAuthorization
+		}
+		req.InvitationPageMeta.DomainID = session.DomainID
+
+		page, err := svc.ListInvitations(ctx, session, req.InvitationPageMeta)
+		if err != nil {
+			return nil, err
+		}
+
+		return listInvitationsRes{
+			page,
+		}, nil
+	}
+}
+
+func listUserInvitationsEndpoint(svc domains.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listInvitationsReq)
 		if err := req.validate(); err != nil {
