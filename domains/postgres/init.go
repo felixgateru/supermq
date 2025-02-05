@@ -48,7 +48,6 @@ func Migration() (*migrate.MemoryMigrationSource, error) {
 						user_id         VARCHAR(36) NOT NULL,
 						domain_id       VARCHAR(36) NOT NULL,
 						role_id         VARCHAR(36) NOT NULL,
-						role_name       VARCHAR(200),
 						created_at      TIMESTAMP NOT NULL,
 						updated_at      TIMESTAMP,
 						confirmed_at    TIMESTAMP,

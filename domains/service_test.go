@@ -628,7 +628,6 @@ func TestViewInvitation(t *testing.T) {
 		UserID:      testsutil.GenerateUUID(t),
 		DomainID:    testsutil.GenerateUUID(t),
 		RoleID:      testsutil.GenerateUUID(t),
-		RoleName:    "admin",
 		Actions:     []string{"read", "delete"},
 		CreatedAt:   time.Now().Add(-time.Hour),
 		UpdatedAt:   time.Now().Add(-time.Hour),
@@ -643,6 +642,7 @@ func TestViewInvitation(t *testing.T) {
 		resp                  domains.Invitation
 		retrieveInvitationErr error
 		listRolesErr          error
+		retrieveRoleErr       error
 		err                   error
 	}{
 		{
@@ -669,17 +669,27 @@ func TestViewInvitation(t *testing.T) {
 			listRolesErr: repoerr.ErrNotFound,
 			err:          svcerr.ErrViewEntity,
 		},
+		{
+			desc:            "view invitation with failed to retrieve role",
+			userID:          validInvitation.UserID,
+			domainID:        validInvitation.DomainID,
+			session:         validSession,
+			retrieveRoleErr: repoerr.ErrNotFound,
+			err:             svcerr.ErrViewEntity,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			repoCall := drepo.On("RetrieveInvitation", context.Background(), mock.Anything, mock.Anything).Return(tc.resp, tc.retrieveInvitationErr)
 			repoCall1 := drepo.On("RoleListActions", context.Background(), tc.resp.RoleID).Return(tc.resp.Actions, tc.listRolesErr)
+			repoCall2 := drepo.On("RetrieveRole", context.Background(), tc.resp.RoleID).Return(roles.Role{}, tc.retrieveRoleErr)
 			inv, err := svc.ViewInvitation(context.Background(), tc.session, tc.userID, tc.domainID)
 			assert.True(t, errors.Contains(err, tc.err))
 			assert.Equal(t, tc.resp, inv, tc.desc)
 			repoCall.Unset()
 			repoCall1.Unset()
+			repoCall2.Unset()
 		})
 	}
 }

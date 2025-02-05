@@ -52,7 +52,6 @@ type InvitationPageMeta struct {
 	UserID            string `json:"user_id,omitempty" db:"user_id,omitempty"`
 	DomainID          string `json:"domain_id,omitempty" db:"domain_id,omitempty"`
 	RoleID            string `json:"role_id,omitempty" db:"role_id,omitempty"`
-	RoleName          string `json:"role_name,omitempty" db:"role_name,omitempty"`
 	InvitedByOrUserID string `db:"invited_by_or_user_id,omitempty"`
 	State             State  `json:"state,omitempty"`
 }

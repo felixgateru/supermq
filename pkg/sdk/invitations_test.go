@@ -118,7 +118,11 @@ func TestSendInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{UserID: tc.sendInvitationReq.UserID, DomainID: tc.sendInvitationReq.DomainID}
+				tc.session = smqauthn.Session{
+					UserID:       tc.sendInvitationReq.UserID,
+					DomainID:     tc.sendInvitationReq.DomainID,
+					DomainUserID: tc.sendInvitationReq.DomainID + "_" + tc.sendInvitationReq.UserID,
+				}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("SendInvitation", mock.Anything, tc.session, tc.svcReq).Return(tc.svcErr)
@@ -186,14 +190,14 @@ func TestViewInvitation(t *testing.T) {
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
 		{
-			desc:     "view invitation with empty userID",
+			desc:     "view invitation with empty domainID",
 			token:    validToken,
-			userID:   "",
-			domainID: invitation.DomainID,
+			userID:   invitation.UserID,
+			domainID: "",
 			svcRes:   domains.Invitation{},
 			svcErr:   nil,
 			response: sdk.Invitation{},
-			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingDomainID, http.StatusBadRequest),
 		},
 		{
 			desc:     "view invitation with invalid domainID",
@@ -209,7 +213,7 @@ func TestViewInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{UserID: tc.userID, DomainID: tc.domainID}
+				tc.session = smqauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: tc.domainID + "_" + tc.userID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ViewInvitation", mock.Anything, tc.session, tc.userID, tc.domainID).Return(tc.svcRes, tc.svcErr)
@@ -504,12 +508,12 @@ func TestDeleteInvitation(t *testing.T) {
 			err:      errors.NewSDKErrorWithStatus(apiutil.ErrBearerToken, http.StatusUnauthorized),
 		},
 		{
-			desc:     "delete invitation with empty userID",
+			desc:     "delete invitation with empty domainID",
 			token:    validToken,
-			userID:   "",
-			domainID: invitation.DomainID,
+			userID:   invitation.UserID,
+			domainID: "",
 			svcErr:   nil,
-			err:      errors.NewSDKErrorWithStatus(errors.Wrap(apiutil.ErrValidation, apiutil.ErrMissingID), http.StatusBadRequest),
+			err:      errors.NewSDKErrorWithStatus(apiutil.ErrMissingDomainID, http.StatusBadRequest),
 		},
 		{
 			desc:     "delete invitation with invalid domainID",
@@ -523,7 +527,7 @@ func TestDeleteInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{UserID: tc.userID, DomainID: tc.domainID}
+				tc.session = smqauthn.Session{UserID: tc.userID, DomainID: tc.domainID, DomainUserID: tc.domainID + "_" + tc.userID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("DeleteInvitation", mock.Anything, tc.session, tc.userID, tc.domainID).Return(tc.svcErr)

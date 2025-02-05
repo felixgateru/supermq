@@ -43,7 +43,7 @@ func (sdk mgSDK) SendInvitation(invitation Invitation, token string) (err error)
 		return errors.NewSDKError(err)
 	}
 
-	url := sdk.domainsURL + "/" + invitationsEndpoint
+	url := sdk.domainsURL + "/" + invitation.DomainID + "/" + invitationsEndpoint
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusCreated)
 
@@ -51,7 +51,7 @@ func (sdk mgSDK) SendInvitation(invitation Invitation, token string) (err error)
 }
 
 func (sdk mgSDK) Invitation(userID, domainID, token string) (invitation Invitation, err error) {
-	url := sdk.domainsURL + "/" + invitationsEndpoint + "/" + userID + "/" + domainID
+	url := sdk.domainsURL + "/" + domainID + "/" + invitationsEndpoint + "/" + userID
 
 	_, body, sdkerr := sdk.processRequest(http.MethodGet, url, token, nil, nil, http.StatusOK)
 	if sdkerr != nil {
@@ -121,7 +121,7 @@ func (sdk mgSDK) RejectInvitation(domainID, token string) (err error) {
 }
 
 func (sdk mgSDK) DeleteInvitation(userID, domainID, token string) (err error) {
-	url := sdk.domainsURL + "/" + invitationsEndpoint + "/" + userID + "/" + domainID
+	url := sdk.domainsURL + "/" + domainID + "/" + invitationsEndpoint + "/" + userID
 
 	_, _, sdkerr := sdk.processRequest(http.MethodDelete, url, token, nil, nil, http.StatusNoContent)
 

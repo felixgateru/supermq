@@ -357,9 +357,6 @@ func (lie listInvitationsEvent) Encode() (map[string]interface{}, error) {
 	if lie.RoleID != "" {
 		val["role_id"] = lie.RoleID
 	}
-	if lie.RoleName != "" {
-		val["role_name"] = lie.RoleName
-	}
 	if lie.State.String() != "" {
 		val["state"] = lie.State.String()
 	}

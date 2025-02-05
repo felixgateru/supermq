@@ -178,12 +178,9 @@ func (svc service) ListDomains(ctx context.Context, session authn.Session, p Pag
 }
 
 func (svc *service) SendInvitation(ctx context.Context, session authn.Session, invitation Invitation) error {
-	role, err := svc.repo.RetrieveRole(ctx, invitation.RoleID)
-	if err != nil {
+	if _, err := svc.repo.RetrieveRole(ctx, invitation.RoleID); err != nil {
 		return errors.Wrap(svcerr.ErrInvalidRole, err)
 	}
-	invitation.RoleName = role.Name
-
 	invitation.InvitedBy = session.UserID
 
 	invitation.CreatedAt = time.Now()
@@ -199,11 +196,16 @@ func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, u
 	if err != nil {
 		return Invitation{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
+	role, err := svc.repo.RetrieveRole(ctx, inv.RoleID)
+	if err != nil {
+		return Invitation{}, errors.Wrap(svcerr.ErrViewEntity, err)
+	}
 	actions, err := svc.repo.RoleListActions(ctx, inv.RoleID)
 	if err != nil {
 		return Invitation{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	inv.Actions = actions
+	inv.RoleName = role.Name
 
 	return inv, nil
 }

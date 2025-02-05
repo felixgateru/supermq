@@ -16,8 +16,8 @@ import (
 )
 
 func (repo domainRepo) SaveInvitation(ctx context.Context, invitation domains.Invitation) (err error) {
-	q := `INSERT INTO invitations (invited_by, user_id, domain_id, role_id, role_name, created_at)
-		VALUES (:invited_by, :user_id, :domain_id, :role_id, :role_name, :created_at)`
+	q := `INSERT INTO invitations (invited_by, user_id, domain_id, role_id, created_at)
+		VALUES (:invited_by, :user_id, :domain_id, :role_id, :created_at)`
 
 	dbInv := toDBInvitation(invitation)
 	if _, err = repo.db.NamedExecContext(ctx, q, dbInv); err != nil {
@@ -28,7 +28,7 @@ func (repo domainRepo) SaveInvitation(ctx context.Context, invitation domains.In
 }
 
 func (repo domainRepo) RetrieveInvitation(ctx context.Context, userID, domainID string) (domains.Invitation, error) {
-	q := `SELECT invited_by, user_id, domain_id, role_id, role_name, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE user_id = :user_id AND domain_id = :domain_id;`
+	q := `SELECT invited_by, user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE user_id = :user_id AND domain_id = :domain_id;`
 
 	dbinv := dbInvitation{
 		UserID:   userID,
@@ -55,7 +55,7 @@ func (repo domainRepo) RetrieveInvitation(ctx context.Context, userID, domainID 
 func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
 	query := pageQuery(pm)
 
-	q := fmt.Sprintf("SELECT invited_by, user_id, domain_id, role_id, role_name, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
+	q := fmt.Sprintf("SELECT invited_by, user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
 
 	rows, err := repo.db.NamedQueryContext(ctx, q, pm)
 	if err != nil {
@@ -148,9 +148,6 @@ func pageQuery(pm domains.InvitationPageMeta) string {
 	if pm.RoleID != "" {
 		query = append(query, "role_id = :role_id")
 	}
-	if pm.RoleName != "" {
-		query = append(query, "role_name = :role_name")
-	}
 	if pm.InvitedByOrUserID != "" {
 		query = append(query, "(invited_by = :invited_by_or_user_id OR user_id = :invited_by_or_user_id)")
 	}
@@ -176,7 +173,6 @@ type dbInvitation struct {
 	UserID      string       `db:"user_id"`
 	DomainID    string       `db:"domain_id"`
 	RoleID      string       `db:"role_id,omitempty"`
-	RoleName    string       `db:"role_name,omitempty"`
 	Relation    string       `db:"relation"`
 	CreatedAt   time.Time    `db:"created_at"`
 	UpdatedAt   sql.NullTime `db:"updated_at,omitempty"`
@@ -201,7 +197,6 @@ func toDBInvitation(inv domains.Invitation) dbInvitation {
 		UserID:      inv.UserID,
 		DomainID:    inv.DomainID,
 		RoleID:      inv.RoleID,
-		RoleName:    inv.RoleName,
 		CreatedAt:   inv.CreatedAt,
 		UpdatedAt:   updatedAt,
 		ConfirmedAt: confirmedAt,
@@ -226,7 +221,6 @@ func toInvitation(dbinv dbInvitation) domains.Invitation {
 		UserID:      dbinv.UserID,
 		DomainID:    dbinv.DomainID,
 		RoleID:      dbinv.RoleID,
-		RoleName:    dbinv.RoleName,
 		CreatedAt:   dbinv.CreatedAt,
 		UpdatedAt:   updatedAt,
 		ConfirmedAt: confirmedAt,

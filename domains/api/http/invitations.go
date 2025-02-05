@@ -121,10 +121,6 @@ func decodeListInvitationsReq(_ context.Context, r *http.Request) (interface{}, 
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
 	}
-	roleName, err := apiutil.ReadStringQuery(r, roleNameKey, "")
-	if err != nil {
-		return nil, errors.Wrap(apiutil.ErrValidation, err)
-	}
 	domainID, err := apiutil.ReadStringQuery(r, domainIDKey, "")
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
@@ -144,7 +140,6 @@ func decodeListInvitationsReq(_ context.Context, r *http.Request) (interface{}, 
 			InvitedBy: invitedBy,
 			UserID:    userID,
 			RoleID:    roleID,
-			RoleName:  roleName,
 			DomainID:  domainID,
 			State:     state,
 		},
