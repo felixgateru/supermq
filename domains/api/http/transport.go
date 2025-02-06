@@ -84,58 +84,58 @@ func MakeHandler(svc domains.Service, authn authn.Authentication, mux *chi.Mux, 
 			), "freeze_domain").ServeHTTP)
 			roleManagerHttp.EntityRoleMangerRouter(svc, d, r, opts)
 		})
-	})
 
-	mux.Route("/{domainID}/invitations", func(r chi.Router) {
-		r.Use(api.AuthenticateMiddleware(authn, true))
-		r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
-			sendInvitationEndpoint(svc),
-			decodeSendInvitationReq,
-			api.EncodeResponse,
-			opts...,
-		), "send_invitation").ServeHTTP)
-		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-			listDomainInvitationsEndpoint(svc),
-			decodeListInvitationsReq,
-			api.EncodeResponse,
-			opts...,
-		), "list_invitations").ServeHTTP)
-		r.Route("/{userID}", func(r chi.Router) {
+		r.Route("/{domainID}/invitations", func(r chi.Router) {
+			r.Use(api.AuthenticateMiddleware(authn, true))
+			r.Post("/", otelhttp.NewHandler(kithttp.NewServer(
+				sendInvitationEndpoint(svc),
+				decodeSendInvitationReq,
+				api.EncodeResponse,
+				opts...,
+			), "send_invitation").ServeHTTP)
 			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-				viewInvitationEndpoint(svc),
-				decodeInvitationReq,
+				listDomainInvitationsEndpoint(svc),
+				decodeListInvitationsReq,
 				api.EncodeResponse,
 				opts...,
-			), "view_invitation").ServeHTTP)
-			r.Delete("/", otelhttp.NewHandler(kithttp.NewServer(
-				deleteInvitationEndpoint(svc),
-				decodeInvitationReq,
-				api.EncodeResponse,
-				opts...,
-			), "delete_invitation").ServeHTTP)
+			), "list_invitations").ServeHTTP)
+			r.Route("/{userID}", func(r chi.Router) {
+				r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
+					viewInvitationEndpoint(svc),
+					decodeInvitationReq,
+					api.EncodeResponse,
+					opts...,
+				), "view_invitation").ServeHTTP)
+				r.Delete("/", otelhttp.NewHandler(kithttp.NewServer(
+					deleteInvitationEndpoint(svc),
+					decodeInvitationReq,
+					api.EncodeResponse,
+					opts...,
+				), "delete_invitation").ServeHTTP)
+			})
 		})
-	})
 
-	mux.Route("/invitations", func(r chi.Router) {
-		r.Use(api.AuthenticateMiddleware(authn, false))
-		r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-			listUserInvitationsEndpoint(svc),
-			decodeListInvitationsReq,
-			api.EncodeResponse,
-			opts...,
-		), "list_invitations").ServeHTTP)
-		r.Post("/accept", otelhttp.NewHandler(kithttp.NewServer(
-			acceptInvitationEndpoint(svc),
-			decodeAcceptInvitationReq,
-			api.EncodeResponse,
-			opts...,
-		), "accept_invitation").ServeHTTP)
-		r.Post("/reject", otelhttp.NewHandler(kithttp.NewServer(
-			rejectInvitationEndpoint(svc),
-			decodeAcceptInvitationReq,
-			api.EncodeResponse,
-			opts...,
-		), "reject_invitation").ServeHTTP)
+		r.Route("/invitations", func(r chi.Router) {
+			r.Use(api.AuthenticateMiddleware(authn, false))
+			r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
+				listUserInvitationsEndpoint(svc),
+				decodeListInvitationsReq,
+				api.EncodeResponse,
+				opts...,
+			), "list_invitations").ServeHTTP)
+			r.Post("/accept", otelhttp.NewHandler(kithttp.NewServer(
+				acceptInvitationEndpoint(svc),
+				decodeAcceptInvitationReq,
+				api.EncodeResponse,
+				opts...,
+			), "accept_invitation").ServeHTTP)
+			r.Post("/reject", otelhttp.NewHandler(kithttp.NewServer(
+				rejectInvitationEndpoint(svc),
+				decodeAcceptInvitationReq,
+				api.EncodeResponse,
+				opts...,
+			), "reject_invitation").ServeHTTP)
+		})
 	})
 
 	mux.Get("/health", supermq.Health("domains", instanceID))
