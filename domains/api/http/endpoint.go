@@ -198,9 +198,9 @@ func sendInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 		}
 
 		invitation := domains.Invitation{
-			UserID:   req.UserID,
-			DomainID: session.DomainID,
-			RoleID:   req.RoleID,
+			InviteeUserID: req.InviteeUserID,
+			DomainID:      session.DomainID,
+			RoleID:        req.RoleID,
 		}
 
 		if err := svc.SendInvitation(ctx, session, invitation); err != nil {

@@ -84,28 +84,28 @@ func (tm *tracingMiddleware) ListDomains(ctx context.Context, session authn.Sess
 func (tm *tracingMiddleware) SendInvitation(ctx context.Context, session authn.Session, invitation domains.Invitation) (err error) {
 	ctx, span := tm.tracer.Start(ctx, "send_invitation", trace.WithAttributes(
 		attribute.String("domain_id", invitation.DomainID),
-		attribute.String("user_id", invitation.UserID),
+		attribute.String("invitee_user_id", invitation.InviteeUserID),
 	))
 	defer span.End()
 
 	return tm.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (tm *tracingMiddleware) ViewInvitation(ctx context.Context, session authn.Session, userID, domain string) (invitation domains.Invitation, err error) {
+func (tm *tracingMiddleware) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domain string) (invitation domains.Invitation, err error) {
 	ctx, span := tm.tracer.Start(ctx, "view_invitation", trace.WithAttributes(
-		attribute.String("user_id", userID),
+		attribute.String("invitee_user_id", inviteeUserID),
 		attribute.String("domain_id", domain),
 	))
 	defer span.End()
 
-	return tm.svc.ViewInvitation(ctx, session, userID, domain)
+	return tm.svc.ViewInvitation(ctx, session, inviteeUserID, domain)
 }
 
 func (tm *tracingMiddleware) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
 	ctx, span := tm.tracer.Start(ctx, "list_invitations", trace.WithAttributes(
 		attribute.Int("limit", int(pm.Limit)),
 		attribute.Int("offset", int(pm.Offset)),
-		attribute.String("user_id", pm.UserID),
+		attribute.String("invitee_user_id", pm.InviteeUserID),
 		attribute.String("domain_id", pm.DomainID),
 		attribute.String("invited_by", pm.InvitedBy),
 	))
@@ -132,12 +132,12 @@ func (tm *tracingMiddleware) RejectInvitation(ctx context.Context, session authn
 	return tm.svc.RejectInvitation(ctx, session, domainID)
 }
 
-func (tm *tracingMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) (err error) {
+func (tm *tracingMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (err error) {
 	ctx, span := tm.tracer.Start(ctx, "delete_invitation", trace.WithAttributes(
-		attribute.String("user_id", userID),
+		attribute.String("invitee_user_id", inviteeUserID),
 		attribute.String("domain_id", domainID),
 	))
 	defer span.End()
 
-	return tm.svc.DeleteInvitation(ctx, session, userID, domainID)
+	return tm.svc.DeleteInvitation(ctx, session, inviteeUserID, domainID)
 }

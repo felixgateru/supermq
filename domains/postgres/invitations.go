@@ -16,8 +16,8 @@ import (
 )
 
 func (repo domainRepo) SaveInvitation(ctx context.Context, invitation domains.Invitation) (err error) {
-	q := `INSERT INTO invitations (invited_by, user_id, domain_id, role_id, created_at)
-		VALUES (:invited_by, :user_id, :domain_id, :role_id, :created_at)`
+	q := `INSERT INTO invitations (invited_by, invitee_user_id, domain_id, role_id, created_at)
+		VALUES (:invited_by, :invitee_user_id, :domain_id, :role_id, :created_at)`
 
 	dbInv := toDBInvitation(invitation)
 	if _, err = repo.db.NamedExecContext(ctx, q, dbInv); err != nil {
@@ -27,12 +27,12 @@ func (repo domainRepo) SaveInvitation(ctx context.Context, invitation domains.In
 	return nil
 }
 
-func (repo domainRepo) RetrieveInvitation(ctx context.Context, userID, domainID string) (domains.Invitation, error) {
-	q := `SELECT invited_by, user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE user_id = :user_id AND domain_id = :domain_id;`
+func (repo domainRepo) RetrieveInvitation(ctx context.Context, inviteeUserID, domainID string) (domains.Invitation, error) {
+	q := `SELECT invited_by, invitee_user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations WHERE invitee_user_id = :invitee_user_id AND domain_id = :domain_id;`
 
 	dbinv := dbInvitation{
-		UserID:   userID,
-		DomainID: domainID,
+		InviteeUserID: inviteeUserID,
+		DomainID:      domainID,
 	}
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbinv)
 	if err != nil {
@@ -55,7 +55,7 @@ func (repo domainRepo) RetrieveInvitation(ctx context.Context, userID, domainID 
 func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
 	query := pageQuery(pm)
 
-	q := fmt.Sprintf("SELECT invited_by, user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
+	q := fmt.Sprintf("SELECT invited_by, invitee_user_id, domain_id, role_id, created_at, updated_at, confirmed_at, rejected_at FROM invitations %s LIMIT :limit OFFSET :offset;", query)
 
 	rows, err := repo.db.NamedQueryContext(ctx, q, pm)
 	if err != nil {
@@ -90,7 +90,7 @@ func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.In
 }
 
 func (repo domainRepo) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) (err error) {
-	q := `UPDATE invitations SET confirmed_at = :confirmed_at, updated_at = :updated_at WHERE user_id = :user_id AND domain_id = :domain_id`
+	q := `UPDATE invitations SET confirmed_at = :confirmed_at, updated_at = :updated_at WHERE invitee_user_id = :invitee_user_id AND domain_id = :domain_id`
 
 	dbinv := toDBInvitation(invitation)
 	result, err := repo.db.NamedExecContext(ctx, q, dbinv)
@@ -105,7 +105,7 @@ func (repo domainRepo) UpdateConfirmation(ctx context.Context, invitation domain
 }
 
 func (repo domainRepo) UpdateRejection(ctx context.Context, invitation domains.Invitation) (err error) {
-	q := `UPDATE invitations SET rejected_at = :rejected_at, updated_at = :updated_at WHERE user_id = :user_id AND domain_id = :domain_id`
+	q := `UPDATE invitations SET rejected_at = :rejected_at, updated_at = :updated_at WHERE invitee_user_id = :invitee_user_id AND domain_id = :domain_id`
 
 	dbInv := toDBInvitation(invitation)
 	result, err := repo.db.NamedExecContext(ctx, q, dbInv)
@@ -119,10 +119,10 @@ func (repo domainRepo) UpdateRejection(ctx context.Context, invitation domains.I
 	return nil
 }
 
-func (repo domainRepo) DeleteInvitation(ctx context.Context, userID, domain string) (err error) {
-	q := `DELETE FROM invitations WHERE user_id = $1 AND domain_id = $2`
+func (repo domainRepo) DeleteInvitation(ctx context.Context, inviteeUserID, domain string) (err error) {
+	q := `DELETE FROM invitations WHERE invitee_user_id = $1 AND domain_id = $2`
 
-	result, err := repo.db.ExecContext(ctx, q, userID, domain)
+	result, err := repo.db.ExecContext(ctx, q, inviteeUserID, domain)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrRemoveEntity, err)
 	}
@@ -139,8 +139,8 @@ func pageQuery(pm domains.InvitationPageMeta) string {
 	if pm.DomainID != "" {
 		query = append(query, "domain_id = :domain_id")
 	}
-	if pm.UserID != "" {
-		query = append(query, "user_id = :user_id")
+	if pm.InviteeUserID != "" {
+		query = append(query, "invitee_user_id = :invitee_user_id")
 	}
 	if pm.InvitedBy != "" {
 		query = append(query, "invited_by = :invited_by")
@@ -149,7 +149,7 @@ func pageQuery(pm domains.InvitationPageMeta) string {
 		query = append(query, "role_id = :role_id")
 	}
 	if pm.InvitedByOrUserID != "" {
-		query = append(query, "(invited_by = :invited_by_or_user_id OR user_id = :invited_by_or_user_id)")
+		query = append(query, "(invited_by = :invited_by_or_user_id OR invitee_user_id = :invited_by_or_user_id)")
 	}
 	if pm.State == domains.Accepted {
 		query = append(query, "confirmed_at IS NOT NULL")
@@ -169,15 +169,15 @@ func pageQuery(pm domains.InvitationPageMeta) string {
 }
 
 type dbInvitation struct {
-	InvitedBy   string       `db:"invited_by"`
-	UserID      string       `db:"user_id"`
-	DomainID    string       `db:"domain_id"`
-	RoleID      string       `db:"role_id,omitempty"`
-	Relation    string       `db:"relation"`
-	CreatedAt   time.Time    `db:"created_at"`
-	UpdatedAt   sql.NullTime `db:"updated_at,omitempty"`
-	ConfirmedAt sql.NullTime `db:"confirmed_at,omitempty"`
-	RejectedAt  sql.NullTime `db:"rejected_at,omitempty"`
+	InvitedBy     string       `db:"invited_by"`
+	InviteeUserID string       `db:"invitee_user_id"`
+	DomainID      string       `db:"domain_id"`
+	RoleID        string       `db:"role_id,omitempty"`
+	Relation      string       `db:"relation"`
+	CreatedAt     time.Time    `db:"created_at"`
+	UpdatedAt     sql.NullTime `db:"updated_at,omitempty"`
+	ConfirmedAt   sql.NullTime `db:"confirmed_at,omitempty"`
+	RejectedAt    sql.NullTime `db:"rejected_at,omitempty"`
 }
 
 func toDBInvitation(inv domains.Invitation) dbInvitation {
@@ -193,14 +193,14 @@ func toDBInvitation(inv domains.Invitation) dbInvitation {
 	}
 
 	return dbInvitation{
-		InvitedBy:   inv.InvitedBy,
-		UserID:      inv.UserID,
-		DomainID:    inv.DomainID,
-		RoleID:      inv.RoleID,
-		CreatedAt:   inv.CreatedAt,
-		UpdatedAt:   updatedAt,
-		ConfirmedAt: confirmedAt,
-		RejectedAt:  rejectedAt,
+		InvitedBy:     inv.InvitedBy,
+		InviteeUserID: inv.InviteeUserID,
+		DomainID:      inv.DomainID,
+		RoleID:        inv.RoleID,
+		CreatedAt:     inv.CreatedAt,
+		UpdatedAt:     updatedAt,
+		ConfirmedAt:   confirmedAt,
+		RejectedAt:    rejectedAt,
 	}
 }
 
@@ -217,13 +217,13 @@ func toInvitation(dbinv dbInvitation) domains.Invitation {
 	}
 
 	return domains.Invitation{
-		InvitedBy:   dbinv.InvitedBy,
-		UserID:      dbinv.UserID,
-		DomainID:    dbinv.DomainID,
-		RoleID:      dbinv.RoleID,
-		CreatedAt:   dbinv.CreatedAt,
-		UpdatedAt:   updatedAt,
-		ConfirmedAt: confirmedAt,
-		RejectedAt:  rejectedAt,
+		InvitedBy:     dbinv.InvitedBy,
+		InviteeUserID: dbinv.InviteeUserID,
+		DomainID:      dbinv.DomainID,
+		RoleID:        dbinv.RoleID,
+		CreatedAt:     dbinv.CreatedAt,
+		UpdatedAt:     updatedAt,
+		ConfirmedAt:   confirmedAt,
+		RejectedAt:    rejectedAt,
 	}
 }

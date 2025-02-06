@@ -56,9 +56,9 @@ var (
 	userID          = testsutil.GenerateUUID(&testing.T{})
 	validSession    = authn.Session{UserID: userID}
 	validInvitation = domains.Invitation{
-		UserID:   testsutil.GenerateUUID(&testing.T{}),
-		DomainID: testsutil.GenerateUUID(&testing.T{}),
-		RoleID:   testsutil.GenerateUUID(&testing.T{}),
+		InviteeUserID: testsutil.GenerateUUID(&testing.T{}),
+		DomainID:      testsutil.GenerateUUID(&testing.T{}),
+		RoleID:        testsutil.GenerateUUID(&testing.T{}),
 	}
 )
 
@@ -592,9 +592,9 @@ func TestSendInvitation(t *testing.T) {
 			desc:    "send invitation with invalid role id",
 			session: validSession,
 			req: domains.Invitation{
-				DomainID: testsutil.GenerateUUID(t),
-				UserID:   testsutil.GenerateUUID(t),
-				RoleID:   inValid,
+				DomainID:      testsutil.GenerateUUID(t),
+				InviteeUserID: testsutil.GenerateUUID(t),
+				RoleID:        inValid,
 			},
 			retrieveRoleErr: repoerr.ErrNotFound,
 			err:             svcerr.ErrInvalidRole,
@@ -624,14 +624,14 @@ func TestViewInvitation(t *testing.T) {
 	svc := newService()
 
 	validInvitation := domains.Invitation{
-		InvitedBy:   testsutil.GenerateUUID(t),
-		UserID:      testsutil.GenerateUUID(t),
-		DomainID:    testsutil.GenerateUUID(t),
-		RoleID:      testsutil.GenerateUUID(t),
-		Actions:     []string{"read", "delete"},
-		CreatedAt:   time.Now().Add(-time.Hour),
-		UpdatedAt:   time.Now().Add(-time.Hour),
-		ConfirmedAt: time.Now().Add(-time.Hour),
+		InvitedBy:     testsutil.GenerateUUID(t),
+		InviteeUserID: testsutil.GenerateUUID(t),
+		DomainID:      testsutil.GenerateUUID(t),
+		RoleID:        testsutil.GenerateUUID(t),
+		Actions:       []string{"read", "delete"},
+		CreatedAt:     time.Now().Add(-time.Hour),
+		UpdatedAt:     time.Now().Add(-time.Hour),
+		ConfirmedAt:   time.Now().Add(-time.Hour),
 	}
 	cases := []struct {
 		desc                  string
@@ -647,7 +647,7 @@ func TestViewInvitation(t *testing.T) {
 	}{
 		{
 			desc:     "view invitation successful",
-			userID:   validInvitation.UserID,
+			userID:   validInvitation.InviteeUserID,
 			domainID: validInvitation.DomainID,
 			session:  validSession,
 			resp:     validInvitation,
@@ -655,7 +655,7 @@ func TestViewInvitation(t *testing.T) {
 		},
 		{
 			desc:                  "view invitation with error retrieving invitation",
-			userID:                validInvitation.UserID,
+			userID:                validInvitation.InviteeUserID,
 			domainID:              validInvitation.DomainID,
 			session:               validSession,
 			retrieveInvitationErr: repoerr.ErrNotFound,
@@ -663,7 +663,7 @@ func TestViewInvitation(t *testing.T) {
 		},
 		{
 			desc:         "view invitation with failed to retrieve role actions",
-			userID:       validInvitation.UserID,
+			userID:       validInvitation.InviteeUserID,
 			domainID:     validInvitation.DomainID,
 			session:      validSession,
 			listRolesErr: repoerr.ErrNotFound,
@@ -671,7 +671,7 @@ func TestViewInvitation(t *testing.T) {
 		},
 		{
 			desc:            "view invitation with failed to retrieve role",
-			userID:          validInvitation.UserID,
+			userID:          validInvitation.InviteeUserID,
 			domainID:        validInvitation.DomainID,
 			session:         validSession,
 			retrieveRoleErr: repoerr.ErrNotFound,
@@ -707,14 +707,14 @@ func TestListInvitations(t *testing.T) {
 		Limit:  10,
 		Invitations: []domains.Invitation{
 			{
-				InvitedBy:   testsutil.GenerateUUID(t),
-				UserID:      testsutil.GenerateUUID(t),
-				DomainID:    testsutil.GenerateUUID(t),
-				RoleID:      testsutil.GenerateUUID(t),
-				RoleName:    "admin",
-				CreatedAt:   time.Now().Add(-time.Hour),
-				UpdatedAt:   time.Now().Add(-time.Hour),
-				ConfirmedAt: time.Now().Add(-time.Hour),
+				InvitedBy:     testsutil.GenerateUUID(t),
+				InviteeUserID: testsutil.GenerateUUID(t),
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
+				RoleName:      "admin",
+				CreatedAt:     time.Now().Add(-time.Hour),
+				UpdatedAt:     time.Now().Add(-time.Hour),
+				ConfirmedAt:   time.Now().Add(-time.Hour),
 			},
 		},
 	}
@@ -775,9 +775,9 @@ func TestAcceptInvitation(t *testing.T) {
 			domainID: validID,
 			session:  validSession,
 			resp: domains.Invitation{
-				UserID:   userID,
-				DomainID: testsutil.GenerateUUID(t),
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			err: nil,
 		},
@@ -791,9 +791,9 @@ func TestAcceptInvitation(t *testing.T) {
 			desc:    "accept invitation with of different user",
 			session: validSession,
 			resp: domains.Invitation{
-				UserID:   testsutil.GenerateUUID(t),
-				DomainID: testsutil.GenerateUUID(t),
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: testsutil.GenerateUUID(t),
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			err: svcerr.ErrAuthorization,
 		},
@@ -802,9 +802,9 @@ func TestAcceptInvitation(t *testing.T) {
 			domainID: validID,
 			session:  validSession,
 			resp: domains.Invitation{
-				UserID:   userID,
-				DomainID: testsutil.GenerateUUID(t),
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			addRoleMemberErr: repoerr.ErrMalformedEntity,
 			err:              svcerr.ErrUpdateEntity,
@@ -814,9 +814,9 @@ func TestAcceptInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:   userID,
-				DomainID: validID,
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: userID,
+				DomainID:      validID,
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			updateConfirmationErr: repoerr.ErrNotFound,
 			err:                   svcerr.ErrUpdateEntity,
@@ -826,10 +826,10 @@ func TestAcceptInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:      userID,
-				DomainID:    testsutil.GenerateUUID(t),
-				RoleID:      testsutil.GenerateUUID(t),
-				ConfirmedAt: time.Now(),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
+				ConfirmedAt:   time.Now(),
 			},
 			err: svcerr.ErrInvitationAlreadyAccepted,
 		},
@@ -838,10 +838,10 @@ func TestAcceptInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:     userID,
-				DomainID:   testsutil.GenerateUUID(t),
-				RoleID:     testsutil.GenerateUUID(t),
-				RejectedAt: time.Now(),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
+				RejectedAt:    time.Now(),
 			},
 			err: svcerr.ErrInvitationAlreadyRejected,
 		},
@@ -852,7 +852,7 @@ func TestAcceptInvitation(t *testing.T) {
 			repoCall := drepo.On("RetrieveInvitation", context.Background(), tc.session.UserID, tc.domainID).Return(tc.resp, tc.retrieveInvitationErr)
 			repoCall1 := drepo.On("RetrieveEntityRole", context.Background(), tc.domainID, tc.resp.RoleID).Return(roles.Role{}, tc.addRoleMemberErr)
 			policyCall := policy.On("AddPolicies", context.Background(), mock.Anything).Return(tc.addRoleMemberErr)
-			repoCall2 := drepo.On("RoleAddMembers", context.Background(), mock.Anything, []string{tc.resp.UserID}).Return([]string{}, tc.addRoleMemberErr)
+			repoCall2 := drepo.On("RoleAddMembers", context.Background(), mock.Anything, []string{tc.resp.InviteeUserID}).Return([]string{}, tc.addRoleMemberErr)
 			repoCall3 := drepo.On("UpdateConfirmation", context.Background(), mock.Anything).Return(tc.updateConfirmationErr)
 			err := svc.AcceptInvitation(context.Background(), tc.session, tc.domainID)
 			assert.True(t, errors.Contains(err, tc.err))
@@ -883,9 +883,9 @@ func TestRejectInvitation(t *testing.T) {
 			domainID: validID,
 			session:  validSession,
 			resp: domains.Invitation{
-				UserID:   userID,
-				DomainID: testsutil.GenerateUUID(t),
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			err: nil,
 		},
@@ -899,9 +899,9 @@ func TestRejectInvitation(t *testing.T) {
 			desc:    "reject invitation with of different user",
 			session: validSession,
 			resp: domains.Invitation{
-				UserID:   testsutil.GenerateUUID(t),
-				DomainID: testsutil.GenerateUUID(t),
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: testsutil.GenerateUUID(t),
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			err: svcerr.ErrAuthorization,
 		},
@@ -910,9 +910,9 @@ func TestRejectInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:   userID,
-				DomainID: validID,
-				RoleID:   testsutil.GenerateUUID(t),
+				InviteeUserID: userID,
+				DomainID:      validID,
+				RoleID:        testsutil.GenerateUUID(t),
 			},
 			updateConfirmationErr: repoerr.ErrNotFound,
 			err:                   svcerr.ErrUpdateEntity,
@@ -922,10 +922,10 @@ func TestRejectInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:      userID,
-				DomainID:    testsutil.GenerateUUID(t),
-				RoleID:      testsutil.GenerateUUID(t),
-				ConfirmedAt: time.Now(),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
+				ConfirmedAt:   time.Now(),
 			},
 			err: svcerr.ErrInvitationAlreadyAccepted,
 		},
@@ -934,10 +934,10 @@ func TestRejectInvitation(t *testing.T) {
 			session:  validSession,
 			domainID: validID,
 			resp: domains.Invitation{
-				UserID:     userID,
-				DomainID:   testsutil.GenerateUUID(t),
-				RoleID:     testsutil.GenerateUUID(t),
-				RejectedAt: time.Now(),
+				InviteeUserID: userID,
+				DomainID:      testsutil.GenerateUUID(t),
+				RoleID:        testsutil.GenerateUUID(t),
+				RejectedAt:    time.Now(),
 			},
 			err: svcerr.ErrInvitationAlreadyRejected,
 		},
@@ -976,21 +976,21 @@ func TestDeleteInvitation(t *testing.T) {
 		},
 		{
 			desc:     "delete invitations for the same user",
-			userID:   validInvitation.UserID,
+			userID:   validInvitation.InviteeUserID,
 			domainID: validInvitation.DomainID,
 			resp:     validInvitation,
 			err:      nil,
 		},
 		{
 			desc:     "delete invitations for the invited user",
-			userID:   validInvitation.UserID,
+			userID:   validInvitation.InviteeUserID,
 			domainID: validInvitation.DomainID,
 			resp:     validInvitation,
 			err:      nil,
 		},
 		{
 			desc:                  "delete invitation with error retrieving invitation",
-			userID:                validInvitation.UserID,
+			userID:                validInvitation.InviteeUserID,
 			domainID:              validInvitation.DomainID,
 			resp:                  domains.Invitation{},
 			retrieveInvitationErr: repoerr.ErrNotFound,
@@ -998,7 +998,7 @@ func TestDeleteInvitation(t *testing.T) {
 		},
 		{
 			desc:                "delete invitation with error deleting invitation",
-			userID:              validInvitation.UserID,
+			userID:              validInvitation.InviteeUserID,
 			domainID:            validInvitation.DomainID,
 			resp:                domains.Invitation{},
 			deleteInvitationErr: repoerr.ErrNotFound,

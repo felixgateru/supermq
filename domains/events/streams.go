@@ -197,11 +197,11 @@ func (es *eventStore) ViewInvitation(ctx context.Context, session authn.Session,
 	}
 
 	event := viewInvitationEvent{
-		userID:   userID,
-		domainID: domainID,
-		roleID:   invitation.RoleID,
-		roleName: invitation.RoleName,
-		session:  session,
+		inviteeUserID: userID,
+		domainID:      domainID,
+		roleID:        invitation.RoleID,
+		roleName:      invitation.RoleName,
+		session:       session,
 	}
 
 	if err := es.Publish(ctx, event); err != nil {
@@ -255,15 +255,15 @@ func (es *eventStore) RejectInvitation(ctx context.Context, session authn.Sessio
 	return es.Publish(ctx, event)
 }
 
-func (es *eventStore) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) error {
-	if err := es.svc.DeleteInvitation(ctx, session, userID, domainID); err != nil {
+func (es *eventStore) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) error {
+	if err := es.svc.DeleteInvitation(ctx, session, inviteeUserID, domainID); err != nil {
 		return err
 	}
 
 	event := deleteInvitationEvent{
-		userID:   userID,
-		domainID: domainID,
-		session:  session,
+		inviteeUserID: inviteeUserID,
+		domainID:      domainID,
+		session:       session,
 	}
 
 	return es.Publish(ctx, event)

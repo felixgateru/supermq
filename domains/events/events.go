@@ -296,35 +296,35 @@ type sendInvitationEvent struct {
 
 func (sie sendInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationSend,
-		"user_id":     sie.invitation.UserID,
-		"domain_id":   sie.invitation.DomainID,
-		"invited_by":  sie.session.UserID,
-		"role_id":     sie.invitation.RoleID,
-		"token_type":  sie.session.Type.String(),
-		"super_admin": sie.session.SuperAdmin,
+		"operation":       invitationSend,
+		"invitee_user_id": sie.invitation.InviteeUserID,
+		"domain_id":       sie.invitation.DomainID,
+		"invited_by":      sie.session.UserID,
+		"role_id":         sie.invitation.RoleID,
+		"token_type":      sie.session.Type.String(),
+		"super_admin":     sie.session.SuperAdmin,
 	}
 
 	return val, nil
 }
 
 type viewInvitationEvent struct {
-	userID   string
-	domainID string
-	roleID   string
-	roleName string
-	session  authn.Session
+	inviteeUserID string
+	domainID      string
+	roleID        string
+	roleName      string
+	session       authn.Session
 }
 
 func (vie viewInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationRetrieve,
-		"user_id":     vie.userID,
-		"domain_id":   vie.domainID,
-		"role_id":     vie.roleID,
-		"role_name":   vie.roleName,
-		"token_type":  vie.session.Type.String(),
-		"super_admin": vie.session.SuperAdmin,
+		"operation":       invitationRetrieve,
+		"invitee_user_id": vie.inviteeUserID,
+		"domain_id":       vie.domainID,
+		"role_id":         vie.roleID,
+		"role_name":       vie.roleName,
+		"token_type":      vie.session.Type.String(),
+		"super_admin":     vie.session.SuperAdmin,
 	}
 
 	return val, nil
@@ -348,8 +348,8 @@ func (lie listInvitationsEvent) Encode() (map[string]interface{}, error) {
 	if lie.InvitedBy != "" {
 		val["invited_by"] = lie.InvitedBy
 	}
-	if lie.UserID != "" {
-		val["user_id"] = lie.UserID
+	if lie.InviteeUserID != "" {
+		val["invitee_user_id"] = lie.InviteeUserID
 	}
 	if lie.DomainID != "" {
 		val["domain_id"] = lie.DomainID
@@ -371,11 +371,11 @@ type acceptInvitationEvent struct {
 
 func (aie acceptInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationAccept,
-		"domain_id":   aie.domainID,
-		"user_id":     aie.session.UserID,
-		"token_type":  aie.session.Type.String(),
-		"super_admin": aie.session.SuperAdmin,
+		"operation":       invitationAccept,
+		"domain_id":       aie.domainID,
+		"invitee_user_id": aie.session.UserID,
+		"token_type":      aie.session.Type.String(),
+		"super_admin":     aie.session.SuperAdmin,
 	}
 
 	return val, nil
@@ -388,29 +388,29 @@ type rejectInvitationEvent struct {
 
 func (rie rejectInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationReject,
-		"domain_id":   rie.domainID,
-		"user_id":     rie.session.UserID,
-		"token_type":  rie.session.Type.String(),
-		"super_admin": rie.session.SuperAdmin,
+		"operation":       invitationReject,
+		"domain_id":       rie.domainID,
+		"invitee_user_id": rie.session.UserID,
+		"token_type":      rie.session.Type.String(),
+		"super_admin":     rie.session.SuperAdmin,
 	}
 
 	return val, nil
 }
 
 type deleteInvitationEvent struct {
-	userID   string
-	domainID string
-	session  authn.Session
+	inviteeUserID string
+	domainID      string
+	session       authn.Session
 }
 
 func (die deleteInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationDelete,
-		"user_id":     die.userID,
-		"domain_id":   die.domainID,
-		"token_type":  die.session.Type.String(),
-		"super_admin": die.session.SuperAdmin,
+		"operation":       invitationDelete,
+		"invitee_user_id": die.inviteeUserID,
+		"domain_id":       die.domainID,
+		"token_type":      die.session.Type.String(),
+		"super_admin":     die.session.SuperAdmin,
 	}
 
 	return val, nil

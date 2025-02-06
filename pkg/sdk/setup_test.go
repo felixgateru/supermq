@@ -220,16 +220,16 @@ func convertChannel(g sdk.Channel) mgchannels.Channel {
 
 func convertInvitation(i sdk.Invitation) domains.Invitation {
 	return domains.Invitation{
-		InvitedBy:   i.InvitedBy,
-		UserID:      i.UserID,
-		DomainID:    i.DomainID,
-		RoleID:      i.RoleID,
-		RoleName:    i.RoleName,
-		Actions:     i.Actions,
-		CreatedAt:   i.CreatedAt,
-		UpdatedAt:   i.UpdatedAt,
-		ConfirmedAt: i.ConfirmedAt,
-		RejectedAt:  i.RejectedAt,
+		InvitedBy:     i.InvitedBy,
+		InviteeUserID: i.InviteeUserID,
+		DomainID:      i.DomainID,
+		RoleID:        i.RoleID,
+		RoleName:      i.RoleName,
+		Actions:       i.Actions,
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
+		ConfirmedAt:   i.ConfirmedAt,
+		RejectedAt:    i.RejectedAt,
 	}
 }
 

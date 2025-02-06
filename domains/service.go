@@ -191,8 +191,8 @@ func (svc *service) SendInvitation(ctx context.Context, session authn.Session, i
 	return nil
 }
 
-func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation Invitation, err error) {
-	inv, err := svc.repo.RetrieveInvitation(ctx, userID, domainID)
+func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (invitation Invitation, err error) {
+	inv, err := svc.repo.RetrieveInvitation(ctx, inviteeUserID, domainID)
 	if err != nil {
 		return Invitation{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
@@ -224,7 +224,7 @@ func (svc *service) AcceptInvitation(ctx context.Context, session authn.Session,
 		return errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	if inv.UserID != session.UserID {
+	if inv.InviteeUserID != session.UserID {
 		return svcerr.ErrAuthorization
 	}
 
@@ -258,7 +258,7 @@ func (svc *service) RejectInvitation(ctx context.Context, session authn.Session,
 		return errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	if inv.UserID != session.UserID {
+	if inv.InviteeUserID != session.UserID {
 		return svcerr.ErrAuthorization
 	}
 
@@ -280,27 +280,27 @@ func (svc *service) RejectInvitation(ctx context.Context, session authn.Session,
 	return nil
 }
 
-func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) error {
-	if session.UserID == userID {
-		if err := svc.repo.DeleteInvitation(ctx, userID, domainID); err != nil {
+func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) error {
+	if session.UserID == inviteeUserID {
+		if err := svc.repo.DeleteInvitation(ctx, inviteeUserID, domainID); err != nil {
 			return errors.Wrap(svcerr.ErrRemoveEntity, err)
 		}
 		return nil
 	}
 
-	inv, err := svc.repo.RetrieveInvitation(ctx, userID, domainID)
+	inv, err := svc.repo.RetrieveInvitation(ctx, inviteeUserID, domainID)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrRemoveEntity, err)
 	}
 
 	if inv.InvitedBy == session.UserID {
-		if err := svc.repo.DeleteInvitation(ctx, userID, domainID); err != nil {
+		if err := svc.repo.DeleteInvitation(ctx, inviteeUserID, domainID); err != nil {
 			return errors.Wrap(svcerr.ErrRemoveEntity, err)
 		}
 		return nil
 	}
 
-	if err := svc.repo.DeleteInvitation(ctx, userID, domainID); err != nil {
+	if err := svc.repo.DeleteInvitation(ctx, inviteeUserID, domainID); err != nil {
 		return errors.Wrap(svcerr.ErrRemoveEntity, err)
 	}
 

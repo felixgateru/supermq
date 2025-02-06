@@ -116,12 +116,12 @@ func (req freezeDomainReq) validate() error {
 }
 
 type sendInvitationReq struct {
-	UserID string `json:"user_id,omitempty"`
-	RoleID string `json:"role_id,omitempty"`
+	InviteeUserID string `json:"invitee_user_id,omitempty"`
+	RoleID        string `json:"role_id,omitempty"`
 }
 
 func (req *sendInvitationReq) validate() error {
-	if req.UserID == "" || req.RoleID == "" {
+	if req.InviteeUserID == "" || req.RoleID == "" {
 		return apiutil.ErrMissingID
 	}
 

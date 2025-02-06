@@ -141,7 +141,7 @@ func (am *authorizationMiddleware) ListDomains(ctx context.Context, session auth
 }
 
 func (am *authorizationMiddleware) SendInvitation(ctx context.Context, session authn.Session, invitation domains.Invitation) (err error) {
-	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.UserID)
+	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.InviteeUserID)
 	if err := am.extAuthorize(ctx, domainUserId, policies.MembershipPermission, policies.DomainType, invitation.DomainID); err == nil {
 		// return error if the user is already a member of the domain
 		return errors.Wrap(svcerr.ErrConflict, ErrMemberExist)
@@ -154,15 +154,15 @@ func (am *authorizationMiddleware) SendInvitation(ctx context.Context, session a
 	return am.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (am *authorizationMiddleware) ViewInvitation(ctx context.Context, session authn.Session, userID, domain string) (invitation domains.Invitation, err error) {
+func (am *authorizationMiddleware) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domain string) (invitation domains.Invitation, err error) {
 	session.DomainUserID = auth.EncodeDomainUserID(session.DomainID, session.UserID)
-	if session.UserID != userID {
+	if session.UserID != inviteeUserID {
 		if err := am.checkAdmin(ctx, session); err != nil {
 			return domains.Invitation{}, err
 		}
 	}
 
-	return am.svc.ViewInvitation(ctx, session, userID, domain)
+	return am.svc.ViewInvitation(ctx, session, inviteeUserID, domain)
 }
 
 func (am *authorizationMiddleware) ListInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
@@ -194,13 +194,13 @@ func (am *authorizationMiddleware) RejectInvitation(ctx context.Context, session
 	return am.svc.RejectInvitation(ctx, session, domainID)
 }
 
-func (am *authorizationMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) (err error) {
+func (am *authorizationMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (err error) {
 	session.DomainUserID = auth.EncodeDomainUserID(session.DomainID, session.UserID)
 	if err := am.checkAdmin(ctx, session); err != nil {
 		return err
 	}
 
-	return am.svc.DeleteInvitation(ctx, session, userID, domainID)
+	return am.svc.DeleteInvitation(ctx, session, inviteeUserID, domainID)
 }
 
 func (am *authorizationMiddleware) authorize(ctx context.Context, op svcutil.Operation, authReq authz.PolicyReq) error {

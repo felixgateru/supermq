@@ -169,7 +169,7 @@ func (lm *loggingMiddleware) SendInvitation(ctx context.Context, session authn.S
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("user_id", invitation.UserID),
+			slog.String("invitee_user_id", invitation.InviteeUserID),
 			slog.String("domain_id", invitation.DomainID),
 		}
 		if err != nil {
@@ -182,11 +182,11 @@ func (lm *loggingMiddleware) SendInvitation(ctx context.Context, session authn.S
 	return lm.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (lm *loggingMiddleware) ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation domains.Invitation, err error) {
+func (lm *loggingMiddleware) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (invitation domains.Invitation, err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("user_id", userID),
+			slog.String("invitee_user_id", inviteeUserID),
 			slog.String("domain_id", domainID),
 		}
 		if err != nil {
@@ -196,7 +196,7 @@ func (lm *loggingMiddleware) ViewInvitation(ctx context.Context, session authn.S
 		}
 		lm.logger.Info("View invitation completed successfully", args...)
 	}(time.Now())
-	return lm.svc.ViewInvitation(ctx, session, userID, domainID)
+	return lm.svc.ViewInvitation(ctx, session, inviteeUserID, domainID)
 }
 
 func (lm *loggingMiddleware) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
@@ -251,11 +251,11 @@ func (lm *loggingMiddleware) RejectInvitation(ctx context.Context, session authn
 	return lm.svc.RejectInvitation(ctx, session, domainID)
 }
 
-func (lm *loggingMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) (err error) {
+func (lm *loggingMiddleware) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("user_id", userID),
+			slog.String("invitee_user_id", inviteeUserID),
 			slog.String("domain_id", domainID),
 		}
 		if err != nil {
@@ -265,5 +265,5 @@ func (lm *loggingMiddleware) DeleteInvitation(ctx context.Context, session authn
 		}
 		lm.logger.Info("Delete invitation completed successfully", args...)
 	}(time.Now())
-	return lm.svc.DeleteInvitation(ctx, session, userID, domainID)
+	return lm.svc.DeleteInvitation(ctx, session, inviteeUserID, domainID)
 }

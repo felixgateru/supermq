@@ -198,7 +198,7 @@ type Service interface {
 	// - the user who sent the invitation
 	// - domain administrators
 	// - platform administrators
-	ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation Invitation, err error)
+	ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (invitation Invitation, err error)
 
 	// ListInvitations returns a list of invitations.
 	// People who can list invitations are:
@@ -216,7 +216,7 @@ type Service interface {
 	// - the user who sent the invitation
 	// - domain administrators
 	// - platform administrators
-	DeleteInvitation(ctx context.Context, session authn.Session, userID, domainID string) (err error)
+	DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (err error)
 
 	// RejectInvitation rejects an invitation.
 	// People who can reject invitations are:

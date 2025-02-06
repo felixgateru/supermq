@@ -18,16 +18,16 @@ const (
 )
 
 type Invitation struct {
-	InvitedBy   string    `json:"invited_by"`
-	UserID      string    `json:"user_id"`
-	DomainID    string    `json:"domain_id"`
-	RoleID      string    `json:"role_id,omitempty"`
-	RoleName    string    `json:"role_name,omitempty"`
-	Actions     []string  `json:"actions,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at,omitempty"`
-	ConfirmedAt time.Time `json:"confirmed_at,omitempty"`
-	RejectedAt  time.Time `json:"rejected_at,omitempty"`
+	InvitedBy     string    `json:"invited_by"`
+	InviteeUserID string    `json:"invitee_user_id"`
+	DomainID      string    `json:"domain_id"`
+	RoleID        string    `json:"role_id,omitempty"`
+	RoleName      string    `json:"role_name,omitempty"`
+	Actions       []string  `json:"actions,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at,omitempty"`
+	ConfirmedAt   time.Time `json:"confirmed_at,omitempty"`
+	RejectedAt    time.Time `json:"rejected_at,omitempty"`
 }
 
 type InvitationPage struct {

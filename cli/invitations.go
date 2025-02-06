@@ -21,9 +21,9 @@ var cmdInvitations = []cobra.Command{
 				return
 			}
 			inv := smqsdk.Invitation{
-				UserID:   args[0],
-				DomainID: args[1],
-				RoleID:   args[2],
+				InviteeUserID: args[0],
+				DomainID:      args[1],
+				RoleID:        args[2],
 			}
 			if err := sdk.SendInvitation(inv, args[3]); err != nil {
 				logErrorCmd(*cmd, err)
