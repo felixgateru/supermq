@@ -27,7 +27,7 @@ tags:
       url: https://docs.supermq.abstractmachines.fr/
 
 paths:
-  /invitations:
+  /{domain_id}/invitations:
     post:
       operationId: sendInvitation
       tags:
@@ -35,6 +35,8 @@ paths:
       summary: Send invitation
       description: |
         Send invitation to user to join domain.
+      parameters:
+        - $ref: "#/components/parameters/domain_id"
       requestBody:
         $ref: "#/components/requestBodies/SendInvitationReq"
       security:
@@ -58,21 +60,115 @@ paths:
           $ref: "#/components/responses/ServiceError"
 
     get:
-      operationId: listInvitations
+      operationId: listDomainInvitations
       tags:
         - Invitations
-      summary: List invitations
+      summary: List domain invitations
       description: |
-        Retrieves a list of invitations. Due to performance concerns, data
+        Retrieves a list of invitations for a given domain. Due to performance concerns, data
         is retrieved in subsets. The API must ensure that the entire
         dataset is consumed either by making subsequent requests, or by
         increasing the subset size of the initial request.
       parameters:
+        - $ref: "#/components/parameters/domain_id"
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Offset"
         - $ref: "#/components/parameters/UserID"
         - $ref: "#/components/parameters/InvitedBy"
+        - $ref: "#/components/parameters/Relation"
+        - $ref: "#/components/parameters/State"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/InvitationPageRes"
+        "400":
+          description: Failed due to malformed query parameters.
+        "401":
+          description: |
+            Missing or invalid access token provided.
+            This endpoint is available only for administrators.
+        "403":
+          description: Failed to perform authorization over the entity.
+        "404":
+          description: A non-existent entity request.
+        "422":
+          description: Database can't process request.
+        "500":
+          $ref: "#/components/responses/ServiceError"
+
+  /{domain_id}/invitations/{user_id}:
+    get:
+      operationId: getInvitation
+      summary: Retrieves a specific invitation
+      description: |
+        Retrieves a specific invitation that is identifier by the user ID and domain ID.
+      tags:
+        - Invitations
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/domain_id"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: "#/components/responses/InvitationRes"
+        "400":
+          description: Failed due to malformed query parameters.
+        "401":
+          description: Missing or invalid access token provided.
+        "403":
+          description: Failed to perform authorization over the entity.
+        "404":
+          description: A non-existent entity request.
+        "422":
+          description: Database can't process request.
+        "500":
+          $ref: "#/components/responses/ServiceError"
+
+    delete:
+      operationId: deleteInvitation
+      summary: Deletes a specific invitation
+      description: |
+        Deletes a specific invitation that is identifier by the user ID and domain ID.
+      tags:
+        - Invitations
+      parameters:
+        - $ref: "#/components/parameters/user_id"
+        - $ref: "#/components/parameters/domain_id"
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Invitation deleted.
+        "400":
+          description: Failed due to malformed JSON.
+        "403":
+          description: Failed to perform authorization over the entity.
+        "404":
+          description: Failed due to non existing user.
+        "401":
+          description: Missing or invalid access token provided.
+        "500":
+          $ref: "#/components/responses/ServiceError"
+
+  /invitations:
+    get:
+      operationId: listUserInvitations
+      tags:
+        - Invitations
+      summary: List user invitations
+      description: |
+        Retrieves a list of invitations for the current user. Due to performance concerns, data
+        is retrieved in subsets. The API must ensure that the entire
+        dataset is consumed either by making subsequent requests, or by
+        increasing the subset size of the initial request.
+      parameters:
         - $ref: "#/components/parameters/DomainID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/UserID"
+        - $ref: "#/components/parameters/InvitedBy"
         - $ref: "#/components/parameters/Relation"
         - $ref: "#/components/parameters/State"
       security:
@@ -143,61 +239,6 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
 
-  /invitations/{user_id}/{domain_id}:
-    get:
-      operationId: getInvitation
-      summary: Retrieves a specific invitation
-      description: |
-        Retrieves a specific invitation that is identifier by the user ID and domain ID.
-      tags:
-        - Invitations
-      parameters:
-        - $ref: "#/components/parameters/user_id"
-        - $ref: "#/components/parameters/domain_id"
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          $ref: "#/components/responses/InvitationRes"
-        "400":
-          description: Failed due to malformed query parameters.
-        "401":
-          description: Missing or invalid access token provided.
-        "403":
-          description: Failed to perform authorization over the entity.
-        "404":
-          description: A non-existent entity request.
-        "422":
-          description: Database can't process request.
-        "500":
-          $ref: "#/components/responses/ServiceError"
-
-    delete:
-      operationId: deleteInvitation
-      summary: Deletes a specific invitation
-      description: |
-        Deletes a specific invitation that is identifier by the user ID and domain ID.
-      tags:
-        - Invitations
-      parameters:
-        - $ref: "#/components/parameters/user_id"
-        - $ref: "#/components/parameters/domain_id"
-      security:
-        - bearerAuth: []
-      responses:
-        "204":
-          description: Invitation deleted.
-        "400":
-          description: Failed due to malformed JSON.
-        "403":
-          description: Failed to perform authorization over the entity.
-        "404":
-          description: Failed due to non existing user.
-        "401":
-          description: Missing or invalid access token provided.
-        "500":
-          $ref: "#/components/responses/ServiceError"
-
   /health:
     get:
       summary: Retrieves service health check info.
@@ -215,39 +256,19 @@ components:
     SendInvitationReqObj:
       type: object
       properties:
-        user_id:
+        invitee_user_id:
           type: string
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
           description: User unique identifier.
-        domain_id:
+        role_id:
           type: string
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-          description: Domain unique identifier.
-        relation:
-          type: string
-          enum:
-            - administrator
-            - editor
-            - contributor
-            - member
-            - guest
-            - domain
-            - parent_group
-            - role_group
-            - group
-            - platform
-          example: editor
-          description: Relation between user and domain.
-        resend:
-          type: boolean
-          example: true
-          description: Resend invitation.
+          description: Identifier for the role to be assigned to the user.
       required:
-        - user_id
-        - domain_id
-        - relation
+        - invitee_user_id
+        - role_id
 
     Invitation:
       type: object
@@ -257,31 +278,31 @@ components:
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
           description: User unique identifier.
-        user_id:
+        invitee_user_id:
           type: string
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
-          description: User unique identifier.
+          description: Invitee user unique identifier.
         domain_id:
           type: string
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
           description: Domain unique identifier.
-        relation:
+        role_id:
           type: string
-          enum:
-            - administrator
-            - editor
-            - contributor
-            - member
-            - guest
-            - domain
-            - parent_group
-            - role_group
-            - group
-            - platform
+          format: uuid
+          example: bb7edb32-2eac-4aad-aebe-ed96fe073879
+          description: Role unique identifier.
+        role_name:
+          type: string
           example: editor
-          description: Relation between user and domain.
+          description: Role name.
+        actions:
+          type: array
+          items:
+            type: string
+          example: ["read", "write"]
+          description: Actions allowed for the role.
         created_at:
           type: string
           format: date-time

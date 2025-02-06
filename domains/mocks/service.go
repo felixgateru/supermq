@@ -104,9 +104,9 @@ func (_m *Service) CreateDomain(ctx context.Context, sesssion authn.Session, d d
 	return r0, r1, r2
 }
 
-// DeleteInvitation provides a mock function with given fields: ctx, session, userID, domainID
-func (_m *Service) DeleteInvitation(ctx context.Context, session authn.Session, userID string, domainID string) error {
-	ret := _m.Called(ctx, session, userID, domainID)
+// DeleteInvitation provides a mock function with given fields: ctx, session, inviteeUserID, domainID
+func (_m *Service) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID string, domainID string) error {
+	ret := _m.Called(ctx, session, inviteeUserID, domainID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeleteInvitation")
@@ -114,7 +114,7 @@ func (_m *Service) DeleteInvitation(ctx context.Context, session authn.Session, 
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string, string) error); ok {
-		r0 = rf(ctx, session, userID, domainID)
+		r0 = rf(ctx, session, inviteeUserID, domainID)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -796,9 +796,9 @@ func (_m *Service) UpdateRoleName(ctx context.Context, session authn.Session, en
 	return r0, r1
 }
 
-// ViewInvitation provides a mock function with given fields: ctx, session, userID, domainID
-func (_m *Service) ViewInvitation(ctx context.Context, session authn.Session, userID string, domainID string) (domains.Invitation, error) {
-	ret := _m.Called(ctx, session, userID, domainID)
+// ViewInvitation provides a mock function with given fields: ctx, session, inviteeUserID, domainID
+func (_m *Service) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID string, domainID string) (domains.Invitation, error) {
+	ret := _m.Called(ctx, session, inviteeUserID, domainID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ViewInvitation")
@@ -807,16 +807,16 @@ func (_m *Service) ViewInvitation(ctx context.Context, session authn.Session, us
 	var r0 domains.Invitation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string, string) (domains.Invitation, error)); ok {
-		return rf(ctx, session, userID, domainID)
+		return rf(ctx, session, inviteeUserID, domainID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, authn.Session, string, string) domains.Invitation); ok {
-		r0 = rf(ctx, session, userID, domainID)
+		r0 = rf(ctx, session, inviteeUserID, domainID)
 	} else {
 		r0 = ret.Get(0).(domains.Invitation)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, authn.Session, string, string) error); ok {
-		r1 = rf(ctx, session, userID, domainID)
+		r1 = rf(ctx, session, inviteeUserID, domainID)
 	} else {
 		r1 = ret.Error(1)
 	}
