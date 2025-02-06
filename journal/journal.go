@@ -69,7 +69,7 @@ func (e EntityType) Query() string {
 	case GroupEntity:
 		return "((operation LIKE 'group.%' AND attributes->>'id' = :entity_id) OR (attributes->>'group_id' = :entity_id))"
 	case ChannelEntity:
-		return "((operation LIKE 'channel.%' AND attributes->>'id' = :entity_id) OR (attributes->>'channel_id' = :entity_id))"
+		return "((operation LIKE 'channel.%' AND attributes->>'id' = :entity_id) OR (attributes->>'channel_id' = :entity_id) OR (jsonb_exists_any(attributes->'channel_ids', array[:entity_id])))"
 	case ClientEntity:
 		return "((operation LIKE 'client.%' AND attributes->>'id' = :entity_id) OR (attributes->>'client_id' = :entity_id))"
 	default:
