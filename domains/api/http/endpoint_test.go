@@ -1303,7 +1303,7 @@ func TestListInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,
-				url:         is.URL + "/domains" + "/invitations?" + tc.query,
+				url:         is.URL + "/invitations?" + tc.query,
 				token:       tc.token,
 				contentType: tc.contentType,
 			}
@@ -1560,7 +1560,7 @@ func TestAcceptInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodPost,
-				url:         is.URL + "/domains/invitations/accept",
+				url:         is.URL + "/invitations/accept",
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),
@@ -1640,7 +1640,7 @@ func TestRejectInvitation(t *testing.T) {
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodPost,
-				url:         is.URL + "/domains/invitations/reject",
+				url:         is.URL + "/invitations/reject",
 				token:       tc.token,
 				contentType: tc.contentType,
 				body:        strings.NewReader(tc.data),

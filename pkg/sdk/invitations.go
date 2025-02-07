@@ -66,8 +66,7 @@ func (sdk mgSDK) Invitation(userID, domainID, token string) (invitation Invitati
 }
 
 func (sdk mgSDK) Invitations(pm PageMetadata, token string) (invitations InvitationPage, err error) {
-	path := sdk.domainsURL + "/" + domainsEndpoint
-	url, err := sdk.withQueryParams(path, invitationsEndpoint, pm)
+	url, err := sdk.withQueryParams(sdk.domainsURL, invitationsEndpoint, pm)
 	if err != nil {
 		return InvitationPage{}, errors.NewSDKError(err)
 	}
@@ -96,7 +95,7 @@ func (sdk mgSDK) AcceptInvitation(domainID, token string) (err error) {
 		return errors.NewSDKError(err)
 	}
 
-	url := sdk.domainsURL + "/" + domainsEndpoint + "/" + invitationsEndpoint + "/" + acceptEndpoint
+	url := sdk.domainsURL + "/" + invitationsEndpoint + "/" + acceptEndpoint
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusNoContent)
 
@@ -114,7 +113,7 @@ func (sdk mgSDK) RejectInvitation(domainID, token string) (err error) {
 		return errors.NewSDKError(err)
 	}
 
-	url := sdk.domainsURL + "/" + domainsEndpoint + "/" + invitationsEndpoint + "/" + rejectEndpoint
+	url := sdk.domainsURL + "/" + invitationsEndpoint + "/" + rejectEndpoint
 
 	_, _, sdkerr := sdk.processRequest(http.MethodPost, url, token, data, nil, http.StatusNoContent)
 

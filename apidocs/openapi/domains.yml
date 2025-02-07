@@ -812,7 +812,7 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
 
-  /domains/invitations:
+  /invitations:
     get:
       operationId: listUserInvitations
       tags:
@@ -850,7 +850,7 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
 
-  /domains/invitations/accept:
+  /invitations/accept:
     post:
       operationId: acceptInvitation
       summary: Accept invitation
@@ -874,7 +874,7 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
 
-  /domains/invitations/reject:
+  /invitations/reject:
     post:
       operationId: rejectInvitation
       summary: Reject invitation
