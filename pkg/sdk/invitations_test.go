@@ -315,7 +315,7 @@ func TestListInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID}
+				tc.session = smqauthn.Session{UserID: validID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ListInvitations", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -382,7 +382,7 @@ func TestAcceptInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: validID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("AcceptInvitation", mock.Anything, tc.session, tc.domainID).Return(tc.svcErr)
@@ -448,7 +448,7 @@ func TestRejectInvitation(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == valid {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: validID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: validID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("RejectInvitation", mock.Anything, tc.session, tc.domainID).Return(tc.svcErr)

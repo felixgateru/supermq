@@ -59,7 +59,7 @@ func (am *authorizationMiddleware) CreateDomain(ctx context.Context, session aut
 
 func (am *authorizationMiddleware) RetrieveDomain(ctx context.Context, session authn.Session, id string) (domains.Domain, error) {
 	if err := am.authorize(ctx, domains.OpRetrieveDomain, authz.PolicyReq{
-		Subject:     session.DomainUserID,
+		Subject:     session.UserID,
 		SubjectType: policies.UserType,
 		SubjectKind: policies.UsersKind,
 		Object:      id,
@@ -72,7 +72,7 @@ func (am *authorizationMiddleware) RetrieveDomain(ctx context.Context, session a
 
 func (am *authorizationMiddleware) UpdateDomain(ctx context.Context, session authn.Session, id string, d domains.DomainReq) (domains.Domain, error) {
 	if err := am.authorize(ctx, domains.OpUpdateDomain, authz.PolicyReq{
-		Subject:     session.DomainUserID,
+		Subject:     session.UserID,
 		SubjectType: policies.UserType,
 		SubjectKind: policies.UsersKind,
 		Object:      id,
@@ -85,7 +85,7 @@ func (am *authorizationMiddleware) UpdateDomain(ctx context.Context, session aut
 
 func (am *authorizationMiddleware) EnableDomain(ctx context.Context, session authn.Session, id string) (domains.Domain, error) {
 	if err := am.authorize(ctx, domains.OpEnableDomain, authz.PolicyReq{
-		Subject:     session.DomainUserID,
+		Subject:     session.UserID,
 		SubjectType: policies.UserType,
 		SubjectKind: policies.UsersKind,
 		Object:      id,
@@ -99,7 +99,7 @@ func (am *authorizationMiddleware) EnableDomain(ctx context.Context, session aut
 
 func (am *authorizationMiddleware) DisableDomain(ctx context.Context, session authn.Session, id string) (domains.Domain, error) {
 	if err := am.authorize(ctx, domains.OpDisableDomain, authz.PolicyReq{
-		Subject:     session.DomainUserID,
+		Subject:     session.UserID,
 		SubjectType: policies.UserType,
 		SubjectKind: policies.UsersKind,
 		Object:      id,

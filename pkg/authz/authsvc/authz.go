@@ -5,6 +5,7 @@ package authsvc
 
 import (
 	"context"
+	"fmt"
 
 	grpcAuthV1 "github.com/absmach/supermq/api/grpc/auth/v1"
 	"github.com/absmach/supermq/auth/api/grpc/auth"
@@ -55,6 +56,7 @@ func (a authorization) Authorize(ctx context.Context, pr authz.PolicyReq) error 
 			domainID = pr.Object
 		}
 		if err := a.checkDomain(ctx, pr.SubjectType, pr.Subject, domainID); err != nil {
+			fmt.Println("Error thrwon here 0")
 			return errors.Wrap(svcerr.ErrDomainAuthorization, err)
 		}
 	}
@@ -72,9 +74,11 @@ func (a authorization) Authorize(ctx context.Context, pr authz.PolicyReq) error 
 	}
 	res, err := a.authSvcClient.Authorize(ctx, &req)
 	if err != nil {
+		fmt.Println("Error thrwon here 1")
 		return errors.Wrap(errors.ErrAuthorization, err)
 	}
 	if !res.GetAuthorized() {
+		fmt.Println("Error thrwon here 2")
 		return errors.ErrAuthorization
 	}
 	return nil

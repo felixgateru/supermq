@@ -557,7 +557,7 @@ func TestListUsers(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ListUsers", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -690,7 +690,7 @@ func TestSearchUsers(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}, tc.authenticateErr)
+			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(smqauthn.Session{UserID: validID, DomainID: domainID}, tc.authenticateErr)
 			svcCall := svc.On("SearchUsers", mock.Anything, mock.Anything).Return(tc.searchreturn, tc.err)
 			page, err := mgsdk.SearchUsers(tc.page, tc.token)
 			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected error %v, got %v", tc.desc, tc.err, err))
@@ -787,7 +787,7 @@ func TestViewUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("View", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
@@ -866,7 +866,7 @@ func TestUserProfile(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("ViewProfile", mock.Anything, tc.session).Return(tc.svcRes, tc.svcErr)
@@ -1030,7 +1030,7 @@ func TestUpdateUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("Update", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -1188,7 +1188,7 @@ func TestUpdateUserTags(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateTags", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -1336,7 +1336,7 @@ func TestUpdateUserEmail(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateEmail", mock.Anything, tc.session, tc.updateUserReq.ID, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -1634,7 +1634,7 @@ func TestUpdatePassword(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateSecret", mock.Anything, tc.session, tc.oldPassword, tc.newPassword).Return(tc.svcRes, tc.svcErr)
@@ -1792,7 +1792,7 @@ func TestUpdateUserRole(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateRole", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -1956,7 +1956,7 @@ func TestUpdateUsername(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateUsername", mock.Anything, tc.session, tc.svcReq.ID, tc.svcReq.Credentials.Username).Return(tc.svcRes, tc.svcErr)
@@ -2118,7 +2118,7 @@ func TestUpdateProfilePicture(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("UpdateProfilePicture", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
@@ -2190,7 +2190,7 @@ func TestEnableUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("Enable", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
@@ -2296,7 +2296,7 @@ func TestDisableUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("Disable", mock.Anything, tc.session, tc.userID).Return(tc.svcRes, tc.svcErr)
@@ -2370,7 +2370,7 @@ func TestDeleteUser(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID, UserID: validID, DomainID: domainID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := svc.On("Delete", mock.Anything, tc.session, tc.userID).Return(tc.svcErr)

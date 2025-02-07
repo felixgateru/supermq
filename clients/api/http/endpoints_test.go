@@ -119,7 +119,7 @@ func TestCreateClient(t *testing.T) {
 			client:      client,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusCreated,
 			err:         nil,
@@ -129,7 +129,7 @@ func TestCreateClient(t *testing.T) {
 			client:      client,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusConflict,
 			err:         svcerr.ErrConflict,
@@ -155,7 +155,7 @@ func TestCreateClient(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
@@ -173,7 +173,7 @@ func TestCreateClient(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         errors.ErrMalformedEntity,
@@ -190,7 +190,7 @@ func TestCreateClient(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         svcerr.ErrInvalidStatus,
@@ -206,7 +206,7 @@ func TestCreateClient(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
 			err:         apiutil.ErrValidation,
@@ -280,7 +280,7 @@ func TestCreateClients(t *testing.T) {
 			client:      items,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusOK,
 			err:         nil,
@@ -310,7 +310,7 @@ func TestCreateClients(t *testing.T) {
 			client:      []clients.Client{},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
@@ -331,7 +331,7 @@ func TestCreateClients(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
@@ -345,7 +345,7 @@ func TestCreateClients(t *testing.T) {
 			},
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
 			err:         apiutil.ErrValidation,
@@ -367,7 +367,7 @@ func TestCreateClients(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 			err:         errors.ErrMalformedEntity,
 		},
@@ -377,7 +377,7 @@ func TestCreateClients(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnprocessableEntity,
 			err:         svcerr.ErrCreateEntity,
 		},
@@ -434,7 +434,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients as admin with valid token",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			status:   http.StatusOK,
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
@@ -448,7 +448,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients as non admin with valid token",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			status:   http.StatusOK,
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
@@ -477,7 +477,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with offset",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Offset: 1,
@@ -493,7 +493,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid offset",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "offset=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -502,7 +502,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with limit",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Limit: 1,
@@ -518,7 +518,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid limit",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "limit=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -527,7 +527,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with limit greater than max",
 			token:    validToken,
 			domainID: domainID,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    fmt.Sprintf("limit=%d", api.MaxLimitSize+1),
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -536,7 +536,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with name",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -551,7 +551,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid name",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "name=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -560,7 +560,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate name",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "name=1&name=2",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -569,7 +569,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with status",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -584,7 +584,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid status",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "status=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -593,7 +593,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate status",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "status=enabled&status=disabled",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -602,7 +602,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with tags",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -617,7 +617,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid tags",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "tag=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -626,7 +626,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate tags",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "tag=tag1&tag=tag2",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -635,7 +635,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with metadata",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -650,7 +650,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid metadata",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "metadata=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -659,7 +659,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate metadata",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -668,7 +668,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with permissions",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -683,7 +683,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid permissions",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "permission=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -692,7 +692,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate permissions",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "permission=view&permission=view",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -701,7 +701,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with list perms",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			listClientsResponse: clients.ClientsPage{
 				Page: clients.Page{
 					Total: 1,
@@ -716,7 +716,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with invalid list perms",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "list_perms=invalid",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrValidation,
@@ -725,7 +725,7 @@ func TestListClients(t *testing.T) {
 			desc:     "list clients with duplicate list perms",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, DomainUserID: domainID + "_" + validID, SuperAdmin: false},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID, SuperAdmin: false},
 			query:    "list_perms=true&listPerms=true",
 			status:   http.StatusBadRequest,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -779,7 +779,7 @@ func TestViewClient(t *testing.T) {
 			desc:     "view client with valid token",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			id:       client.ID,
 			status:   http.StatusOK,
 
@@ -806,7 +806,7 @@ func TestViewClient(t *testing.T) {
 			desc:     "view client with invalid id",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			id:       inValid,
 			status:   http.StatusForbidden,
 
@@ -866,7 +866,7 @@ func TestUpdateClient(t *testing.T) {
 			desc:        "update client with valid token",
 			domainID:    domainID,
 			id:          client.ID,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			data:        fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
 			token:       validToken,
 			contentType: contentType,
@@ -907,7 +907,7 @@ func TestUpdateClient(t *testing.T) {
 			data:        fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: "application/xml",
 			status:      http.StatusUnsupportedMediaType,
 
@@ -919,7 +919,7 @@ func TestUpdateClient(t *testing.T) {
 			data:        fmt.Sprintf(`{"name":%s}`, "invalid"),
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 
@@ -931,7 +931,7 @@ func TestUpdateClient(t *testing.T) {
 			data:        fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, newName, newTag, toJSON(newMetadata)),
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 
@@ -940,7 +940,7 @@ func TestUpdateClient(t *testing.T) {
 		{
 			desc:           "update client with name that is too long",
 			id:             client.ID,
-			authnRes:       smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:       smqauthn.Session{UserID: validID, DomainID: domainID},
 			data:           fmt.Sprintf(`{"name":"%s","tags":["%s"],"metadata":%s}`, strings.Repeat("a", api.MaxNameSize+1), newTag, toJSON(newMetadata)),
 			domainID:       domainID,
 			token:          validToken,
@@ -1015,7 +1015,7 @@ func TestUpdateClientsTags(t *testing.T) {
 			},
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusOK,
 
 			err: nil,
@@ -1048,7 +1048,7 @@ func TestUpdateClientsTags(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusForbidden,
 
 			err: svcerr.ErrAuthorization,
@@ -1060,7 +1060,7 @@ func TestUpdateClientsTags(t *testing.T) {
 			contentType: "application/xml",
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnsupportedMediaType,
 			err:         apiutil.ErrValidation,
 		},
@@ -1071,7 +1071,7 @@ func TestUpdateClientsTags(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 
 			err: apiutil.ErrValidation,
@@ -1083,7 +1083,7 @@ func TestUpdateClientsTags(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 
 			err: errors.ErrMalformedEntity,
@@ -1148,7 +1148,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusOK,
 			err:         nil,
 		},
@@ -1198,7 +1198,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrValidation,
 		},
@@ -1215,7 +1215,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 
 			err: apiutil.ErrValidation,
@@ -1233,7 +1233,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: "application/xml",
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusUnsupportedMediaType,
 
 			err: apiutil.ErrValidation,
@@ -1251,7 +1251,7 @@ func TestUpdateClientSecret(t *testing.T) {
 			contentType: contentType,
 			domainID:    domainID,
 			token:       validToken,
-			authnRes:    smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes:    smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:      http.StatusBadRequest,
 
 			err: apiutil.ErrValidation,
@@ -1311,7 +1311,7 @@ func TestEnableClient(t *testing.T) {
 			},
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusOK,
 
 			err: nil,
@@ -1332,7 +1332,7 @@ func TestEnableClient(t *testing.T) {
 			},
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusBadRequest,
 
 			err: apiutil.ErrValidation,
@@ -1396,7 +1396,7 @@ func TestDisableClient(t *testing.T) {
 			},
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusOK,
 
 			err: nil,
@@ -1417,7 +1417,7 @@ func TestDisableClient(t *testing.T) {
 			},
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusBadRequest,
 
 			err: apiutil.ErrValidation,
@@ -1476,7 +1476,7 @@ func TestDeleteClient(t *testing.T) {
 			id:       client.ID,
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusNoContent,
 
 			err: nil,
@@ -1504,7 +1504,7 @@ func TestDeleteClient(t *testing.T) {
 			id:       " ",
 			domainID: domainID,
 			token:    validToken,
-			authnRes: smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID},
+			authnRes: smqauthn.Session{UserID: validID, DomainID: domainID},
 			status:   http.StatusBadRequest,
 
 			err: apiutil.ErrMissingID,
@@ -1653,7 +1653,7 @@ func TestSetClientParentGroupEndpoint(t *testing.T) {
 				body:        strings.NewReader(tc.data),
 			}
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID + "_" + validID, UserID: validID, DomainID: validID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: validID}
 			}
 			authCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
 			svcCall := svc.On("SetParentGroup", mock.Anything, tc.session, validID, tc.id).Return(tc.svcErr)
@@ -1741,7 +1741,7 @@ func TestRemoveClientParentGroupEndpoint(t *testing.T) {
 				token:  tc.token,
 			}
 			if tc.token == validToken {
-				tc.session = smqauthn.Session{DomainUserID: validID + "_" + validID, UserID: validID, DomainID: validID}
+				tc.session = smqauthn.Session{UserID: validID, DomainID: validID}
 			}
 			authCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
 			svcCall := svc.On("RemoveParentGroup", mock.Anything, tc.session, tc.id).Return(tc.svcErr)
