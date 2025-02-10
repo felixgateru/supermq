@@ -107,6 +107,36 @@ func TestCreateDomain(t *testing.T) {
 			err:     nil,
 		},
 		{
+			desc: "create domain with custom id",
+			d: domains.Domain{
+				ID:     validID,
+				Name:   groupName,
+				Status: domains.EnabledStatus,
+			},
+			session: validSession,
+			err:     nil,
+		},
+		{
+			desc: "create domain with id that is too short",
+			d: domains.Domain{
+				ID:     inValid,
+				Name:   groupName,
+				Status: domains.EnabledStatus,
+			},
+			session: validSession,
+			err:     svcerr.ErrCreateEntity,
+		},
+		{
+			desc: "create domain with id with invalid characters",
+			d: domains.Domain{
+				ID:     "d4ebb847-5d0e__e46-bdd9-b6aceaaa3a22",
+				Name:   groupName,
+				Status: domains.EnabledStatus,
+			},
+			session: validSession,
+			err:     svcerr.ErrCreateEntity,
+		},
+		{
 			desc: "create domain with invalid status",
 			d: domains.Domain{
 				Name:   groupName,

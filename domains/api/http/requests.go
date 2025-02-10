@@ -25,6 +25,7 @@ type page struct {
 }
 
 type createDomainReq struct {
+	ID       string                 `json:"id,omitempty"`
 	Name     string                 `json:"name"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
