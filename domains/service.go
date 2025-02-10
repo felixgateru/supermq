@@ -5,6 +5,8 @@ package domains
 
 import (
 	"context"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/absmach/supermq"
@@ -18,6 +20,7 @@ import (
 var (
 	errCreateDomainPolicy = errors.New("failed to create domain policy")
 	errRollbackRepo       = errors.New("failed to rollback repo")
+	idRegExp              = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{34}[a-z0-9]$`)
 )
 
 type service struct {
@@ -48,11 +51,20 @@ func New(repo Repository, cache Cache, policy policies.Service, idProvider super
 func (svc service) CreateDomain(ctx context.Context, session authn.Session, d Domain) (retDo Domain, retRps []roles.RoleProvision, retErr error) {
 	d.CreatedBy = session.UserID
 
-	domainID, err := svc.idProvider.ID()
-	if err != nil {
-		return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
+	switch d.ID {
+	case "":
+		domainID, err := svc.idProvider.ID()
+		if err != nil {
+			return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
+		}
+		d.ID = domainID
+	default:
+		domainID := strings.ToLower(d.ID)
+		if err := validateID(domainID); err != nil {
+			return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
+		}
+		d.ID = domainID
 	}
-	d.ID = domainID
 
 	if d.Status != DisabledStatus && d.Status != EnabledStatus {
 		return Domain{}, []roles.RoleProvision{}, svcerr.ErrInvalidStatus
@@ -87,7 +99,7 @@ func (svc service) CreateDomain(ctx context.Context, session authn.Session, d Do
 		},
 	}
 
-	rps, err := svc.AddNewEntitiesRoles(ctx, domainID, session.UserID, []string{domainID}, optionalPolicies, newBuiltInRoleMembers)
+	rps, err := svc.AddNewEntitiesRoles(ctx, d.ID, session.UserID, []string{d.ID}, optionalPolicies, newBuiltInRoleMembers)
 	if err != nil {
 		return Domain{}, []roles.RoleProvision{}, errors.Wrap(errCreateDomainPolicy, err)
 	}
