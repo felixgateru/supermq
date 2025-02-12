@@ -46,7 +46,6 @@ func TestSaveInvitation(t *testing.T) {
 				InviteeUserID: userID,
 				DomainID:      domainID,
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: nil,
@@ -59,7 +58,6 @@ func TestSaveInvitation(t *testing.T) {
 				DomainID:      domainID,
 				CreatedAt:     time.Now(),
 				RoleID:        roleID,
-				RoleName:      "admin",
 				ConfirmedAt:   time.Now(),
 			},
 			err: nil,
@@ -71,7 +69,6 @@ func TestSaveInvitation(t *testing.T) {
 				InviteeUserID: userID,
 				DomainID:      domainID,
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: repoerr.ErrConflict,
@@ -83,7 +80,6 @@ func TestSaveInvitation(t *testing.T) {
 				InviteeUserID: testsutil.GenerateUUID(t),
 				DomainID:      domainID,
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: repoerr.ErrMalformedEntity,
@@ -95,7 +91,6 @@ func TestSaveInvitation(t *testing.T) {
 				InviteeUserID: testsutil.GenerateUUID(t),
 				DomainID:      invalidUUID,
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: repoerr.ErrMalformedEntity,
@@ -107,7 +102,6 @@ func TestSaveInvitation(t *testing.T) {
 				InviteeUserID: invalidUUID,
 				DomainID:      testsutil.GenerateUUID(t),
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: repoerr.ErrMalformedEntity,
@@ -118,7 +112,6 @@ func TestSaveInvitation(t *testing.T) {
 				InvitedBy:     testsutil.GenerateUUID(t),
 				InviteeUserID: testsutil.GenerateUUID(t),
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: repoerr.ErrCreateEntity,
@@ -129,7 +122,6 @@ func TestSaveInvitation(t *testing.T) {
 				InvitedBy: testsutil.GenerateUUID(t),
 				DomainID:  domainID,
 				RoleID:    roleID,
-				RoleName:  "admin",
 				CreatedAt: time.Now(),
 			},
 			err: nil,
@@ -140,7 +132,6 @@ func TestSaveInvitation(t *testing.T) {
 				DomainID:      domainID,
 				InviteeUserID: testsutil.GenerateUUID(t),
 				RoleID:        roleID,
-				RoleName:      "admin",
 				CreatedAt:     time.Now(),
 			},
 			err: nil,
@@ -151,18 +142,6 @@ func TestSaveInvitation(t *testing.T) {
 				InvitedBy:     testsutil.GenerateUUID(t),
 				InviteeUserID: testsutil.GenerateUUID(t),
 				DomainID:      domainID,
-				RoleName:      "admin",
-				CreatedAt:     time.Now(),
-			},
-			err: nil,
-		},
-		{
-			desc: "add invitation with empty invitation role name",
-			invitation: domains.Invitation{
-				InvitedBy:     testsutil.GenerateUUID(t),
-				InviteeUserID: testsutil.GenerateUUID(t),
-				DomainID:      domainID,
-				RoleID:        roleID,
 				CreatedAt:     time.Now(),
 			},
 			err: nil,
@@ -192,7 +171,6 @@ func TestInvitationRetrieve(t *testing.T) {
 		InviteeUserID: testsutil.GenerateUUID(t),
 		DomainID:      domainID,
 		RoleID:        testsutil.GenerateUUID(t),
-		RoleName:      "admin",
 		CreatedAt:     time.Now().UTC().Truncate(time.Microsecond),
 	}
 
@@ -285,7 +263,6 @@ func TestInvitationRetrieveAll(t *testing.T) {
 			InviteeUserID: testsutil.GenerateUUID(t),
 			DomainID:      domainID,
 			RoleID:        testsutil.GenerateUUID(t),
-			RoleName:      "admin",
 			CreatedAt:     time.Now().UTC().Truncate(time.Microsecond),
 		}
 		err := repo.SaveInvitation(context.Background(), invitation)
@@ -669,7 +646,6 @@ func TestInvitationUpdateConfirmation(t *testing.T) {
 		InviteeUserID: testsutil.GenerateUUID(t),
 		DomainID:      domainID,
 		RoleID:        testsutil.GenerateUUID(t),
-		RoleName:      "admin",
 		CreatedAt:     time.Now(),
 	}
 	err := repo.SaveInvitation(context.Background(), invitation)
@@ -732,7 +708,6 @@ func TestInvitationUpdateRejection(t *testing.T) {
 		InviteeUserID: testsutil.GenerateUUID(t),
 		DomainID:      domainID,
 		RoleID:        testsutil.GenerateUUID(t),
-		RoleName:      "admin",
 		CreatedAt:     time.Now(),
 	}
 	err := repo.SaveInvitation(context.Background(), invitation)
@@ -795,7 +770,6 @@ func TestInvitationDelete(t *testing.T) {
 		InviteeUserID: testsutil.GenerateUUID(t),
 		DomainID:      domainID,
 		RoleID:        testsutil.GenerateUUID(t),
-		RoleName:      "admin",
 		CreatedAt:     time.Now(),
 	}
 	err := repo.SaveInvitation(context.Background(), invitation)
