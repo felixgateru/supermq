@@ -5,8 +5,6 @@ package domains
 
 import (
 	"context"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/absmach/supermq"
@@ -20,7 +18,6 @@ import (
 var (
 	errCreateDomainPolicy = errors.New("failed to create domain policy")
 	errRollbackRepo       = errors.New("failed to rollback repo")
-	idRegExp              = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{34}[a-z0-9]$`)
 )
 
 type service struct {
@@ -51,16 +48,9 @@ func New(repo Repository, cache Cache, policy policies.Service, idProvider super
 func (svc service) CreateDomain(ctx context.Context, session authn.Session, d Domain) (retDo Domain, retRps []roles.RoleProvision, retErr error) {
 	d.CreatedBy = session.UserID
 
-	switch d.ID {
-	case "":
+	if d.ID == "" {
 		domainID, err := svc.idProvider.ID()
 		if err != nil {
-			return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
-		}
-		d.ID = domainID
-	default:
-		domainID := strings.ToLower(d.ID)
-		if err := validateID(domainID); err != nil {
 			return Domain{}, []roles.RoleProvision{}, errors.Wrap(svcerr.ErrCreateEntity, err)
 		}
 		d.ID = domainID
@@ -79,7 +69,7 @@ func (svc service) CreateDomain(ctx context.Context, session authn.Session, d Do
 	}
 	defer func() {
 		if retErr != nil {
-			if errRollBack := svc.repo.DeleteDomain(ctx, domainID); errRollBack != nil {
+			if errRollBack := svc.repo.DeleteDomain(ctx, d.ID); errRollBack != nil {
 				retErr = errors.Wrap(retErr, errors.Wrap(errRollbackRepo, errRollBack))
 			}
 		}

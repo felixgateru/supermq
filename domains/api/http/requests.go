@@ -4,6 +4,7 @@
 package http
 
 import (
+	api "github.com/absmach/supermq/api/http"
 	apiutil "github.com/absmach/supermq/api/http/util"
 	"github.com/absmach/supermq/domains"
 )
@@ -33,10 +34,12 @@ type createDomainReq struct {
 }
 
 func (req createDomainReq) validate() error {
+	if req.ID != "" {
+		return api.ValidateUUID(req.ID)
+	}
 	if req.Name == "" {
 		return apiutil.ErrMissingName
 	}
-
 	if req.Alias == "" {
 		return apiutil.ErrMissingAlias
 	}

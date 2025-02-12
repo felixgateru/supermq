@@ -87,7 +87,4 @@ var (
 
 	// ErrUnauthorizedPAT indicates failure occurred while authorizing PAT.
 	ErrUnauthorizedPAT = errors.New("failed to authorize PAT")
-
-	// ErrInvalidIDFormat indicates that the ID format is invalid.
-	ErrInvalidIDFormat = errors.New("invalid ID format")
 )
