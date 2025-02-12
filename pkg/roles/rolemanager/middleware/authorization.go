@@ -341,7 +341,7 @@ func (ram RoleManagerAuthorizationMiddleware) authorizeMembers(ctx context.Conte
 		for _, member := range members {
 			if err := ram.authz.Authorize(ctx, smqauthz.PolicyReq{
 				Permission:  policies.MembershipPermission,
-				Subject:     policies.EncodeDomainUserID(session.DomainID, member),
+				Subject:     member,
 				SubjectType: policies.UserType,
 				SubjectKind: policies.UsersKind,
 				Object:      session.DomainID,
