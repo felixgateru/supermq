@@ -41,12 +41,12 @@ const (
 	GroupKey    = "group"
 	DomainKey   = "domain"
 
-	StartLevelKey    = "start_level"
-	EndLevelKey      = "end_level"
-	TreeKey          = "tree"
-	ParentKey        = "parent_id"
-	LevelKey         = "level"
-	WithoutParentKey = "without_parent"
+	StartLevelKey = "start_level"
+	EndLevelKey   = "end_level"
+	TreeKey       = "tree"
+	ParentKey     = "parent_id"
+	LevelKey      = "level"
+	RootGroupKey  = "root_group"
 
 	TokenKey   = "token"
 	SubjectKey = "subject"
