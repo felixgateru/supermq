@@ -106,7 +106,8 @@ func ValidateName(id string) error {
 	if !nameRegExp.MatchString(id) {
 		return apiutil.ErrInvalidNameFormat
 	}
-	if strings.Contains(id, "__") {
+	// Names containing double underscores or double dashes are invalid due to similarity concerns.
+	if strings.Contains(id, "__") || strings.Contains(id, "--") {
 		return apiutil.ErrInvalidNameFormat
 	}
 
