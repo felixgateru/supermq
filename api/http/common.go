@@ -108,7 +108,7 @@ func ValidateName(id string) error {
 	}
 	// Names containing double underscores or double dashes are invalid due to similarity concerns.
 	if strings.Contains(id, "__") || strings.Contains(id, "--") {
-		return apiutil.ErrInvalidNameFormat
+		return errors.Wrap(apiutil.ErrInvalidNameFormat, errors.New("name containing double underscores or double dashes not allowed"))
 	}
 
 	return nil
