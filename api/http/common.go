@@ -90,8 +90,8 @@ const (
 )
 
 var (
-	nameRegExp                = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{34}[a-z0-9]$`)
-	errDoubleDashOrUnderscore = errors.New("name containing double underscores or double dashes not allowed")
+	nameRegExp        = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{34}[a-z0-9]$`)
+	errUnreadableName = errors.New("name containing double underscores or double dashes not allowed")
 )
 
 // ValidateUUID validates UUID format.
@@ -111,7 +111,7 @@ func ValidateName(id string) error {
 	}
 	// Names containing double underscores or double dashes are invalid due to similarity concerns.
 	if strings.Contains(id, "__") || strings.Contains(id, "--") {
-		return errors.Wrap(apiutil.ErrInvalidNameFormat, errDoubleDashOrUnderscore)
+		return errors.Wrap(apiutil.ErrInvalidNameFormat, errUnreadableName)
 	}
 
 	return nil
