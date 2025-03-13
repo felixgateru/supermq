@@ -27,6 +27,7 @@ const (
 type IssueReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserRole      uint32                 `protobuf:"varint,2,opt,name=user_role,json=userRole,proto3" json:"user_role,omitempty"`
 	Type          uint32                 `protobuf:"varint,3,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -67,6 +68,13 @@ func (x *IssueReq) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+func (x *IssueReq) GetUserRole() uint32 {
+	if x != nil {
+		return x.UserRole
+	}
+	return 0
 }
 
 func (x *IssueReq) GetType() uint32 {

@@ -70,9 +70,10 @@ func (x *AuthNReq) GetToken() string {
 
 type AuthNRes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // id
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`       // user id
-	DomainId      string                 `protobuf:"bytes,3,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"` // domain id
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                              // id
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`        // user id
+	UserRole      uint32                 `protobuf:"varint,3,opt,name=user_role,json=userRole,proto3" json:"user_role,omitempty"` // user role
+	DomainId      string                 `protobuf:"bytes,4,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`  // domain id
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,6 +120,13 @@ func (x *AuthNRes) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+func (x *AuthNRes) GetUserRole() uint32 {
+	if x != nil {
+		return x.UserRole
+	}
+	return 0
 }
 
 func (x *AuthNRes) GetDomainId() string {
