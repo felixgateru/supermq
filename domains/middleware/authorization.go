@@ -60,7 +60,7 @@ func (am *authorizationMiddleware) CreateDomain(ctx context.Context, session aut
 func (am *authorizationMiddleware) RetrieveDomain(ctx context.Context, session authn.Session, id string, withRoles bool) (domains.Domain, error) {
 	if err := am.checkSuperAdmin(ctx, session.UserID); err == nil {
 		session.SuperAdmin = true
-		return am.svc.RetrieveDomain(ctx, session, id)
+		return am.svc.RetrieveDomain(ctx, session, id, withRoles)
 	}
 
 	if err := am.authorize(ctx, domains.OpRetrieveDomain, authz.PolicyReq{

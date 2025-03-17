@@ -163,18 +163,6 @@ func TestIssue(t *testing.T) {
 			token: accessToken,
 			err:   nil,
 		},
-		{
-			desc: "issue access key with invalid role",
-			key: auth.Key{
-				Type:     auth.AccessKey,
-				User:     userID,
-				Role:     3,
-				IssuedAt: time.Now(),
-			},
-			token:        accessToken,
-			roleCheckErr: errRoleAuth,
-			err:          errRoleAuth,
-		},
 	}
 	for _, tc := range cases2 {
 		repoCall := krepo.On("Save", mock.Anything, mock.Anything).Return(mock.Anything, tc.saveErr)

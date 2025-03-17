@@ -219,6 +219,8 @@ func TestIssue(t *testing.T) {
 
 func TestRetrieve(t *testing.T) {
 	svc := newService()
+	policyCall := pEvaluator.On("CheckPolicy", mock.Anything, mock.Anything).Return(nil)
+	callBackCall := callback.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	token, err := svc.Issue(context.Background(), "", auth.Key{Type: auth.AccessKey, Role: auth.UserRole, IssuedAt: time.Now(), Subject: id})
 	assert.Nil(t, err, fmt.Sprintf("Issuing login key expected to succeed: %s", err))
 	key := auth.Key{Type: auth.APIKey, IssuedAt: time.Now(), Subject: id}
@@ -227,6 +229,8 @@ func TestRetrieve(t *testing.T) {
 	k, err := svc.Issue(context.Background(), token.AccessToken, key)
 	assert.Nil(t, err, fmt.Sprintf("Issuing login key expected to succeed: %s", err))
 	repocall.Unset()
+	policyCall.Unset()
+	callBackCall.Unset()
 
 	ts := newServer(svc)
 	defer ts.Close()
@@ -297,6 +301,8 @@ func TestRetrieve(t *testing.T) {
 
 func TestRevoke(t *testing.T) {
 	svc := newService()
+	policyCall := pEvaluator.On("CheckPolicy", mock.Anything, mock.Anything).Return(nil)
+	callBackCall := callback.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	token, err := svc.Issue(context.Background(), "", auth.Key{Type: auth.AccessKey, Role: auth.UserRole, IssuedAt: time.Now(), Subject: id})
 	assert.Nil(t, err, fmt.Sprintf("Issuing login key expected to succeed: %s", err))
 	key := auth.Key{Type: auth.APIKey, IssuedAt: time.Now(), Subject: id}
@@ -305,6 +311,8 @@ func TestRevoke(t *testing.T) {
 	k, err := svc.Issue(context.Background(), token.AccessToken, key)
 	assert.Nil(t, err, fmt.Sprintf("Issuing login key expected to succeed: %s", err))
 	repocall.Unset()
+	policyCall.Unset()
+	callBackCall.Unset()
 
 	ts := newServer(svc)
 	defer ts.Close()

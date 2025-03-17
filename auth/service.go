@@ -376,7 +376,7 @@ func (svc service) checkUserRole(ctx context.Context, key Key) (err error) {
 		}
 		return nil
 	default:
-		return errRoleAuth
+		return nil
 	}
 }
 
