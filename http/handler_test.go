@@ -39,8 +39,8 @@ const (
 )
 
 var (
-	topicMsg      = "channels/%s/messages"
-	subtopicMsg   = "channels/%s/messages/subtopic"
+	topicMsg      = "ch/%s/msg"
+	subtopicMsg   = "ch/%s/msg/subtopic"
 	topic         = fmt.Sprintf(topicMsg, chanID)
 	subtopic      = fmt.Sprintf(subtopicMsg, chanID)
 	invalidTopic  = invalidValue
