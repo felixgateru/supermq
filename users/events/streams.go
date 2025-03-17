@@ -18,9 +18,14 @@ const (
 	supermqPrefix           = "supermq."
 	createStream            = supermqPrefix + userCreate
 	updateStream            = supermqPrefix + userUpdate
+	updateRoleStream        = supermqPrefix + userUpdateRole
+	updateTagsStream        = supermqPrefix + userUpdateTags
+	updateSecretStream      = supermqPrefix + userUpdateSecret
 	updateUsernameStream    = supermqPrefix + userUpdateUsername
 	updatePictureStream     = supermqPrefix + userUpdateProfilePicture
-	changeStatusStream      = supermqPrefix + changeUserStatus
+	UpdateEmailStream       = supermqPrefix + userUpdateEmail
+	enableStream            = supermqPrefix + userEnable
+	disableStream           = supermqPrefix + userDisable
 	viewStream              = supermqPrefix + userView
 	viewProfileStream       = supermqPrefix + profileView
 	listStream              = supermqPrefix + userList
@@ -83,7 +88,7 @@ func (es *eventStore) Update(ctx context.Context, session authn.Session, user us
 		return user, err
 	}
 
-	return es.update(ctx, session, "", user)
+	return es.update(ctx, session, userUpdate, updateStream, user)
 }
 
 func (es *eventStore) UpdateRole(ctx context.Context, session authn.Session, user users.User) (users.User, error) {
@@ -92,7 +97,7 @@ func (es *eventStore) UpdateRole(ctx context.Context, session authn.Session, use
 		return user, err
 	}
 
-	return es.update(ctx, session, "role", user)
+	return es.update(ctx, session, userUpdateRole, updateRoleStream, user)
 }
 
 func (es *eventStore) UpdateTags(ctx context.Context, session authn.Session, user users.User) (users.User, error) {
@@ -101,7 +106,7 @@ func (es *eventStore) UpdateTags(ctx context.Context, session authn.Session, use
 		return user, err
 	}
 
-	return es.update(ctx, session, "tags", user)
+	return es.update(ctx, session, userUpdateTags, updateTagsStream, user)
 }
 
 func (es *eventStore) UpdateSecret(ctx context.Context, session authn.Session, oldSecret, newSecret string) (users.User, error) {
@@ -110,7 +115,7 @@ func (es *eventStore) UpdateSecret(ctx context.Context, session authn.Session, o
 		return user, err
 	}
 
-	return es.update(ctx, session, "secret", user)
+	return es.update(ctx, session, userUpdateSecret, updateSecretStream, user)
 }
 
 func (es *eventStore) UpdateUsername(ctx context.Context, session authn.Session, id, username string) (users.User, error) {
@@ -144,7 +149,7 @@ func (es *eventStore) UpdateProfilePicture(ctx context.Context, session authn.Se
 		middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, updateStream, event); err != nil {
+	if err := es.Publish(ctx, updatePictureStream, event); err != nil {
 		return user, err
 	}
 
@@ -157,15 +162,15 @@ func (es *eventStore) UpdateEmail(ctx context.Context, session authn.Session, id
 		return user, err
 	}
 
-	return es.update(ctx, session, "email", user)
+	return es.update(ctx, session, userUpdateEmail, UpdateEmailStream, user)
 }
 
-func (es *eventStore) update(ctx context.Context, session authn.Session, operation string, user users.User) (users.User, error) {
+func (es *eventStore) update(ctx context.Context, session authn.Session, operation, stream string, user users.User) (users.User, error) {
 	event := updateUserEvent{
 		user, operation, session, middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, updateStream, event); err != nil {
+	if err := es.Publish(ctx, stream, event); err != nil {
 		return user, err
 	}
 
@@ -251,7 +256,7 @@ func (es *eventStore) Enable(ctx context.Context, session authn.Session, id stri
 		return user, err
 	}
 
-	return es.changeStatus(ctx, session, user)
+	return es.changeStatus(ctx, session, userEnable, enableStream, user)
 }
 
 func (es *eventStore) Disable(ctx context.Context, session authn.Session, id string) (users.User, error) {
@@ -260,12 +265,13 @@ func (es *eventStore) Disable(ctx context.Context, session authn.Session, id str
 		return user, err
 	}
 
-	return es.changeStatus(ctx, session, user)
+	return es.changeStatus(ctx, session, userDisable, disableStream, user)
 }
 
-func (es *eventStore) changeStatus(ctx context.Context, session authn.Session, user users.User) (users.User, error) {
+func (es *eventStore) changeStatus(ctx context.Context, session authn.Session, operation, stream string, user users.User) (users.User, error) {
 	event := changeUserStatusEvent{
 		id:        user.ID,
+		operation: operation,
 		updatedAt: user.UpdatedAt,
 		updatedBy: user.UpdatedBy,
 		status:    user.Status.String(),
@@ -273,7 +279,7 @@ func (es *eventStore) changeStatus(ctx context.Context, session authn.Session, u
 		requestID: middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, changeStatusStream, event); err != nil {
+	if err := es.Publish(ctx, stream, event); err != nil {
 		return user, err
 	}
 
@@ -310,7 +316,7 @@ func (es *eventStore) GenerateResetToken(ctx context.Context, email, host string
 		requestID: middleware.GetReqID(ctx),
 	}
 
-	return es.Publish(ctx, refreshTokenStream, event)
+	return es.Publish(ctx, resetTokenStream, event)
 }
 
 func (es *eventStore) IssueToken(ctx context.Context, username, secret string) (*grpcTokenV1.Token, error) {
@@ -341,7 +347,7 @@ func (es *eventStore) RefreshToken(ctx context.Context, session authn.Session, r
 		requestID: middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, refreshToken, event); err != nil {
+	if err := es.Publish(ctx, refreshTokenStream, event); err != nil {
 		return token, err
 	}
 
