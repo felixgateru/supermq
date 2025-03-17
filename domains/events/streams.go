@@ -19,13 +19,11 @@ const (
 	supermqPrefix            = "supermq."
 	createStream             = supermqPrefix + domainCreate
 	retrieveStream           = supermqPrefix + domainRetrieve
-	retrieveStatusStream     = supermqPrefix + domainRetrieveStatus
 	updateStream             = supermqPrefix + domainUpdate
 	enableStream             = supermqPrefix + domainEnable
 	disableStream            = supermqPrefix + domainDisable
 	freezeStream             = supermqPrefix + domainFreeze
 	listStream               = supermqPrefix + domainList
-	userDeleteStream         = supermqPrefix + domainUserDelete
 	sendInvitationStream     = supermqPrefix + invitationSend
 	acceptInvitationStream   = supermqPrefix + invitationAccept
 	rejectInvitationStream   = supermqPrefix + invitationReject

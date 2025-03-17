@@ -15,7 +15,14 @@ const (
 	userPrefix               = "user."
 	userCreate               = userPrefix + "create"
 	userUpdate               = userPrefix + "update"
-	changeUserStatus         = userPrefix + "change_status"
+	userUpdateRole           = userPrefix + "update_role"
+	userUpdateTags           = userPrefix + "update_tags"
+	userUpdateSecret         = userPrefix + "update_secret"
+	userUpdateUsername       = userPrefix + "update_username"
+	userUpdateProfilePicture = userPrefix + "update_profile_picture"
+	userUpdateEmail          = userPrefix + "update_email"
+	userEnable               = userPrefix + "enable"
+	userDisable              = userPrefix + "disable"
 	userView                 = userPrefix + "view"
 	profileView              = userPrefix + "view_profile"
 	userList                 = userPrefix + "list"
@@ -30,8 +37,6 @@ const (
 	oauthCallback            = userPrefix + "oauth_callback"
 	addClientPolicy          = userPrefix + "add_policy"
 	deleteUser               = userPrefix + "delete"
-	userUpdateUsername       = userPrefix + "update_username"
-	userUpdateProfilePicture = userPrefix + "update_profile_picture"
 )
 
 var (
@@ -103,15 +108,12 @@ type updateUserEvent struct {
 
 func (uce updateUserEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   userUpdate,
+		"operation":   uce.operation,
 		"updated_at":  uce.UpdatedAt,
 		"updated_by":  uce.UpdatedBy,
 		"token_type":  uce.Type.String(),
 		"super_admin": uce.SuperAdmin,
 		"request_id":  uce.requestID,
-	}
-	if uce.operation != "" {
-		val["operation"] = userUpdate + "_" + uce.operation
 	}
 
 	if uce.ID != "" {
@@ -205,6 +207,7 @@ func (uppe updateProfilePictureEvent) Encode() (map[string]interface{}, error) {
 
 type changeUserStatusEvent struct {
 	id        string
+	operation string
 	status    string
 	updatedAt time.Time
 	updatedBy string
@@ -214,7 +217,7 @@ type changeUserStatusEvent struct {
 
 func (rce changeUserStatusEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"operation":   changeUserStatus,
+		"operation":   rce.operation,
 		"id":          rce.id,
 		"status":      rce.status,
 		"updated_at":  rce.updatedAt,
