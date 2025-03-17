@@ -20,10 +20,13 @@ const (
 	supermqPrefix      = "supermq."
 	createStream       = supermqPrefix + channelCreate
 	updateStream       = supermqPrefix + channelUpdate
-	changeStatusStream = supermqPrefix + channelChangeStatus
+	updateTagsStream   = supermqPrefix + channelUpdateTags
+	enableStream       = supermqPrefix + channelEnable
+	disableStream      = supermqPrefix + channelDisable
 	removeStream       = supermqPrefix + channelRemove
 	viewStream         = supermqPrefix + channelView
 	listStream         = supermqPrefix + channelList
+	listByUserStream   = supermqPrefix + channelListByUser
 	connectStream      = supermqPrefix + channelConnect
 	disconnectStream   = supermqPrefix + channelDisconnect
 	setParentStream    = supermqPrefix + channelSetParent
@@ -76,32 +79,37 @@ func (es *eventStore) CreateChannels(ctx context.Context, session authn.Session,
 }
 
 func (es *eventStore) UpdateChannel(ctx context.Context, session authn.Session, ch channels.Channel) (channels.Channel, error) {
-	chann, err := es.svc.UpdateChannel(ctx, session, ch)
+	ch, err := es.svc.UpdateChannel(ctx, session, ch)
 	if err != nil {
-		return chann, err
+		return ch, err
 	}
 
-	return es.update(ctx, "", session, chann)
+	event := updateChannelEvent{
+		Channel:   ch,
+		Session:   session,
+		operation: channelUpdate,
+		requestID: middleware.GetReqID(ctx),
+	}
+	if err := es.Publish(ctx, updateStream, event); err != nil {
+		return ch, err
+	}
+
+	return ch, nil
 }
 
 func (es *eventStore) UpdateChannelTags(ctx context.Context, session authn.Session, ch channels.Channel) (channels.Channel, error) {
-	chann, err := es.svc.UpdateChannelTags(ctx, session, ch)
+	ch, err := es.svc.UpdateChannelTags(ctx, session, ch)
 	if err != nil {
-		return chann, err
+		return ch, err
 	}
 
-	return es.update(ctx, "tags", session, chann)
-}
-
-func (es *eventStore) update(ctx context.Context, operation string, session authn.Session, ch channels.Channel) (channels.Channel, error) {
 	event := updateChannelEvent{
 		Channel:   ch,
-		operation: operation,
 		Session:   session,
+		operation: channelUpdateTags,
 		requestID: middleware.GetReqID(ctx),
 	}
-
-	if err := es.Publish(ctx, updateStream, event); err != nil {
+	if err := es.Publish(ctx, updateTagsStream, event); err != nil {
 		return ch, err
 	}
 
@@ -154,7 +162,7 @@ func (es *eventStore) ListUserChannels(ctx context.Context, session authn.Sessio
 		Session:   session,
 		requestID: middleware.GetReqID(ctx),
 	}
-	if err := es.Publish(ctx, listStream, event); err != nil {
+	if err := es.Publish(ctx, listByUserStream, event); err != nil {
 		return cp, err
 	}
 
@@ -162,33 +170,34 @@ func (es *eventStore) ListUserChannels(ctx context.Context, session authn.Sessio
 }
 
 func (es *eventStore) EnableChannel(ctx context.Context, session authn.Session, id string) (channels.Channel, error) {
-	cli, err := es.svc.EnableChannel(ctx, session, id)
+	ch, err := es.svc.EnableChannel(ctx, session, id)
 	if err != nil {
-		return cli, err
+		return ch, err
 	}
 
-	return es.changeStatus(ctx, session, cli)
+	return es.changeStatus(ctx, session, channelEnable, enableStream, ch)
 }
 
 func (es *eventStore) DisableChannel(ctx context.Context, session authn.Session, id string) (channels.Channel, error) {
-	cli, err := es.svc.DisableChannel(ctx, session, id)
+	ch, err := es.svc.DisableChannel(ctx, session, id)
 	if err != nil {
-		return cli, err
+		return ch, err
 	}
 
-	return es.changeStatus(ctx, session, cli)
+	return es.changeStatus(ctx, session, channelDisable, disableStream, ch)
 }
 
-func (es *eventStore) changeStatus(ctx context.Context, session authn.Session, ch channels.Channel) (channels.Channel, error) {
-	event := changeStatusChannelEvent{
+func (es *eventStore) changeStatus(ctx context.Context, session authn.Session, operation, stream string, ch channels.Channel) (channels.Channel, error) {
+	event := changeChannelStatusEvent{
 		id:        ch.ID,
+		operation: operation,
 		updatedAt: ch.UpdatedAt,
 		updatedBy: ch.UpdatedBy,
 		status:    ch.Status.String(),
 		Session:   session,
 		requestID: middleware.GetReqID(ctx),
 	}
-	if err := es.Publish(ctx, changeStatusStream, event); err != nil {
+	if err := es.Publish(ctx, stream, event); err != nil {
 		return ch, err
 	}
 

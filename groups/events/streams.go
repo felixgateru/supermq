@@ -19,9 +19,11 @@ const (
 	supermqPrefix           = "supermq."
 	createStream            = supermqPrefix + groupCreate
 	updateStream            = supermqPrefix + groupUpdate
-	changeStatusStream      = supermqPrefix + groupChangeStatus
+	enableStream            = supermqPrefix + groupEnable
+	disableStream           = supermqPrefix + groupDisable
 	viewStream              = supermqPrefix + groupView
 	listStream              = supermqPrefix + groupList
+	listUserGroupsStream    = supermqPrefix + groupListUserGroups
 	removeStream            = supermqPrefix + groupRemove
 	retrieveHierarchyStream = supermqPrefix + groupRetrieveGroupHierarchy
 	addParentStream         = supermqPrefix + groupAddParentGroup
@@ -149,7 +151,7 @@ func (es eventStore) ListUserGroups(ctx context.Context, session authn.Session, 
 		requestID:  middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, listStream, event); err != nil {
+	if err := es.Publish(ctx, listUserGroupsStream, event); err != nil {
 		return gp, err
 	}
 
@@ -162,7 +164,7 @@ func (es eventStore) EnableGroup(ctx context.Context, session authn.Session, id 
 		return group, err
 	}
 
-	return es.changeStatus(ctx, session, group)
+	return es.changeStatus(ctx, session, groupEnable, enableStream, group)
 }
 
 func (es eventStore) DisableGroup(ctx context.Context, session authn.Session, id string) (groups.Group, error) {
@@ -171,12 +173,13 @@ func (es eventStore) DisableGroup(ctx context.Context, session authn.Session, id
 		return group, err
 	}
 
-	return es.changeStatus(ctx, session, group)
+	return es.changeStatus(ctx, session, groupDisable, disableStream, group)
 }
 
-func (es eventStore) changeStatus(ctx context.Context, session authn.Session, group groups.Group) (groups.Group, error) {
-	event := changeStatusGroupEvent{
+func (es eventStore) changeStatus(ctx context.Context, session authn.Session, operation, stream string, group groups.Group) (groups.Group, error) {
+	event := changeGroupStatusEvent{
 		id:        group.ID,
+		operation: operation,
 		updatedAt: group.UpdatedAt,
 		updatedBy: group.UpdatedBy,
 		status:    group.Status.String(),
@@ -184,7 +187,7 @@ func (es eventStore) changeStatus(ctx context.Context, session authn.Session, gr
 		requestID: middleware.GetReqID(ctx),
 	}
 
-	if err := es.Publish(ctx, changeStatusStream, event); err != nil {
+	if err := es.Publish(ctx, stream, event); err != nil {
 		return group, err
 	}
 
@@ -261,7 +264,7 @@ func (es eventStore) RemoveAllChildrenGroups(ctx context.Context, session authn.
 	if err := es.svc.RemoveAllChildrenGroups(ctx, session, id); err != nil {
 		return err
 	}
-	if err := es.Publish(ctx, removeChildrenStream, removeAllChildrenGroupsEvent{id: id, Session: session, requestID: middleware.GetReqID(ctx)}); err != nil {
+	if err := es.Publish(ctx, removeAllChildrenStream, removeAllChildrenGroupsEvent{id: id, Session: session, requestID: middleware.GetReqID(ctx)}); err != nil {
 		return err
 	}
 	return nil
