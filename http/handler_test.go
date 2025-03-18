@@ -35,7 +35,7 @@ const (
 	chanID                = "123e4567-e89b-12d3-a456-000000000001"
 	invalidID             = "invalidID"
 	invalidValue          = "invalidValue"
-	invalidChannelIDTopic = "channels/**/messages"
+	invalidChannelIDTopic = "ch/**/msg"
 )
 
 var (
