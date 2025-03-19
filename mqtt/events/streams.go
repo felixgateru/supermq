@@ -142,11 +142,11 @@ func (es *eventStore) Disconnect(ctx context.Context) error {
 
 func parseTopic(topic string) (string, string, error) {
 	channelParts := channelRegExp.FindStringSubmatch(topic)
-	if len(channelParts) < 2 {
+	if len(channelParts) < 3 {
 		return "", "", errMalformedTopic
 	}
 
-	chanID := channelParts[1]
+	chanID := channelParts[2]
 	subtopic := channelParts[2]
 
 	if subtopic == "" {
