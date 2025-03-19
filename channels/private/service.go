@@ -10,10 +10,14 @@ import (
 	"github.com/absmach/supermq/channels"
 	dom "github.com/absmach/supermq/domains"
 	pkgDomains "github.com/absmach/supermq/pkg/domains"
+	dom "github.com/absmach/supermq/domains"
+	pkgDomains "github.com/absmach/supermq/pkg/domains"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/policies"
 )
+
+var errDisabledDomain = errors.New("domain is disabled or frozen")
 
 var errDisabledDomain = errors.New("domain is disabled or frozen")
 

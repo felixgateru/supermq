@@ -60,6 +60,7 @@ var (
 	channelRegExp    = regexp.MustCompile(`^\/?([\w\-]+)/c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 )
 
+
 // Event implements events.Event interface.
 type handler struct {
 	publisher messaging.Publisher

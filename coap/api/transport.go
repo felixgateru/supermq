@@ -165,6 +165,7 @@ func decodeMessage(msg *mux.Message) (*messaging.Message, error) {
 		Payload:  []byte{},
 		Created:  time.Now().UnixNano(),
 	}
+	fmt.Printf("Message: %+v\n", ret)
 
 	if msg.Body() != nil {
 		buff, err := io.ReadAll(msg.Body())
