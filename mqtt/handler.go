@@ -60,6 +60,7 @@ var (
 	channelRegExp    = regexp.MustCompile(`^\/?c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 )
 
+
 // Event implements events.Event interface.
 type handler struct {
 	publisher messaging.Publisher
@@ -158,16 +159,18 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(ErrFailedPublish, ErrClientNotInitialized)
 	}
 	h.logger.Info(fmt.Sprintf(LogInfoPublished, s.ID, *topic))
+
 	// Topics are in the format:
 	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
 
 	channelParts := channelRegExp.FindStringSubmatch(*topic)
-	if len(channelParts) < 2 {
+	if len(channelParts) < 3 {
 		return errors.Wrap(ErrFailedPublish, ErrMalformedTopic)
 	}
 
-	chanID := channelParts[1]
-	subtopic := channelParts[2]
+	domainID := channelParts[1]
+	chanID := channelParts[2]
+	subtopic := channelParts[3]
 
 	subtopic, err := parseSubtopic(subtopic)
 	if err != nil {
@@ -176,6 +179,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	msg := messaging.Message{
 		Protocol:  protocol,
+		Domain:    domainID,
 		Channel:   chanID,
 		Subtopic:  subtopic,
 		Publisher: s.Username,
@@ -231,17 +235,20 @@ func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgTyp
 	}
 
 	channelParts := channelRegExp.FindStringSubmatch(topic)
-	if len(channelParts) < 1 {
+	if len(channelParts) < 2 {
+		fmt.Println("Error thrown here 1")
 		return ErrMalformedTopic
 	}
 
-	chanID := channelParts[1]
+	domainID := channelParts[1]
+	chanID := channelParts[2]
 
 	ar := &grpcChannelsV1.AuthzReq{
 		Type:       uint32(msgType),
 		ClientId:   clientID,
 		ClientType: policies.ClientType,
 		ChannelId:  chanID,
+		DomainId:   domainID,
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
