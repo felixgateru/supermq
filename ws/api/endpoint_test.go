@@ -78,7 +78,7 @@ func makeURL(tsURL, domainID, chanID, subtopic, clientKey string, header bool) (
 		subtopicPart = fmt.Sprintf("/%s", subtopic)
 	}
 	if header {
-		return fmt.Sprintf("%s/%s/c/%s/m%s", u, chanID, domainID, subtopicPart), nil
+		return fmt.Sprintf("%s/%s/c/%s/m%s", u, domainID, chanID, subtopicPart), nil
 	}
 
 	return fmt.Sprintf("%s/%s/c/%s/m%s?authorization=%s", u, domainID, chanID, subtopicPart, clientKey), nil
