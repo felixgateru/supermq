@@ -161,6 +161,17 @@ func TestSendMessage(t *testing.T) {
 			svcErr:      svcerr.ErrAuthentication,
 			err:         errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
+		{
+			desc:      "publish message with invalid domain ID",
+			chanName:  channelID,
+			domainID:  wrongID,
+			msg:       msg,
+			clientKey: clientKey,
+			authRes:   &grpcClientsV1.AuthnRes{Authenticated: false, Id: ""},
+			authErr:   svcerr.ErrAuthentication,
+			svcErr:    svcerr.ErrAuthentication,
+			err:       errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
