@@ -6,8 +6,6 @@ package jwt
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strconv"
 
 	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/pkg/errors"
@@ -63,7 +61,6 @@ func (tok *tokenizer) Issue(key auth.Key) (string, error) {
 		IssuedAt(key.IssuedAt).
 		Claim(tokenType, key.Type).
 		Expiration(key.ExpiresAt)
-	builder.Claim(userField, key.User)
 	builder.Claim(RoleField, key.Role)
 	if key.Subject != "" {
 		builder.Subject(key.Subject)
@@ -136,11 +133,11 @@ func toKey(tkn jwt.Token) (auth.Key, error) {
 	if !ok {
 		return auth.Key{}, errInvalidType
 	}
-	ktype, err := strconv.ParseInt(fmt.Sprintf("%v", tType), 10, 64)
-	if err != nil {
-		return auth.Key{}, err
+	kType, ok := tType.(float64)
+	if !ok {
+		return auth.Key{}, errInvalidType
 	}
-	kt := auth.KeyType(ktype)
+	kt := auth.KeyType(kType)
 	if !kt.Validate() {
 		return auth.Key{}, errInvalidType
 	}
@@ -149,9 +146,9 @@ func toKey(tkn jwt.Token) (auth.Key, error) {
 	if !ok {
 		return auth.Key{}, errInvalidRole
 	}
-	kRole, err := strconv.ParseInt(fmt.Sprintf("%v", tRole), 10, 64)
-	if err != nil {
-		return auth.Key{}, err
+	kRole, ok := tRole.(float64)
+	if !ok {
+		return auth.Key{}, errInvalidRole
 	}
 	kr := auth.Role(kRole)
 	if !kr.Validate() {
@@ -159,7 +156,7 @@ func toKey(tkn jwt.Token) (auth.Key, error) {
 	}
 
 	key.ID = tkn.JwtID()
-	key.Type = auth.KeyType(ktype)
+	key.Type = auth.KeyType(kType)
 	key.Role = auth.Role(kRole)
 	key.Issuer = tkn.Issuer()
 	key.Subject = tkn.Subject()

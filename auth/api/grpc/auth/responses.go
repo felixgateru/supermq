@@ -9,7 +9,6 @@ type authenticateRes struct {
 	id       string
 	userID   string
 	userRole smqauth.Role
-	domainID string
 }
 
 type authorizeRes struct {

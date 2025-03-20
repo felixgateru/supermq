@@ -140,8 +140,8 @@ func (am *authorizationMiddleware) ListDomains(ctx context.Context, session auth
 }
 
 func (am *authorizationMiddleware) SendInvitation(ctx context.Context, session authn.Session, invitation domains.Invitation) (err error) {
-	Subject := auth.EncodeDomainUserID(invitation.DomainID, invitation.InviteeUserID)
-	if err := am.extAuthorize(ctx, Subject, policies.MembershipPermission, policies.DomainType, invitation.DomainID); err == nil {
+	domainUserId := auth.EncodeDomainUserID(invitation.DomainID, invitation.InviteeUserID)
+	if err := am.extAuthorize(ctx, domainUserId, policies.MembershipPermission, policies.DomainType, invitation.DomainID); err == nil {
 		// return error if the user is already a member of the domain
 		return errors.Wrap(svcerr.ErrConflict, ErrMemberExist)
 	}

@@ -85,9 +85,7 @@ type Key struct {
 	Type      KeyType   `json:"type,omitempty"`
 	Issuer    string    `json:"issuer,omitempty"`
 	Subject   string    `json:"subject,omitempty"` // user ID
-	User      string    `json:"user,omitempty"`
 	Role      Role      `json:"role,omitempty"`
-	Domain    string    `json:"domain,omitempty"` // domain user ID
 	IssuedAt  time.Time `json:"issued_at,omitempty"`
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 }
@@ -98,12 +96,10 @@ func (key Key) String() string {
 	type: %s,
 	issuer_id: %s,
 	subject: %s,
-	user: %s,
 	role: %s,
-	domain: %s,
 	iat: %v,
 	eat: %v
-}`, key.ID, key.Type, key.Issuer, key.Subject, key.User, key.Role, key.Domain, key.IssuedAt, key.ExpiresAt)
+}`, key.ID, key.Type, key.Issuer, key.Subject, key.Role, key.IssuedAt, key.ExpiresAt)
 }
 
 // Expired verifies if the key is expired.
