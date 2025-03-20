@@ -147,7 +147,7 @@ func parseTopic(topic string) (string, string, error) {
 	}
 
 	chanID := channelParts[2]
-	subtopic := channelParts[2]
+	subtopic := channelParts[3]
 
 	if subtopic == "" {
 		return subtopic, chanID, nil

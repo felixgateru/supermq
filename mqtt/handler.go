@@ -60,7 +60,6 @@ var (
 	channelRegExp    = regexp.MustCompile(`^\/?c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 )
 
-
 // Event implements events.Event interface.
 type handler struct {
 	publisher messaging.Publisher
@@ -235,8 +234,7 @@ func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgTyp
 	}
 
 	channelParts := channelRegExp.FindStringSubmatch(topic)
-	if len(channelParts) < 2 {
-		fmt.Println("Error thrown here 1")
+	if len(channelParts) < 3 {
 		return ErrMalformedTopic
 	}
 
