@@ -24,7 +24,6 @@ message AuthNRes {
   string id    = 1;     // id
   string user_id = 2;   // user id
   uint32 user_role = 3; // user role  
-  string domain_id = 4; // domain id
 }
 
 message AuthZReq {
