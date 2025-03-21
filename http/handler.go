@@ -55,7 +55,7 @@ var (
 	errFailedParseSubtopic      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to parse subtopic"))
 )
 
-var channelRegExp = regexp.MustCompile(`^\/?c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
+var channelRegExp = regexp.MustCompile(`^\/?c\\/([\w\-]+)\\/m(\\/[^?]*)?(\?.*)?$`)
 
 // Event implements events.Event interface.
 type handler struct {
