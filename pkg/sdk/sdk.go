@@ -1015,9 +1015,9 @@ type SDK interface {
 	//
 	// example:
 	//  msg := '[{"bn":"some-base-name:","bt":1.276020076001e+09, "bu":"A","bver":5, "n":"voltage","u":"V","v":120.1}, {"n":"current","t":-5,"v":1.2}, {"n":"current","t":-4,"v":1.3}]'
-	//  err := sdk.SendMessage("channelID", msg, "clientSecret")
+	//  err := sdk.SendMessage("channelID", msg, "domainID", "clientSecret")
 	//  fmt.Println(err)
-	SendMessage(chanID, msg, key string) errors.SDKError
+	SendMessage(chanID, msg, domainID, key string) errors.SDKError
 
 	// SetContentType sets message content type.
 	//
@@ -1324,6 +1324,7 @@ type mgSDK struct {
 	msgContentType ContentType
 	client         *http.Client
 	curlFlag       bool
+	roles          bool
 }
 
 // Config contains sdk configuration parameters.
@@ -1341,6 +1342,7 @@ type Config struct {
 	MsgContentType  ContentType
 	TLSVerification bool
 	CurlFlag        bool
+	Roles           bool
 }
 
 // NewSDK returns new supermq SDK instance.
@@ -1365,12 +1367,16 @@ func NewSDK(conf Config) SDK {
 			},
 		},
 		curlFlag: conf.CurlFlag,
+		roles:    conf.Roles,
 	}
 }
 
 // processRequest creates and send a new HTTP request, and checks for errors in the HTTP response.
 // It then returns the response headers, the response body, and the associated error(s) (if any).
 func (sdk mgSDK) processRequest(method, reqUrl, token string, data []byte, headers map[string]string, expectedRespCodes ...int) (http.Header, []byte, errors.SDKError) {
+	if sdk.roles {
+		reqUrl = reqUrl + fmt.Sprintf("?roles=%v", true)
+	}
 	req, err := http.NewRequest(method, reqUrl, bytes.NewReader(data))
 	if err != nil {
 		return make(http.Header), []byte{}, errors.NewSDKError(err)

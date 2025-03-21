@@ -35,14 +35,15 @@ const (
 	chanID                = "123e4567-e89b-12d3-a456-000000000001"
 	invalidID             = "invalidID"
 	invalidValue          = "invalidValue"
-	invalidChannelIDTopic = "channels/**/messages"
+	invalidChannelIDTopic = "ch/**/msg"
 )
 
 var (
-	topicMsg      = "channels/%s/messages"
-	subtopicMsg   = "channels/%s/messages/subtopic"
-	topic         = fmt.Sprintf(topicMsg, chanID)
-	subtopic      = fmt.Sprintf(subtopicMsg, chanID)
+	domainID      = testsutil.GenerateUUID(&testing.T{})
+	topicMsg      = "/%s/ch/%s/msg"
+	subtopicMsg   = "/%s/ch/%s/msg/subtopic"
+	topic         = fmt.Sprintf(topicMsg, domainID, chanID)
+	subtopic      = fmt.Sprintf(subtopicMsg, domainID, chanID)
 	invalidTopic  = invalidValue
 	payload       = []byte("[{'n':'test-name', 'v': 1.2}]")
 	sessionClient = session.Session{
