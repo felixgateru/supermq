@@ -24,6 +24,7 @@ type Channel struct {
 	Tags        []string  `json:"tags,omitempty"`
 	ParentGroup string    `json:"parent_group_id,omitempty"`
 	Domain      string    `json:"domain_id,omitempty"`
+	Topic       string    `json:"topic,omitempty"`
 	Metadata    Metadata  `json:"metadata,omitempty"`
 	CreatedBy   string    `json:"created_by,omitempty"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
@@ -150,6 +151,9 @@ type Repository interface {
 
 	// RetrieveByID retrieves the channel having the provided identifier
 	RetrieveByID(ctx context.Context, id string) (Channel, error)
+
+	// RetrieveByTopic retrieves the channel having the provided topic
+	RetrieveByTopic(ctx context.Context, topic, domainID string) (Channel, error)
 
 	// RetrieveByIDWithRoles retrieves channel by its unique ID along with member roles.
 	RetrieveByIDWithRoles(ctx context.Context, id, memberID string) (Channel, error)
