@@ -1033,6 +1033,32 @@ func (_mock *Repository) RetrieveByIDWithRoles(ctx context.Context, id string, m
 	return r0, r1
 }
 
+// RetrieveByTopic provides a mock function with given fields: ctx, topic, domainID
+func (_m *Repository) RetrieveByTopic(ctx context.Context, topic string, domainID string) (channels.Channel, error) {
+	ret := _m.Called(ctx, topic, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveByTopic")
+	}
+
+	var r0 channels.Channel
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (channels.Channel, error)); ok {
+		return returnFunc(ctx, id, memberID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) channels.Channel); ok {
+		r0 = returnFunc(ctx, id, memberID)
+	} else {
+		r0 = ret.Get(0).(channels.Channel)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = returnFunc(ctx, id, memberID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
 // Repository_RetrieveByIDWithRoles_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveByIDWithRoles'
 type Repository_RetrieveByIDWithRoles_Call struct {
 	*mock.Call

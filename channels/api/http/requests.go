@@ -99,6 +99,7 @@ func (req listChannelsReq) validate() error {
 type updateChannelReq struct {
 	id       string
 	Name     string                 `json:"name,omitempty"`
+	Topic    string                 `json:"topic,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
 }
@@ -109,6 +110,11 @@ func (req updateChannelReq) validate() error {
 	}
 	if len(req.Name) > api.MaxNameSize {
 		return apiutil.ErrNameSize
+	}
+	if req.Topic != "" {
+		if err := validateTopic(req.Topic); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -301,5 +307,16 @@ func (req deleteChannelReq) validate() error {
 	if req.id == "" {
 		return apiutil.ErrMissingID
 	}
+	return nil
+}
+
+func validateTopic(topic string) error {
+	if err := api.ValidateUUID(topic); err == nil {
+		return nil
+	}
+	if err := api.ValidateTopic(topic); err != nil {
+		return err
+	}
+
 	return nil
 }

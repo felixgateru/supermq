@@ -227,6 +227,17 @@ func TestUpdate(t *testing.T) {
 			err: nil,
 		},
 		{
+			desc:   "update channel topic",
+			update: "topic",
+			channel: channels.Channel{
+				ID:        validChannel.ID,
+				Topic:     testsutil.GenerateUUID(t),
+				UpdatedAt: validTimestamp,
+				UpdatedBy: testsutil.GenerateUUID(t),
+			},
+			err: nil,
+		},
+		{
 			desc:   "update channel metadata",
 			update: "metadata",
 			channel: channels.Channel{
@@ -273,9 +284,12 @@ func TestUpdate(t *testing.T) {
 				switch tc.update {
 				case "all":
 					assert.Equal(t, tc.channel.Name, channel.Name, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Name, channel.Name))
+					assert.Equal(t, tc.channel.Topic, channel.Topic, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Topic, channel.Topic))
 					assert.Equal(t, tc.channel.Metadata, channel.Metadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Metadata, channel.Metadata))
 				case "name":
 					assert.Equal(t, tc.channel.Name, channel.Name, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Name, channel.Name))
+				case "topic":
+					assert.Equal(t, tc.channel.Topic, channel.Topic, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Topic, channel.Topic))
 				case "metadata":
 					assert.Equal(t, tc.channel.Metadata, channel.Metadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.channel.Metadata, channel.Metadata))
 				}
