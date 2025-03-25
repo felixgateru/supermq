@@ -328,7 +328,6 @@ func TestUpdateChannel(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			repoCall := repo.On("Update", context.Background(), mock.Anything).Return(tc.repoResp, tc.repoErr)
 			got, err := svc.UpdateChannel(context.Background(), validSession, tc.channel)
-			fmt.Printf("got: %v, err: %v\n", got, err)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			if err == nil {
 				assert.Equal(t, tc.repoResp, got)
