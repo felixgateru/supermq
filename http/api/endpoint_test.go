@@ -248,7 +248,7 @@ func TestPublish(t *testing.T) {
 				ClientType:  policies.ClientType,
 				Type:        uint32(connections.Publish),
 			}).Return(tc.authzRes, tc.authzErr)
-			svcCall := pub.On("Publish", mock.Anything, tc.chanID, mock.Anything).Return(nil)
+			svcCall := pub.On("Publish", mock.Anything, tc.chanTopic, mock.Anything).Return(nil)
 			req := testRequest{
 				client:      ts.Client(),
 				method:      http.MethodPost,

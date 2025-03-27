@@ -35,6 +35,7 @@ var (
 	validRoute   = "validRoute"
 	validChannel = ch.Channel{
 		ID:     validID,
+		Topic:  validID,
 		Domain: testsutil.GenerateUUID(&testing.T{}),
 		Status: channels.EnabledStatus,
 	}

@@ -30,7 +30,7 @@ import (
 const (
 	password              = "password"
 	password1             = "password1"
-	chanID                = "123e4567-e89b-12d3-a456-000000000001"
+	chanTopic             = "validTopic"
 	invalidID             = "invalidID"
 	invalidValue          = "invalidValue"
 	clientID              = "clientID"
@@ -235,7 +235,7 @@ func TestAuthSubscribe(t *testing.T) {
 		session   *session.Session
 		err       error
 		topic     *[]string
-		channelID string
+		chanTopic string
 		authZRes  *grpcChannelsV1.AuthzRes
 		authZErr  error
 	}{
@@ -258,12 +258,12 @@ func TestAuthSubscribe(t *testing.T) {
 			topic:   &invalidTopics,
 		},
 		{
-			desc:      "subscribe with invalid channel ID",
+			desc:      "subscribe with invalid channel Topic",
 			session:   &sessionClientSub,
 			err:       svcerr.ErrAuthorization,
 			topic:     &invalidChanIDTopics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			channelID: invalidValue,
+			chanTopic: invalidValue,
 		},
 		{
 			desc:      "subscribe successfully",
@@ -271,7 +271,7 @@ func TestAuthSubscribe(t *testing.T) {
 			err:       nil,
 			topic:     &topics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			channelID: chanID,
+			chanTopic: chanTopic,
 		},
 		{
 			desc:      "subscribe with failed authorization",
@@ -279,7 +279,7 @@ func TestAuthSubscribe(t *testing.T) {
 			err:       svcerr.ErrAuthorization,
 			topic:     &topics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			channelID: chanID,
+			chanTopic: chanTopic,
 		},
 	}
 

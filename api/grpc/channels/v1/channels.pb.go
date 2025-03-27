@@ -190,7 +190,7 @@ type AuthzReq struct {
 	DomainRoute   string                 `protobuf:"bytes,1,opt,name=domain_route,json=domainRoute,proto3" json:"domain_route,omitempty"`
 	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	ClientType    string                 `protobuf:"bytes,3,opt,name=client_type,json=clientType,proto3" json:"client_type,omitempty"`
-	ChannelId     string                 `protobuf:"bytes,4,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ChannelTopic  string                 `protobuf:"bytes,4,opt,name=channel_topic,json=channelTopic,proto3" json:"channel_topic,omitempty"`
 	Type          uint32                 `protobuf:"varint,5,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -247,9 +247,9 @@ func (x *AuthzReq) GetClientType() string {
 	return ""
 }
 
-func (x *AuthzReq) GetChannelId() string {
+func (x *AuthzReq) GetChannelTopic() string {
 	if x != nil {
-		return x.ChannelId
+		return x.ChannelTopic
 	}
 	return ""
 }

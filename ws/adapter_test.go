@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	chanID     = "1"
+	chanTopic  = "1"
 	invalidID  = "invalidID"
 	invalidKey = "invalidKey"
 	id         = "1"
@@ -183,7 +183,7 @@ func TestSubscribe(t *testing.T) {
 	for _, tc := range cases {
 		subConfig := messaging.SubscriberConfig{
 			ID:       clientID,
-			Topic:    "channels." + tc.chanID + "." + subTopic,
+			Topic:    "channels." + tc.chanTopic + "." + subTopic,
 			ClientID: clientID,
 			Handler:  c,
 		}
