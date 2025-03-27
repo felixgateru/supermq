@@ -82,11 +82,11 @@ type Connection struct {
 }
 
 type AuthzReq struct {
-	DomainID   string
-	ChannelID  string
-	ClientID   string
-	ClientType string
-	Type       connections.ConnType
+	DomainID     string
+	ChannelTopic string
+	ClientID     string
+	ClientType   string
+	Type         connections.ConnType
 }
 
 type Service interface {

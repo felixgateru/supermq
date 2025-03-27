@@ -25,11 +25,11 @@ func LoggingMiddleware(svc ws.Service, logger *slog.Logger) ws.Service {
 
 // Subscribe logs the subscribe request. It logs the channel and subtopic(if present) and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) Subscribe(ctx context.Context, clientKey, domainID, chanID, subtopic string, c *ws.Client) (err error) {
+func (lm *loggingMiddleware) Subscribe(ctx context.Context, clientKey, domainID, chanTopic, subtopic string, c *ws.Client) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("channel_id", chanID),
+			slog.String("channel_topic", chanTopic),
 			slog.String("domain_id", domainID),
 		}
 		if subtopic != "" {
@@ -43,5 +43,5 @@ func (lm *loggingMiddleware) Subscribe(ctx context.Context, clientKey, domainID,
 		lm.logger.Info("Subscribe completed successfully", args...)
 	}(time.Now())
 
-	return lm.svc.Subscribe(ctx, clientKey, domainID, chanID, subtopic, c)
+	return lm.svc.Subscribe(ctx, clientKey, domainID, chanTopic, subtopic, c)
 }
