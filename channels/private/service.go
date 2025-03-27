@@ -15,7 +15,10 @@ import (
 	"github.com/absmach/supermq/pkg/policies"
 )
 
-var errDisabledDomain = errors.New("domain is disabled or frozen")
+var (
+	errDisabledDomain  = errors.New("domain is disabled or frozen")
+	errDisabledChannel = errors.New("channel is disabled")
+)
 
 //go:generate mockery --name Service  --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
@@ -46,6 +49,13 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 	if d.Status != dom.EnabledStatus {
 		return errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
 	}
+	ch, err := svc.repo.RetrieveByTopic(ctx, req.ChannelTopic, req.DomainID)
+	if err != nil {
+		return errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if ch.Status != channels.EnabledStatus {
+		return errors.Wrap(svcerr.ErrAuthorization, errDisabledChannel)
+	}
 	switch req.ClientType {
 	case policies.UserType:
 		permission, err := req.Type.Permission()
@@ -55,7 +65,7 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 		pr := policies.Policy{
 			Subject:     auth.EncodeDomainUserID(req.DomainID, req.ClientID),
 			SubjectType: policies.UserType,
-			Object:      req.ChannelID,
+			Object:      ch.ID,
 			Permission:  permission,
 			ObjectType:  policies.ChannelType,
 		}
@@ -66,7 +76,7 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 	case policies.ClientType:
 		// Optimization: Add cache
 		if err := svc.repo.ClientAuthorize(ctx, channels.Connection{
-			ChannelID: req.ChannelID,
+			ChannelID: ch.ID,
 			ClientID:  req.ClientID,
 			Type:      req.Type,
 		}); err != nil {

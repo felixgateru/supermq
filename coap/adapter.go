@@ -72,11 +72,11 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 	}
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   msg.GetDomain(),
-		ClientId:   authnRes.GetId(),
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Publish),
-		ChannelId:  msg.GetChannel(),
+		DomainId:     msg.GetDomain(),
+		ClientId:     authnRes.GetId(),
+		ClientType:   policies.ClientType,
+		Type:         uint32(connections.Publish),
+		ChannelTopic: msg.GetChannel(),
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -90,7 +90,7 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 	return svc.pubsub.Publish(ctx, msg.GetChannel(), msg)
 }
 
-func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, c Client) error {
+func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanTopic, subtopic string, c Client) error {
 	authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{
 		ClientSecret: key,
 	})
@@ -103,11 +103,11 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 
 	clientID := authnRes.GetId()
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   clientID,
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Subscribe),
-		ChannelId:  chanID,
+		DomainId:     domainID,
+		ClientId:     clientID,
+		ClientType:   policies.ClientType,
+		Type:         uint32(connections.Subscribe),
+		ChannelTopic: chanTopic,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -116,12 +116,12 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanID)
+	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
 
-	authzc := newAuthzClient(clientID, domainID, chanID, subtopic, svc.channels, c)
+	authzc := newAuthzClient(clientID, domainID, chanTopic, subtopic, svc.channels, c)
 	subCfg := messaging.SubscriberConfig{
 		ID:       c.Token(),
 		ClientID: clientID,
@@ -131,7 +131,7 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 	return svc.pubsub.Subscribe(ctx, subCfg)
 }
 
-func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string) error {
+func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanTopic, subtopic, token string) error {
 	authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{
 		ClientSecret: key,
 	})
@@ -143,11 +143,11 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanI
 	}
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   authnRes.GetId(),
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Subscribe),
-		ChannelId:  chanID,
+		DomainId:     domainID,
+		ClientId:     authnRes.GetId(),
+		ClientType:   policies.ClientType,
+		Type:         uint32(connections.Subscribe),
+		ChannelTopic: chanTopic,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -156,7 +156,7 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanI
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanID)
+	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -164,8 +164,8 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanI
 	return svc.pubsub.Unsubscribe(ctx, token, subject)
 }
 
-func (svc *adapterService) DisconnectHandler(ctx context.Context, chanID, subtopic, token string) error {
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanID)
+func (svc *adapterService) DisconnectHandler(ctx context.Context, chanTopic, subtopic, token string) error {
+	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -183,24 +183,24 @@ type authzClient interface {
 
 type ac struct {
 	clientID  string
-	channelID string
+	chanTopic string
 	domainID  string
 	subTopic  string
 	channels  grpcChannelsV1.ChannelsServiceClient
 	client    Client
 }
 
-func newAuthzClient(clientID, domainID, channelID, subTopic string, channels grpcChannelsV1.ChannelsServiceClient, client Client) authzClient {
-	return ac{clientID, channelID, domainID, subTopic, channels, client}
+func newAuthzClient(clientID, domainID, chanTopic, subTopic string, channels grpcChannelsV1.ChannelsServiceClient, client Client) authzClient {
+	return ac{clientID, chanTopic, domainID, subTopic, channels, client}
 }
 
 func (a ac) Handle(m *messaging.Message) error {
 	res, err := a.channels.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{
-		ClientId:   a.clientID,
-		ClientType: policies.ClientType,
-		ChannelId:  a.channelID,
-		DomainId:   a.domainID,
-		Type:       uint32(connections.Subscribe),
+		ClientId:     a.clientID,
+		ClientType:   policies.ClientType,
+		ChannelTopic: a.chanTopic,
+		DomainId:     a.domainID,
+		Type:         uint32(connections.Subscribe),
 	})
 	if err != nil {
 		if disErr := a.Cancel(); disErr != nil {

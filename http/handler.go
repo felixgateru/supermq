@@ -153,7 +153,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	domainID, chanID, subtopic, err := parseTopic(*topic)
+	domainID, chanTopic, subtopic, err := parseTopic(*topic)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
 	}
@@ -161,18 +161,18 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol: protocol,
 		Domain:   domainID,
-		Channel:  chanID,
+		Channel:  chanTopic,
 		Subtopic: subtopic,
 		Payload:  *payload,
 		Created:  time.Now().UnixNano(),
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   clientID,
-		ClientType: clientType,
-		ChannelId:  msg.Channel,
-		Type:       uint32(connections.Publish),
+		DomainId:     domainID,
+		ClientId:     clientID,
+		ClientType:   clientType,
+		ChannelTopic: msg.Channel,
+		Type:         uint32(connections.Publish),
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
