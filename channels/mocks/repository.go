@@ -1033,12 +1033,12 @@ func (_mock *Repository) RetrieveByIDWithRoles(ctx context.Context, id string, m
 	return r0, r1
 }
 
-// RetrieveByTopic provides a mock function with given fields: ctx, topic, domainID
-func (_m *Repository) RetrieveByTopic(ctx context.Context, topic string, domainID string) (channels.Channel, error) {
-	ret := _m.Called(ctx, topic, domainID)
+// RetrieveByRoute provides a mock function with given fields: ctx, route, domainID
+func (_m *Repository) RetrieveByRoute(ctx context.Context, route string, domainID string) (channels.Channel, error) {
+	ret := _m.Called(ctx, route, domainID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByTopic")
+		panic("no return value specified for RetrieveByRoute")
 	}
 
 	var r0 channels.Channel

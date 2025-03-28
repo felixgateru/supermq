@@ -118,7 +118,7 @@ func TestCreateChannel(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:    "create channel with empty topic",
+			desc:    "create channel with empty route",
 			channel: etChan,
 			saveResp: []channels.Channel{{
 				ID:        testsutil.GenerateUUID(t),
