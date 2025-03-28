@@ -25,8 +25,8 @@ func (req createChannelReq) validate() error {
 			return apiutil.ErrMissingChannelID
 		}
 	}
-	if req.Channel.Topic != "" {
-		if err := validateTopic(req.Channel.Topic); err != nil {
+	if req.Channel.Route != "" {
+		if err := validateRoute(req.Channel.Route); err != nil {
 			return err
 		}
 	}
@@ -88,7 +88,6 @@ func (req listChannelsReq) validate() error {
 type updateChannelReq struct {
 	id       string
 	Name     string                 `json:"name,omitempty"`
-	Topic    string                 `json:"topic,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
 }
@@ -99,11 +98,6 @@ func (req updateChannelReq) validate() error {
 	}
 	if len(req.Name) > api.MaxNameSize {
 		return apiutil.ErrNameSize
-	}
-	if req.Topic != "" {
-		if err := validateTopic(req.Topic); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -299,11 +293,11 @@ func (req deleteChannelReq) validate() error {
 	return nil
 }
 
-func validateTopic(topic string) error {
-	if err := api.ValidateUUID(topic); err == nil {
+func validateRoute(route string) error {
+	if err := api.ValidateUUID(route); err == nil {
 		return nil
 	}
-	if err := api.ValidateTopic(topic); err != nil {
+	if err := api.ValidateRoute(route); err != nil {
 		return err
 	}
 
