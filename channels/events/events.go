@@ -53,7 +53,7 @@ func (cce createChannelEvent) Encode() (map[string]interface{}, error) {
 		"operation":         channelCreate,
 		"id":                cce.ID,
 		"roles_provisioned": cce.rolesProvisioned,
-		"topic":             cce.Topic,
+		"route":             cce.Route,
 		"status":            cce.Status.String(),
 		"created_at":        cce.CreatedAt,
 		"domain":            cce.DomainID,
@@ -162,8 +162,8 @@ func (vce viewChannelEvent) Encode() (map[string]interface{}, error) {
 	if vce.Name != "" {
 		val["name"] = vce.Name
 	}
-	if vce.Topic != "" {
-		val["topic"] = vce.Topic
+	if vce.Route != "" {
+		val["route"] = vce.Route
 	}
 	if len(vce.Tags) > 0 {
 		val["tags"] = vce.Tags

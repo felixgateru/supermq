@@ -41,24 +41,24 @@ func TestCreateChannelReqValidation(t *testing.T) {
 			err: apiutil.ErrNameSize,
 		},
 		{
-			desc: "valid request with topic",
+			desc: "valid request with route",
 			req: createChannelReq{
 				Channel: channels.Channel{
 					Name:  valid,
-					Topic: valid,
+					Route: valid,
 				},
 			},
 			err: nil,
 		},
 		{
-			desc: "invalid topic",
+			desc: "invalid route",
 			req: createChannelReq{
 				Channel: channels.Channel{
 					Name:  valid,
-					Topic: "__invalid",
+					Route: "__invalid",
 				},
 			},
-			err: apiutil.ErrInvalidTopicFormat,
+			err: apiutil.ErrInvalidRouteFormat,
 		},
 		{
 			desc: "missing channel ID",

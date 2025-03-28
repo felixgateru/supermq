@@ -38,7 +38,7 @@ var (
 	validChannel = channels.Channel{
 		ID:    testsutil.GenerateUUID(&testing.T{}),
 		Name:  namegen.Generate(),
-		Topic: namegen.Generate(),
+		Route: namegen.Generate(),
 		Metadata: map[string]interface{}{
 			"key": "value",
 		},
@@ -49,7 +49,7 @@ var (
 	validChannelWithRoles = channels.Channel{
 		ID:    testsutil.GenerateUUID(&testing.T{}),
 		Name:  namegen.Generate(),
-		Topic: namegen.Generate(),
+		Route: namegen.Generate(),
 		Metadata: map[string]interface{}{
 			"key": "value",
 		},
@@ -94,7 +94,7 @@ func TestCreateChannel(t *testing.T) {
 	svc := newService(t)
 
 	etChan := validChannel
-	etChan.Topic = ""
+	etChan.Route = ""
 
 	cases := []struct {
 		desc              string
@@ -118,7 +118,7 @@ func TestCreateChannel(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:    "create channel with empty topic",
+			desc:    "create channel with empty route",
 			channel: etChan,
 			saveResp: []channels.Channel{{
 				ID:        testsutil.GenerateUUID(t),
@@ -309,7 +309,7 @@ func TestUpdateChannel(t *testing.T) {
 			channel: channels.Channel{
 				ID:    testsutil.GenerateUUID(t),
 				Name:  namegen.Generate(),
-				Topic: namegen.Generate(),
+				Route: namegen.Generate(),
 			},
 			repoResp: validChannel,
 		},
