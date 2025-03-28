@@ -265,4 +265,7 @@ var (
 
 	// ErrInvalidRouteFormat indicates invalid route format.
 	ErrInvalidRouteFormat = errors.New("invalid route format")
+
+	// ErrMissingRoute indicates missing route.
+	ErrMissingRoute = errors.New("missing route")
 )
