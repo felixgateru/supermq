@@ -25,10 +25,11 @@ func (req createChannelReq) validate() error {
 			return apiutil.ErrMissingChannelID
 		}
 	}
-	if req.Channel.Route != "" {
-		if err := validateRoute(req.Channel.Route); err != nil {
-			return err
-		}
+	if req.Channel.Route == "" {
+		return apiutil.ErrMissingRoute
+	}
+	if err := validateRoute(req.Channel.Route); err != nil {
+		return err
 	}
 
 	return nil
@@ -50,6 +51,12 @@ func (req createChannelsReq) validate() error {
 		}
 		if len(channel.Name) > api.MaxNameSize {
 			return apiutil.ErrNameSize
+		}
+		if channel.Route == "" {
+			return apiutil.ErrMissingRoute
+		}
+		if err := validateRoute(channel.Route); err != nil {
+			return err
 		}
 	}
 

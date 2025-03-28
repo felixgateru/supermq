@@ -538,10 +538,10 @@ components:
           type: string
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
           description: Id of parent channel, it must be existing channel.
-        topic:
+        route:
           type: string
-          example: channelTopic
-          description: Channel topic.
+          example: channelRoute
+          description: Channel route.
         metadata:
           type: object
           example: { "location": "example" }
@@ -587,10 +587,10 @@ components:
           format: uuid
           example: bb7edb32-2eac-4aad-aebe-ed96fe073879
           description: Channel parent identifier.
-        topic:
+        route:
           type: string
-          example: channelTopic
-          description: Channel topic.
+          example: channelRoute
+          description: Channel route.
         metadata:
           type: object
           example: { "role": "general" }
@@ -655,17 +655,12 @@ components:
           type: string
           example: channelName
           description: Free-form channel name. Channel name is unique on the given hierarchy level.
-        topic:
-          type: string
-          example: channelTopic
-          description: Channel topic.
         metadata:
           type: object
           example: { "role": "general" }
           description: Arbitrary, object-encoded channels's data.
       required:
         - name
-        - topic
         - metadata
 
     ChannelUpdateTags:

@@ -26,7 +26,8 @@ func TestCreateChannelReqValidation(t *testing.T) {
 			desc: "valid request",
 			req: createChannelReq{
 				Channel: channels.Channel{
-					Name: valid,
+					Name:  valid,
+					Route: valid,
 				},
 			},
 			err: nil,
@@ -35,20 +36,11 @@ func TestCreateChannelReqValidation(t *testing.T) {
 			desc: "long name",
 			req: createChannelReq{
 				Channel: channels.Channel{
-					Name: strings.Repeat("a", api.MaxNameSize+1),
-				},
-			},
-			err: apiutil.ErrNameSize,
-		},
-		{
-			desc: "valid request with route",
-			req: createChannelReq{
-				Channel: channels.Channel{
-					Name:  valid,
+					Name:  strings.Repeat("a", api.MaxNameSize+1),
 					Route: valid,
 				},
 			},
-			err: nil,
+			err: apiutil.ErrNameSize,
 		},
 		{
 			desc: "invalid route",
@@ -88,7 +80,8 @@ func TestCreateChannelsReqValidation(t *testing.T) {
 			req: createChannelsReq{
 				Channels: []channels.Channel{
 					{
-						Name: valid,
+						Name:  valid,
+						Route: valid,
 					},
 				},
 			},
@@ -99,7 +92,8 @@ func TestCreateChannelsReqValidation(t *testing.T) {
 			req: createChannelsReq{
 				Channels: []channels.Channel{
 					{
-						Name: strings.Repeat("a", api.MaxNameSize+1),
+						Name:  strings.Repeat("a", api.MaxNameSize+1),
+						Route: valid,
 					},
 				},
 			},
