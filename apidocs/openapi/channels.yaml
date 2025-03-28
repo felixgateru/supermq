@@ -661,7 +661,6 @@ components:
           description: Arbitrary, object-encoded channels's data.
       required:
         - name
-        - topic
         - metadata
 
     ChannelUpdateTags:
