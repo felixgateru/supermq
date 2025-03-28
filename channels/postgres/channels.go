@@ -95,9 +95,6 @@ func (cr *channelRepository) Update(ctx context.Context, channel channels.Channe
 	if channel.Metadata != nil {
 		query = append(query, "metadata = :metadata,")
 	}
-	if channel.Topic != "" {
-		query = append(query, "topic = :topic,")
-	}
 	if len(query) > 0 {
 		upq = strings.Join(query, " ")
 	}
