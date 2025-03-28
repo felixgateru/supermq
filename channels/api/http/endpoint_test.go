@@ -823,7 +823,6 @@ func TestUpdateChannelEndpoint(t *testing.T) {
 	updateChannelReq := channels.Channel{
 		ID:    validID,
 		Name:  valid,
-		Topic: valid,
 		Metadata: map[string]interface{}{
 			"name": "test",
 		},
@@ -902,20 +901,6 @@ func TestUpdateChannelEndpoint(t *testing.T) {
 			contentType: contentType,
 			status:      http.StatusBadRequest,
 			err:         apiutil.ErrNameSize,
-		},
-		{
-			desc:     "update channel with invalid topic format",
-			token:    validToken,
-			id:       validID,
-			domainID: validID,
-			updateReq: channels.Channel{
-				ID:    validID,
-				Name:  valid,
-				Topic: "__invalid",
-			},
-			contentType: contentType,
-			status:      http.StatusBadRequest,
-			err:         apiutil.ErrInvalidTopicFormat,
 		},
 		{
 			desc:        "update channel with invalid content type",
