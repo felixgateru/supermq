@@ -45,7 +45,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test",
-				Alias: "test",
+				Topic: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -63,7 +63,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test",
-				Alias: "test",
+				Topic: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -81,7 +81,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    "",
 				Name:  "test1",
-				Alias: "test1",
+				Topic: "test1",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -95,11 +95,11 @@ func TestSaveDomain(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "add domain with empty alias",
+			desc: "add domain with empty topic",
 			domain: domains.Domain{
 				ID:    testsutil.GenerateUUID(&testing.T{}),
 				Name:  "test1",
-				Alias: "",
+				Topic: "",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -117,7 +117,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Alias: "test1",
+				Topic: "test1",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"key": make(chan int),
@@ -154,7 +154,7 @@ func TestRetrieveByID(t *testing.T) {
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Alias: "test",
+		Topic: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -167,7 +167,7 @@ func TestRetrieveByID(t *testing.T) {
 	}
 
 	_, err := repo.SaveDomain(context.Background(), domain)
-	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
+	require.Nil(t, err, fmt.Sprintf("failed to save domain %s", domain.ID))
 
 	cases := []struct {
 		desc     string
@@ -176,19 +176,19 @@ func TestRetrieveByID(t *testing.T) {
 		err      error
 	}{
 		{
-			desc:     "retrieve existing client",
+			desc:     "retrieve existing domain",
 			domainID: domain.ID,
 			response: domain,
 			err:      nil,
 		},
 		{
-			desc:     "retrieve non-existing client",
+			desc:     "retrieve non-existing domain",
 			domainID: invalid,
 			response: domains.Domain{},
 			err:      repoerr.ErrNotFound,
 		},
 		{
-			desc:     "retrieve with empty client id",
+			desc:     "retrieve with empty domain id",
 			domainID: "",
 			response: domains.Domain{},
 			err:      repoerr.ErrNotFound,
@@ -198,6 +198,68 @@ func TestRetrieveByID(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			d, err := repo.RetrieveDomainByID(context.Background(), tc.domainID)
+			assert.Equal(t, tc.response, d, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, d))
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.err, err))
+		})
+	}
+}
+
+func TestRetrieveByTopic(t *testing.T) {
+	t.Cleanup(func() {
+		_, err := db.Exec("DELETE FROM domains")
+		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
+	})
+
+	repo := postgres.NewRepository(database)
+
+	validTopic := "testTopic"
+	domain := domains.Domain{
+		ID:    domainID,
+		Name:  "test",
+		Topic: validTopic,
+		Tags:  []string{"test"},
+		Metadata: map[string]interface{}{
+			"test": "test",
+		},
+		CreatedBy: userID,
+		UpdatedBy: userID,
+		CreatedAt: time.Now().UTC().Truncate(time.Millisecond),
+		UpdatedAt: time.Now().UTC().Truncate(time.Millisecond),
+		Status:    domains.EnabledStatus,
+	}
+
+	_, err := repo.SaveDomain(context.Background(), domain)
+	require.Nil(t, err, fmt.Sprintf("failed to save domain %s", domain.ID))
+
+	cases := []struct {
+		desc     string
+		topic    string
+		response domains.Domain
+		err      error
+	}{
+		{
+			desc:     "retrieve existing domain",
+			topic:    validTopic,
+			response: domain,
+			err:      nil,
+		},
+		{
+			desc:     "retrieve doamin with invalid topic",
+			topic:    invalid,
+			response: domains.Domain{},
+			err:      repoerr.ErrNotFound,
+		},
+		{
+			desc:     "retrieve with empty domain topic",
+			topic:    "",
+			response: domains.Domain{},
+			err:      repoerr.ErrNotFound,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			d, err := repo.RetrieveDomainByTopic(context.Background(), tc.topic)
 			assert.Equal(t, tc.response, d, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, d))
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.err, err))
 		})
@@ -217,7 +279,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 		domain := domains.Domain{
 			ID:    testsutil.GenerateUUID(t),
 			Name:  fmt.Sprintf(`"test%d"`, i),
-			Alias: fmt.Sprintf(`"test%d"`, i),
+			Topic: fmt.Sprintf(`"test%d"`, i),
 			Tags:  []string{"test"},
 			Metadata: map[string]interface{}{
 				"test": "test",
@@ -453,14 +515,14 @@ func TestUpdate(t *testing.T) {
 	}
 	updatedTags := []string{"test1"}
 	updatedStatus := domains.DisabledStatus
-	updatedAlias := "test1"
+	updatedTopic := "test1"
 
 	repo := postgres.NewRepository(database)
 
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Alias: "test",
+		Topic: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -471,7 +533,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	_, err := repo.SaveDomain(context.Background(), domain)
-	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
+	require.Nil(t, err, fmt.Sprintf("failed to save domain %s", domain.ID))
 
 	cases := []struct {
 		desc     string
@@ -490,7 +552,7 @@ func TestUpdate(t *testing.T) {
 			response: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Alias: "test",
+				Topic: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test1": "test1",
@@ -503,19 +565,19 @@ func TestUpdate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:     "update existing domain name, metadata, tags, status and alias",
+			desc:     "update existing domain name, metadata, tags, status and topic",
 			domainID: domain.ID,
 			d: domains.DomainReq{
 				Name:     &updatedName,
 				Metadata: &updatedMetadata,
 				Tags:     &updatedTags,
 				Status:   &updatedStatus,
-				Alias:    &updatedAlias,
+				Topic:    &updatedTopic,
 			},
 			response: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Alias: "test1",
+				Topic: "test1",
 				Tags:  []string{"test1"},
 				Metadata: map[string]interface{}{
 					"test1": "test1",
@@ -580,7 +642,7 @@ func TestDelete(t *testing.T) {
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Alias: "test",
+		Topic: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -591,7 +653,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	_, err := repo.SaveDomain(context.Background(), domain)
-	require.Nil(t, err, fmt.Sprintf("failed to save client %s", domain.ID))
+	require.Nil(t, err, fmt.Sprintf("failed to save domain %s", domain.ID))
 
 	cases := []struct {
 		desc     string
@@ -636,7 +698,7 @@ func TestListDomains(t *testing.T) {
 		domain := domains.Domain{
 			ID:    testsutil.GenerateUUID(t),
 			Name:  fmt.Sprintf(`"test%d"`, i),
-			Alias: fmt.Sprintf(`"test%d"`, i),
+			Topic: fmt.Sprintf(`"test%d"`, i),
 			Tags:  []string{"test"},
 			Metadata: map[string]interface{}{
 				"test": "test",

@@ -48,9 +48,9 @@ func NewRepository(db postgres.Database) domains.Repository {
 }
 
 func (repo domainRepo) SaveDomain(ctx context.Context, d domains.Domain) (dd domains.Domain, err error) {
-	q := `INSERT INTO domains (id, name, tags, alias, metadata, created_at, updated_at, updated_by, created_by, status)
-	VALUES (:id, :name, :tags, :alias, :metadata, :created_at, :updated_at, :updated_by, :created_by, :status)
-	RETURNING id, name, tags, alias, metadata, created_at, updated_at, updated_by, created_by, status;`
+	q := `INSERT INTO domains (id, name, tags, topic, metadata, created_at, updated_at, updated_by, created_by, status)
+	VALUES (:id, :name, :tags, :topic, :metadata, :created_at, :updated_at, :updated_by, :created_by, :status)
+	RETURNING id, name, tags, topic, metadata, created_at, updated_at, updated_by, created_by, status;`
 
 	dbd, err := toDBDomain(d)
 	if err != nil {
@@ -138,7 +138,7 @@ func (repo domainRepo) RetrieveDomainByIDWithRoles(ctx context.Context, id strin
 		d.id,
 		d.name,
 		d.tags,
-		d.alias,
+		d.topic,
 		d.metadata,
 		d.created_at,
 		d.updated_at,
@@ -182,7 +182,7 @@ func (repo domainRepo) RetrieveDomainByIDWithRoles(ctx context.Context, id strin
 
 // RetrieveDomainByID retrieves Domain by its unique ID.
 func (repo domainRepo) RetrieveDomainByID(ctx context.Context, id string) (domains.Domain, error) {
-	q := `SELECT d.id as id, d.name as name, d.tags as tags,  d.alias as alias, d.metadata as metadata, d.created_at as created_at, d.updated_at as updated_at, d.updated_by as updated_by, d.created_by as created_by, d.status as status
+	q := `SELECT d.id as id, d.name as name, d.tags as tags,  d.topic as topic, d.metadata as metadata, d.created_at as created_at, d.updated_at as updated_at, d.updated_by as updated_by, d.created_by as created_by, d.status as status
         FROM domains d WHERE d.id = :id`
 
 	dbdp := dbDomainsPage{
@@ -190,6 +190,37 @@ func (repo domainRepo) RetrieveDomainByID(ctx context.Context, id string) (domai
 	}
 
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbdp)
+	if err != nil {
+		return domains.Domain{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+	}
+	defer rows.Close()
+
+	dbd := dbDomain{}
+	if rows.Next() {
+		if err = rows.StructScan(&dbd); err != nil {
+			return domains.Domain{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+		}
+
+		domain, err := toDomain(dbd)
+		if err != nil {
+			return domains.Domain{}, errors.Wrap(repoerr.ErrFailedOpDB, err)
+		}
+
+		return domain, nil
+	}
+	return domains.Domain{}, repoerr.ErrNotFound
+}
+
+// RetrieveDomainByTopic retrieves Domain by its unique topic.
+func (repo domainRepo) RetrieveDomainByTopic(ctx context.Context, topic string) (domains.Domain, error) {
+	q := `SELECT d.id as id, d.name as name, d.tags as tags,  d.topic as topic, d.metadata as metadata, d.created_at as created_at, d.updated_at as updated_at, d.updated_by as updated_by, d.created_by as created_by, d.status as status
+		FROM domains d WHERE d.topic = :topic`
+
+	dbdom := dbDomain{
+		Topic: &topic,
+	}
+
+	rows, err := repo.db.NamedQueryContext(ctx, q, dbdom)
 	if err != nil {
 		return domains.Domain{}, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
@@ -222,7 +253,7 @@ func (repo domainRepo) RetrieveAllDomainsByIDs(ctx context.Context, pm domains.P
 		return domains.DomainsPage{}, errors.Wrap(repoerr.ErrFailedOpDB, err)
 	}
 
-	q = `SELECT d.id as id, d.name as name, d.tags as tags, d.alias as alias, d.metadata as metadata, d.created_at as created_at, d.updated_at as updated_at, d.updated_by as updated_by, d.created_by as created_by, d.status as status
+	q = `SELECT d.id as id, d.name as name, d.tags as tags, d.topic as topic, d.metadata as metadata, d.created_at as created_at, d.updated_at as updated_at, d.updated_by as updated_by, d.created_by as created_by, d.status as status
 	FROM domains d`
 	q = fmt.Sprintf("%s %s  LIMIT %d OFFSET %d;", q, query, pm.Limit, pm.Offset)
 
@@ -272,7 +303,7 @@ func (repo domainRepo) ListDomains(ctx context.Context, pm domains.Page) (domain
 			d.id as id,
 			d.name as name,
 			d.tags as tags,
-			d.alias as alias,
+			d.topic as topic,
 			d.metadata as metadata,
 			d.created_at as created_at,
 			d.updated_at as updated_at,
@@ -291,7 +322,7 @@ func (repo domainRepo) ListDomains(ctx context.Context, pm domains.Page) (domain
 				d.id as id,
 				d.name as name,
 				d.tags as tags,
-				d.alias as alias,
+				d.topic as topic,
 				d.metadata as metadata,
 				d.status as status,
 				d.role_id AS role_id,
@@ -371,9 +402,9 @@ func (repo domainRepo) UpdateDomain(ctx context.Context, id string, dr domains.D
 		query = append(query, "status = :status")
 		d.Status = *dr.Status
 	}
-	if dr.Alias != nil {
-		query = append(query, "alias = :alias")
-		d.Alias = *dr.Alias
+	if dr.Topic != nil {
+		query = append(query, "topic = :topic")
+		d.Topic = *dr.Topic
 	}
 	d.UpdatedAt = time.Now()
 	if dr.UpdatedAt != nil {
@@ -389,7 +420,7 @@ func (repo domainRepo) UpdateDomain(ctx context.Context, id string, dr domains.D
 	}
 	q := fmt.Sprintf(`UPDATE domains SET %s
         WHERE id = :id
-        RETURNING id, name, tags, alias, metadata, created_at, updated_at, updated_by, created_by, status;`,
+        RETURNING id, name, tags, topic, metadata, created_at, updated_at, updated_by, created_by, status;`,
 		upq)
 
 	dbd, err := toDBDomain(d)
@@ -438,7 +469,7 @@ func (repo domainRepo) userDomainsBaseQuery() string {
 				d.id as id,
 				d.name as name,
 				d.tags as tags,
-				d.alias as alias,
+				d.topic as topic,
 				d.metadata as metadata,
 				d.created_at as created_at,
 				d.updated_at as updated_at,
@@ -497,7 +528,7 @@ type dbDomain struct {
 	Name      string           `db:"name"`
 	Metadata  []byte           `db:"metadata,omitempty"`
 	Tags      pgtype.TextArray `db:"tags,omitempty"`
-	Alias     *string          `db:"alias,omitempty"`
+	Topic     *string          `db:"topic,omitempty"`
 	Status    domains.Status   `db:"status"`
 	RoleID    string           `db:"role_id"`
 	RoleName  string           `db:"role_name"`
@@ -523,9 +554,9 @@ func toDBDomain(d domains.Domain) (dbDomain, error) {
 	if err := tags.Set(d.Tags); err != nil {
 		return dbDomain{}, err
 	}
-	var alias *string
-	if d.Alias != "" {
-		alias = &d.Alias
+	var topic *string
+	if d.Topic != "" {
+		topic = &d.Topic
 	}
 
 	var updatedBy *string
@@ -542,7 +573,7 @@ func toDBDomain(d domains.Domain) (dbDomain, error) {
 		Name:      d.Name,
 		Metadata:  data,
 		Tags:      tags,
-		Alias:     alias,
+		Topic:     topic,
 		Status:    d.Status,
 		RoleID:    d.RoleID,
 		CreatedBy: d.CreatedBy,
@@ -563,9 +594,9 @@ func toDomain(d dbDomain) (domains.Domain, error) {
 	for _, e := range d.Tags.Elements {
 		tags = append(tags, e.String)
 	}
-	var alias string
-	if d.Alias != nil {
-		alias = *d.Alias
+	var topic string
+	if d.Topic != nil {
+		topic = *d.Topic
 	}
 	var updatedBy string
 	if d.UpdatedBy != nil {
@@ -588,7 +619,7 @@ func toDomain(d dbDomain) (domains.Domain, error) {
 		Name:      d.Name,
 		Metadata:  metadata,
 		Tags:      tags,
-		Alias:     alias,
+		Topic:     topic,
 		RoleID:    d.RoleID,
 		RoleName:  d.RoleName,
 		Actions:   d.Actions,
