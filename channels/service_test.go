@@ -118,16 +118,6 @@ func TestCreateChannel(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:    "create channel with empty route",
-			channel: etChan,
-			saveResp: []channels.Channel{{
-				ID:        testsutil.GenerateUUID(t),
-				CreatedAt: time.Now(),
-				Domain:    validID,
-			}},
-			err: nil,
-		},
-		{
 			desc: "create channel with invalid status",
 			channel: channels.Channel{
 				Name:   namegen.Generate(),
