@@ -27,7 +27,7 @@ var (
 
 	errID            = errors.New("missing or invalid 'id'")
 	errName          = errors.New("missing or invalid 'name'")
-	errAlias         = errors.New("missing or invalid 'alias'")
+	errTopic         = errors.New("missing or invalid 'topic'")
 	errTags          = errors.New("invalid 'tags'")
 	errStatus        = errors.New("missing or invalid 'status'")
 	errConvertStatus = errors.New("failed to convert status")
@@ -60,11 +60,11 @@ func ToDomains(data map[string]interface{}) (domains.Domain, error) {
 	}
 	d.Status = st
 
-	alias, ok := data["alias"].(string)
+	topic, ok := data["topic"].(string)
 	if !ok {
-		return domains.Domain{}, errAlias
+		return domains.Domain{}, errTopic
 	}
-	d.Alias = alias
+	d.Topic = topic
 
 	cby, ok := data["created_by"].(string)
 	if !ok {
@@ -145,9 +145,9 @@ func decodeUpdateDomainEvent(data map[string]interface{}) (domains.Domain, error
 		d.Name = name
 	}
 
-	alias, ok := data["alias"].(string)
+	topic, ok := data["topic"].(string)
 	if ok {
-		d.Alias = alias
+		d.Topic = topic
 	}
 
 	itags, ok := data["tags"].([]interface{})

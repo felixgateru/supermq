@@ -177,8 +177,8 @@ var (
 	// ErrMissingName indicates missing identity name.
 	ErrMissingName = errors.New("missing identity name")
 
-	// ErrMissingName indicates missing alias.
-	ErrMissingAlias = errors.New("missing alias")
+	// ErrMissingTopic indicates missing topic.
+	ErrMissingTopic = errors.New("missing topic")
 
 	// ErrInvalidLevel indicates an invalid group level.
 	ErrInvalidLevel = errors.New("invalid group level (should be between 0 and 5)")
@@ -262,4 +262,7 @@ var (
 
 	// ErrInvalidNameFormat indicates invalid name format.
 	ErrInvalidNameFormat = errors.New("invalid name format")
+
+	// ErrInvalidTopicFormat indicates invalid topic format.
+	ErrInvalidTopicFormat = errors.New("invalid topic format")
 )

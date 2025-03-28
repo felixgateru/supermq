@@ -61,6 +61,15 @@ func Migration() (*migrate.MemoryMigrationSource, error) {
 					`DROP TABLE IF EXISTS invitations`,
 				},
 			},
+			{
+				Id: "domain_3",
+				Up: []string{
+					`ALTER TABLE domains RENAME COLUMN alias TO topic;`,
+				},
+				Down: []string{
+					`ALTER TABLE domains RENAME COLUMN topic TO alias;`,
+				},
+			},
 		},
 	}
 

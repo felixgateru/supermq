@@ -58,7 +58,7 @@ func (cde createDomainEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
 		"operation":         domainCreate,
 		"id":                cde.ID,
-		"alias":             cde.Alias,
+		"topic":             cde.Topic,
 		"status":            cde.Status.String(),
 		"created_at":        cde.CreatedAt,
 		"created_by":        cde.CreatedBy,
@@ -92,7 +92,7 @@ func (rde retrieveDomainEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
 		"operation":   domainRetrieve,
 		"id":          rde.ID,
-		"alias":       rde.Alias,
+		"topic":       rde.Topic,
 		"status":      rde.Status.String(),
 		"created_at":  rde.CreatedAt,
 		"user_id":     rde.UserID,
@@ -151,7 +151,7 @@ func (ude updateDomainEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
 		"operation":   domainUpdate,
 		"id":          ude.domain.ID,
-		"alias":       ude.domain.Alias,
+		"topic":       ude.domain.Topic,
 		"status":      ude.domain.Status.String(),
 		"created_at":  ude.domain.CreatedAt,
 		"created_by":  ude.domain.CreatedBy,

@@ -35,7 +35,7 @@ func createDomainEndpoint(svc domains.Service) endpoint.Endpoint {
 			Name:     req.Name,
 			Metadata: req.Metadata,
 			Tags:     req.Tags,
-			Alias:    req.Alias,
+			Topic:    req.Topic,
 		}
 		domain, _, err := svc.CreateDomain(ctx, session, d)
 		if err != nil {
@@ -86,7 +86,7 @@ func updateDomainEndpoint(svc domains.Service) endpoint.Endpoint {
 			Name:     req.Name,
 			Metadata: &metadata,
 			Tags:     req.Tags,
-			Alias:    req.Alias,
+			Topic:    req.Topic,
 		}
 		domain, err := svc.UpdateDomain(ctx, session, req.domainID, d)
 		if err != nil {
