@@ -263,6 +263,6 @@ var (
 	// ErrInvalidNameFormat indicates invalid name format.
 	ErrInvalidNameFormat = errors.New("invalid name format")
 
-	// ErrInvalidTopicFormat indicates invalid topic format.
-	ErrInvalidTopicFormat = errors.New("invalid topic format")
+	// ErrInvalidRouteFormat indicates invalid route format.
+	ErrInvalidRouteFormat = errors.New("invalid route format")
 )

@@ -478,27 +478,27 @@ func (_m *Repository) RetrieveByIDWithRoles(ctx context.Context, id string, memb
 	return r0, r1
 }
 
-// RetrieveByTopic provides a mock function with given fields: ctx, topic, domainID
-func (_m *Repository) RetrieveByTopic(ctx context.Context, topic string, domainID string) (channels.Channel, error) {
-	ret := _m.Called(ctx, topic, domainID)
+// RetrieveByRoute provides a mock function with given fields: ctx, route, domainID
+func (_m *Repository) RetrieveByRoute(ctx context.Context, route string, domainID string) (channels.Channel, error) {
+	ret := _m.Called(ctx, route, domainID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByTopic")
+		panic("no return value specified for RetrieveByRoute")
 	}
 
 	var r0 channels.Channel
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (channels.Channel, error)); ok {
-		return rf(ctx, topic, domainID)
+		return rf(ctx, route, domainID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) channels.Channel); ok {
-		r0 = rf(ctx, topic, domainID)
+		r0 = rf(ctx, route, domainID)
 	} else {
 		r0 = ret.Get(0).(channels.Channel)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, topic, domainID)
+		r1 = rf(ctx, route, domainID)
 	} else {
 		r1 = ret.Error(1)
 	}
