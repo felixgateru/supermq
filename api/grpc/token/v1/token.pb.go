@@ -195,9 +195,10 @@ var File_token_v1_token_proto protoreflect.FileDescriptor
 
 const file_token_v1_token_proto_rawDesc = "" +
 	"\n" +
-	"\x14token/v1/token.proto\x12\btoken.v1\"7\n" +
+	"\x14token/v1/token.proto\x12\btoken.v1\"T\n" +
 	"\bIssueReq\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
+	"\tuser_role\x18\x02 \x01(\rR\buserRole\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\rR\x04type\"1\n" +
 	"\n" +
 	"RefreshReq\x12#\n" +
