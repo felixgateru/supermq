@@ -128,7 +128,7 @@ func (es *eventHandler) updateDomainHandler(ctx context.Context, data map[string
 		domains.DomainReq{
 			Name:      &d.Name,
 			Metadata:  &d.Metadata,
-			Alias:     &d.Alias,
+			Topic:     &d.Topic,
 			Tags:      &d.Tags,
 			UpdatedBy: &d.UpdatedBy,
 			UpdatedAt: &d.UpdatedAt,

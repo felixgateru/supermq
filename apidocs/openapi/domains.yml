@@ -59,7 +59,7 @@ paths:
         "401":
           description: Missing or invalid access token provided.
         "409":
-          description: Failed due to using an existing alias.
+          description: Failed due to using an existing topic.
         "415":
           description: Missing or invalid content type.
         "422":
@@ -123,9 +123,9 @@ paths:
           $ref: "#/components/responses/ServiceError"
 
     patch:
-      summary: Updates name, metadata, tags and alias of the domain.
+      summary: Updates name, metadata, tags and topic of the domain.
       description: |
-        Updates name, metadata, tags and alias of the domain.
+        Updates name, metadata, tags and topic of the domain.
       tags:
         - Domains
       parameters:
@@ -930,13 +930,13 @@ components:
           type: object
           example: { "domain": "example.com" }
           description: Arbitrary, object-encoded domain's data.
-        alias:
+        topic:
           type: string
-          example: domain alias
-          description: Domain alias.
+          example: domain topic
+          description: Domain topic.
       required:
         - name
-        - alias
+        - topic
     Domain:
       type: object
       properties:
@@ -960,10 +960,10 @@ components:
           type: object
           example: { "domain": "example.com" }
           description: Arbitrary, object-encoded domain's data.
-        alias:
+        topic:
           type: string
-          example: domain alias
-          description: Domain alias.
+          example: domain topic
+          description: Domain topic.
         status:
           type: string
           description: Domain Status
@@ -1034,10 +1034,10 @@ components:
           type: object
           example: { "domain": "example.com" }
           description: Arbitrary, object-encoded domain's data.
-        alias:
+        topic:
           type: string
-          example: domain alias
-          description: Domain alias.
+          example: domain topic
+          description: Domain topic.
 
     SendInvitationReqObj:
       type: object
@@ -1291,7 +1291,7 @@ components:
           schema:
             $ref: "#/components/schemas/DomainReqObj"
     DomainUpdateReq:
-      description: JSON-formated document describing the name, alias, tags, and metadata of the domain to be updated
+      description: JSON-formated document describing the name, topic, tags, and metadata of the domain to be updated
       required: true
       content:
         application/json:

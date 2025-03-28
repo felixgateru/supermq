@@ -35,7 +35,7 @@ var (
 		Name:     authDomain.Name,
 		Metadata: authDomain.Metadata,
 		Tags:     authDomain.Tags,
-		Alias:    authDomain.Alias,
+		Topic:    authDomain.Topic,
 	}
 	validRoles = []roles.MemberRoleActions{
 		{
@@ -49,7 +49,7 @@ var (
 		Name:     sdkDomain.Name,
 		Metadata: sdkDomain.Metadata,
 		Tags:     sdkDomain.Tags,
-		Alias:    sdkDomain.Alias,
+		Topic:    sdkDomain.Topic,
 		Roles:    validRoles,
 	}
 	updatedDomianName = "updated-domain"
@@ -126,7 +126,7 @@ func TestCreateDomain(t *testing.T) {
 				Name:     "",
 				Metadata: sdkDomain.Metadata,
 				Tags:     sdkDomain.Tags,
-				Alias:    sdkDomain.Alias,
+				Topic:    sdkDomain.Topic,
 			},
 			svcReq:   domains.Domain{},
 			svcRes:   domains.Domain{},
@@ -2341,7 +2341,7 @@ func generateTestDomain(t *testing.T) (domains.Domain, sdk.Domain) {
 		Name:      "test-domain",
 		Metadata:  domains.Metadata(validMetadata),
 		Tags:      []string{"tag1", "tag2"},
-		Alias:     "test-alias",
+		Topic:     "test-topic",
 		Status:    domains.EnabledStatus,
 		CreatedBy: ownerID,
 		CreatedAt: createdAt,
@@ -2355,7 +2355,7 @@ func generateTestDomain(t *testing.T) (domains.Domain, sdk.Domain) {
 		Name:      ad.Name,
 		Metadata:  validMetadata,
 		Tags:      ad.Tags,
-		Alias:     ad.Alias,
+		Topic:     ad.Topic,
 		Status:    ad.Status.String(),
 		CreatedBy: ad.CreatedBy,
 		CreatedAt: ad.CreatedAt,
