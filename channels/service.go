@@ -65,9 +65,6 @@ func (svc service) CreateChannels(ctx context.Context, session authn.Session, ch
 			}
 			c.ID = clientID
 		}
-		if c.Route == "" {
-			c.Route = c.ID
-		}
 
 		if c.Status != DisabledStatus && c.Status != EnabledStatus {
 			return []Channel{}, []roles.RoleProvision{}, svcerr.ErrInvalidStatus
