@@ -62,9 +62,9 @@ packages:
     interfaces:
       Authz:
       Cache:
-      Callback:
+      CallBack:
       Hasher:
-      Keys:
+      KeyRepository:
       PATS:
       PATSRepository:
       Service:
