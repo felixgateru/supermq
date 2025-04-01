@@ -788,7 +788,7 @@ func TestAddParentGroup(t *testing.T) {
 			repoCall := repo.On("RetrieveByID", context.Background(), tc.id).Return(tc.retrieveResp, tc.retrieveErr)
 			policyCall := policies.On("AddPolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.addPoliciesErr)
 			policyCall1 := policies.On("DeletePolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.deletePoliciesErr)
-			repoCall1 := repo.On("AssignParentGroup", context.Background(), tc.parentID, []string{tc.id}).Return(tc.assignParentErr)
+			repoCall1 := repo.On("AssignParentGroup", context.Background(), tc.parentID, tc.id).Return(tc.assignParentErr)
 			err := svc.AddParentGroup(context.Background(), validSession, tc.id, tc.parentID)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			ok := repo.AssertCalled(t, "RetrieveByID", context.Background(), tc.id)
@@ -869,7 +869,7 @@ func TestRemoveParentGroup(t *testing.T) {
 			repoCall := repo.On("RetrieveByID", context.Background(), tc.id).Return(tc.retrieveResp, tc.retrieveErr)
 			policyCall := policies.On("DeletePolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.deletePoliciesErr)
 			policyCall1 := policies.On("AddPolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.addPoliciesErr)
-			repoCall1 := repo.On("UnassignParentGroup", context.Background(), tc.retrieveResp.Parent, []string{tc.id}).Return(tc.unassignParentErr)
+			repoCall1 := repo.On("UnassignParentGroup", context.Background(), tc.retrieveResp.Parent, tc.id).Return(tc.unassignParentErr)
 			err := svc.RemoveParentGroup(context.Background(), validSession, tc.id)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			ok := repo.AssertCalled(t, "RetrieveByID", context.Background(), tc.id)
@@ -888,7 +888,7 @@ func TestAddChildrenGroups(t *testing.T) {
 	cases := []struct {
 		desc              string
 		parentID          string
-		childrenIDs       []string
+		childID           string
 		retrieveResp      groups.Page
 		retrieveErr       error
 		addPoliciesErr    error
@@ -897,9 +897,9 @@ func TestAddChildrenGroups(t *testing.T) {
 		err               error
 	}{
 		{
-			desc:        "add children groups successfully",
-			parentID:    parentGroupID,
-			childrenIDs: []string{validGroup.ID},
+			desc:     "add children groups successfully",
+			parentID: parentGroupID,
+			childID:  validGroup.ID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
@@ -911,21 +911,21 @@ func TestAddChildrenGroups(t *testing.T) {
 		{
 			desc:        "add children groups with failed to retrieve",
 			parentID:    parentGroupID,
-			childrenIDs: []string{validGroup.ID},
+			childID:     validGroup.ID,
 			retrieveErr: repoerr.ErrNotFound,
 			err:         repoerr.ErrNotFound,
 		},
 		{
 			desc:         "add non existent child group",
 			parentID:     parentGroupID,
-			childrenIDs:  []string{testsutil.GenerateUUID(&testing.T{})},
+			childID:      validGroup.ID,
 			retrieveResp: groups.Page{},
 			err:          groups.ErrGroupIDs,
 		},
 		{
-			desc:        "add child group with parent",
-			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			desc:     "add child group with parent",
+			parentID: parentGroupID,
+			childID:  validGroup.ID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -935,9 +935,9 @@ func TestAddChildrenGroups(t *testing.T) {
 			err: svcerr.ErrConflict,
 		},
 		{
-			desc:        "add children groups with failed to add policies",
-			parentID:    parentGroupID,
-			childrenIDs: []string{validGroup.ID},
+			desc:     "add children groups with failed to add policies",
+			parentID: parentGroupID,
+			childID:  validGroup.ID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
@@ -948,9 +948,9 @@ func TestAddChildrenGroups(t *testing.T) {
 			err:            svcerr.ErrAddPolicies,
 		},
 		{
-			desc:        "add children groups with repo error in assign children groups",
-			parentID:    parentGroupID,
-			childrenIDs: []string{validGroup.ID},
+			desc:     "add children groups with repo error in assign children groups",
+			parentID: parentGroupID,
+			childID:  validGroup.ID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
@@ -961,9 +961,9 @@ func TestAddChildrenGroups(t *testing.T) {
 			err:             repoerr.ErrNotFound,
 		},
 		{
-			desc:        "add children groups with repo error in assign children groups and failed to delete policies",
-			parentID:    parentGroupID,
-			childrenIDs: []string{validGroup.ID},
+			desc:     "add children groups with repo error in assign children groups and failed to delete policies",
+			parentID: parentGroupID,
+			childID:  validGroup.ID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{validGroup},
 				PageMeta: groups.PageMeta{
@@ -986,11 +986,11 @@ func TestAddChildrenGroups(t *testing.T) {
 				ObjectType:  policysvc.GroupType,
 				Object:      validGroup.ID,
 			}
-			repoCall := repo.On("RetrieveByIDs", context.Background(), groups.PageMeta{Limit: 1<<63 - 1}, tc.childrenIDs).Return(tc.retrieveResp, tc.retrieveErr)
+			repoCall := repo.On("RetrieveByIDs", context.Background(), groups.PageMeta{Limit: 1<<63 - 1}, tc.childID).Return(tc.retrieveResp, tc.retrieveErr)
 			policyCall := policies.On("AddPolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.addPoliciesErr)
 			policyCall1 := policies.On("DeletePolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.deletePoliciesErr)
-			repoCall1 := repo.On("AssignParentGroup", context.Background(), tc.parentID, tc.childrenIDs).Return(tc.assignParentErr)
-			err := svc.AddChildrenGroups(context.Background(), validSession, tc.parentID, tc.childrenIDs)
+			repoCall1 := repo.On("AssignParentGroup", context.Background(), tc.parentID, tc.childID).Return(tc.assignParentErr)
+			err := svc.AddChildrenGroups(context.Background(), validSession, tc.parentID, []string{tc.childID})
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			repoCall.Unset()
 			policyCall.Unset()
@@ -1006,7 +1006,7 @@ func TestRemoveChildrenGroups(t *testing.T) {
 	cases := []struct {
 		desc              string
 		parentID          string
-		childrenIDs       []string
+		childID           string
 		retrieveResp      groups.Page
 		retrieveErr       error
 		deletePoliciesErr error
@@ -1015,9 +1015,9 @@ func TestRemoveChildrenGroups(t *testing.T) {
 		err               error
 	}{
 		{
-			desc:        "remove children groups successfully",
-			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			desc:     "remove children groups successfully",
+			parentID: parentGroupID,
+			childID:  childGroupID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -1029,21 +1029,21 @@ func TestRemoveChildrenGroups(t *testing.T) {
 		{
 			desc:        "remove children groups with failed to retrieve",
 			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			childID:     childGroupID,
 			retrieveErr: repoerr.ErrNotFound,
 			err:         repoerr.ErrNotFound,
 		},
 		{
 			desc:         "remove non existent child group",
 			parentID:     parentGroupID,
-			childrenIDs:  []string{testsutil.GenerateUUID(&testing.T{})},
+			childID:      testsutil.GenerateUUID(&testing.T{}),
 			retrieveResp: groups.Page{},
 			err:          groups.ErrGroupIDs,
 		},
 		{
-			desc:        "remove children groups from different parent",
-			parentID:    validGroup.ID,
-			childrenIDs: []string{childGroupID},
+			desc:     "remove children groups from different parent",
+			parentID: validGroup.ID,
+			childID:  childGroupID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -1053,9 +1053,9 @@ func TestRemoveChildrenGroups(t *testing.T) {
 			err: svcerr.ErrConflict,
 		},
 		{
-			desc:        "remove children groups with failed to delete policies",
-			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			desc:     "remove children groups with failed to delete policies",
+			parentID: parentGroupID,
+			childID:  childGroupID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -1066,9 +1066,9 @@ func TestRemoveChildrenGroups(t *testing.T) {
 			err:               svcerr.ErrDeletePolicies,
 		},
 		{
-			desc:        "remove children groups with repo error in unassign children groups",
-			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			desc:     "remove children groups with repo error in unassign children groups",
+			parentID: parentGroupID,
+			childID:  childGroupID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -1079,9 +1079,9 @@ func TestRemoveChildrenGroups(t *testing.T) {
 			err:               repoerr.ErrNotFound,
 		},
 		{
-			desc:        "remove children groups with repo error in unassign children groups and failed to add policies",
-			parentID:    parentGroupID,
-			childrenIDs: []string{childGroupID},
+			desc:     "remove children groups with repo error in unassign children groups and failed to add policies",
+			parentID: parentGroupID,
+			childID:  childGroupID,
 			retrieveResp: groups.Page{
 				Groups: []groups.Group{childGroup},
 				PageMeta: groups.PageMeta{
@@ -1104,11 +1104,11 @@ func TestRemoveChildrenGroups(t *testing.T) {
 				ObjectType:  policysvc.GroupType,
 				Object:      childGroupID,
 			}
-			repoCall := repo.On("RetrieveByIDs", context.Background(), groups.PageMeta{Limit: 1<<63 - 1}, tc.childrenIDs).Return(tc.retrieveResp, tc.retrieveErr)
+			repoCall := repo.On("RetrieveByIDs", context.Background(), groups.PageMeta{Limit: 1<<63 - 1}, tc.childID).Return(tc.retrieveResp, tc.retrieveErr)
 			policyCall := policies.On("DeletePolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.deletePoliciesErr)
 			policyCall1 := policies.On("AddPolicies", context.Background(), []policysvc.Policy{pol}).Return(tc.addPoliciesErr)
-			repoCall1 := repo.On("UnassignParentGroup", context.Background(), tc.parentID, tc.childrenIDs).Return(tc.unassignParentErr)
-			err := svc.RemoveChildrenGroups(context.Background(), validSession, tc.parentID, tc.childrenIDs)
+			repoCall1 := repo.On("UnassignParentGroup", context.Background(), tc.parentID, tc.childID).Return(tc.unassignParentErr)
+			err := svc.RemoveChildrenGroups(context.Background(), validSession, tc.parentID, []string{tc.childID})
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			repoCall.Unset()
 			policyCall.Unset()
