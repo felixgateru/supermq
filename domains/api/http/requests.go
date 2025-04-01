@@ -54,7 +54,6 @@ type updateDomainReq struct {
 	Name     *string                 `json:"name,omitempty"`
 	Metadata *map[string]interface{} `json:"metadata,omitempty"`
 	Tags     *[]string               `json:"tags,omitempty"`
-	Route    *string                 `json:"route,omitempty"`
 }
 
 func (req updateDomainReq) validate() error {
