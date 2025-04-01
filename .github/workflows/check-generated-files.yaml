@@ -115,8 +115,8 @@ jobs:
       - name: Check Mocks are up to Date
         if: steps.changes.outputs.mocks == 'true'
         run: |
-          MOCKERY_VERSION=v2.53.3
-          go install github.com/vektra/mockery/v2@$MOCKERY_VERSION
+          MOCKERY_VERSION=v3.0.0-beta.6
+          go install github.com/vektra/mockery/v3@$MOCKERY_VERSION
 
           mv ./auth/mocks/token_client.go ./auth/mocks/token_client.go.tmp
           mv ./auth/mocks/authz.go ./auth/mocks/authz.go.tmp

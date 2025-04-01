@@ -1,11 +1,14 @@
 # Copyright (c) Abstract Machines
 # SPDX-License-Identifier: Apache-2.0
 
-outpkg: mocks
+pkgname: mocks
 mockname: "{{.InterfaceName}}"
 filename: "{{snakecase .InterfaceName}}.go"
 dir: "{{.InterfaceDirRelative}}/mocks"
-boilerplate-file: ./tools/config/boilerplate.txt
+template-data:
+  boilerplate-file: ./tools/config/boilerplate.txt
+  with-expecter: true
+force-file-write: true
 
 packages:
   github.com/absmach/supermq/api/grpc/clients/v1:
