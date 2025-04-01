@@ -65,8 +65,6 @@ type Permissions []string
 
 // PolicyService facilitates the communication to authorization
 // services and implements Authz functionalities for spicedb
-//
-//go:generate mockery --name Service --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
 	// AddPolicy creates a policy for the given subject, so that, after
 	// AddPolicy, `subject` has a `relation` on `object`. Returns a non-nil
