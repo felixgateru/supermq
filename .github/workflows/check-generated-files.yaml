@@ -122,15 +122,15 @@ jobs:
           make mocks
 
           check_mock_changes() {
-              local file_path=$1
-              local tmp_file_path=$1.tmp
-              local entity_name=$2
+            local file_path=$1
+            local tmp_file_path=$1.tmp
+            local entity_name=$2
 
-              if ! cmp -s "$file_path" "$tmp_file_path"; then
-                  echo "Error: Generated mocks for $entity_name are out of sync!"
-                  echo "Please run 'make mocks' with mockery version $MOCKERY_VERSION and commit the changes."
-                  exit 1
-              fi
+            if ! cmp -s "$file_path" "$tmp_file_path"; then
+                echo "Error: Generated mocks for $entity_name are out of sync!"
+                echo "Please run 'make mocks' with mockery version $MOCKERY_VERSION and commit the changes."
+                exit 1
+            fi
           }
 
           for f in $(find . -type f -path '*/mocks/*.go' ! -name 'doc.go'); do
