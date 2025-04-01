@@ -16,7 +16,7 @@ type createDomainReq struct {
 	Name     string                 `json:"name"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
-	Topic    string                 `json:"topic"`
+	Route    string                 `json:"route"`
 }
 
 func (req createDomainReq) validate() error {
@@ -26,10 +26,10 @@ func (req createDomainReq) validate() error {
 	if req.Name == "" {
 		return apiutil.ErrMissingName
 	}
-	if req.Topic == "" {
-		return apiutil.ErrMissingTopic
+	if req.Route == "" {
+		return apiutil.ErrMissingRoute
 	}
-	if err := validateTopic(req.Topic); err != nil {
+	if err := validateRoute(req.Route); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ type updateDomainReq struct {
 	Name     *string                 `json:"name,omitempty"`
 	Metadata *map[string]interface{} `json:"metadata,omitempty"`
 	Tags     *[]string               `json:"tags,omitempty"`
-	Topic    *string                 `json:"topic,omitempty"`
+	Route    *string                 `json:"route,omitempty"`
 }
 
 func (req updateDomainReq) validate() error {
@@ -162,11 +162,11 @@ func (req *invitationReq) validate() error {
 	return nil
 }
 
-func validateTopic(topic string) error {
-	if err := api.ValidateUUID(topic); err == nil {
+func validateRoute(route string) error {
+	if err := api.ValidateUUID(route); err == nil {
 		return nil
 	}
-	if err := api.ValidateTopic(topic); err != nil {
+	if err := api.ValidateRoute(route); err != nil {
 		return err
 	}
 

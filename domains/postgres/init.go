@@ -64,10 +64,10 @@ func Migration() (*migrate.MemoryMigrationSource, error) {
 			{
 				Id: "domain_3",
 				Up: []string{
-					`ALTER TABLE domains RENAME COLUMN alias TO topic;`,
+					`ALTER TABLE domains RENAME COLUMN alias TO route;`,
 				},
 				Down: []string{
-					`ALTER TABLE domains RENAME COLUMN topic TO alias;`,
+					`ALTER TABLE domains RENAME COLUMN route TO alias;`,
 				},
 			},
 		},

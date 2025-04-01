@@ -823,7 +823,7 @@ func saveDomain(t *testing.T, repo domains.Repository) domains.Domain {
 	domain := domains.Domain{
 		ID:    testsutil.GenerateUUID(t),
 		Name:  "test",
-		Topic: "test",
+		Route: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",

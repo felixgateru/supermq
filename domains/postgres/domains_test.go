@@ -18,9 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	invalid = "invalid"
-)
+const invalid = "invalid"
 
 var (
 	domainID = testsutil.GenerateUUID(&testing.T{})
@@ -45,7 +43,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test",
-				Topic: "test",
+				Route: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -63,7 +61,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test",
-				Topic: "test",
+				Route: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -81,7 +79,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    "",
 				Name:  "test1",
-				Topic: "test1",
+				Route: "test1",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -95,11 +93,11 @@ func TestSaveDomain(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc: "add domain with empty topic",
+			desc: "add domain with empty route",
 			domain: domains.Domain{
 				ID:    testsutil.GenerateUUID(&testing.T{}),
 				Name:  "test1",
-				Topic: "",
+				Route: "",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test": "test",
@@ -117,7 +115,7 @@ func TestSaveDomain(t *testing.T) {
 			domain: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Topic: "test1",
+				Route: "test1",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"key": make(chan int),
@@ -154,7 +152,7 @@ func TestRetrieveByID(t *testing.T) {
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Topic: "test",
+		Route: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -204,7 +202,7 @@ func TestRetrieveByID(t *testing.T) {
 	}
 }
 
-func TestRetrieveByTopic(t *testing.T) {
+func TestRetrieveByRoute(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM domains")
 		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
@@ -212,11 +210,11 @@ func TestRetrieveByTopic(t *testing.T) {
 
 	repo := postgres.NewRepository(database)
 
-	validTopic := "testTopic"
+	validRoute := "testRoute"
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Topic: validTopic,
+		Route: validRoute,
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -233,25 +231,25 @@ func TestRetrieveByTopic(t *testing.T) {
 
 	cases := []struct {
 		desc     string
-		topic    string
+		route    string
 		response domains.Domain
 		err      error
 	}{
 		{
 			desc:     "retrieve existing domain",
-			topic:    validTopic,
+			route:    validRoute,
 			response: domain,
 			err:      nil,
 		},
 		{
-			desc:     "retrieve doamin with invalid topic",
-			topic:    invalid,
+			desc:     "retrieve doamin with invalid route",
+			route:    invalid,
 			response: domains.Domain{},
 			err:      repoerr.ErrNotFound,
 		},
 		{
-			desc:     "retrieve with empty domain topic",
-			topic:    "",
+			desc:     "retrieve with empty domain route",
+			route:    "",
 			response: domains.Domain{},
 			err:      repoerr.ErrNotFound,
 		},
@@ -259,7 +257,7 @@ func TestRetrieveByTopic(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			d, err := repo.RetrieveDomainByTopic(context.Background(), tc.topic)
+			d, err := repo.RetrieveDomainByRoute(context.Background(), tc.route)
 			assert.Equal(t, tc.response, d, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, d))
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.err, err))
 		})
@@ -279,7 +277,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 		domain := domains.Domain{
 			ID:    testsutil.GenerateUUID(t),
 			Name:  fmt.Sprintf(`"test%d"`, i),
-			Topic: fmt.Sprintf(`"test%d"`, i),
+			Route: fmt.Sprintf(`"test%d"`, i),
 			Tags:  []string{"test"},
 			Metadata: map[string]interface{}{
 				"test": "test",
@@ -515,14 +513,13 @@ func TestUpdate(t *testing.T) {
 	}
 	updatedTags := []string{"test1"}
 	updatedStatus := domains.DisabledStatus
-	updatedTopic := "test1"
 
 	repo := postgres.NewRepository(database)
 
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Topic: "test",
+		Route: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -552,7 +549,7 @@ func TestUpdate(t *testing.T) {
 			response: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Topic: "test",
+				Route: "test",
 				Tags:  []string{"test"},
 				Metadata: map[string]interface{}{
 					"test1": "test1",
@@ -565,19 +562,18 @@ func TestUpdate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:     "update existing domain name, metadata, tags, status and topic",
+			desc:     "update existing domain name, metadata, tags and status",
 			domainID: domain.ID,
 			d: domains.DomainReq{
 				Name:     &updatedName,
 				Metadata: &updatedMetadata,
 				Tags:     &updatedTags,
 				Status:   &updatedStatus,
-				Topic:    &updatedTopic,
 			},
 			response: domains.Domain{
 				ID:    domainID,
 				Name:  "test1",
-				Topic: "test1",
+				Route: "test",
 				Tags:  []string{"test1"},
 				Metadata: map[string]interface{}{
 					"test1": "test1",
@@ -642,7 +638,7 @@ func TestDelete(t *testing.T) {
 	domain := domains.Domain{
 		ID:    domainID,
 		Name:  "test",
-		Topic: "test",
+		Route: "test",
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
@@ -698,7 +694,7 @@ func TestListDomains(t *testing.T) {
 		domain := domains.Domain{
 			ID:    testsutil.GenerateUUID(t),
 			Name:  fmt.Sprintf(`"test%d"`, i),
-			Topic: fmt.Sprintf(`"test%d"`, i),
+			Route: fmt.Sprintf(`"test%d"`, i),
 			Tags:  []string{"test"},
 			Metadata: map[string]interface{}{
 				"test": "test",

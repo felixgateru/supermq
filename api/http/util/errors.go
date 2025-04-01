@@ -177,8 +177,8 @@ var (
 	// ErrMissingName indicates missing identity name.
 	ErrMissingName = errors.New("missing identity name")
 
-	// ErrMissingTopic indicates missing topic.
-	ErrMissingTopic = errors.New("missing topic")
+	// ErrMissingRoute indicates missing route.
+	ErrMissingRoute = errors.New("missing route")
 
 	// ErrInvalidLevel indicates an invalid group level.
 	ErrInvalidLevel = errors.New("invalid group level (should be between 0 and 5)")
@@ -263,6 +263,6 @@ var (
 	// ErrInvalidNameFormat indicates invalid name format.
 	ErrInvalidNameFormat = errors.New("invalid name format")
 
-	// ErrInvalidTopicFormat indicates invalid topic format.
-	ErrInvalidTopicFormat = errors.New("invalid topic format")
+	// ErrInvalidRouteFormat indicates invalid route format.
+	ErrInvalidRouteFormat = errors.New("invalid route format")
 )

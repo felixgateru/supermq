@@ -92,7 +92,7 @@ const (
 
 var (
 	nameRegExp        = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{34}[a-z0-9]$`)
-	topicRegExp       = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,35}$`)
+	routeRegExp       = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,35}$`)
 	errUnreadableName = errors.New("name containing double underscores or double dashes not allowed")
 )
 
@@ -119,14 +119,14 @@ func ValidateName(id string) error {
 	return nil
 }
 
-// ValidateTopic validates topic format.
-func ValidateTopic(topic string) error {
-	if !topicRegExp.MatchString(topic) {
-		return apiutil.ErrInvalidTopicFormat
+// ValidateRoute validates route format.
+func ValidateRoute(route string) error {
+	if !routeRegExp.MatchString(route) {
+		return apiutil.ErrInvalidRouteFormat
 	}
 
-	if strings.Contains(topic, "__") || strings.Contains(topic, "--") {
-		return errors.Wrap(apiutil.ErrInvalidTopicFormat, errUnreadableName)
+	if strings.Contains(route, "__") || strings.Contains(route, "--") {
+		return errors.Wrap(apiutil.ErrInvalidRouteFormat, errUnreadableName)
 	}
 
 	return nil
@@ -176,7 +176,7 @@ func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 		errors.Contains(err, errors.ErrMalformedEntity),
 		errors.Contains(err, apiutil.ErrMissingID),
 		errors.Contains(err, apiutil.ErrMissingName),
-		errors.Contains(err, apiutil.ErrMissingTopic),
+		errors.Contains(err, apiutil.ErrMissingRoute),
 		errors.Contains(err, apiutil.ErrMissingEmail),
 		errors.Contains(err, apiutil.ErrInvalidEmail),
 		errors.Contains(err, apiutil.ErrMissingHost),
@@ -233,7 +233,7 @@ func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 		errors.Contains(err, apiutil.ErrMissingRoleMembers),
 		errors.Contains(err, apiutil.ErrMissingDescription),
 		errors.Contains(err, apiutil.ErrMissingEntityID),
-		errors.Contains(err, apiutil.ErrInvalidTopicFormat):
+		errors.Contains(err, apiutil.ErrInvalidRouteFormat):
 		err = unwrap(err)
 		w.WriteHeader(http.StatusBadRequest)
 

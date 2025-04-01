@@ -40,7 +40,7 @@ The following actions are supported:
 
 ## Domains
 
-Domains are used to group users and clients. Each domain has a unique topic that is associated with the domain. Domains are used to group users and their entities.
+Domains are used to group users and clients. Each domain has a unique route that is associated with the domain. Domains are used to group users and their entities.
 
 Domain consists of the following fields:
 
@@ -48,7 +48,7 @@ Domain consists of the following fields:
 - Name - name of the domain
 - Tags - array of tags
 - Metadata - Arbitrary, object-encoded domain's data
-- Topic - unique topic of the domain
+- Route - unique route of the domain used in messaging
 - CreatedAt - timestamp at which the domain is created
 - UpdatedAt - timestamp at which the domain is updated
 - UpdatedBy - user that updated the domain
