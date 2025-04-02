@@ -98,6 +98,9 @@ func (uce updateChannelEvent) Encode() (map[string]interface{}, error) {
 	if uce.ID != "" {
 		val["id"] = uce.ID
 	}
+	if uce.Route != "" {
+		val["route"] = uce.Route
+	}
 	if uce.Name != "" {
 		val["name"] = uce.Name
 	}

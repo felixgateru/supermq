@@ -1033,32 +1033,6 @@ func (_mock *Repository) RetrieveByIDWithRoles(ctx context.Context, id string, m
 	return r0, r1
 }
 
-// RetrieveByRoute provides a mock function with given fields: ctx, route, domainID
-func (_m *Repository) RetrieveByRoute(ctx context.Context, route string, domainID string) (channels.Channel, error) {
-	ret := _m.Called(ctx, route, domainID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByRoute")
-	}
-
-	var r0 channels.Channel
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (channels.Channel, error)); ok {
-		return returnFunc(ctx, id, memberID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) channels.Channel); ok {
-		r0 = returnFunc(ctx, id, memberID)
-	} else {
-		r0 = ret.Get(0).(channels.Channel)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, id, memberID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
 // Repository_RetrieveByIDWithRoles_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveByIDWithRoles'
 type Repository_RetrieveByIDWithRoles_Call struct {
 	*mock.Call
@@ -1085,6 +1059,62 @@ func (_c *Repository_RetrieveByIDWithRoles_Call) Return(channel channels.Channel
 }
 
 func (_c *Repository_RetrieveByIDWithRoles_Call) RunAndReturn(run func(ctx context.Context, id string, memberID string) (channels.Channel, error)) *Repository_RetrieveByIDWithRoles_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RetrieveByRoute provides a mock function for the type Repository
+func (_mock *Repository) RetrieveByRoute(ctx context.Context, route string, domainID string) (channels.Channel, error) {
+	ret := _mock.Called(ctx, route, domainID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveByRoute")
+	}
+
+	var r0 channels.Channel
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (channels.Channel, error)); ok {
+		return returnFunc(ctx, route, domainID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) channels.Channel); ok {
+		r0 = returnFunc(ctx, route, domainID)
+	} else {
+		r0 = ret.Get(0).(channels.Channel)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = returnFunc(ctx, route, domainID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repository_RetrieveByRoute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveByRoute'
+type Repository_RetrieveByRoute_Call struct {
+	*mock.Call
+}
+
+// RetrieveByRoute is a helper method to define mock.On call
+//   - ctx
+//   - route
+//   - domainID
+func (_e *Repository_Expecter) RetrieveByRoute(ctx interface{}, route interface{}, domainID interface{}) *Repository_RetrieveByRoute_Call {
+	return &Repository_RetrieveByRoute_Call{Call: _e.mock.On("RetrieveByRoute", ctx, route, domainID)}
+}
+
+func (_c *Repository_RetrieveByRoute_Call) Run(run func(ctx context.Context, route string, domainID string)) *Repository_RetrieveByRoute_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Repository_RetrieveByRoute_Call) Return(channel channels.Channel, err error) *Repository_RetrieveByRoute_Call {
+	_c.Call.Return(channel, err)
+	return _c
+}
+
+func (_c *Repository_RetrieveByRoute_Call) RunAndReturn(run func(ctx context.Context, route string, domainID string) (channels.Channel, error)) *Repository_RetrieveByRoute_Call {
 	_c.Call.Return(run)
 	return _c
 }
