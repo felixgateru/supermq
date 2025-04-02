@@ -23,6 +23,7 @@ type Channel struct {
 	Tags        []string  `json:"tags,omitempty"`
 	ParentGroup string    `json:"parent_group_id,omitempty"`
 	Domain      string    `json:"domain_id,omitempty"`
+	Route       string    `json:"route,omitempty"`
 	Metadata    Metadata  `json:"metadata,omitempty"`
 	CreatedBy   string    `json:"created_by,omitempty"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
@@ -88,7 +89,6 @@ type AuthzReq struct {
 	Type       connections.ConnType
 }
 
-//go:generate mockery --name Service  --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
 	// CreateChannels adds channels to the user.
 	CreateChannels(ctx context.Context, session authn.Session, channels ...Channel) ([]Channel, []roles.RoleProvision, error)
@@ -132,8 +132,6 @@ type Service interface {
 }
 
 // ChannelRepository specifies a channel persistence API.
-//
-//go:generate mockery --name Repository --output=./mocks --filename repository.go  --quiet --note "Copyright (c) Abstract Machines"
 type Repository interface {
 	// Save persists multiple channels. Channels are saved using a transaction. If one channel
 	// fails then none will be saved. Successful operation is indicated by non-nil
@@ -152,6 +150,9 @@ type Repository interface {
 
 	// RetrieveByID retrieves the channel having the provided identifier
 	RetrieveByID(ctx context.Context, id string) (Channel, error)
+
+	// RetrieveByRoute retrieves the channel having the provided route
+	RetrieveByRoute(ctx context.Context, route, domainID string) (Channel, error)
 
 	// RetrieveByIDWithRoles retrieves channel by its unique ID along with member roles.
 	RetrieveByIDWithRoles(ctx context.Context, id, memberID string) (Channel, error)

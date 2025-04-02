@@ -36,8 +36,9 @@ var (
 	idProvider   = uuid.New()
 	namegen      = namegenerator.NewGenerator()
 	validChannel = channels.Channel{
-		ID:   testsutil.GenerateUUID(&testing.T{}),
-		Name: namegen.Generate(),
+		ID:    testsutil.GenerateUUID(&testing.T{}),
+		Name:  namegen.Generate(),
+		Route: namegen.Generate(),
 		Metadata: map[string]interface{}{
 			"key": "value",
 		},
@@ -46,8 +47,9 @@ var (
 		Status: channels.EnabledStatus,
 	}
 	validChannelWithRoles = channels.Channel{
-		ID:   testsutil.GenerateUUID(&testing.T{}),
-		Name: namegen.Generate(),
+		ID:    testsutil.GenerateUUID(&testing.T{}),
+		Name:  namegen.Generate(),
+		Route: namegen.Generate(),
 		Metadata: map[string]interface{}{
 			"key": "value",
 		},
@@ -90,6 +92,9 @@ func newService(t *testing.T) channels.Service {
 
 func TestCreateChannel(t *testing.T) {
 	svc := newService(t)
+
+	etChan := validChannel
+	etChan.Route = ""
 
 	cases := []struct {
 		desc              string
@@ -292,8 +297,9 @@ func TestUpdateChannel(t *testing.T) {
 		{
 			desc: "update channel successfully",
 			channel: channels.Channel{
-				ID:   testsutil.GenerateUUID(t),
-				Name: namegen.Generate(),
+				ID:    testsutil.GenerateUUID(t),
+				Name:  namegen.Generate(),
+				Route: namegen.Generate(),
 			},
 			repoResp: validChannel,
 		},
@@ -769,7 +775,7 @@ func TestRemoveChannel(t *testing.T) {
 			repoCall2 := repo.On("RetrieveEntitiesRolesActionsMembers", context.Background(), []string{tc.id}).Return([]roles.EntityActionRole{}, []roles.EntityMemberRole{}, nil)
 			policyCall := policies.On("DeletePolicies", context.Background(), mock.Anything).Return(tc.deletePoliciesErr)
 			policyCall1 := policies.On("DeletePolicyFilter", context.Background(), mock.Anything).Return(tc.deletePolicyFilterErr)
-			repoCall3 := repoCall.On("Remove", context.Background(), tc.id).Return(tc.removeErr)
+			repoCall3 := repoCall.On("Remove", context.Background(), []string{tc.id}).Return(tc.removeErr)
 			err := svc.RemoveChannel(context.Background(), validSession, tc.id)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			repoCall.Unset()

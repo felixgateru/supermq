@@ -17,10 +17,13 @@ const (
 	channelPrefix       = "channel."
 	channelCreate       = channelPrefix + "create"
 	channelUpdate       = channelPrefix + "update"
-	channelChangeStatus = channelPrefix + "change_status"
+	channelUpdateTags   = channelPrefix + "update_tags"
+	channelEnable       = channelPrefix + "enable"
+	channelDisable      = channelPrefix + "disable"
 	channelRemove       = channelPrefix + "remove"
 	channelView         = channelPrefix + "view"
 	channelList         = channelPrefix + "list"
+	channelListByUser   = channelPrefix + "list_by_user"
 	channelConnect      = channelPrefix + "connect"
 	channelDisconnect   = channelPrefix + "disconnect"
 	channelSetParent    = channelPrefix + "set_parent"
@@ -30,7 +33,7 @@ const (
 var (
 	_ events.Event = (*createChannelEvent)(nil)
 	_ events.Event = (*updateChannelEvent)(nil)
-	_ events.Event = (*changeStatusChannelEvent)(nil)
+	_ events.Event = (*changeChannelStatusEvent)(nil)
 	_ events.Event = (*viewChannelEvent)(nil)
 	_ events.Event = (*listChannelEvent)(nil)
 	_ events.Event = (*removeChannelEvent)(nil)
@@ -50,6 +53,7 @@ func (cce createChannelEvent) Encode() (map[string]interface{}, error) {
 		"operation":         channelCreate,
 		"id":                cce.ID,
 		"roles_provisioned": cce.rolesProvisioned,
+		"route":             cce.Route,
 		"status":            cce.Status.String(),
 		"created_at":        cce.CreatedAt,
 		"domain":            cce.DomainID,
@@ -74,14 +78,14 @@ func (cce createChannelEvent) Encode() (map[string]interface{}, error) {
 
 type updateChannelEvent struct {
 	channels.Channel
-	operation string
 	authn.Session
+	operation string
 	requestID string
 }
 
 func (uce updateChannelEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   channelUpdate,
+		"operation":   uce.operation,
 		"updated_at":  uce.UpdatedAt,
 		"updated_by":  uce.UpdatedBy,
 		"domain":      uce.DomainID,
@@ -90,12 +94,12 @@ func (uce updateChannelEvent) Encode() (map[string]interface{}, error) {
 		"super_admin": uce.SuperAdmin,
 		"request_id":  uce.requestID,
 	}
-	if uce.operation != "" {
-		val["operation"] = channelUpdate + "_" + uce.operation
-	}
 
 	if uce.ID != "" {
 		val["id"] = uce.ID
+	}
+	if uce.Route != "" {
+		val["route"] = uce.Route
 	}
 	if uce.Name != "" {
 		val["name"] = uce.Name
@@ -116,8 +120,9 @@ func (uce updateChannelEvent) Encode() (map[string]interface{}, error) {
 	return val, nil
 }
 
-type changeStatusChannelEvent struct {
+type changeChannelStatusEvent struct {
 	id        string
+	operation string
 	status    string
 	updatedAt time.Time
 	updatedBy string
@@ -125,18 +130,18 @@ type changeStatusChannelEvent struct {
 	requestID string
 }
 
-func (rce changeStatusChannelEvent) Encode() (map[string]interface{}, error) {
+func (cse changeChannelStatusEvent) Encode() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"operation":   channelChangeStatus,
-		"id":          rce.id,
-		"status":      rce.status,
-		"updated_at":  rce.updatedAt,
-		"updated_by":  rce.updatedBy,
-		"domain":      rce.DomainID,
-		"user_id":     rce.UserID,
-		"token_type":  rce.Type.String(),
-		"super_admin": rce.SuperAdmin,
-		"request_id":  rce.requestID,
+		"operation":   cse.operation,
+		"id":          cse.id,
+		"status":      cse.status,
+		"updated_at":  cse.updatedAt,
+		"updated_by":  cse.updatedBy,
+		"domain":      cse.DomainID,
+		"user_id":     cse.UserID,
+		"token_type":  cse.Type.String(),
+		"super_admin": cse.SuperAdmin,
+		"request_id":  cse.requestID,
 	}, nil
 }
 
@@ -159,6 +164,9 @@ func (vce viewChannelEvent) Encode() (map[string]interface{}, error) {
 
 	if vce.Name != "" {
 		val["name"] = vce.Name
+	}
+	if vce.Route != "" {
+		val["route"] = vce.Route
 	}
 	if len(vce.Tags) > 0 {
 		val["tags"] = vce.Tags
@@ -235,7 +243,7 @@ type listUserChannelsEvent struct {
 
 func (luce listUserChannelsEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   channelList,
+		"operation":   channelListByUser,
 		"req_user_id": luce.userID,
 		"total":       luce.Total,
 		"offset":      luce.Offset,

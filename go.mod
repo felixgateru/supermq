@@ -1,6 +1,6 @@
 module github.com/absmach/supermq
 
-go 1.23.4
+go 1.24.2
 
 require (
 	github.com/0x6flab/namegenerator v1.4.0
@@ -17,19 +17,19 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-kit/kit v0.13.0
-	github.com/gofrs/uuid/v5 v5.3.1
+	github.com/gofrs/uuid/v5 v5.3.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/vault/api v1.16.0
 	github.com/hashicorp/vault/api/auth/approle v0.9.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/jackc/pgtype v1.14.4
-	github.com/jackc/pgx/v5 v5.7.3
+	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lestrrat-go/jwx/v2 v2.1.4
 	github.com/lib/pq v1.10.9
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.40.0
+	github.com/nats-io/nats.go v1.40.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pelletier/go-toml v1.9.5

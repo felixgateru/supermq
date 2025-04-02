@@ -4,6 +4,7 @@
 package sdk_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -53,12 +54,14 @@ func TestCreateChannel(t *testing.T) {
 
 	createChannelReq := channels.Channel{
 		Name:     channel.Name,
+		Route:    channel.Route,
 		Metadata: channels.Metadata{"role": "client"},
 		Status:   channels.EnabledStatus,
 	}
 
 	channelReq := sdk.Channel{
 		Name:     channel.Name,
+		Route:    channel.Route,
 		Metadata: validMetadata,
 		Status:   channels.EnabledStatus.String(),
 	}
@@ -133,6 +136,7 @@ func TestCreateChannel(t *testing.T) {
 			desc: "create channel with parent group",
 			channelReq: sdk.Channel{
 				Name:        channel.Name,
+				Route:       channel.Route,
 				ParentGroup: parentID,
 				Status:      channels.EnabledStatus.String(),
 			},
@@ -141,6 +145,7 @@ func TestCreateChannel(t *testing.T) {
 			createChannelReq: channels.Channel{
 				Name:        channel.Name,
 				ParentGroup: parentID,
+				Route:       channel.Route,
 				Status:      channels.EnabledStatus,
 			},
 			svcRes:   []channels.Channel{convertChannel(pChannel)},
@@ -152,6 +157,7 @@ func TestCreateChannel(t *testing.T) {
 			desc: "create channel with invalid parent",
 			channelReq: sdk.Channel{
 				Name:        channel.Name,
+				Route:       channel.Route,
 				ParentGroup: wrongID,
 				Status:      channels.EnabledStatus.String(),
 			},
@@ -160,6 +166,7 @@ func TestCreateChannel(t *testing.T) {
 			createChannelReq: channels.Channel{
 				Name:        channel.Name,
 				ParentGroup: wrongID,
+				Route:       channel.Route,
 				Status:      channels.EnabledStatus,
 			},
 			svcRes:   []channels.Channel{},
@@ -172,6 +179,7 @@ func TestCreateChannel(t *testing.T) {
 			channelReq: sdk.Channel{
 				ID:          channel.ID,
 				ParentGroup: parentID,
+				Route:       channel.Route,
 				Name:        channel.Name,
 				Metadata:    validMetadata,
 				CreatedAt:   channel.CreatedAt,
@@ -183,6 +191,7 @@ func TestCreateChannel(t *testing.T) {
 			createChannelReq: channels.Channel{
 				ID:          channel.ID,
 				ParentGroup: parentID,
+				Route:       channel.Route,
 				Name:        channel.Name,
 				Metadata:    channels.Metadata{"role": "client"},
 				CreatedAt:   channel.CreatedAt,
@@ -212,12 +221,12 @@ func TestCreateChannel(t *testing.T) {
 				tc.session = smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
-			svcCall := gsvc.On("CreateChannels", mock.Anything, tc.session, tc.createChannelReq).Return(tc.svcRes, []roles.RoleProvision{}, tc.svcErr)
-			resp, err := mgsdk.CreateChannel(tc.channelReq, tc.domainID, tc.token)
+			svcCall := gsvc.On("CreateChannels", mock.Anything, tc.session, []channels.Channel{tc.createChannelReq}).Return(tc.svcRes, []roles.RoleProvision{}, tc.svcErr)
+			resp, err := mgsdk.CreateChannel(context.Background(), tc.channelReq, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
-				ok := svcCall.Parent.AssertCalled(t, "CreateChannels", mock.Anything, tc.session, tc.createChannelReq)
+				ok := svcCall.Parent.AssertCalled(t, "CreateChannels", mock.Anything, tc.session, []channels.Channel{tc.createChannelReq})
 				assert.True(t, ok)
 			}
 			svcCall.Unset()
@@ -293,8 +302,9 @@ func TestCreateChannels(t *testing.T) {
 			token:    validToken,
 			channelsReq: []sdk.Channel{
 				{
-					ID:   generateUUID(t),
-					Name: "channel_1",
+					ID:    generateUUID(t),
+					Name:  "channel_1",
+					Route: valid,
 					Metadata: map[string]interface{}{
 						"test": make(chan int),
 					},
@@ -332,8 +342,8 @@ func TestCreateChannels(t *testing.T) {
 				tc.session = smqauthn.Session{DomainUserID: domainID + "_" + validID, UserID: validID, DomainID: domainID}
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
-			svcCall := gsvc.On("CreateChannels", mock.Anything, tc.session, tc.createChannelsReq[0], tc.createChannelsReq[1], tc.createChannelsReq[2]).Return(tc.svcRes, []roles.RoleProvision{}, tc.svcErr)
-			resp, err := mgsdk.CreateChannels(tc.channelsReq, tc.domainID, tc.token)
+			svcCall := gsvc.On("CreateChannels", mock.Anything, tc.session, tc.createChannelsReq).Return(tc.svcRes, []roles.RoleProvision{}, tc.svcErr)
+			resp, err := mgsdk.CreateChannels(context.Background(), tc.channelsReq, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			svcCall.Unset()
@@ -604,7 +614,7 @@ func TestListChannels(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("ListChannels", mock.Anything, tc.session, tc.channelsPageMeta).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.Channels(pm, tc.domainID, tc.token)
+			resp, err := mgsdk.Channels(context.Background(), pm, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -743,9 +753,9 @@ func TestViewChannel(t *testing.T) {
 
 			switch tc.withRoles {
 			case true:
-				resp, err = mgsdkRoles.Channel(tc.channelID, tc.domainID, tc.token)
+				resp, err = mgsdkRoles.Channel(context.Background(), tc.channelID, tc.domainID, tc.token)
 			default:
-				resp, err = mgsdk.Channel(tc.channelID, tc.domainID, tc.token)
+				resp, err = mgsdk.Channel(context.Background(), tc.channelID, tc.domainID, tc.token)
 			}
 
 			assert.Equal(t, tc.err, err)
@@ -1021,7 +1031,7 @@ func TestUpdateChannel(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("UpdateChannel", mock.Anything, tc.session, tc.updateChannelReq).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.UpdateChannel(tc.channelReq, tc.domainID, tc.token)
+			resp, err := mgsdk.UpdateChannel(context.Background(), tc.channelReq, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -1172,7 +1182,7 @@ func TestUpdateChannelTags(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, mock.Anything).Return(tc.session, tc.authenticateErr)
 			svcCall := tsvc.On("UpdateChannelTags", mock.Anything, tc.session, tc.svcReq).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.UpdateChannelTags(tc.updateChannelReq, tc.domainID, tc.token)
+			resp, err := mgsdk.UpdateChannelTags(context.Background(), tc.updateChannelReq, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -1279,7 +1289,7 @@ func TestEnableChannel(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("EnableChannel", mock.Anything, tc.session, tc.channelID).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.EnableChannel(tc.channelID, tc.domainID, tc.token)
+			resp, err := mgsdk.EnableChannel(context.Background(), tc.channelID, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -1389,7 +1399,7 @@ func TestDisableChannel(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("DisableChannel", mock.Anything, tc.session, tc.channelID).Return(tc.svcRes, tc.svcErr)
-			resp, err := mgsdk.DisableChannel(tc.channelID, tc.domainID, tc.token)
+			resp, err := mgsdk.DisableChannel(context.Background(), tc.channelID, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			assert.Equal(t, tc.response, resp)
 			if tc.err == nil {
@@ -1469,7 +1479,7 @@ func TestDeleteChannel(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("RemoveChannel", mock.Anything, tc.session, tc.channelID).Return(tc.svcErr)
-			err := mgsdk.DeleteChannel(tc.channelID, tc.domainID, tc.token)
+			err := mgsdk.DeleteChannel(context.Background(), tc.channelID, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "RemoveChannel", mock.Anything, tc.session, tc.channelID)
@@ -1588,7 +1598,7 @@ func TestConnect(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("Connect", mock.Anything, tc.session, tc.connection.ChannelIDs, tc.connection.ClientIDs, connTypes).Return(tc.svcErr)
-			err := mgsdk.Connect(tc.connection, tc.domainID, tc.token)
+			err := mgsdk.Connect(context.Background(), tc.connection, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Connect", mock.Anything, tc.session, tc.connection.ChannelIDs, tc.connection.ClientIDs, connTypes)
@@ -1707,7 +1717,7 @@ func TestDisconnect(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("Disconnect", mock.Anything, tc.session, tc.disconnect.ChannelIDs, tc.disconnect.ClientIDs, connTypes).Return(tc.svcErr)
-			err := mgsdk.Disconnect(tc.disconnect, tc.domainID, tc.token)
+			err := mgsdk.Disconnect(context.Background(), tc.disconnect, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Disconnect", mock.Anything, tc.session, tc.disconnect.ChannelIDs, tc.disconnect.ClientIDs, connTypes)
@@ -1812,7 +1822,7 @@ func TestConnectClients(t *testing.T) {
 			assert.Nil(t, err, fmt.Sprintf("error parsing connection type %s", tc.connType))
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("Connect", mock.Anything, tc.session, []string{tc.channelID}, []string{tc.clientID}, []connections.ConnType{connType}).Return(tc.svcErr)
-			err = mgsdk.ConnectClients(tc.channelID, []string{tc.clientID}, []string{tc.connType}, tc.domainID, tc.token)
+			err = mgsdk.ConnectClients(context.Background(), tc.channelID, []string{tc.clientID}, []string{tc.connType}, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Connect", mock.Anything, tc.session, []string{tc.channelID}, []string{tc.clientID}, []connections.ConnType{connType})
@@ -1915,7 +1925,7 @@ func TestDisconnectClients(t *testing.T) {
 			assert.Nil(t, err, fmt.Sprintf("error parsing connection type %s", tc.connType))
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("Disconnect", mock.Anything, tc.session, []string{tc.channelID}, []string{tc.clientID}, []connections.ConnType{connType}).Return(tc.svcErr)
-			err = mgsdk.DisconnectClients(tc.channelID, []string{tc.clientID}, []string{tc.connType}, tc.domainID, tc.token)
+			err = mgsdk.DisconnectClients(context.Background(), tc.channelID, []string{tc.clientID}, []string{tc.connType}, tc.domainID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "Disconnect", mock.Anything, tc.session, []string{tc.channelID}, []string{tc.clientID}, []connections.ConnType{connType})
@@ -2010,7 +2020,7 @@ func TestSetChannelParent(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("SetParentGroup", mock.Anything, tc.session, tc.parentID, tc.channelID).Return(tc.svcErr)
-			err := mgsdk.SetChannelParent(tc.channelID, tc.domainID, tc.parentID, tc.token)
+			err := mgsdk.SetChannelParent(context.Background(), tc.channelID, tc.domainID, tc.parentID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "SetParentGroup", mock.Anything, tc.session, tc.parentID, tc.channelID)
@@ -2096,7 +2106,7 @@ func TestRemoveChannelParent(t *testing.T) {
 			}
 			authCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authenticateErr)
 			svcCall := gsvc.On("RemoveParentGroup", mock.Anything, tc.session, tc.channelID).Return(tc.svcErr)
-			err := mgsdk.RemoveChannelParent(tc.channelID, tc.domainID, tc.parentID, tc.token)
+			err := mgsdk.RemoveChannelParent(context.Background(), tc.channelID, tc.domainID, tc.parentID, tc.token)
 			assert.Equal(t, tc.err, err)
 			if tc.err == nil {
 				ok := svcCall.Parent.AssertCalled(t, "RemoveParentGroup", mock.Anything, tc.session, tc.channelID)
@@ -2116,6 +2126,7 @@ func generateTestChannel(t *testing.T) sdk.Channel {
 		ID:        testsutil.GenerateUUID(&testing.T{}),
 		DomainID:  testsutil.GenerateUUID(&testing.T{}),
 		Name:      channelName,
+		Route:     valid,
 		Metadata:  sdk.Metadata{"role": "client"},
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
