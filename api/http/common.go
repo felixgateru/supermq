@@ -233,8 +233,7 @@ func EncodeError(_ context.Context, err error, w http.ResponseWriter) {
 		errors.Contains(err, apiutil.ErrMissingRoleMembers),
 		errors.Contains(err, apiutil.ErrMissingDescription),
 		errors.Contains(err, apiutil.ErrMissingEntityID),
-		errors.Contains(err, apiutil.ErrInvalidRouteFormat),
-		errors.Contains(err, apiutil.ErrMissingRoute):
+		errors.Contains(err, apiutil.ErrInvalidRouteFormat):
 		err = unwrap(err)
 		w.WriteHeader(http.StatusBadRequest)
 
