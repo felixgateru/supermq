@@ -28,14 +28,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const port = 7005
+const port = 7020
 
 var (
 	validID      = testsutil.GenerateUUID(&testing.T{})
 	validRoute   = "validRoute"
 	validChannel = ch.Channel{
 		ID:     validID,
-		Topic:  validID,
+		Route:  validID,
 		Domain: testsutil.GenerateUUID(&testing.T{}),
 		Status: channels.EnabledStatus,
 	}
@@ -119,7 +119,7 @@ func TestAuthorize(t *testing.T) {
 				ChannelID:   tc.channelID,
 				Type:        tc.connType,
 			}
-			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.authzErr)
+			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.channelID, tc.authzErr)
 			res, err := client.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{
 				DomainRoute: tc.domainRoute,
 				ClientId:    tc.clientID,

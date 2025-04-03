@@ -1012,7 +1012,7 @@ func (_mock *Repository) RetrieveByIDWithRoles(ctx context.Context, id string, m
 	ret := _mock.Called(ctx, id, memberID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for RetrieveByTopic")
+		panic("no return value specified for RetrieveByIDWithRoles")
 	}
 
 	var r0 channels.Channel

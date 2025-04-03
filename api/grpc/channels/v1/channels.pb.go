@@ -190,7 +190,7 @@ type AuthzReq struct {
 	DomainRoute   string                 `protobuf:"bytes,1,opt,name=domain_route,json=domainRoute,proto3" json:"domain_route,omitempty"`
 	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	ClientType    string                 `protobuf:"bytes,3,opt,name=client_type,json=clientType,proto3" json:"client_type,omitempty"`
-	ChannelTopic  string                 `protobuf:"bytes,4,opt,name=channel_topic,json=channelTopic,proto3" json:"channel_topic,omitempty"`
+	ChannelRoute  string                 `protobuf:"bytes,4,opt,name=channel_route,json=channelRoute,proto3" json:"channel_route,omitempty"`
 	Type          uint32                 `protobuf:"varint,5,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -247,9 +247,9 @@ func (x *AuthzReq) GetClientType() string {
 	return ""
 }
 
-func (x *AuthzReq) GetChannelTopic() string {
+func (x *AuthzReq) GetChannelRoute() string {
 	if x != nil {
-		return x.ChannelTopic
+		return x.ChannelRoute
 	}
 	return ""
 }
@@ -264,6 +264,7 @@ func (x *AuthzReq) GetType() uint32 {
 type AuthzRes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -303,6 +304,13 @@ func (x *AuthzRes) GetAuthorized() bool {
 		return x.Authorized
 	}
 	return false
+}
+
+func (x *AuthzRes) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
 }
 
 var File_channels_v1_channels_proto protoreflect.FileDescriptor

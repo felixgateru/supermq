@@ -116,7 +116,7 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainRoute, chan
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
+	subject := fmt.Sprintf("%s.%s", chansPrefix, authzRes.GetChannelId())
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -156,7 +156,7 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainRoute, ch
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
+	subject := fmt.Sprintf("%s.%s.%s", chansPrefix, domainID, )
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -164,8 +164,8 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainRoute, ch
 	return svc.pubsub.Unsubscribe(ctx, token, subject)
 }
 
-func (svc *adapterService) DisconnectHandler(ctx context.Context, chanTopic, subtopic, token string) error {
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanTopic)
+func (svc *adapterService) DisconnectHandler(ctx context.Context, chanID, subtopic, token string) error {
+	subject := fmt.Sprintf("%s.%s", chansPrefix, chanRoute)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}

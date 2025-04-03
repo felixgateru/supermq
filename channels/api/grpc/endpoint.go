@@ -28,7 +28,7 @@ func authorizeEndpoint(svc channels.Service) endpoint.Endpoint {
 			return authorizeRes{}, err
 		}
 
-		return authorizeRes{authorized: true}, nil
+		return authorizeRes{authorized: true, channelID: channelID}, nil
 	}
 }
 
