@@ -83,7 +83,7 @@ type Connection struct {
 
 type AuthzReq struct {
 	DomainID     string
-	ChannelTopic string
+	ChannelRoute string
 	ClientID     string
 	ClientType   string
 	Type         connections.ConnType

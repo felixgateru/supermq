@@ -95,7 +95,6 @@ func (req listChannelsReq) validate() error {
 type updateChannelReq struct {
 	id       string
 	Name     string                 `json:"name,omitempty"`
-	Topic    string                 `json:"topic,omitempty"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	Tags     []string               `json:"tags,omitempty"`
 }
@@ -106,11 +105,6 @@ func (req updateChannelReq) validate() error {
 	}
 	if len(req.Name) > api.MaxNameSize {
 		return apiutil.ErrNameSize
-	}
-	if req.Topic != "" {
-		if err := validateTopic(req.Topic); err != nil {
-			return err
-		}
 	}
 
 	return nil

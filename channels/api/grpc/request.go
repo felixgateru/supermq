@@ -13,7 +13,7 @@ var errDomainID = errors.New("domain id required for users")
 
 type authorizeReq struct {
 	domainID     string
-	channelTopic string
+	channelRoute string
 	clientID     string
 	clientType   string
 	connType     connections.ConnType

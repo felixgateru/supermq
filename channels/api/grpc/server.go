@@ -74,14 +74,14 @@ func decodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}
 		domainID:     req.GetDomainId(),
 		clientID:     req.GetClientId(),
 		clientType:   req.GetClientType(),
-		channelTopic: req.GetChannelTopic(),
+		channelRoute: req.GetChannelRoute(),
 		connType:     connType,
 	}, nil
 }
 
 func encodeAuthorizeResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	res := grpcRes.(authorizeRes)
-	return &grpcChannelsV1.AuthzRes{Authorized: res.authorized}, nil
+	return &grpcChannelsV1.AuthzRes{Authorized: res.authorized, ChannelId: res.channelID}, nil
 }
 
 func (s *grpcServer) RemoveClientConnections(ctx context.Context, req *grpcChannelsV1.RemoveClientConnectionsReq) (*grpcChannelsV1.RemoveClientConnectionsRes, error) {
