@@ -185,8 +185,9 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		Payload:   *payload,
 		Created:   time.Now().UnixNano(),
 	}
+	msgTopic := fmt.Sprintf("%s.%s", msg.GetDomain(), msg.GetChannel())
 
-	if err := h.publisher.Publish(ctx, msg.GetChannel(), &msg); err != nil {
+	if err := h.publisher.Publish(ctx, msgTopic, &msg); err != nil {
 		return errors.Wrap(ErrFailedPublishToMsgBroker, err)
 	}
 

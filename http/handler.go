@@ -185,8 +185,9 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	if clientType == policies.ClientType {
 		msg.Publisher = clientID
 	}
+	msgTopic := fmt.Sprintf("%s.%s", msg.GetDomain(), msg.GetChannel())
 
-	if err := h.publisher.Publish(ctx, msg.Channel, &msg); err != nil {
+	if err := h.publisher.Publish(ctx, msgTopic, &msg); err != nil {
 		return errors.Wrap(errFailedPublishToMsgBroker, err)
 	}
 

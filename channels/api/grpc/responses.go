@@ -5,7 +5,6 @@ package grpc
 
 type authorizeRes struct {
 	authorized bool
-	channelID string
 }
 
 type removeClientConnectionsRes struct{}

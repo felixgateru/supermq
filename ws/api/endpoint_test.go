@@ -66,7 +66,7 @@ func makeURL(tsURL, domainRoute, chanID, subtopic, clientKey string, header bool
 	u, _ := url.Parse(tsURL)
 	u.Scheme = protocol
 
-	if chanID == "0" || chanID == "" {
+	if chanRoute == "0" || chanRoute == "" {
 		if header {
 			return fmt.Sprintf("%s/%s/c/%s/m", u, domainRoute, chanID), fmt.Errorf("invalid channel id")
 		}

@@ -37,7 +37,7 @@ type Service interface {
 	Unsubscribe(ctx context.Context, key, domainRoute, chanID, subptopic, token string) error
 
 	// DisconnectHandler method is used to disconnected the client
-	DisconnectHandler(ctx context.Context, chanID, subptopic, token string) error
+	DisconnectHandler(ctx context.Context, domainID, chanRoute, subptopic, token string) error
 }
 
 var _ Service = (*adapterService)(nil)
@@ -86,8 +86,9 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 	}
 
 	msg.Publisher = authnRes.GetId()
+	topic := fmt.Sprintf("%s.%s", msg.GetDomain(), msg.GetChannel())
 
-	return svc.pubsub.Publish(ctx, msg.GetChannel(), msg)
+	return svc.pubsub.Publish(ctx, topic, msg)
 }
 
 func (svc *adapterService) Subscribe(ctx context.Context, key, domainRoute, chanID, subtopic string, c Client) error {
@@ -116,7 +117,7 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainRoute, chan
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s", chansPrefix, authzRes.GetChannelId())
+	subject := fmt.Sprintf("%s.%s.%s", chansPrefix, domainID, chanRoute)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -156,7 +157,7 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainRoute, ch
 		return svcerr.ErrAuthorization
 	}
 
-	subject := fmt.Sprintf("%s.%s.%s", chansPrefix, domainID, )
+	subject := fmt.Sprintf("%s.%s.%s", chansPrefix, domainID, chanRoute)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -164,8 +165,8 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainRoute, ch
 	return svc.pubsub.Unsubscribe(ctx, token, subject)
 }
 
-func (svc *adapterService) DisconnectHandler(ctx context.Context, chanID, subtopic, token string) error {
-	subject := fmt.Sprintf("%s.%s", chansPrefix, chanRoute)
+func (svc *adapterService) DisconnectHandler(ctx context.Context, domainID, chanRoute, subtopic, token string) error {
+	subject := fmt.Sprintf("%s.%s.%s", chansPrefix, domainID, chanRoute)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}

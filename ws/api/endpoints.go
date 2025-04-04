@@ -38,7 +38,7 @@ func handshake(ctx context.Context, svc ws.Service) http.HandlerFunc {
 			return
 		}
 
-		logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.chanID))
+		logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.chanRoute))
 	}
 }
 
@@ -64,7 +64,7 @@ func decodeRequest(r *http.Request) (connReq, error) {
 
 	channelParts := channelPartRegExp.FindStringSubmatch(r.RequestURI)
 	if len(channelParts) < 3 {
-		logger.Warn("Empty channel id or malformed url")
+		logger.Warn("Empty channel route or malformed url")
 		return connReq{}, errors.ErrMalformedEntity
 	}
 

@@ -119,7 +119,7 @@ func TestAuthorize(t *testing.T) {
 				ChannelID:   tc.channelID,
 				Type:        tc.connType,
 			}
-			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.channelID, tc.authzErr)
+			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.authzErr)
 			res, err := client.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{
 				DomainRoute: tc.domainRoute,
 				ClientId:    tc.clientID,

@@ -32,7 +32,7 @@ func (lm *loggingMiddleware) Publish(ctx context.Context, key string, msg *messa
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("channel_id", msg.GetChannel()),
+			slog.String("channel_route", msg.GetChannel()),
 			slog.String("domain_id", msg.GetDomain()),
 		}
 		if msg.GetSubtopic() != "" {
@@ -97,11 +97,11 @@ func (lm *loggingMiddleware) Unsubscribe(ctx context.Context, key, domainRoute, 
 
 // DisconnectHandler logs the disconnect handler. It logs the channel ID, subtopic (if any) and the time it took to complete the request.
 // If the request fails, it logs the error.
-func (lm *loggingMiddleware) DisconnectHandler(ctx context.Context, chanID, subtopic, token string) (err error) {
+func (lm *loggingMiddleware) DisconnectHandler(ctx context.Context, domainID, chanRoute, subtopic, token string) (err error) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("channel_id", chanID),
+			slog.String("channel_route", chanRoute),
 			slog.String("token", token),
 		}
 		if subtopic != "" {
@@ -115,5 +115,5 @@ func (lm *loggingMiddleware) DisconnectHandler(ctx context.Context, chanID, subt
 		lm.logger.Info("Unsubscribe completed successfully", args...)
 	}(time.Now())
 
-	return lm.svc.DisconnectHandler(ctx, chanID, subtopic, token)
+	return lm.svc.DisconnectHandler(ctx, domainID, chanRoute, subtopic, token)
 }

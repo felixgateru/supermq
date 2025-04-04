@@ -264,7 +264,6 @@ func (x *AuthzReq) GetType() uint32 {
 type AuthzRes struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Authorized    bool                   `protobuf:"varint,1,opt,name=authorized,proto3" json:"authorized,omitempty"`
-	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -304,13 +303,6 @@ func (x *AuthzRes) GetAuthorized() bool {
 		return x.Authorized
 	}
 	return false
-}
-
-func (x *AuthzRes) GetChannelId() string {
-	if x != nil {
-		return x.ChannelId
-	}
-	return ""
 }
 
 var File_channels_v1_channels_proto protoreflect.FileDescriptor
