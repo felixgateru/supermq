@@ -44,25 +44,25 @@ func (tm *tracingServiceMiddleware) Publish(ctx context.Context, key string, msg
 }
 
 // Subscribe traces a CoAP subscribe operation.
-func (tm *tracingServiceMiddleware) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, c coap.Client) error {
+func (tm *tracingServiceMiddleware) Subscribe(ctx context.Context, key, domainRoute, chanID, subtopic string, c coap.Client) error {
 	ctx, span := tm.tracer.Start(ctx, subscribeOP, trace.WithAttributes(
 		attribute.String("channel_id", chanID),
-		attribute.String("domain_id", domainID),
+		attribute.String("domain_route", domainRoute),
 		attribute.String("subtopic", subtopic),
 	))
 	defer span.End()
-	return tm.svc.Subscribe(ctx, key, domainID, chanID, subtopic, c)
+	return tm.svc.Subscribe(ctx, key, domainRoute, chanID, subtopic, c)
 }
 
 // Unsubscribe traces a CoAP unsubscribe operation.
-func (tm *tracingServiceMiddleware) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string) error {
+func (tm *tracingServiceMiddleware) Unsubscribe(ctx context.Context, key, domainRoute, chanID, subtopic, token string) error {
 	ctx, span := tm.tracer.Start(ctx, unsubscribeOP, trace.WithAttributes(
 		attribute.String("channel_id", chanID),
-		attribute.String("domain_id", domainID),
+		attribute.String("domain_route", domainRoute),
 		attribute.String("subtopic", subtopic),
 	))
 	defer span.End()
-	return tm.svc.Unsubscribe(ctx, key, domainID, chanID, subtopic, token)
+	return tm.svc.Unsubscribe(ctx, key, domainRoute, chanID, subtopic, token)
 }
 
 // DisconnectHandler traces a CoAP disconnect operation.

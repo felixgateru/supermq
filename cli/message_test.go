@@ -24,6 +24,7 @@ func TestSendMesageCmd(t *testing.T) {
 	rootCmd := setFlags(messageCmd)
 
 	message := "[{\"bn\":\"Dev1\",\"n\":\"temp\",\"v\":20}, {\"n\":\"hum\",\"v\":40}, {\"bn\":\"Dev2\", \"n\":\"temp\",\"v\":20}, {\"n\":\"hum\",\"v\":40}]"
+	domainRoute := "validRoute"
 
 	cases := []struct {
 		desc          string
@@ -37,7 +38,7 @@ func TestSendMesageCmd(t *testing.T) {
 			args: []string{
 				channel.ID,
 				message,
-				domainID,
+				domainRoute,
 				client.Credentials.Secret,
 			},
 			logType: okLog,
@@ -48,7 +49,7 @@ func TestSendMesageCmd(t *testing.T) {
 				channel.ID,
 				message,
 				client.Credentials.Secret,
-				domainID,
+				domainRoute,
 				extraArg,
 			},
 			logType: usageLog,
@@ -58,7 +59,7 @@ func TestSendMesageCmd(t *testing.T) {
 			args: []string{
 				channel.ID,
 				message,
-				domainID,
+				domainRoute,
 				"invalid_secret",
 			},
 			sdkErr:        errors.NewSDKErrorWithStatus(errors.Wrap(svcerr.ErrAuthentication, errors.Wrap(svcerr.ErrAuthorization, svcerr.ErrNotFound)), http.StatusBadRequest),

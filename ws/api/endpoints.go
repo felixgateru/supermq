@@ -16,7 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-var channelPartRegExp = regexp.MustCompile(`^/c/([\w\-]+)/m(/[^?]*)?(\?.*)?$`)
+var channelPartRegExp = regexp.MustCompile(`^\/?([\w\-]+)/c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 
 func handshake(ctx context.Context, svc ws.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func handshake(ctx context.Context, svc ws.Service) http.HandlerFunc {
 		req.conn = conn
 		client := ws.NewClient(conn)
 
-		if err := svc.Subscribe(ctx, req.clientKey, req.domainID, req.chanID, req.subtopic, client); err != nil {
+		if err := svc.Subscribe(ctx, req.clientKey, req.domainRoute, req.chanID, req.subtopic, client); err != nil {
 			req.conn.Close()
 			return
 		}
@@ -53,13 +53,13 @@ func decodeRequest(r *http.Request) (connReq, error) {
 		authKey = authKeys[0]
 	}
 
-	domainID := chi.URLParam(r, "domainID")
+	domainRoute := chi.URLParam(r, "domainRoute")
 	chanID := chi.URLParam(r, "chanID")
 
 	req := connReq{
-		clientKey: authKey,
-		chanID:    chanID,
-		domainID:  domainID,
+		clientKey:   authKey,
+		chanID:      chanID,
+		domainRoute: domainRoute,
 	}
 
 	channelParts := channelPartRegExp.FindStringSubmatch(r.RequestURI)

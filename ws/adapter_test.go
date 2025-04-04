@@ -35,11 +35,11 @@ const (
 )
 
 var (
-	domainID = testsutil.GenerateUUID(&testing.T{})
-	clientID = testsutil.GenerateUUID(&testing.T{})
-	msg      = messaging.Message{
+	domainRoute = "domainRoute"
+	clientID    = testsutil.GenerateUUID(&testing.T{})
+	msg         = messaging.Message{
 		Channel:   chanID,
-		Domain:    domainID,
+		Domain:    domainRoute,
 		Publisher: id,
 		Subtopic:  "",
 		Protocol:  protocol,
@@ -61,122 +61,122 @@ func TestSubscribe(t *testing.T) {
 	c := ws.NewClient(nil)
 
 	cases := []struct {
-		desc      string
-		clientKey string
-		chanID    string
-		domainID  string
-		subtopic  string
-		authNRes  *grpcClientsV1.AuthnRes
-		authNErr  error
-		authZRes  *grpcChannelsV1.AuthzRes
-		authZErr  error
-		subErr    error
-		err       error
+		desc        string
+		clientKey   string
+		chanID      string
+		domainRoute string
+		subtopic    string
+		authNRes    *grpcClientsV1.AuthnRes
+		authNErr    error
+		authZRes    *grpcChannelsV1.AuthzRes
+		authZErr    error
+		subErr      error
+		err         error
 	}{
 		{
-			desc:      "subscribe to channel with valid clientKey, chanID, subtopic",
-			clientKey: clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			desc:        "subscribe to channel with valid clientKey, chanID, subtopic",
+			clientKey:   clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 		{
-			desc:      "subscribe again to channel with valid clientKey, chanID, subtopic",
-			clientKey: clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			desc:        "subscribe again to channel with valid clientKey, chanID, subtopic",
+			clientKey:   clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 		{
-			desc:      "subscribe to channel with subscribe set to fail",
-			clientKey: clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			subErr:    ws.ErrFailedSubscription,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       ws.ErrFailedSubscription,
+			desc:        "subscribe to channel with subscribe set to fail",
+			clientKey:   clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			subErr:      ws.ErrFailedSubscription,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         ws.ErrFailedSubscription,
 		},
 		{
-			desc:      "subscribe to channel with invalid clientKey",
-			clientKey: invalidKey,
-			chanID:    invalidID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Authenticated: false},
-			authNErr:  svcerr.ErrAuthentication,
-			err:       svcerr.ErrAuthorization,
+			desc:        "subscribe to channel with invalid clientKey",
+			clientKey:   invalidKey,
+			chanID:      invalidID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Authenticated: false},
+			authNErr:    svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with empty channel",
-			clientKey: clientKey,
-			chanID:    "",
-			domainID:  domainID,
-			subtopic:  subTopic,
-			err:       svcerr.ErrAuthentication,
+			desc:        "subscribe to channel with empty channel",
+			clientKey:   clientKey,
+			chanID:      "",
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:      "subscribe to channel with empty clientKey",
-			clientKey: "",
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			err:       svcerr.ErrAuthentication,
+			desc:        "subscribe to channel with empty clientKey",
+			clientKey:   "",
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:      "subscribe to channel with empty clientKey and empty channel",
-			clientKey: "",
-			chanID:    "",
-			domainID:  domainID,
-			subtopic:  subTopic,
-			err:       svcerr.ErrAuthentication,
+			desc:        "subscribe to channel with empty clientKey and empty channel",
+			clientKey:   "",
+			chanID:      "",
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			err:         svcerr.ErrAuthentication,
 		},
 		{
-			desc:      "subscribe to channel with invalid channel",
-			clientKey: clientKey,
-			chanID:    invalidID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			authZErr:  svcerr.ErrAuthorization,
-			err:       svcerr.ErrAuthorization,
+			desc:        "subscribe to channel with invalid channel",
+			clientKey:   clientKey,
+			chanID:      invalidID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: false},
+			authZErr:    svcerr.ErrAuthorization,
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with failed authentication",
-			clientKey: clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Authenticated: false},
-			err:       svcerr.ErrAuthorization,
+			desc:        "subscribe to channel with failed authentication",
+			clientKey:   clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Authenticated: false},
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with failed authorization",
-			clientKey: clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			err:       svcerr.ErrAuthorization,
+			desc:        "subscribe to channel with failed authorization",
+			clientKey:   clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: false},
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with valid clientKey prefixed with 'client_', chanID, subtopic",
-			clientKey: "Client " + clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			subtopic:  subTopic,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			desc:        "subscribe to channel with valid clientKey prefixed with 'client_', chanID, subtopic",
+			clientKey:   "Client " + clientKey,
+			chanID:      chanID,
+			domainRoute: domainRoute,
+			subtopic:    subTopic,
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 	}
 
@@ -193,14 +193,14 @@ func TestSubscribe(t *testing.T) {
 		}
 		clientsCall := clients.On("Authenticate", mock.Anything, authReq).Return(tc.authNRes, tc.authNErr)
 		channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
-			ClientType: policies.ClientType,
-			ClientId:   tc.authNRes.GetId(),
-			Type:       uint32(connections.Subscribe),
-			ChannelId:  tc.chanID,
-			DomainId:   tc.domainID,
+			ClientType:  policies.ClientType,
+			ClientId:    tc.authNRes.GetId(),
+			Type:        uint32(connections.Subscribe),
+			ChannelId:   tc.chanID,
+			DomainRoute: tc.domainRoute,
 		}).Return(tc.authZRes, tc.authZErr)
 		repocall := pubsub.On("Subscribe", mock.Anything, subConfig).Return(tc.subErr)
-		err := svc.Subscribe(context.Background(), tc.clientKey, tc.domainID, tc.chanID, tc.subtopic, c)
+		err := svc.Subscribe(context.Background(), tc.clientKey, tc.domainRoute, tc.chanID, tc.subtopic, c)
 		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repocall.Unset()
 		clientsCall.Unset()

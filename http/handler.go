@@ -55,7 +55,7 @@ var (
 	errFailedParseSubtopic      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to parse subtopic"))
 )
 
-var channelRegExp = regexp.MustCompile(`^\/?c\\/([\w\-]+)\\/m(\\/[^?]*)?(\?.*)?$`)
+var channelRegExp = regexp.MustCompile(`^\/?([\w\-]+)/c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 
 // Event implements events.Event interface.
 type handler struct {
@@ -153,14 +153,14 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	domainID, chanID, subtopic, err := parseTopic(*topic)
+	domainRoute, chanID, subtopic, err := parseTopic(*topic)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
 	}
 
 	msg := messaging.Message{
 		Protocol: protocol,
-		Domain:   domainID,
+		Domain:   domainRoute,
 		Channel:  chanID,
 		Subtopic: subtopic,
 		Payload:  *payload,
@@ -168,11 +168,11 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   clientID,
-		ClientType: clientType,
-		ChannelId:  msg.Channel,
-		Type:       uint32(connections.Publish),
+		DomainRoute: domainRoute,
+		ClientId:    clientID,
+		ClientType:  clientType,
+		ChannelId:   msg.Channel,
+		Type:        uint32(connections.Publish),
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
@@ -212,13 +212,13 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func parseTopic(topic string) (string, string, string, error) {
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(topic)
 	if len(channelParts) < 3 {
 		return "", "", "", errors.Wrap(errFailedPublish, errMalformedTopic)
 	}
 
-	domainID := channelParts[1]
+	domainRoute := channelParts[1]
 	chanID := channelParts[2]
 	subtopic := channelParts[3]
 
@@ -227,7 +227,7 @@ func parseTopic(topic string) (string, string, string, error) {
 		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
 	}
 
-	return domainID, chanID, subtopic, nil
+	return domainRoute, chanID, subtopic, nil
 }
 
 func parseSubtopic(subtopic string) (string, error) {

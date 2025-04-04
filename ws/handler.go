@@ -50,7 +50,7 @@ var (
 	errFailedPublishToMsgBroker = errors.New("failed to publish to supermq message broker")
 )
 
-var channelRegExp = regexp.MustCompile(`^\/?c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
+var channelRegExp = regexp.MustCompile(`^\/?([\w\-]+)/c\/([\w\-]+)\/m(\/[^?]*)?(\?.*)?$`)
 
 // Event implements events.Event interface.
 type handler struct {
@@ -139,13 +139,13 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(*topic)
 	if len(channelParts) < 3 {
 		return errors.Wrap(errFailedPublish, errMalformedTopic)
 	}
 
-	domainID := channelParts[1]
+	domainRoute := channelParts[1]
 	chanID := channelParts[2]
 	subtopic := channelParts[3]
 
@@ -161,7 +161,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	msg := messaging.Message{
 		Protocol: protocol,
-		Domain:   domainID,
+		Domain:   domainRoute,
 		Channel:  chanID,
 		Subtopic: subtopic,
 		Payload:  *payload,
@@ -226,7 +226,7 @@ func (h *handler) authAccess(ctx context.Context, token, topic string, msgType c
 	clientID := authnRes.GetId()
 
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
 	if !channelRegExp.MatchString(topic) {
 		return "", "", errMalformedTopic
 	}
@@ -236,15 +236,15 @@ func (h *handler) authAccess(ctx context.Context, token, topic string, msgType c
 		return "", "", errMalformedTopic
 	}
 
-	domainID := channelParts[1]
+	domainRoute := channelParts[1]
 	chanID := channelParts[2]
 
 	ar := &grpcChannelsV1.AuthzReq{
-		Type:       uint32(msgType),
-		ClientId:   clientID,
-		ClientType: clientType,
-		ChannelId:  chanID,
-		DomainId:   domainID,
+		Type:        uint32(msgType),
+		ClientId:    clientID,
+		ClientType:  clientType,
+		ChannelId:   chanID,
+		DomainRoute: domainRoute,
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
