@@ -15,6 +15,8 @@ import (
 	"github.com/absmach/supermq/pkg/policies"
 )
 
+var errDisabledDomain = errors.New("domain is disabled or frozen")
+
 type Service interface {
 	Authorize(ctx context.Context, req channels.AuthzReq) error
 	UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error
@@ -36,7 +38,7 @@ func New(repo channels.Repository, evaluator policies.Evaluator, policy policies
 }
 
 func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
-	d, err := svc.domains.RetrieveEntity(ctx, req.DomainID)
+	d, err := svc.domains.RetrieveByRoute(ctx, req.DomainRoute)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
@@ -50,7 +52,7 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 			return err
 		}
 		pr := policies.Policy{
-			Subject:     auth.EncodeDomainUserID(req.DomainID, req.ClientID),
+			Subject:     auth.EncodeDomainUserID(d.ID, req.ClientID),
 			SubjectType: policies.UserType,
 			Object:      req.ChannelID,
 			Permission:  permission,

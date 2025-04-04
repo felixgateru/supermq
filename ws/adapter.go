@@ -36,10 +36,10 @@ var (
 // Service specifies web socket service API.
 type Service interface {
 	// Subscribe subscribes message from the broker using the clientKey for authorization,
-	// the channelID for subscription and domainID specifies the domain for authorization.
+	// the channelID for subscription and domainRoute specifies the domain for authorization.
 	// Subtopic is optional.
 	// If the subscription is successful, nil is returned otherwise error is returned.
-	Subscribe(ctx context.Context, clientKey, domainID, chanID, subtopic string, client *Client) error
+	Subscribe(ctx context.Context, clientKey, domainRoute, chanID, subtopic string, client *Client) error
 }
 
 var _ Service = (*adapterService)(nil)
@@ -59,12 +59,12 @@ func New(clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.Cha
 	}
 }
 
-func (svc *adapterService) Subscribe(ctx context.Context, clientKey, domainID, chanID, subtopic string, c *Client) error {
-	if chanID == "" || clientKey == "" || domainID == "" {
+func (svc *adapterService) Subscribe(ctx context.Context, clientKey, domainRoute, chanID, subtopic string, c *Client) error {
+	if chanID == "" || clientKey == "" || domainRoute == "" {
 		return svcerr.ErrAuthentication
 	}
 
-	clientID, err := svc.authorize(ctx, clientKey, domainID, chanID, connections.Subscribe)
+	clientID, err := svc.authorize(ctx, clientKey, domainRoute, chanID, connections.Subscribe)
 	if err != nil {
 		return svcerr.ErrAuthorization
 	}
@@ -91,7 +91,7 @@ func (svc *adapterService) Subscribe(ctx context.Context, clientKey, domainID, c
 
 // authorize checks if the clientKey is authorized to access the channel
 // and returns the clientID if it is.
-func (svc *adapterService) authorize(ctx context.Context, clientKey, domainID, chanID string, msgType connections.ConnType) (string, error) {
+func (svc *adapterService) authorize(ctx context.Context, clientKey, domainRoute, chanID string, msgType connections.ConnType) (string, error) {
 	authnReq := &grpcClientsV1.AuthnReq{
 		ClientSecret: clientKey,
 	}
@@ -107,11 +107,11 @@ func (svc *adapterService) authorize(ctx context.Context, clientKey, domainID, c
 	}
 
 	authzReq := &grpcChannelsV1.AuthzReq{
-		ClientType: policies.ClientType,
-		ClientId:   authnRes.GetId(),
-		Type:       uint32(msgType),
-		ChannelId:  chanID,
-		DomainId:   domainID,
+		ClientType:  policies.ClientType,
+		ClientId:    authnRes.GetId(),
+		Type:        uint32(msgType),
+		ChannelId:   chanID,
+		DomainRoute: domainRoute,
 	}
 	authzRes, err := svc.channels.Authorize(ctx, authzReq)
 	if err != nil {

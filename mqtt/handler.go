@@ -166,7 +166,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(ErrFailedPublish, ErrMalformedTopic)
 	}
 
-	domainID := channelParts[1]
+	domainRoute := channelParts[1]
 	chanID := channelParts[2]
 	subtopic := channelParts[3]
 
@@ -177,7 +177,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	msg := messaging.Message{
 		Protocol:  protocol,
-		Domain:    domainID,
+		Domain:    domainRoute,
 		Channel:   chanID,
 		Subtopic:  subtopic,
 		Publisher: s.Username,
@@ -227,7 +227,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgType connections.ConnType) error {
 	// Topics are in the format:
-	// <domain_id>/ch/<channel_id>/msg/<subtopic>/.../ct/<content_type>
+	// <domain_route>/ch/<channel_id>/msg/<subtopic>/.../ct/<content_type>
 	if !channelRegExp.MatchString(topic) {
 		return ErrMalformedTopic
 	}
@@ -237,15 +237,15 @@ func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgTyp
 		return ErrMalformedTopic
 	}
 
-	domainID := channelParts[1]
+	domainRoute := channelParts[1]
 	chanID := channelParts[2]
 
 	ar := &grpcChannelsV1.AuthzReq{
-		Type:       uint32(msgType),
-		ClientId:   clientID,
-		ClientType: policies.ClientType,
-		ChannelId:  chanID,
-		DomainId:   domainID,
+		Type:        uint32(msgType),
+		ClientId:    clientID,
+		ClientType:  policies.ClientType,
+		ChannelId:   chanID,
+		DomainRoute: domainRoute,
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {

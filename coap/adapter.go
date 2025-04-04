@@ -72,11 +72,11 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 	}
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   msg.GetDomain(),
-		ClientId:   authnRes.GetId(),
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Publish),
-		ChannelId:  msg.GetChannel(),
+		DomainRoute: msg.GetDomain(),
+		ClientId:    authnRes.GetId(),
+		ClientType:  policies.ClientType,
+		Type:        uint32(connections.Publish),
+		ChannelId:   msg.GetChannel(),
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -103,11 +103,11 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 
 	clientID := authnRes.GetId()
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   clientID,
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Subscribe),
-		ChannelId:  chanID,
+		DomainRoute: domainID,
+		ClientId:    clientID,
+		ClientType:  policies.ClientType,
+		Type:        uint32(connections.Subscribe),
+		ChannelId:   chanID,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -143,11 +143,11 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanI
 	}
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   authnRes.GetId(),
-		ClientType: policies.ClientType,
-		Type:       uint32(connections.Subscribe),
-		ChannelId:  chanID,
+		DomainRoute: domainID,
+		ClientId:    authnRes.GetId(),
+		ClientType:  policies.ClientType,
+		Type:        uint32(connections.Subscribe),
+		ChannelId:   chanID,
 	})
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
@@ -196,11 +196,11 @@ func newAuthzClient(clientID, domainID, channelID, subTopic string, channels grp
 
 func (a ac) Handle(m *messaging.Message) error {
 	res, err := a.channels.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{
-		ClientId:   a.clientID,
-		ClientType: policies.ClientType,
-		ChannelId:  a.channelID,
-		DomainId:   a.domainID,
-		Type:       uint32(connections.Subscribe),
+		ClientId:    a.clientID,
+		ClientType:  policies.ClientType,
+		ChannelId:   a.channelID,
+		DomainRoute: a.domainID,
+		Type:        uint32(connections.Subscribe),
 	})
 	if err != nil {
 		if disErr := a.Cancel(); disErr != nil {
