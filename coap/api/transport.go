@@ -133,7 +133,7 @@ func handleGet(m *mux.Message, w mux.ResponseWriter, msg *messaging.Message, key
 	if obs == startObserve {
 		c := coap.NewClient(w.Conn(), m.Token(), logger)
 		w.Conn().AddOnClose(func() {
-			_ = service.DisconnectHandler(context.Background(), msg.GetChannel(), msg.GetSubtopic(), c.Token())
+			_ = service.DisconnectHandler(context.Background(), msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), c.Token())
 		})
 		return service.Subscribe(w.Conn().Context(), key, msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), c)
 	}

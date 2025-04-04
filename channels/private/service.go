@@ -21,7 +21,7 @@ var (
 )
 
 type Service interface {
-	Authorize(ctx context.Context, req channels.AuthzReq) (string, error)
+	Authorize(ctx context.Context, req channels.AuthzReq) error
 	UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error
 	RemoveClientConnections(ctx context.Context, clientID string) error
 	RetrieveByID(ctx context.Context, id string) (channels.Channel, error)
@@ -40,26 +40,26 @@ func New(repo channels.Repository, evaluator policies.Evaluator, policy policies
 	return service{repo, evaluator, policy, domains}
 }
 
-func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) (string, error) {
+func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 	d, err := svc.domains.RetrieveEntity(ctx, req.DomainID)
 	if err != nil {
-		return "", errors.Wrap(svcerr.ErrAuthorization, err)
+		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
 	if d.Status != dom.EnabledStatus {
-		return "", errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
+		return errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
 	}
 	ch, err := svc.repo.RetrieveByRoute(ctx, req.ChannelRoute, req.DomainID)
 	if err != nil {
-		return "", errors.Wrap(svcerr.ErrAuthorization, err)
+		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
 	if ch.Status != channels.EnabledStatus {
-		return "", errors.Wrap(svcerr.ErrAuthorization, errDisabledChannel)
+		return errors.Wrap(svcerr.ErrAuthorization, errDisabledChannel)
 	}
 	switch req.ClientType {
 	case policies.UserType:
 		permission, err := req.Type.Permission()
 		if err != nil {
-			return "", err
+			return err
 		}
 		pr := policies.Policy{
 			Subject:     auth.EncodeDomainUserID(req.DomainID, req.ClientID),
@@ -69,9 +69,9 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) (string
 			ObjectType:  policies.ChannelType,
 		}
 		if err := svc.evaluator.CheckPolicy(ctx, pr); err != nil {
-			return "", errors.Wrap(svcerr.ErrAuthorization, err)
+			return errors.Wrap(svcerr.ErrAuthorization, err)
 		}
-		return ch.ID, nil
+		return nil
 	case policies.ClientType:
 		// Optimization: Add cache
 		if err := svc.repo.ClientAuthorize(ctx, channels.Connection{
@@ -79,11 +79,11 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) (string
 			ClientID:  req.ClientID,
 			Type:      req.Type,
 		}); err != nil {
-			return "", errors.Wrap(svcerr.ErrAuthorization, err)
+			return errors.Wrap(svcerr.ErrAuthorization, err)
 		}
-		return ch.ID, nil
+		return nil
 	default:
-		return "", svcerr.ErrAuthentication
+		return svcerr.ErrAuthentication
 	}
 }
 

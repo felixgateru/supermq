@@ -88,7 +88,7 @@ func (client grpcClient) Authorize(ctx context.Context, req *grpcChannelsV1.Auth
 
 	ar := res.(authorizeRes)
 
-	return &grpcChannelsV1.AuthzRes{Authorized: ar.authorized, ChannelId: ar.channelID}, nil
+	return &grpcChannelsV1.AuthzRes{Authorized: ar.authorized}, nil
 }
 
 func encodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
@@ -106,7 +106,7 @@ func encodeAuthorizeRequest(_ context.Context, grpcReq interface{}) (interface{}
 func decodeAuthorizeResponse(_ context.Context, grpcRes interface{}) (interface{}, error) {
 	res := grpcRes.(*grpcChannelsV1.AuthzRes)
 
-	return authorizeRes{authorized: res.GetAuthorized(), channelID: res.GetChannelId()}, nil
+	return authorizeRes{authorized: res.GetAuthorized()}, nil
 }
 
 func (client grpcClient) RemoveClientConnections(ctx context.Context, req *grpcChannelsV1.RemoveClientConnectionsReq, _ ...grpc.CallOption) (r *grpcChannelsV1.RemoveClientConnectionsRes, err error) {

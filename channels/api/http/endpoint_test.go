@@ -786,8 +786,8 @@ func TestUpdateChannelEndpoint(t *testing.T) {
 	defer gs.Close()
 
 	updateChannelReq := channels.Channel{
-		ID:    validID,
-		Name:  valid,
+		ID:   validID,
+		Name: valid,
 		Metadata: map[string]interface{}{
 			"name": "test",
 		},

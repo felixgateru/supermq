@@ -146,7 +146,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 
 	domainID := channelParts[1]
-	chanTopic := channelParts[2]
+	chanRoute := channelParts[2]
 	subtopic := channelParts[3]
 
 	subtopic, err := parseSubtopic(subtopic)
@@ -162,7 +162,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol: protocol,
 		Domain:   domainID,
-		Channel:  chanTopic,
+		Channel:  chanRoute,
 		Subtopic: subtopic,
 		Payload:  *payload,
 		Created:  time.Now().UnixNano(),
@@ -171,8 +171,9 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	if clientType == policies.ClientType {
 		msg.Publisher = clientID
 	}
+	msgTopic := fmt.Sprintf("%s.%s", msg.GetDomain(), msg.GetChannel())
 
-	if err := h.pubsub.Publish(ctx, msg.GetChannel(), &msg); err != nil {
+	if err := h.pubsub.Publish(ctx, msgTopic, &msg); err != nil {
 		return errors.Wrap(errFailedPublishToMsgBroker, err)
 	}
 
@@ -237,13 +238,13 @@ func (h *handler) authAccess(ctx context.Context, token, topic string, msgType c
 	}
 
 	domainID := channelParts[1]
-	chanTopic := channelParts[2]
+	chanRoute := channelParts[2]
 
 	ar := &grpcChannelsV1.AuthzReq{
 		Type:         uint32(msgType),
 		ClientId:     clientID,
 		ClientType:   clientType,
-		ChannelTopic: chanTopic,
+		ChannelRoute: chanRoute,
 		DomainId:     domainID,
 	}
 	res, err := h.channels.Authorize(ctx, ar)

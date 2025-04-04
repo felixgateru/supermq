@@ -69,7 +69,6 @@ func TestAuthorize(t *testing.T) {
 		clientID     string
 		clientType   string
 		channelRoute string
-		channelID    string
 		connType     connections.ConnType
 		err          error
 		authzErr     error
@@ -82,9 +81,8 @@ func TestAuthorize(t *testing.T) {
 			clientID:     validID,
 			clientType:   policies.UserType,
 			channelRoute: validID,
-			channelID:    validID,
 			connType:     connections.Publish,
-			res:          &grpcChannelsV1.AuthzRes{Authorized: true, ChannelId: validID},
+			res:          &grpcChannelsV1.AuthzRes{Authorized: true},
 			err:          nil,
 		},
 		{
@@ -120,7 +118,7 @@ func TestAuthorize(t *testing.T) {
 				ChannelRoute: tc.channelRoute,
 				Type:         tc.connType,
 			}
-			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.channelID, tc.authzErr)
+			svcCall := svc.On("Authorize", mock.Anything, authReq).Return(tc.authzErr)
 			res, err := client.Authorize(context.Background(), &grpcChannelsV1.AuthzReq{
 				DomainId:     tc.domainID,
 				ClientId:     tc.clientID,

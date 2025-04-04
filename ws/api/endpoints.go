@@ -33,12 +33,12 @@ func handshake(ctx context.Context, svc ws.Service) http.HandlerFunc {
 		req.conn = conn
 		client := ws.NewClient(conn)
 
-		if err := svc.Subscribe(ctx, req.clientKey, req.domainID, req.chanID, req.subtopic, client); err != nil {
+		if err := svc.Subscribe(ctx, req.clientKey, req.domainID, req.chanRoute, req.subtopic, client); err != nil {
 			req.conn.Close()
 			return
 		}
 
-		logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.chanID))
+		logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.chanRoute))
 	}
 }
 
@@ -54,17 +54,17 @@ func decodeRequest(r *http.Request) (connReq, error) {
 	}
 
 	domainID := chi.URLParam(r, "domainID")
-	chanID := chi.URLParam(r, "chanID")
+	chanRoute := chi.URLParam(r, "chanRoute")
 
 	req := connReq{
 		clientKey: authKey,
-		chanID:    chanID,
+		chanRoute: chanRoute,
 		domainID:  domainID,
 	}
 
 	channelParts := channelPartRegExp.FindStringSubmatch(r.RequestURI)
 	if len(channelParts) < 3 {
-		logger.Warn("Empty channel id or malformed url")
+		logger.Warn("Empty channel route or malformed url")
 		return connReq{}, errors.ErrMalformedEntity
 	}
 

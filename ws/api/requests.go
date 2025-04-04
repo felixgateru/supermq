@@ -7,7 +7,7 @@ import "github.com/gorilla/websocket"
 
 type connReq struct {
 	clientKey string
-	chanID    string
+	chanRoute string
 	domainID  string
 	subtopic  string
 	conn      *websocket.Conn

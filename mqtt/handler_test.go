@@ -30,7 +30,7 @@ import (
 const (
 	password              = "password"
 	password1             = "password1"
-	chanTopic             = "validTopic"
+	chanRoute             = "validRoute"
 	invalidID             = "invalidID"
 	invalidValue          = "invalidValue"
 	clientID              = "clientID"
@@ -42,7 +42,7 @@ const (
 var (
 	domainID            = testsutil.GenerateUUID(&testing.T{})
 	topicMsg            = "/%s/ch/%s/msg"
-	topic               = fmt.Sprintf(topicMsg, domainID, chanTopic)
+	topic               = fmt.Sprintf(topicMsg, domainID, chanRoute)
 	invalidTopic        = invalidValue
 	payload             = []byte("[{'n':'test-name', 'v': 1.2}]")
 	topics              = []string{topic}
@@ -215,7 +215,7 @@ func TestAuthPublish(t *testing.T) {
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 				DomainId:     domainID,
-				ChannelTopic: chanTopic,
+				ChannelRoute: chanRoute,
 				ClientId:     clientID,
 				ClientType:   policies.ClientType,
 				Type:         uint32(connections.Publish),
@@ -235,7 +235,7 @@ func TestAuthSubscribe(t *testing.T) {
 		session   *session.Session
 		err       error
 		topic     *[]string
-		chanTopic string
+		chanRoute string
 		authZRes  *grpcChannelsV1.AuthzRes
 		authZErr  error
 	}{
@@ -258,12 +258,12 @@ func TestAuthSubscribe(t *testing.T) {
 			topic:   &invalidTopics,
 		},
 		{
-			desc:      "subscribe with invalid channel Topic",
+			desc:      "subscribe with invalid channel route",
 			session:   &sessionClientSub,
 			err:       svcerr.ErrAuthorization,
 			topic:     &invalidChanIDTopics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			chanTopic: invalidValue,
+			chanRoute: invalidValue,
 		},
 		{
 			desc:      "subscribe successfully",
@@ -271,7 +271,7 @@ func TestAuthSubscribe(t *testing.T) {
 			err:       nil,
 			topic:     &topics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			chanTopic: chanTopic,
+			chanRoute: chanRoute,
 		},
 		{
 			desc:      "subscribe with failed authorization",
@@ -279,7 +279,7 @@ func TestAuthSubscribe(t *testing.T) {
 			err:       svcerr.ErrAuthorization,
 			topic:     &topics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			chanTopic: chanTopic,
+			chanRoute: chanRoute,
 		},
 	}
 
@@ -291,7 +291,7 @@ func TestAuthSubscribe(t *testing.T) {
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 				DomainId:     domainID,
-				ChannelTopic: tc.chanTopic,
+				ChannelRoute: tc.chanRoute,
 				ClientId:     clientID1,
 				ClientType:   policies.ClientType,
 				Type:         uint32(connections.Subscribe),

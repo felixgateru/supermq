@@ -153,7 +153,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	domainID, chanTopic, subtopic, err := parseTopic(*topic)
+	domainID, chanRoute, subtopic, err := parseTopic(*topic)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
 	}
@@ -161,7 +161,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol: protocol,
 		Domain:   domainID,
-		Channel:  chanTopic,
+		Channel:  chanRoute,
 		Subtopic: subtopic,
 		Payload:  *payload,
 		Created:  time.Now().UnixNano(),
@@ -171,7 +171,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		DomainId:     domainID,
 		ClientId:     clientID,
 		ClientType:   clientType,
-		ChannelTopic: msg.Channel,
+		ChannelRoute: msg.Channel,
 		Type:         uint32(connections.Publish),
 	}
 	res, err := h.channels.Authorize(ctx, ar)
@@ -185,8 +185,9 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	if clientType == policies.ClientType {
 		msg.Publisher = clientID
 	}
+	msgTopic := fmt.Sprintf("%s.%s", msg.GetDomain(), msg.GetChannel())
 
-	if err := h.publisher.Publish(ctx, msg.Channel, &msg); err != nil {
+	if err := h.publisher.Publish(ctx, msgTopic, &msg); err != nil {
 		return errors.Wrap(errFailedPublishToMsgBroker, err)
 	}
 

@@ -62,15 +62,15 @@ func newProxyHTPPServer(svc session.Handler, targetServer *httptest.Server) (*ht
 	return httptest.NewServer(http.HandlerFunc(mp.Handler)), nil
 }
 
-func makeURL(tsURL, domainID, chanID, subtopic, clientKey string, header bool) (string, error) {
+func makeURL(tsURL, domainID, chanRoute, subtopic, clientKey string, header bool) (string, error) {
 	u, _ := url.Parse(tsURL)
 	u.Scheme = protocol
 
-	if chanID == "0" || chanID == "" {
+	if chanRoute == "0" || chanRoute == "" {
 		if header {
-			return fmt.Sprintf("%s/%s/ch/%s/msg", u, domainID, chanID), fmt.Errorf("invalid channel id")
+			return fmt.Sprintf("%s/%s/ch/%s/msg", u, domainID, chanRoute), fmt.Errorf("invalid channel id")
 		}
-		return fmt.Sprintf("%s/%s/ch/%s/msg?authorization=%s", u, domainID, chanID, clientKey), fmt.Errorf("invalid channel id")
+		return fmt.Sprintf("%s/%s/ch/%s/msg?authorization=%s", u, domainID, chanRoute, clientKey), fmt.Errorf("invalid channel id")
 	}
 
 	subtopicPart := ""
@@ -78,19 +78,19 @@ func makeURL(tsURL, domainID, chanID, subtopic, clientKey string, header bool) (
 		subtopicPart = fmt.Sprintf("/%s", subtopic)
 	}
 	if header {
-		return fmt.Sprintf("%s/%s/ch/%s/msg%s", u, domainID, chanID, subtopicPart), nil
+		return fmt.Sprintf("%s/%s/ch/%s/msg%s", u, domainID, chanRoute, subtopicPart), nil
 	}
 
-	return fmt.Sprintf("%s/%s/ch/%s/msg%s?authorization=%s", u, domainID, chanID, subtopicPart, clientKey), nil
+	return fmt.Sprintf("%s/%s/ch/%s/msg%s?authorization=%s", u, domainID, chanRoute, subtopicPart, clientKey), nil
 }
 
-func handshake(tsURL, domainID, chanID, subtopic, clientKey string, addHeader bool) (*websocket.Conn, *http.Response, error) {
+func handshake(tsURL, domainID, chanRoute, subtopic, clientKey string, addHeader bool) (*websocket.Conn, *http.Response, error) {
 	header := http.Header{}
 	if addHeader {
 		header.Add("Authorization", clientKey)
 	}
 
-	turl, _ := makeURL(tsURL, domainID, chanID, subtopic, clientKey, addHeader)
+	turl, _ := makeURL(tsURL, domainID, chanRoute, subtopic, clientKey, addHeader)
 	conn, res, errRet := websocket.DefaultDialer.Dial(turl, header)
 
 	return conn, res, errRet
@@ -116,7 +116,7 @@ func TestHandshake(t *testing.T) {
 	cases := []struct {
 		desc      string
 		domainID  string
-		chanID    string
+		chanRoute string
 		subtopic  string
 		header    bool
 		clientKey string
@@ -127,7 +127,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "",
 			header:    true,
 			clientKey: clientKey,
@@ -137,7 +137,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message with clientKey as query parameter",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "",
 			header:    false,
 			clientKey: clientKey,
@@ -147,7 +147,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message that cannot be published",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "",
 			header:    true,
 			clientKey: clientKey,
@@ -157,7 +157,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message to subtopic",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "subtopic",
 			header:    true,
 			clientKey: clientKey,
@@ -167,7 +167,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message to nested subtopic",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "subtopic/nested",
 			header:    true,
 			clientKey: clientKey,
@@ -177,7 +177,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message to all subtopics",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  ">",
 			header:    true,
 			clientKey: clientKey,
@@ -187,7 +187,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect to empty channel",
 			domainID:  domainID,
-			chanID:    "",
+			chanRoute: "",
 			subtopic:  "",
 			header:    true,
 			clientKey: clientKey,
@@ -197,7 +197,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect with empty clientKey",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "",
 			header:    true,
 			clientKey: "",
@@ -207,7 +207,7 @@ func TestHandshake(t *testing.T) {
 		{
 			desc:      "connect and send message to subtopic with invalid name",
 			domainID:  domainID,
-			chanID:    id,
+			chanRoute: id,
 			subtopic:  "sub/a*b/topic",
 			header:    true,
 			clientKey: clientKey,
@@ -218,7 +218,7 @@ func TestHandshake(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			conn, res, err := handshake(ts.URL, tc.domainID, tc.chanID, tc.subtopic, tc.clientKey, tc.header)
+			conn, res, err := handshake(ts.URL, tc.domainID, tc.chanRoute, tc.subtopic, tc.clientKey, tc.header)
 			assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code '%d' got '%d'\n", tc.desc, tc.status, res.StatusCode))
 
 			if tc.status == http.StatusSwitchingProtocols {
