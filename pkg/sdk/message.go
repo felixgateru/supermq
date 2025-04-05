@@ -4,6 +4,7 @@
 package sdk
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 const channelParts = 2
 
-func (sdk mgSDK) SendMessage(chanName, msg, key string) errors.SDKError {
+func (sdk mgSDK) SendMessage(ctx context.Context, chanName, msg, domainID, key string) errors.SDKError {
 	chanNameParts := strings.SplitN(chanName, ".", channelParts)
 	chanID := chanNameParts[0]
 	subtopicPart := ""
@@ -22,9 +23,9 @@ func (sdk mgSDK) SendMessage(chanName, msg, key string) errors.SDKError {
 		subtopicPart = fmt.Sprintf("/%s", strings.ReplaceAll(chanNameParts[1], ".", "/"))
 	}
 
-	reqURL := fmt.Sprintf("%s/ch/%s/msg%s", sdk.httpAdapterURL, chanID, subtopicPart)
+	reqURL := fmt.Sprintf("%s/%s/ch/%s/msg%s", sdk.httpAdapterURL, domainID, chanID, subtopicPart)
 
-	_, _, err := sdk.processRequest(http.MethodPost, reqURL, ClientPrefix+key, []byte(msg), nil, http.StatusAccepted)
+	_, _, err := sdk.processRequest(ctx, http.MethodPost, reqURL, ClientPrefix+key, []byte(msg), nil, http.StatusAccepted)
 
 	return err
 }

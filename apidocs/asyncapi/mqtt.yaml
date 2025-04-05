@@ -37,8 +37,12 @@ servers:
       - user-password: []
 
 channels:
-  ch/{channelID}/msg/{subtopic}:
+  /{domainRoute}/ch/{channelID}/msg/{subtopic}:
     parameters:
+      domainRoute:
+        $ref: '#/components/parameters/domainRoute'
+        in: path
+        required: true
       channelID:
         $ref: '#/components/parameters/channelID'
         in: path
@@ -87,6 +91,10 @@ components:
         ```
 
   parameters:
+    domainRoute:
+      description: Route of the domain associated with the channel and client.
+      schema:
+        type: string
     channelID:
       description: Channel ID connected to the Client ID defined in the username.
       schema:

@@ -8,12 +8,15 @@ import (
 
 	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/channels"
+	dom "github.com/absmach/supermq/domains"
+	pkgDomains "github.com/absmach/supermq/pkg/domains"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/policies"
 )
 
-//go:generate mockery --name Service  --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
+var errDisabledDomain = errors.New("domain is disabled or frozen")
+
 type Service interface {
 	Authorize(ctx context.Context, req channels.AuthzReq) error
 	UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error
@@ -25,15 +28,23 @@ type service struct {
 	repo      channels.Repository
 	evaluator policies.Evaluator
 	policy    policies.Service
+	domains   pkgDomains.Authorization
 }
 
 var _ Service = (*service)(nil)
 
-func New(repo channels.Repository, evaluator policies.Evaluator, policy policies.Service) Service {
-	return service{repo, evaluator, policy}
+func New(repo channels.Repository, evaluator policies.Evaluator, policy policies.Service, domains pkgDomains.Authorization) Service {
+	return service{repo, evaluator, policy, domains}
 }
 
 func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
+	d, err := svc.domains.RetrieveByRoute(ctx, req.DomainRoute)
+	if err != nil {
+		return errors.Wrap(svcerr.ErrAuthorization, err)
+	}
+	if d.Status != dom.EnabledStatus {
+		return errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
+	}
 	switch req.ClientType {
 	case policies.UserType:
 		permission, err := req.Type.Permission()
@@ -41,7 +52,7 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 			return err
 		}
 		pr := policies.Policy{
-			Subject:     auth.EncodeDomainUserID(req.DomainID, req.ClientID),
+			Subject:     auth.EncodeDomainUserID(d.ID, req.ClientID),
 			SubjectType: policies.UserType,
 			Object:      req.ChannelID,
 			Permission:  permission,

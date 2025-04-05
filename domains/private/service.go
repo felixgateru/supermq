@@ -13,10 +13,10 @@ import (
 
 const defLimit = 100
 
-//go:generate mockery --name Service  --output=./mocks --filename service.go --quiet --note "Copyright (c) Abstract Machines"
 type Service interface {
 	RetrieveEntity(ctx context.Context, id string) (domains.Domain, error)
 	DeleteUserFromDomains(ctx context.Context, id string) error
+	RetrieveByRoute(ctx context.Context, route string) (domains.Domain, error)
 }
 
 var _ Service = (*service)(nil)
@@ -68,4 +68,13 @@ func (svc service) DeleteUserFromDomains(ctx context.Context, id string) (err er
 	}
 
 	return nil
+}
+
+func (svc service) RetrieveByRoute(ctx context.Context, route string) (domains.Domain, error) {
+	dom, err := svc.repo.RetrieveDomainByRoute(ctx, route)
+	if err != nil {
+		return domains.Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
+	}
+
+	return domains.Domain{ID: dom.ID, Status: dom.Status}, nil
 }

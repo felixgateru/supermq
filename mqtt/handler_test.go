@@ -18,10 +18,10 @@ import (
 	"github.com/absmach/supermq/internal/testsutil"
 	smqlog "github.com/absmach/supermq/logger"
 	"github.com/absmach/supermq/mqtt"
-	"github.com/absmach/supermq/mqtt/mocks"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
+	"github.com/absmach/supermq/pkg/messaging/mocks"
 	"github.com/absmach/supermq/pkg/policies"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,13 +40,14 @@ const (
 )
 
 var (
-	topicMsg            = "ch/%s/msg"
-	topic               = fmt.Sprintf(topicMsg, chanID)
+	domainRoute         = "validRoute"
+	topicMsg            = "/%s/ch/%s/msg"
+	topic               = fmt.Sprintf(topicMsg, domainRoute, chanID)
 	invalidTopic        = invalidValue
 	payload             = []byte("[{'n':'test-name', 'v': 1.2}]")
 	topics              = []string{topic}
 	invalidTopics       = []string{invalidValue}
-	invalidChanIDTopics = []string{fmt.Sprintf(topicMsg, invalidValue)}
+	invalidChanIDTopics = []string{fmt.Sprintf(topicMsg, domainRoute, invalidValue)}
 	// Test log messages for cases the handler does not provide a return value.
 	logBuffer     = bytes.Buffer{}
 	sessionClient = session.Session{
@@ -68,8 +69,9 @@ var (
 )
 
 var (
-	clients  = new(climocks.ClientsServiceClient)
-	channels = new(chmocks.ChannelsServiceClient)
+	clients   *climocks.ClientsServiceClient
+	channels  *chmocks.ChannelsServiceClient
+	publisher *mocks.PubSub
 )
 
 func TestAuthConnect(t *testing.T) {
@@ -212,10 +214,11 @@ func TestAuthPublish(t *testing.T) {
 				ctx = session.NewContext(ctx, tc.session)
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
-				ChannelId:  chanID,
-				ClientId:   clientID,
-				ClientType: policies.ClientType,
-				Type:       uint32(connections.Publish),
+				DomainRoute: domainRoute,
+				ChannelId:   chanID,
+				ClientId:    clientID,
+				ClientType:  policies.ClientType,
+				Type:        uint32(connections.Publish),
 			}).Return(tc.authZRes, tc.authZErr)
 			err := handler.AuthPublish(ctx, tc.topic, &tc.payload)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -287,10 +290,11 @@ func TestAuthSubscribe(t *testing.T) {
 				ctx = session.NewContext(ctx, tc.session)
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
-				ChannelId:  tc.channelID,
-				ClientId:   clientID1,
-				ClientType: policies.ClientType,
-				Type:       uint32(connections.Subscribe),
+				DomainRoute: domainRoute,
+				ChannelId:   tc.channelID,
+				ClientId:    clientID1,
+				ClientType:  policies.ClientType,
+				Type:        uint32(connections.Subscribe),
 			}).Return(tc.authZRes, tc.authZErr)
 			err := handler.AuthSubscribe(ctx, tc.topic)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -406,9 +410,11 @@ func TestPublish(t *testing.T) {
 		if tc.session != nil {
 			ctx = session.NewContext(ctx, tc.session)
 		}
+		repoCall := publisher.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		err := handler.Publish(ctx, &tc.topic, &tc.payload)
 		assert.Contains(t, logBuffer.String(), tc.logMsg)
 		assert.Equal(t, tc.err, err)
+		repoCall.Unset()
 	}
 }
 
@@ -527,5 +533,6 @@ func newHandler() session.Handler {
 	}
 	clients = new(climocks.ClientsServiceClient)
 	channels = new(chmocks.ChannelsServiceClient)
-	return mqtt.NewHandler(mocks.NewPublisher(), logger, clients, channels)
+	publisher = new(mocks.PubSub)
+	return mqtt.NewHandler(publisher, logger, clients, channels)
 }

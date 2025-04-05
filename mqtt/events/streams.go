@@ -15,12 +15,17 @@ import (
 	"github.com/absmach/supermq/pkg/events/store"
 )
 
-const streamID = "supermq.mqtt"
+const (
+	supermqPrefix    = "supermq."
+	subscribeStream  = supermqPrefix + clientSubscribe
+	connectStream    = supermqPrefix + clientConnect
+	disconnectStream = supermqPrefix + clientDisconnect
+)
 
 var (
 	errFailedSession  = errors.New("failed to obtain session from context")
 	errMalformedTopic = errors.New("malformed topic")
-	channelRegExp     = regexp.MustCompile(`^\/?ch\/([\w\-]+)\/msg(\/[^?]*)?(\?.*)?$`)
+	channelRegExp     = regexp.MustCompile(`^\/?([\w\-]+)/ch\/([\w\-]+)\/msg(\/[^?]*)?(\?.*)?$`)
 )
 
 // EventStore is a struct used to store event streams in Redis.
@@ -33,7 +38,7 @@ type eventStore struct {
 // NewEventStoreMiddleware returns middleware around mGate service that sends
 // events to event store.
 func NewEventStoreMiddleware(ctx context.Context, handler session.Handler, url, instance string) (session.Handler, error) {
-	publisher, err := store.NewPublisher(ctx, url, streamID)
+	publisher, err := store.NewPublisher(ctx, url)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +66,7 @@ func (es *eventStore) AuthConnect(ctx context.Context) error {
 		instance:     es.instance,
 	}
 
-	return es.ep.Publish(ctx, ev)
+	return es.ep.Publish(ctx, connectStream, ev)
 }
 
 func (es *eventStore) AuthPublish(ctx context.Context, topic *string, payload *[]byte) error {
@@ -103,7 +108,7 @@ func (es *eventStore) Subscribe(ctx context.Context, topics *[]string) error {
 			subtopic:     subtopic,
 		}
 
-		if err := es.ep.Publish(ctx, ev); err != nil {
+		if err := es.ep.Publish(ctx, subscribeStream, ev); err != nil {
 			return err
 		}
 	}
@@ -132,17 +137,17 @@ func (es *eventStore) Disconnect(ctx context.Context) error {
 		instance:     es.instance,
 	}
 
-	return es.ep.Publish(ctx, ev)
+	return es.ep.Publish(ctx, disconnectStream, ev)
 }
 
 func parseTopic(topic string) (string, string, error) {
 	channelParts := channelRegExp.FindStringSubmatch(topic)
-	if len(channelParts) < 2 {
+	if len(channelParts) < 3 {
 		return "", "", errMalformedTopic
 	}
 
-	chanID := channelParts[1]
-	subtopic := channelParts[2]
+	chanID := channelParts[2]
+	subtopic := channelParts[3]
 
 	if subtopic == "" {
 		return subtopic, chanID, nil
