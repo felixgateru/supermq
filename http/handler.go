@@ -153,7 +153,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	domainRoute, chanID, subtopic, err := parseTopic(*topic)
+	domainRoute, chanRoute, subtopic, err := parseTopic(*topic)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
 	}
@@ -161,18 +161,18 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol: protocol,
 		Domain:   domainRoute,
-		Channel:  chanID,
+		Channel:  chanRoute,
 		Subtopic: subtopic,
 		Payload:  *payload,
 		Created:  time.Now().UnixNano(),
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
-		DomainRoute: domainRoute,
-		ClientId:    clientID,
-		ClientType:  clientType,
-		ChannelId:   msg.Channel,
-		Type:        uint32(connections.Publish),
+		DomainRoute:  domainRoute,
+		ClientId:     clientID,
+		ClientType:   clientType,
+		ChannelRoute: msg.Channel,
+		Type:         uint32(connections.Publish),
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
@@ -213,14 +213,14 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func parseTopic(topic string) (string, string, string, error) {
 	// Topics are in the format:
-	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_route>/m/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(topic)
 	if len(channelParts) < 3 {
 		return "", "", "", errors.Wrap(errFailedPublish, errMalformedTopic)
 	}
 
 	domainRoute := channelParts[1]
-	chanID := channelParts[2]
+	chanRoute := channelParts[2]
 	subtopic := channelParts[3]
 
 	subtopic, err := parseSubtopic(subtopic)
@@ -228,7 +228,7 @@ func parseTopic(topic string) (string, string, string, error) {
 		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
 	}
 
-	return domainRoute, chanID, subtopic, nil
+	return domainRoute, chanRoute, subtopic, nil
 }
 
 func parseSubtopic(subtopic string) (string, error) {

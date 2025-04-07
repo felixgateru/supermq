@@ -315,14 +315,13 @@ const file_channels_v1_channels_proto_rawDesc = "" +
 	"\x1aRemoveClientConnectionsRes\"I\n" +
 	"\x1fUnsetParentGroupFromChannelsReq\x12&\n" +
 	"\x0fparent_group_id\x18\x01 \x01(\tR\rparentGroupId\"!\n" +
-	"\x1fUnsetParentGroupFromChannelsRes\"\x9e\x01\n" +
+	"\x1fUnsetParentGroupFromChannelsRes\"\xa4\x01\n" +
 	"\bAuthzReq\x12!\n" +
 	"\fdomain_route\x18\x01 \x01(\tR\vdomainRoute\x12\x1b\n" +
 	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x1f\n" +
 	"\vclient_type\x18\x03 \x01(\tR\n" +
-	"clientType\x12\x1d\n" +
-	"\n" +
-	"channel_id\x18\x04 \x01(\tR\tchannelId\x12\x12\n" +
+	"clientType\x12#\n" +
+	"\rchannel_route\x18\x04 \x01(\tR\fchannelRoute\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\rR\x04type\"*\n" +
 	"\bAuthzRes\x12\x1e\n" +
 	"\n" +

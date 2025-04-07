@@ -10,8 +10,6 @@ import (
 	"github.com/absmach/supermq/channels"
 	dom "github.com/absmach/supermq/domains"
 	pkgDomains "github.com/absmach/supermq/pkg/domains"
-	dom "github.com/absmach/supermq/domains"
-	pkgDomains "github.com/absmach/supermq/pkg/domains"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/policies"
@@ -21,8 +19,6 @@ var (
 	errDisabledDomain  = errors.New("domain is disabled or frozen")
 	errDisabledChannel = errors.New("channel is disabled")
 )
-
-var errDisabledDomain = errors.New("domain is disabled or frozen")
 
 type Service interface {
 	Authorize(ctx context.Context, req channels.AuthzReq) error
@@ -52,7 +48,7 @@ func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
 	if d.Status != dom.EnabledStatus {
 		return errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
 	}
-	ch, err := svc.repo.RetrieveByRoute(ctx, req.ChannelRoute, req.DomainID)
+	ch, err := svc.repo.RetrieveByRoute(ctx, req.ChannelRoute, d.ID)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}

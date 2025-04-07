@@ -40,14 +40,14 @@ const (
 )
 
 var (
-	domainRoute         = "validRoute"
-	topicMsg            = "/%s/c/%s/m"
-	topic               = fmt.Sprintf(topicMsg, domainRoute, chanID)
-	invalidTopic        = invalidValue
-	payload             = []byte("[{'n':'test-name', 'v': 1.2}]")
-	topics              = []string{topic}
-	invalidTopics       = []string{invalidValue}
-	invalidChanIDTopics = []string{fmt.Sprintf(topicMsg, domainRoute, invalidValue)}
+	domainRoute            = "validRoute"
+	topicMsg               = "/%s/c/%s/m"
+	topic                  = fmt.Sprintf(topicMsg, domainRoute, chanRoute)
+	invalidTopic           = invalidValue
+	payload                = []byte("[{'n':'test-name', 'v': 1.2}]")
+	topics                 = []string{topic}
+	invalidTopics          = []string{invalidValue}
+	invalidChanRouteTopics = []string{fmt.Sprintf(topicMsg, domainRoute, invalidValue)}
 	// Test log messages for cases the handler does not provide a return value.
 	logBuffer     = bytes.Buffer{}
 	sessionClient = session.Session{
@@ -214,11 +214,11 @@ func TestAuthPublish(t *testing.T) {
 				ctx = session.NewContext(ctx, tc.session)
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
-				DomainRoute: domainRoute,
-				ChannelId:   chanID,
-				ClientId:    clientID,
-				ClientType:  policies.ClientType,
-				Type:        uint32(connections.Publish),
+				DomainRoute:  domainRoute,
+				ChannelRoute: chanRoute,
+				ClientId:     clientID,
+				ClientType:   policies.ClientType,
+				Type:         uint32(connections.Publish),
 			}).Return(tc.authZRes, tc.authZErr)
 			err := handler.AuthPublish(ctx, tc.topic, &tc.payload)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
@@ -261,7 +261,7 @@ func TestAuthSubscribe(t *testing.T) {
 			desc:      "subscribe with invalid channel route",
 			session:   &sessionClientSub,
 			err:       svcerr.ErrAuthorization,
-			topic:     &invalidChanIDTopics,
+			topic:     &invalidChanRouteTopics,
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
 			chanRoute: invalidValue,
 		},
@@ -290,11 +290,11 @@ func TestAuthSubscribe(t *testing.T) {
 				ctx = session.NewContext(ctx, tc.session)
 			}
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
-				DomainRoute: domainRoute,
-				ChannelId:   tc.channelID,
-				ClientId:    clientID1,
-				ClientType:  policies.ClientType,
-				Type:        uint32(connections.Subscribe),
+				DomainRoute:  domainRoute,
+				ChannelRoute: tc.chanRoute,
+				ClientId:     clientID1,
+				ClientType:   policies.ClientType,
+				Type:         uint32(connections.Subscribe),
 			}).Return(tc.authZRes, tc.authZErr)
 			err := handler.AuthSubscribe(ctx, tc.topic)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))

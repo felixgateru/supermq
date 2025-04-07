@@ -12,11 +12,11 @@ import (
 var errDomainRoute = errors.New("domain route required for users")
 
 type authorizeReq struct {
-	domainRoute string
-	channelID   string
-	clientID    string
-	clientType  string
-	connType    connections.ConnType
+	domainRoute  string
+	channelRoute string
+	clientID     string
+	clientType   string
+	connType     connections.ConnType
 }
 
 func (req authorizeReq) validate() error {

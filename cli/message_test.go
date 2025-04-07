@@ -36,7 +36,7 @@ func TestSendMesageCmd(t *testing.T) {
 		{
 			desc: "send message successfully",
 			args: []string{
-				channel.ID,
+				channel.Route,
 				message,
 				domainRoute,
 				client.Credentials.Secret,
@@ -46,7 +46,7 @@ func TestSendMesageCmd(t *testing.T) {
 		{
 			desc: "send message with invalid args",
 			args: []string{
-				channel.ID,
+				channel.Route,
 				message,
 				client.Credentials.Secret,
 				domainRoute,
@@ -57,7 +57,7 @@ func TestSendMesageCmd(t *testing.T) {
 		{
 			desc: "send message with invalid client secret",
 			args: []string{
-				channel.ID,
+				channel.Route,
 				message,
 				domainRoute,
 				"invalid_secret",

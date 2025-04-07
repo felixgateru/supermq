@@ -160,7 +160,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	h.logger.Info(fmt.Sprintf(LogInfoPublished, s.ID, *topic))
 
 	// Topics are in the format:
-	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_route>/m/<subtopic>/.../ct/<content_type>
 
 	channelParts := channelRegExp.FindStringSubmatch(*topic)
 	if len(channelParts) < 3 {
@@ -168,7 +168,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 
 	domainRoute := channelParts[1]
-	chanID := channelParts[2]
+	chanRoute := channelParts[2]
 	subtopic := channelParts[3]
 
 	subtopic, err := parseSubtopic(subtopic)
@@ -179,7 +179,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol:  protocol,
 		Domain:    domainRoute,
-		Channel:   chanID,
+		Channel:   chanRoute,
 		Subtopic:  subtopic,
 		Publisher: s.Username,
 		Payload:   *payload,
@@ -229,7 +229,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgType connections.ConnType) error {
 	// Topics are in the format:
-	// domain_route/c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// domain_route/c/<channel_route>/m/<subtopic>/.../ct/<content_type>
 	if !channelRegExp.MatchString(topic) {
 		return ErrMalformedTopic
 	}
@@ -240,14 +240,14 @@ func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgTyp
 	}
 
 	domainRoute := channelParts[1]
-	chanID := channelParts[2]
+	chanRoute := channelParts[2]
 
 	ar := &grpcChannelsV1.AuthzReq{
-		Type:        uint32(msgType),
-		ClientId:    clientID,
-		ClientType:  policies.ClientType,
-		ChannelId:   chanID,
-		DomainRoute: domainRoute,
+		Type:         uint32(msgType),
+		ClientId:     clientID,
+		ClientType:   policies.ClientType,
+		ChannelRoute: chanRoute,
+		DomainRoute:  domainRoute,
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
