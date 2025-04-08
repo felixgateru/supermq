@@ -303,14 +303,3 @@ func (req deleteChannelReq) validate() error {
 	}
 	return nil
 }
-
-func validateRoute(route string) error {
-	if err := api.ValidateUUID(route); err == nil {
-		return nil
-	}
-	if err := api.ValidateRoute(route); err != nil {
-		return err
-	}
-
-	return nil
-}
