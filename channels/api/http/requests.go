@@ -28,7 +28,7 @@ func (req createChannelReq) validate() error {
 	if req.Channel.Route == "" {
 		return apiutil.ErrMissingRoute
 	}
-	if err := validateRoute(req.Channel.Route); err != nil {
+	if err := api.ValidateRoute(req.Channel.Route); err != nil {
 		return err
 	}
 
@@ -55,7 +55,7 @@ func (req createChannelsReq) validate() error {
 		if channel.Route == "" {
 			return apiutil.ErrMissingRoute
 		}
-		if err := validateRoute(channel.Route); err != nil {
+		if err := api.ValidateRoute(channel.Route); err != nil {
 			return err
 		}
 	}
@@ -297,16 +297,5 @@ func (req deleteChannelReq) validate() error {
 	if req.id == "" {
 		return apiutil.ErrMissingID
 	}
-	return nil
-}
-
-func validateRoute(route string) error {
-	if err := api.ValidateUUID(route); err == nil {
-		return nil
-	}
-	if err := api.ValidateRoute(route); err != nil {
-		return err
-	}
-
 	return nil
 }
