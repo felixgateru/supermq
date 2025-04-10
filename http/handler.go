@@ -55,7 +55,7 @@ var (
 	errFailedParseSubtopic      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to parse subtopic"))
 )
 
-var channelRegExp = regexp.MustCompile(`^\/?c\\/([\w\-]+)\\/m(\\/[^?]*)?(\?.*)?$`)
+var channelRegExp = regexp.MustCompile(`^\/?m\/([\w\-]+)\/c\/([\w\-]+)(\/[^?]*)?(\?.*)?$`)
 
 // Event implements events.Event interface.
 type handler struct {
@@ -212,7 +212,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func parseTopic(topic string) (string, string, string, error) {
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// m/<domain_id>/c/<channel_id>/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(topic)
 	if len(channelParts) < 3 {
 		return "", "", "", errors.Wrap(errFailedPublish, errMalformedTopic)

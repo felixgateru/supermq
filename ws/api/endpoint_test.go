@@ -68,9 +68,9 @@ func makeURL(tsURL, domainID, chanID, subtopic, clientKey string, header bool) (
 
 	if chanID == "0" || chanID == "" {
 		if header {
-			return fmt.Sprintf("%s/%s/c/%s/m", u, domainID, chanID), fmt.Errorf("invalid channel id")
+			return fmt.Sprintf("%s/m/%s/c/%s", u, domainID, chanID), fmt.Errorf("invalid channel id")
 		}
-		return fmt.Sprintf("%s/%s/c/%s/m?authorization=%s", u, domainID, chanID, clientKey), fmt.Errorf("invalid channel id")
+		return fmt.Sprintf("%s/m/%s/c/%s?authorization=%s", u, domainID, chanID, clientKey), fmt.Errorf("invalid channel id")
 	}
 
 	subtopicPart := ""
@@ -78,10 +78,10 @@ func makeURL(tsURL, domainID, chanID, subtopic, clientKey string, header bool) (
 		subtopicPart = fmt.Sprintf("/%s", subtopic)
 	}
 	if header {
-		return fmt.Sprintf("%s/%s/c/%s/m%s", u, domainID, chanID, subtopicPart), nil
+		return fmt.Sprintf("%s/m/%s/c/%s%s", u, domainID, chanID, subtopicPart), nil
 	}
 
-	return fmt.Sprintf("%s/%s/c/%s/m%s?authorization=%s", u, domainID, chanID, subtopicPart, clientKey), nil
+	return fmt.Sprintf("%s/m/%s/c/%s%s?authorization=%s", u, domainID, chanID, subtopicPart, clientKey), nil
 }
 
 func handshake(tsURL, domainID, chanID, subtopic, clientKey string, addHeader bool) (*websocket.Conn, *http.Response, error) {

@@ -15,6 +15,8 @@ import (
 	"github.com/absmach/supermq/pkg/policies"
 )
 
+var errDisabledDomain = errors.New("domain is disabled or frozen")
+
 type Service interface {
 	Authorize(ctx context.Context, req channels.AuthzReq) error
 	UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error

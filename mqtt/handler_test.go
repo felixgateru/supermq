@@ -36,12 +36,12 @@ const (
 	clientID              = "clientID"
 	clientID1             = "clientID1"
 	subtopic              = "testSubtopic"
-	invalidChannelIDTopic = "c/**/m"
+	invalidChannelIDTopic = "m/**/c"
 )
 
 var (
 	domainID            = testsutil.GenerateUUID(&testing.T{})
-	topicMsg            = "/%s/c/%s/m"
+	topicMsg            = "/m/%s/c/%s"
 	topic               = fmt.Sprintf(topicMsg, domainID, chanID)
 	invalidTopic        = invalidValue
 	payload             = []byte("[{'n':'test-name', 'v': 1.2}]")

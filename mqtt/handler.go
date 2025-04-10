@@ -57,7 +57,7 @@ var (
 
 var (
 	errInvalidUserId = errors.New("invalid user id")
-	channelRegExp    = regexp.MustCompile(`^\/?c\\/([\w\-]+)\\/m(\\/[^?]*)?(\?.*)?$`)
+	channelRegExp    = regexp.MustCompile(`^\/?m\/([\w\-]+)\/c\/([\w\-]+)(\/[^?]*)?(\?.*)?$`)
 )
 
 // Event implements events.Event interface.
@@ -160,7 +160,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	h.logger.Info(fmt.Sprintf(LogInfoPublished, s.ID, *topic))
 
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// m/<domain_id>/c/<channel_id>/<subtopic>/.../ct/<content_type>
 
 	channelParts := channelRegExp.FindStringSubmatch(*topic)
 	if len(channelParts) < 3 {
@@ -228,7 +228,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func (h *handler) authAccess(ctx context.Context, clientID, topic string, msgType connections.ConnType) error {
 	// Topics are in the format:
-	// c/<channel_id>/m/<subtopic>/.../ct/<content_type>
+	// m/<domain_id>/c/<channel_id>/<subtopic>/.../ct/<content_type>
 	if !channelRegExp.MatchString(topic) {
 		return ErrMalformedTopic
 	}

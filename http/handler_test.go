@@ -35,13 +35,13 @@ const (
 	chanID                = "123e4567-e89b-12d3-a456-000000000001"
 	invalidID             = "invalidID"
 	invalidValue          = "invalidValue"
-	invalidChannelIDTopic = "c/**/m"
+	invalidChannelIDTopic = "m/**/c"
 )
 
 var (
 	domainID      = testsutil.GenerateUUID(&testing.T{})
-	topicMsg      = "/%s/c/%s/m"
-	subtopicMsg   = "/%s/c/%s/m/subtopic"
+	topicMsg      = "/m/%s/c/%s"
+	subtopicMsg   = "/m/%s/c/%s/subtopic"
 	topic         = fmt.Sprintf(topicMsg, domainID, chanID)
 	subtopic      = fmt.Sprintf(subtopicMsg, domainID, chanID)
 	invalidTopic  = invalidValue

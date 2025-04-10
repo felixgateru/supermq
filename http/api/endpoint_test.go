@@ -252,7 +252,7 @@ func TestPublish(t *testing.T) {
 			req := testRequest{
 				client:      ts.Client(),
 				method:      http.MethodPost,
-				url:         fmt.Sprintf("%s/%s/c/%s/m", ts.URL, tc.domainID, tc.chanID),
+				url:         fmt.Sprintf("%s/m/%s/c/%s", ts.URL, tc.domainID, tc.chanID),
 				contentType: tc.contentType,
 				token:       tc.key,
 				body:        strings.NewReader(tc.msg),
