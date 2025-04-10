@@ -27,7 +27,7 @@ tags:
       url: https://docs.supermq.abstractmachines.fr/
 
 paths:
-  /{domainID}/c/{channelID}/m:
+  /m/{domainID}/c/{channelID}:
     post:
       summary: Sends message to the communication channel
       description: |

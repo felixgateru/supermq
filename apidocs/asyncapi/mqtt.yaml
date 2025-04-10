@@ -37,7 +37,7 @@ servers:
       - user-password: []
 
 channels:
-  /{domainID}/c/{channelID}/m/{subtopic}:
+  /m/{domainID}/c/{channelID}/{subtopic}:
     parameters:
       domainID:
         $ref: '#/components/parameters/domainID'
