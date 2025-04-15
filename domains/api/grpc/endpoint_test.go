@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
 	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	apiutil "github.com/absmach/supermq/api/http/util"
+	"github.com/absmach/supermq/domains"
 	grpcapi "github.com/absmach/supermq/domains/api/grpc"
-	domains "github.com/absmach/supermq/domains/private"
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -99,5 +100,47 @@ func TestDeleteUserFromDomains(t *testing.T) {
 		assert.Equal(t, tc.deleteUserRes.GetDeleted(), dpr.GetDeleted(), fmt.Sprintf("%s: expected %v got %v", tc.desc, tc.deleteUserRes.GetDeleted(), dpr.GetDeleted()))
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Unset()
+	}
+}
+
+func TestRetrieveEntity(t *testing.T) {
+	conn, err := grpc.NewClient(authAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.Nil(t, err, fmt.Sprintf("Unexpected error creating client connection %s", err))
+	grpcClient := grpcapi.NewDomainsClient(conn, time.Second)
+
+	dom := domains.Domain{
+		ID:     id,
+		Status: domains.EnabledStatus,
+	}
+	cases := []struct {
+		desc        string
+		token       string
+		retrieveReq *grpcCommonV1.RetrieveEntityReq
+		svcRes      domains.Domain
+		svcErr      error
+		retrieveRes *grpcCommonV1.RetrieveEntityRes
+		err         error
+	}{
+		{
+			desc:  "retrieve entity with valid req",
+			token: validToken,
+			retrieveReq: &grpcCommonV1.RetrieveEntityReq{
+				Id: id,
+			},
+			retrieveRes: &grpcCommonV1.RetrieveEntityRes{
+				Entity: &grpcCommonV1.EntityBasic{
+					Id:     id,
+					Status: uint32(domains.EnabledStatus),
+				},
+			},
+			err: nil,
+		},
+	}
+	for _, tc := range cases {
+		svcCall := svc.On("RetrieveEntity", mock.Anything, tc.retrieveReq.Id).Return(tc.svcRes, tc.svcErr)
+		dpr, err := grpcClient.RetrieveEntity(context.Background(), tc.retrieveReq)
+		assert.Equal(t, tc.retrieveRes.Entity, dpr.Entity, fmt.Sprintf("%s: expected %v got %v", tc.desc, tc.retrieveRes.Entity, dpr.Entity))
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		svcCall.Unset()
 	}
 }
