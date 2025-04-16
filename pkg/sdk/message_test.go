@@ -20,6 +20,7 @@ import (
 	apiutil "github.com/absmach/supermq/api/http/util"
 	chmocks "github.com/absmach/supermq/channels/mocks"
 	climocks "github.com/absmach/supermq/clients/mocks"
+	dmocks "github.com/absmach/supermq/domains/mocks"
 	adapter "github.com/absmach/supermq/http"
 	"github.com/absmach/supermq/http/api"
 	smqlog "github.com/absmach/supermq/logger"
@@ -35,14 +36,16 @@ import (
 var (
 	channelsGRPCClient *chmocks.ChannelsServiceClient
 	clientsGRPCClient  *climocks.ClientsServiceClient
+	domainsGRPCClient  *dmocks.DomainsServiceClient
 )
 
 func setupMessages() (*httptest.Server, *pubsub.PubSub) {
 	clientsGRPCClient = new(climocks.ClientsServiceClient)
 	channelsGRPCClient = new(chmocks.ChannelsServiceClient)
+	domainsGRPCClient = new(dmocks.DomainsServiceClient)
 	pub := new(pubsub.PubSub)
 	authn := new(authnmocks.Authentication)
-	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, smqlog.NewMock())
+	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, domainsGRPCClient, smqlog.NewMock())
 
 	mux := api.MakeHandler(smqlog.NewMock(), "")
 	target := httptest.NewServer(mux)
