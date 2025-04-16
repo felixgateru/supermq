@@ -116,7 +116,7 @@ func encodeRetrieveEntityRequest(_ context.Context, grpcReq interface{}) (interf
 	}, nil
 }
 
-func (client domainsGrpcClient) RetrieveByRoute(ctx context.Context, in *grpcDomainsV1.RetrieveByRouteReq, opts ...grpc.CallOption) (*grpcCommonV1.RetrieveEntityRes, error) {
+func (client domainsGrpcClient) RetrieveByRoute(ctx context.Context, in *grpcCommonV1.RetrieveByRouteReq, opts ...grpc.CallOption) (*grpcCommonV1.RetrieveEntityRes, error) {
 	ctx, cancel := context.WithTimeout(ctx, client.timeout)
 	defer cancel()
 
@@ -142,7 +142,7 @@ func decodeRetrieveByRouteResponse(_ context.Context, grpcRes interface{}) (inte
 }
 func encodeRetrieveByRouteRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(retrieveByRouteReq)
-	return &grpcDomainsV1.RetrieveByRouteReq{
+	return &grpcCommonV1.RetrieveByRouteReq{
 		Route: req.Route,
 	}, nil
 }
