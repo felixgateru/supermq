@@ -17,7 +17,7 @@ service DomainsService {
     returns (DeleteUserRes) {}
   rpc RetrieveEntity(common.v1.RetrieveEntityReq) 
     returns (common.v1.RetrieveEntityRes) {}
-  rpc RetrieveByRoute(RetrieveByRouteReq)
+  rpc RetrieveByRoute(common.v1.RetrieveByRouteReq)
     returns (common.v1.RetrieveEntityRes) {}
 }
 
@@ -27,8 +27,4 @@ message DeleteUserRes {
 
 message DeleteUserReq{
   string id          = 1;
-}
-
-message RetrieveByRouteReq{
-  string route = 1;
 }

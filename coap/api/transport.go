@@ -13,6 +13,10 @@ import (
 	"time"
 
 	"github.com/absmach/supermq"
+	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
+	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
+	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
+	api "github.com/absmach/supermq/api/http"
 	"github.com/absmach/supermq/coap"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
@@ -37,8 +41,10 @@ var (
 )
 
 var (
-	logger  *slog.Logger
-	service coap.Service
+	logger   *slog.Logger
+	service  coap.Service
+	channels grpcChannelsV1.ChannelsServiceClient
+	domains  grpcDomainsV1.DomainsServiceClient
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
@@ -51,9 +57,11 @@ func MakeHandler(instanceID string) http.Handler {
 }
 
 // MakeCoAPHandler creates handler for CoAP messages.
-func MakeCoAPHandler(svc coap.Service, l *slog.Logger) mux.HandlerFunc {
+func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, domainsClient grpcDomainsV1.DomainsServiceClient, l *slog.Logger) mux.HandlerFunc {
 	logger = l
 	service = svc
+	channels = channelsClient
+	domains = domainsClient
 
 	return handler
 }
