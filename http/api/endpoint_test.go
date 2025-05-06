@@ -18,6 +18,7 @@ import (
 	"github.com/absmach/mgate/pkg/session"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
+	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
 	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	apiutil "github.com/absmach/supermq/api/http/util"
 	chmocks "github.com/absmach/supermq/channels/mocks"
@@ -253,6 +254,7 @@ func TestPublish(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			clientsCall := clients.On("Authenticate", mock.Anything, &grpcClientsV1.AuthnReq{ClientSecret: tc.key}).Return(tc.authnRes, tc.authnErr)
+			domainsCall := domains.On("RetrieveByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: tc.domainID}}, nil)
 			channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 				DomainId:   tc.domainID,
 				ChannelId:  tc.chanID,
@@ -260,6 +262,7 @@ func TestPublish(t *testing.T) {
 				ClientType: policies.ClientType,
 				Type:       uint32(connections.Publish),
 			}).Return(tc.authzRes, tc.authzErr)
+			channelsCall1 := channels.On("RetrieveByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: chanID}}, nil)
 			svcCall := pub.On("Publish", mock.Anything, tc.chanID, mock.Anything).Return(nil)
 			req := testRequest{
 				client:      ts.Client(),
@@ -276,6 +279,8 @@ func TestPublish(t *testing.T) {
 			svcCall.Unset()
 			clientsCall.Unset()
 			channelsCall.Unset()
+			domainsCall.Unset()
+			channelsCall1.Unset()
 		})
 	}
 }

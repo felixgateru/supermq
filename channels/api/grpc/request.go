@@ -4,10 +4,10 @@
 package grpc
 
 import (
+	apiutil "github.com/absmach/supermq/api/http/util"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/absmach/supermq/pkg/policies"
-	apiutil "github.com/absmach/supermq/api/http/util"
 )
 
 var errDomainID = errors.New("domain id required for users")
@@ -51,6 +51,6 @@ func (req retrieveByRouteReq) validate() error {
 	if req.domainID == "" {
 		return apiutil.ErrMissingDomainID
 	}
-	
+
 	return nil
 }

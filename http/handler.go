@@ -158,7 +158,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	domainID, chanID, subtopic, err := h.parseTopic(*topic)
+	domainID, chanID, subtopic, err := h.parseTopic(ctx, *topic)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
 	}
@@ -215,7 +215,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) parseTopic(topic string) (string, string, string, error) {
+func (h *handler) parseTopic(ctx context.Context, topic string) (string, string, string, error) {
 	// Topics are in the format:
 	// m/<domain_id>/c/<channel_id>/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(topic)
@@ -223,11 +223,11 @@ func (h *handler) parseTopic(topic string) (string, string, string, error) {
 		return "", "", "", errors.Wrap(errFailedPublish, errMalformedTopic)
 	}
 
-	domainID, err := h.resolveDomain(channelParts[1])
+	domainID, err := h.resolveDomain(ctx, channelParts[1])
 	if err != nil {
 		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
 	}
-	chanID, err := h.resolveChannel(channelParts[2], domainID)
+	chanID, err := h.resolveChannel(ctx, channelParts[2], domainID)
 	if err != nil {
 		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
 	}
@@ -270,12 +270,12 @@ func parseSubtopic(subtopic string) (string, error) {
 	return subtopic, nil
 }
 
-func (h *handler) resolveDomain(domain string) (string, error) {
+func (h *handler) resolveDomain(ctx context.Context, domain string) (string, error) {
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
 
-	d, err := h.domains.RetrieveByRoute(context.Background(), &grpcCommonV1.RetrieveByRouteReq{
+	d, err := h.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route: domain,
 	})
 	if err != nil {
@@ -285,12 +285,12 @@ func (h *handler) resolveDomain(domain string) (string, error) {
 	return d.Entity.Id, nil
 }
 
-func (h *handler) resolveChannel(channel, domainID string) (string, error) {
+func (h *handler) resolveChannel(ctx context.Context, channel, domainID string) (string, error) {
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
 
-	c, err := h.channels.RetrieveByRoute(context.Background(), &grpcCommonV1.RetrieveByRouteReq{
+	c, err := h.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})
