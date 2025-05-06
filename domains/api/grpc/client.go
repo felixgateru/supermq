@@ -140,6 +140,7 @@ func decodeRetrieveByRouteResponse(_ context.Context, grpcRes interface{}) (inte
 	res := grpcRes.(*grpcCommonV1.RetrieveEntityRes)
 	return retrieveEntityRes{id: res.Entity.GetId(), status: uint8(res.Entity.GetStatus())}, nil
 }
+
 func encodeRetrieveByRouteRequest(_ context.Context, grpcReq interface{}) (interface{}, error) {
 	req := grpcReq.(retrieveByRouteReq)
 	return &grpcCommonV1.RetrieveByRouteReq{

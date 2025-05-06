@@ -64,11 +64,11 @@ func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, 
 		return svcerr.ErrAuthentication
 	}
 
-	domainID, err := svc.resolveDomain(domainID)
+	domainID, err := svc.resolveDomain(ctx, domainID)
 	if err != nil {
 		return err
 	}
-	chanID, err = svc.resolveChannel(chanID, domainID)
+	chanID, err = svc.resolveChannel(ctx, chanID, domainID)
 	if err != nil {
 		return err
 	}
@@ -138,12 +138,12 @@ func (svc *adapterService) authorize(ctx context.Context, clientKey, domainID, c
 	return authnRes.GetId(), nil
 }
 
-func (svc *adapterService) resolveDomain(domain string) (string, error) {
+func (svc *adapterService) resolveDomain(ctx context.Context, domain string) (string, error) {
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
 
-	d, err := svc.domains.RetrieveByRoute(context.Background(), &grpcCommonV1.RetrieveByRouteReq{
+	d, err := svc.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route: domain,
 	})
 	if err != nil {
@@ -153,12 +153,12 @@ func (svc *adapterService) resolveDomain(domain string) (string, error) {
 	return d.Entity.Id, nil
 }
 
-func (svc *adapterService) resolveChannel(channel, domainID string) (string, error) {
+func (svc *adapterService) resolveChannel(ctx context.Context, channel, domainID string) (string, error) {
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
 
-	c, err := svc.channels.RetrieveByRoute(context.Background(), &grpcCommonV1.RetrieveByRouteReq{
+	c, err := svc.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})
