@@ -50,7 +50,7 @@ const (
 	envPrefixClients   = "SMQ_CLIENTS_GRPC_"
 	envPrefixChannels  = "SMQ_CHANNELS_GRPC_"
 	envPrefixAuth      = "SMQ_AUTH_GRPC_"
-	envPrefixDomains  = "SMQ_DOMAINS_GRPC_"
+	envPrefixDomains   = "SMQ_DOMAINS_GRPC_"
 	defSvcHTTPPort     = "80"
 	targetHTTPProtocol = "http"
 	targetHTTPHost     = "localhost"

@@ -173,8 +173,8 @@ func encodeRetrieveByRouteResponse(_ context.Context, grpcRes interface{}) (inte
 
 	return &grpcCommonV1.RetrieveEntityRes{
 		Entity: &grpcCommonV1.EntityBasic{
-			Id:            res.id,
-			Status:        uint32(res.status),
+			Id:     res.id,
+			Status: uint32(res.status),
 		},
 	}, nil
 }
