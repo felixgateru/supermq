@@ -17,6 +17,7 @@ import (
 	proxy "github.com/absmach/mgate/pkg/http"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
+	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
 	apiutil "github.com/absmach/supermq/api/http/util"
 	chmocks "github.com/absmach/supermq/channels/mocks"
 	climocks "github.com/absmach/supermq/clients/mocks"
@@ -191,6 +192,8 @@ func TestSendMessage(t *testing.T) {
 			svcCall.Unset()
 			authzCall.Unset()
 			authnCall.Unset()
+			domainsCall.Unset()
+			channelsCall.Unset()
 		})
 	}
 }
