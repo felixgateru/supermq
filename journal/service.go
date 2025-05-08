@@ -136,7 +136,6 @@ func (svc *service) addSubscription(ctx context.Context, journal Journal) error 
 	}
 	var subtopic string
 	topics := strings.Split(ae.topic, ".")
-	fmt.Println(topics)
 	if len(topics) > 2 {
 		subtopic = topics[2]
 	}
