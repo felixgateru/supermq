@@ -11,6 +11,7 @@ import (
 	"github.com/absmach/supermq/journal"
 	"github.com/absmach/supermq/pkg/events"
 	"github.com/absmach/supermq/pkg/events/store"
+	"github.com/absmach/supermq/pkg/messaging"
 )
 
 var ErrMissingOccurredAt = errors.New("missing occurred_at")
@@ -18,9 +19,11 @@ var ErrMissingOccurredAt = errors.New("missing occurred_at")
 // Start method starts consuming messages received from Event store.
 func Start(ctx context.Context, consumer string, sub events.Subscriber, service journal.Service) error {
 	subCfg := events.SubscriberConfig{
-		Consumer: consumer,
-		Stream:   store.StreamAllEvents,
-		Handler:  Handle(service),
+		Consumer:       consumer,
+		Stream:         store.StreamAllEvents,
+		Handler:        Handle(service),
+		Ordered:        true,
+		DeliveryPolicy: messaging.DeliverAllPolicy,
 	}
 
 	return sub.Subscribe(ctx, subCfg)
