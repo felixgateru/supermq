@@ -108,7 +108,7 @@ func (svc *service) handleTelemetry(ctx context.Context, journal Journal) error 
 }
 
 func (svc *service) addClientTelemetry(ctx context.Context, journal Journal) error {
-	ce, err := toClientEvent(journal)
+	ce, err := toClientEvent(journal, true)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func (svc *service) addClientTelemetry(ctx context.Context, journal Journal) err
 }
 
 func (svc *service) removeClientTelemetry(ctx context.Context, journal Journal) error {
-	ce, err := toClientEvent(journal)
+	ce, err := toClientEvent(journal, false)
 	if err != nil {
 		return err
 	}
@@ -216,9 +216,8 @@ type clientEvent struct {
 	createdAt time.Time
 }
 
-func toClientEvent(journal Journal) (clientEvent, error) {
+func toClientEvent(journal Journal, isCreate bool) (clientEvent, error) {
 	var createdAt time.Time
-	var err error
 	id, err := getStringAttribute(journal, "id")
 	if err != nil {
 		return clientEvent{}, err
@@ -228,11 +227,13 @@ func toClientEvent(journal Journal) (clientEvent, error) {
 		return clientEvent{}, err
 	}
 
-	createdAtStr := journal.Attributes["created_at"].(string)
-	if createdAtStr != "" {
-		createdAt, err = time.Parse(time.RFC3339, createdAtStr)
-		if err != nil {
-			return clientEvent{}, fmt.Errorf("invalid created_at format")
+	if isCreate {
+		createdAtStr := journal.Attributes["created_at"].(string)
+		if createdAtStr != "" {
+			createdAt, err = time.Parse(time.RFC3339, createdAtStr)
+			if err != nil {
+				return clientEvent{}, fmt.Errorf("invalid created_at format")
+			}
 		}
 	}
 	return clientEvent{

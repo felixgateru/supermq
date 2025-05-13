@@ -38,14 +38,11 @@ func (repo *repository) DeleteClientTelemetry(ctx context.Context, clientID, dom
 		ClientID: clientID,
 		DomainID: domainID,
 	}
-
-	result, err := repo.db.NamedExecContext(ctx, q, dbct)
+	_, err := repo.db.NamedExecContext(ctx, q, dbct)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrRemoveEntity, err)
 	}
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		return repoerr.ErrNotFound
-	}
+
 	return nil
 }
 
@@ -81,17 +78,17 @@ func (repo *repository) RetrieveClientTelemetry(ctx context.Context, clientID, d
 }
 
 func (repo *repository) AddSubscription(ctx context.Context, sub journal.ClientSubscription) error {
-	q := `INSERT INTO subscriptions (id, subscriber_id, channel_id, subtopic, client_id)
-		VALUES (:id, :subscriber_id, :channel_id, :subtopic, :client_id);
+	q := `
+		INSERT INTO subscriptions (id, subscriber_id, channel_id, subtopic, client_id)
+		SELECT :id, :subscriber_id, :channel_id, :subtopic, :client_id
+		FROM clients_telemetry
+		WHERE client_id = :client_id
+		RETURNING id;
 	`
 
-	result, err := repo.db.NamedExecContext(ctx, q, sub)
+	_, err := repo.db.NamedExecContext(ctx, q, sub)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
-	}
-
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		return repoerr.ErrNotFound
 	}
 
 	return nil
@@ -144,13 +141,9 @@ func (repo *repository) IncrementInboundMessages(ctx context.Context, clientID s
 		return errors.Wrap(repoerr.ErrUpdateEntity, err)
 	}
 
-	result, err := repo.db.NamedExecContext(ctx, q, dbct)
+	_, err = repo.db.NamedExecContext(ctx, q, dbct)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
-	}
-
-	if rows, _ := result.RowsAffected(); rows == 0 {
-		return repoerr.ErrNotFound
 	}
 
 	return nil
