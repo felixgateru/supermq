@@ -31,8 +31,6 @@ services:
       - supermq-base-net
     volumes:
       - supermq-journal-volume:/var/lib/postgresql/data
-    ports:
-      - 6012:5432
 
   journal:
     image: supermq/journal:${SMQ_RELEASE_TAG}
