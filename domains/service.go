@@ -193,9 +193,35 @@ func (svc *service) SendInvitation(ctx context.Context, session authn.Session, i
 
 	invitation.CreatedAt = time.Now()
 
+	if invitation.Resend {
+		if err := svc.resendInvitation(ctx, invitation); err != nil {
+			return errors.Wrap(svcerr.ErrUpdateEntity, err)
+		}
+		return nil
+	}
+
 	if err := svc.repo.SaveInvitation(ctx, invitation); err != nil {
 		return errors.Wrap(svcerr.ErrCreateEntity, err)
 	}
+	return nil
+}
+
+func (svc *service) resendInvitation(ctx context.Context, invitation Invitation) error {
+	inv, err := svc.repo.RetrieveInvitation(ctx, invitation.InviteeUserID, invitation.DomainID)
+	if err != nil {
+		return err
+	}
+	if !inv.ConfirmedAt.IsZero() {
+		return svcerr.ErrInvitationAlreadyAccepted
+	}
+	if !inv.RejectedAt.IsZero() {
+		invitation.RejectedAt = time.Time{}
+		invitation.UpdatedAt = time.Now()
+		if err := svc.repo.UpdateRejection(ctx, invitation); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
