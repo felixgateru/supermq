@@ -179,7 +179,7 @@ func updateEndpoint(svc users.Service) endpoint.Endpoint {
 		usr := users.UserReq{
 			FirstName: req.FirstName,
 			LastName:  req.LastName,
-			Metadata:  (*users.Metadata)(req.Metadata),
+			Metadata:  req.Metadata,
 		}
 
 		user, err := svc.Update(ctx, session, req.id, usr)
