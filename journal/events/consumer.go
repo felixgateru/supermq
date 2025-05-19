@@ -41,6 +41,7 @@ func Handle(service journal.Service) handleFunc {
 
 		operation, ok := data["operation"].(string)
 		if !ok {
+			// Error is logged instead of being returned to avoid redelivering of the event.
 			slog.Error(errMsg, "error", errMissingOperation)
 			return nil
 		}
