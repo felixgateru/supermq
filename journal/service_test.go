@@ -55,7 +55,7 @@ func TestSave(t *testing.T) {
 		{
 			desc:    "with repo error",
 			repoErr: repoerr.ErrCreateEntity,
-			err:     nil,
+			err:     repoerr.ErrCreateEntity,
 		},
 	}
 

@@ -6,7 +6,6 @@ package journal
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -24,6 +23,11 @@ const (
 	messagingPublish     = "messaging.client_publish"
 	messagingSubscribe   = "messaging.client_subscribe"
 	messagingUnsubscribe = "messaging.client_unsubscribe"
+)
+
+var (
+	errSaveJournal     = errors.New("failed to save journal")
+	errHandleTelemetry = errors.New("failed to handle client telemetry")
 )
 
 type service struct {
@@ -46,12 +50,10 @@ func (svc *service) Save(ctx context.Context, journal Journal) error {
 	journal.ID = id
 
 	if err := svc.repository.Save(ctx, journal); err != nil {
-		slog.Error("failed to save journal", "error", err)
-		return nil
+		return errors.Wrap(errSaveJournal, err)
 	}
 	if err := svc.handleTelemetry(ctx, journal); err != nil {
-		slog.Error("failed to handle client telemetry", "error", err)
-		return nil
+		return errors.Wrap(errHandleTelemetry, err)
 	}
 
 	return nil

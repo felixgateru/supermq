@@ -6,6 +6,7 @@ package events
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/absmach/supermq/journal"
@@ -69,8 +70,11 @@ func Handle(service journal.Service) handleFunc {
 			Attributes: data,
 			Metadata:   metadata,
 		}
+		if err := service.Save(ctx, j); err != nil {
+			slog.Error("failed to save journal", "error", err)
+		}
 
-		return service.Save(ctx, j)
+		return nil
 	}
 }
 
