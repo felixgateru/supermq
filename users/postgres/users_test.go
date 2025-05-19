@@ -1057,6 +1057,7 @@ func TestUpdate(t *testing.T) {
 
 	user1 := generateUser(t, users.EnabledStatus, repo)
 	user2 := generateUser(t, users.DisabledStatus, repo)
+	user3 := generateUser(t, users.EnabledStatus, repo)
 
 	updatedMetadata := users.Metadata{"update": namesgen.Generate()}
 	malformedMetadata := users.Metadata{"update": make(chan int)}
@@ -1066,12 +1067,16 @@ func TestUpdate(t *testing.T) {
 	updatedProfilePicture := namesgen.Generate()
 	adminRole := users.AdminRole
 	updatedEmail := namesgen.Generate() + emailSuffix
+	emptyName := ""
+	emptyTags := []string{}
+	allRole := users.AllRole
 
 	cases := []struct {
 		desc    string
 		update  string
 		userID  string
 		userReq users.UserReq
+		userRes users.User
 		err     error
 	}{
 		{
@@ -1080,6 +1085,9 @@ func TestUpdate(t *testing.T) {
 			userID: user1.ID,
 			userReq: users.UserReq{
 				Metadata: &updatedMetadata,
+			},
+			userRes: users.User{
+				Metadata: updatedMetadata,
 			},
 			err: nil,
 		},
@@ -1091,6 +1099,18 @@ func TestUpdate(t *testing.T) {
 				Metadata: &malformedMetadata,
 			},
 			err: repoerr.ErrUpdateEntity,
+		},
+		{
+			desc:   "update empty metadata for enabled user",
+			update: "metadata",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				Metadata: &users.Metadata{},
+			},
+			userRes: users.User{
+				Metadata: users.Metadata{},
+			},
+			err: nil,
 		},
 		{
 			desc:   "update metadata for disabled user",
@@ -1108,7 +1128,20 @@ func TestUpdate(t *testing.T) {
 			userReq: users.UserReq{
 				FirstName: &updatedFirstName,
 			},
+			userRes: users.User{
+				FirstName: updatedFirstName,
+			},
 			err: nil,
+		},
+		{
+			desc:   "update empty first name for enabled user",
+			update: "first_name",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				FirstName: &emptyName,
+			},
+			userRes: user3,
+			err:     nil,
 		},
 		{
 			desc:   "update first name for disabled user",
@@ -1144,7 +1177,20 @@ func TestUpdate(t *testing.T) {
 			userReq: users.UserReq{
 				LastName: &updatedLastName,
 			},
+			userRes: users.User{
+				LastName: updatedLastName,
+			},
 			err: nil,
+		},
+		{
+			desc:   "update empty last name for enabled user",
+			update: "last_name",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				LastName: &emptyName,
+			},
+			userRes: user3,
+			err:     nil,
 		},
 		{
 			desc:   "update last name for disabled user",
@@ -1170,6 +1216,20 @@ func TestUpdate(t *testing.T) {
 			userReq: users.UserReq{
 				Tags: &updateTags,
 			},
+			userRes: users.User{
+				Tags: updateTags,
+			},
+			err: nil,
+		},
+		{
+			desc:   "update empty tags for enabled user",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				Tags: &emptyTags,
+			},
+			userRes: users.User{
+				Tags: []string{},
+			},
 			err: nil,
 		},
 		{
@@ -1193,6 +1253,20 @@ func TestUpdate(t *testing.T) {
 			userID: user1.ID,
 			userReq: users.UserReq{
 				ProfilePicture: &updatedProfilePicture,
+			},
+			userRes: users.User{
+				ProfilePicture: updatedProfilePicture,
+			},
+			err: nil,
+		},
+		{
+			desc:   "update empty profile picture for enabled user",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				ProfilePicture: &emptyName,
+			},
+			userRes: users.User{
+				ProfilePicture: emptyName,
 			},
 			err: nil,
 		},
@@ -1218,7 +1292,19 @@ func TestUpdate(t *testing.T) {
 			userReq: users.UserReq{
 				Role: &adminRole,
 			},
+			userRes: users.User{
+				Role: adminRole,
+			},
 			err: nil,
+		},
+		{
+			desc:   "update all role for enabled user",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				Role: &allRole,
+			},
+			userRes: user3,
+			err:     nil,
 		},
 		{
 			desc:   "update role for disabled user",
@@ -1242,7 +1328,19 @@ func TestUpdate(t *testing.T) {
 			userReq: users.UserReq{
 				Email: &updatedEmail,
 			},
+			userRes: users.User{
+				Email: updatedEmail,
+			},
 			err: nil,
+		},
+		{
+			desc:   "update empty email for enabled user",
+			userID: user3.ID,
+			userReq: users.UserReq{
+				Email: &emptyName,
+			},
+			userRes: user3,
+			err:     nil,
 		},
 		{
 			desc:   "update email for disabled user",
@@ -1268,27 +1366,29 @@ func TestUpdate(t *testing.T) {
 			updatedBy := testsutil.GenerateUUID(t)
 			c.userReq.UpdatedAt = &updatedAt
 			c.userReq.UpdatedBy = &updatedBy
+			c.userRes.UpdatedAt = updatedAt
+			c.userRes.UpdatedBy = updatedBy
 			expected, err := repo.Update(context.Background(), c.userID, c.userReq)
 			assert.True(t, errors.Contains(err, c.err), fmt.Sprintf("expected %s to contain %s\n", err, c.err))
 			if err == nil {
 				switch c.update {
 				case "metadata":
-					assert.Equal(t, *c.userReq.Metadata, expected.Metadata)
+					assert.Equal(t, c.userRes.Metadata, expected.Metadata)
 				case "first_name":
-					assert.Equal(t, *c.userReq.FirstName, expected.FirstName)
+					assert.Equal(t, c.userRes.FirstName, expected.FirstName)
 				case "last_name":
-					assert.Equal(t, *c.userReq.LastName, expected.LastName)
+					assert.Equal(t, c.userRes.LastName, expected.LastName)
 				case "tags":
-					assert.Equal(t, *c.userReq.Tags, expected.Tags)
+					assert.Equal(t, c.userRes.Tags, expected.Tags)
 				case "profile_picture":
-					assert.Equal(t, *c.userReq.ProfilePicture, expected.ProfilePicture)
+					assert.Equal(t, c.userRes.ProfilePicture, expected.ProfilePicture)
 				case "role":
-					assert.Equal(t, *c.userReq.Role, expected.Role)
+					assert.Equal(t, c.userRes.Role, expected.Role)
 				case "email":
-					assert.Equal(t, *c.userReq.Email, expected.Email)
+					assert.Equal(t, c.userRes.Email, expected.Email)
 				}
-				assert.Equal(t, *c.userReq.UpdatedAt, expected.UpdatedAt)
-				assert.Equal(t, *c.userReq.UpdatedBy, expected.UpdatedBy)
+				assert.Equal(t, c.userRes.UpdatedAt, expected.UpdatedAt)
+				assert.Equal(t, c.userRes.UpdatedBy, expected.UpdatedBy)
 			}
 		})
 	}
