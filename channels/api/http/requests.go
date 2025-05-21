@@ -26,7 +26,9 @@ func (req createChannelReq) validate() error {
 		}
 	}
 	if req.Channel.Route != "" {
-		return api.ValidateRoute(req.Channel.Route)
+		if err := api.ValidateRoute(req.Channel.Route); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -50,7 +52,9 @@ func (req createChannelsReq) validate() error {
 			return apiutil.ErrNameSize
 		}
 		if channel.Route != "" {
-			return api.ValidateRoute(channel.Route)
+			if err := api.ValidateRoute(channel.Route); err != nil {
+				return err
+			}
 		}
 	}
 
