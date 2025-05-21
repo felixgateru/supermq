@@ -53,6 +53,16 @@ func TestCreateChannelReqValidation(t *testing.T) {
 			err: apiutil.ErrInvalidRouteFormat,
 		},
 		{
+			desc: "uuid as route",
+			req: createChannelReq{
+				Channel: channels.Channel{
+					Name:  valid,
+					Route: testsutil.GenerateUUID(t),
+				},
+			},
+			err: apiutil.ErrInvalidRouteFormat,
+		},
+		{
 			desc: "missing channel ID",
 			req: createChannelReq{
 				Channel: channels.Channel{
