@@ -165,6 +165,17 @@ func TestCreateChannelEndpoint(t *testing.T) {
 			err:         apiutil.ErrInvalidRouteFormat,
 		},
 		{
+			desc:  "create channel with UUID route",
+			token: validToken, domainID: validID,
+			req: channels.Channel{
+				Name:  valid,
+				Route: testsutil.GenerateUUID(t),
+			},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			err:         apiutil.ErrInvalidRouteFormat,
+		},
+		{
 			desc:        "create channel with invalid content type",
 			token:       validToken,
 			domainID:    validID,
@@ -309,6 +320,19 @@ func TestCreateChannelsEndpoint(t *testing.T) {
 				{
 					Name:  valid,
 					Route: "__invalid",
+				},
+			},
+			contentType: contentType,
+			status:      http.StatusBadRequest,
+			err:         apiutil.ErrInvalidRouteFormat,
+		},
+		{
+			desc:  "create channel with UUID route",
+			token: validToken, domainID: validID,
+			req: []channels.Channel{
+				{
+					Name:  valid,
+					Route: testsutil.GenerateUUID(t),
 				},
 			},
 			contentType: contentType,
