@@ -55,6 +55,9 @@ func (req createChannelsReq) validate() error {
 			if err := api.ValidateRoute(channel.Route); err != nil {
 				return err
 			}
+			if err := api.ValidateUUID(channel.Route); err == nil {
+				return apiutil.ErrInvalidRouteFormat
+			}
 		}
 	}
 
