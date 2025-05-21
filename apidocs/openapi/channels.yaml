@@ -553,6 +553,7 @@ components:
           example: enabled
       required:
         - name
+        - route
 
     ParentGroupReqObj:
       type: object
