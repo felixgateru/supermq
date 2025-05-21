@@ -72,8 +72,9 @@ func TestCreateChannelEndpoint(t *testing.T) {
 		Metadata: map[string]interface{}{
 			"name": "test",
 		},
-		Route: valid,
 	}
+	reqWithRoute := reqChannel
+	reqWithRoute.Route = valid
 
 	cases := []struct {
 		desc        string
@@ -93,6 +94,16 @@ func TestCreateChannelEndpoint(t *testing.T) {
 			token:       validToken,
 			domainID:    validID,
 			req:         reqChannel,
+			contentType: contentType,
+			svcResp:     []channels.Channel{validChannelResp},
+			status:      http.StatusCreated,
+			err:         nil,
+		},
+		{
+			desc:        "create channel with route",
+			token:       validToken,
+			domainID:    validID,
+			req:         reqWithRoute,
 			contentType: contentType,
 			svcResp:     []channels.Channel{validChannelResp},
 			status:      http.StatusCreated,

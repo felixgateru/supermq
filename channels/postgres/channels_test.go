@@ -55,6 +55,19 @@ func TestSave(t *testing.T) {
 
 	duplicateChannelID := testsutil.GenerateUUID(t)
 
+	duplicateRoute := testsutil.GenerateUUID(t)
+	duplicateDomain := testsutil.GenerateUUID(t)
+
+	duplicateChannel := channels.Channel{
+		ID:     testsutil.GenerateUUID(t),
+		Domain: duplicateDomain,
+		Name:   namegen.Generate(),
+		Route:  duplicateRoute,
+	}
+
+	_, err := repo.Save(context.Background(), duplicateChannel)
+	require.Nil(t, err, fmt.Sprintf("save channel unexpected error: %s", err))
+
 	cases := []struct {
 		desc    string
 		channel channels.Channel
@@ -149,6 +162,17 @@ func TestSave(t *testing.T) {
 				},
 			},
 			err: nil,
+		},
+		{
+			desc: "add channel with duplicate route",
+			channel: channels.Channel{
+				ID:     testsutil.GenerateUUID(t),
+				Domain: duplicateDomain,
+				Name:   namegen.Generate(),
+				Route:  duplicateRoute,
+			},
+			resp: []channels.Channel{},
+			err:  repoerr.ErrConflict,
 		},
 	}
 

@@ -151,7 +151,7 @@ func (cr *channelRepository) RetrieveByRoute(ctx context.Context, route, domainI
 		FROM channels WHERE route = :route AND domain_id = :domain_id`
 
 	dbch := dbChannel{
-		Route:  route,
+		Route:  toNullString(route),
 		Domain: domainID,
 	}
 
@@ -1109,7 +1109,7 @@ type dbChannel struct {
 	ParentGroup               sql.NullString   `db:"parent_group_id,omitempty"`
 	Tags                      pgtype.TextArray `db:"tags,omitempty"`
 	Domain                    string           `db:"domain_id"`
-	Route                     string           `db:"route,omitempty"`
+	Route                     sql.NullString   `db:"route,omitempty"`
 	Metadata                  []byte           `db:"metadata,omitempty"`
 	CreatedBy                 *string          `db:"created_by,omitempty"`
 	CreatedAt                 time.Time        `db:"created_at,omitempty"`
@@ -1160,7 +1160,7 @@ func toDBChannel(ch channels.Channel) (dbChannel, error) {
 		Name:        ch.Name,
 		ParentGroup: toNullString(ch.ParentGroup),
 		Domain:      ch.Domain,
-		Route:       ch.Route,
+		Route:       toNullString(ch.Route),
 		Tags:        tags,
 		Metadata:    data,
 		CreatedBy:   createdBy,
@@ -1234,7 +1234,7 @@ func toChannel(ch dbChannel) (channels.Channel, error) {
 		Name:                      ch.Name,
 		Tags:                      tags,
 		Domain:                    ch.Domain,
-		Route:                     ch.Route,
+		Route:                     toString(ch.Route),
 		ParentGroup:               toString(ch.ParentGroup),
 		Metadata:                  metadata,
 		CreatedBy:                 createdBy,
