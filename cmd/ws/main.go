@@ -209,7 +209,7 @@ func main() {
 	})
 
 	g.Go(func() error {
-		handler := ws.NewHandler(nps, logger, authn, clientsClient, channelsClient)
+		handler := ws.NewHandler(nps, logger, authn, clientsClient, channelsClient, domainsClient)
 		return proxyWS(ctx, httpServerConfig, targetServerConfig, logger, handler)
 	})
 

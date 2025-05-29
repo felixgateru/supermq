@@ -36,7 +36,6 @@ import (
 )
 
 const (
-	id         = "1"
 	clientKey  = "c02ff576-ccd5-40f6-ba5f-c85377aad529"
 	protocol   = "ws"
 	instanceID = "5de9b29a-feb9-11ed-be56-0242ac120002"
@@ -45,6 +44,7 @@ const (
 var (
 	msg      = []byte(`[{"n":"current","t":-1,"v":1.6}]`)
 	domainID = testsutil.GenerateUUID(&testing.T{})
+	id       = testsutil.GenerateUUID(&testing.T{})
 )
 
 func newService(clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient) (ws.Service, *mocks.PubSub) {
@@ -119,7 +119,7 @@ func TestHandshake(t *testing.T) {
 	svc, pubsub := newService(clients, channels, domains)
 	target := newHTTPServer(svc)
 	defer target.Close()
-	handler := ws.NewHandler(pubsub, smqlog.NewMock(), authn, clients, channels)
+	handler := ws.NewHandler(pubsub, smqlog.NewMock(), authn, clients, channels, domains)
 	ts, err := newProxyHTPPServer(handler, target)
 	require.Nil(t, err)
 	defer ts.Close()
