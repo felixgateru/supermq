@@ -15,6 +15,9 @@ import (
 	"github.com/absmach/mgate/pkg/session"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
+	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
+	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
+	api "github.com/absmach/supermq/api/http"
 	apiutil "github.com/absmach/supermq/api/http/util"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/connections"
@@ -43,6 +46,8 @@ var (
 	errMissingTopicSub          = errors.New("failed to subscribe due to missing topic")
 	errFailedPublish            = errors.New("failed to publish")
 	errFailedPublishToMsgBroker = errors.New("failed to publish to supermq message broker")
+	errFailedResolveDomain      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve domain route"))
+	errFailedResolveChannel     = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve channel route"))
 )
 
 // Event implements events.Event interface.
@@ -50,18 +55,20 @@ type handler struct {
 	pubsub   messaging.PubSub
 	clients  grpcClientsV1.ClientsServiceClient
 	channels grpcChannelsV1.ChannelsServiceClient
+	domains  grpcDomainsV1.DomainsServiceClient
 	authn    smqauthn.Authentication
 	logger   *slog.Logger
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) session.Handler {
+func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient) session.Handler {
 	return &handler{
 		logger:   logger,
 		pubsub:   pubsub,
 		authn:    authn,
 		clients:  clients,
 		channels: channels,
+		domains:  domains,
 	}
 }
 
