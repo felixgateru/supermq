@@ -87,8 +87,8 @@ func decodeRequest(r *http.Request) (connReq, error) {
 
 	req := connReq{
 		clientKey: authKey,
-		channel:    channel,
-		domain:  domain,
+		channel:   channel,
+		domain:    domain,
 	}
 
 	channelParts := channelPartRegExp.FindStringSubmatch(r.RequestURI)
