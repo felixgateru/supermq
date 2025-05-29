@@ -56,6 +56,8 @@ var (
 	errMalformedTopic           = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("malformed topic"))
 	errMissingTopicPub          = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to publish due to missing topic"))
 	errFailedParseSubtopic      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to parse subtopic"))
+	errFailedResolveDomain      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve domain route"))
+	errFailedResolveChannel     = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve channel route"))
 )
 
 var channelRegExp = regexp.MustCompile(`^\/?m\/([\w\-]+)\/c\/([\w\-]+)(\/[^?]*)?(\?.*)?$`)
@@ -217,7 +219,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 
 func (h *handler) parseTopic(ctx context.Context, topic string) (string, string, string, error) {
 	// Topics are in the format:
-	// m/<domain_id>/c/<channel_id>/<subtopic>/.../ct/<content_type>
+	// m/<domain>/c/<channel>/<subtopic>/.../ct/<content_type>
 	channelParts := channelRegExp.FindStringSubmatch(topic)
 	if len(channelParts) < 3 {
 		return "", "", "", errors.Wrap(errFailedPublish, errMalformedTopic)
@@ -225,11 +227,11 @@ func (h *handler) parseTopic(ctx context.Context, topic string) (string, string,
 
 	domainID, err := h.resolveDomain(ctx, channelParts[1])
 	if err != nil {
-		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
+		return "", "", "", errFailedResolveDomain
 	}
 	chanID, err := h.resolveChannel(ctx, channelParts[2], domainID)
 	if err != nil {
-		return "", "", "", errors.Wrap(errFailedParseSubtopic, err)
+		return "", "", "", errFailedResolveChannel
 	}
 	subtopic := channelParts[3]
 

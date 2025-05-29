@@ -62,18 +62,18 @@ func New(clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.Cha
 	}
 }
 
-func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, domainID, chanID, subtopic string, c *Client) error {
-	if chanID == "" || clientKey == "" || domainID == "" {
+func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, domain, channel, subtopic string, c *Client) error {
+	if channel == "" || clientKey == "" || domain == "" {
 		return svcerr.ErrAuthentication
 	}
 
-	domainID, err := svc.resolveDomain(ctx, domainID)
+	domainID, err := svc.resolveDomain(ctx, domain)
 	if err != nil {
-		return err
+		return errFailedResolveDomain
 	}
-	chanID, err = svc.resolveChannel(ctx, chanID, domainID)
+	chanID, err := svc.resolveChannel(ctx, channel, domainID)
 	if err != nil {
-		return err
+		return errFailedResolveChannel
 	}
 
 	clientID, err := svc.authorize(ctx, clientKey, domainID, chanID, connections.Subscribe)
@@ -99,7 +99,16 @@ func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, 
 	return nil
 }
 
-func (svc *adapterService) Unsubscribe(ctx context.Context, sessionID, domainID, chanID, subtopic string) error {
+func (svc *adapterService) Unsubscribe(ctx context.Context, sessionID, domain, channel, subtopic string) error {
+	domainID, err := svc.resolveDomain(ctx, domain)
+	if err != nil {
+		return errFailedResolveDomain
+	}
+	chanID, err := svc.resolveChannel(ctx, channel, domainID)
+	if err != nil {
+		return errFailedResolveChannel
+	}
+
 	topic := fmt.Sprintf("%s.%s", chansPrefix, chanID)
 	if subtopic != "" {
 		topic = fmt.Sprintf("%s.%s", topic, subtopic)
