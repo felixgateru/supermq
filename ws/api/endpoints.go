@@ -81,8 +81,8 @@ func decodeRequest(r *http.Request, logger *slog.Logger) (connReq, error) {
 
 	req := connReq{
 		clientKey: authKey,
-		channel:    channel,
-		domain:  domain,
+		channel:   channel,
+		domain:    domain,
 	}
 
 	subTopic := chi.URLParam(r, "*")
