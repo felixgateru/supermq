@@ -43,7 +43,7 @@ func (svc service) RetrieveEntity(ctx context.Context, id string) (domains.Domai
 		return domains.Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	status = dom.Status
-	if err := svc.cache.Save(ctx, id, status); err != nil {
+	if err := svc.cache.SaveStatus(ctx, id, status); err != nil {
 		return domains.Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
@@ -71,20 +71,17 @@ func (svc service) DeleteUserFromDomains(ctx context.Context, id string) (err er
 }
 
 func (svc service) RetrieveByRoute(ctx context.Context, route string) (domains.Domain, error) {
+	id, err := svc.cache.ID(ctx, route)
+	if err == nil {
+		return domains.Domain{ID: id}, nil
+	}
 	dom, err := svc.repo.RetrieveDomainByRoute(ctx, route)
 	if err != nil {
 		return domains.Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-
-	status, err := svc.cache.Status(ctx, dom.ID)
-	if err == nil {
-		dom.Status = status
-		return dom, nil
-	}
-
-	if err := svc.cache.Save(ctx, dom.ID, dom.Status); err != nil {
+	if err := svc.cache.SaveID(ctx, route, dom.ID); err != nil {
 		return domains.Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	return dom, nil
+	return domains.Domain{ID: dom.ID}, nil
 }
