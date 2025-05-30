@@ -18,6 +18,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testRoute   = "test-route"
+	nonExistent = "non-existing"
+)
+
 func setupChannelsClient(t *testing.T) channels.Cache {
 	opts, err := redis.ParseURL(redisURL)
 	assert.Nil(t, err, fmt.Sprintf("got unexpected error on parsing redis URL: %s", err))
@@ -29,7 +34,7 @@ func setupChannelsClient(t *testing.T) channels.Cache {
 func TestSave(t *testing.T) {
 	cc := setupChannelsClient(t)
 
-	route := "test-route"
+	route := testRoute
 	domainID := testsutil.GenerateUUID(t)
 
 	cases := []struct {
@@ -80,7 +85,7 @@ func TestID(t *testing.T) {
 	cc := setupChannelsClient(t)
 
 	domainID := testsutil.GenerateUUID(t)
-	route := "test-route"
+	route := testRoute
 	id := testsutil.GenerateUUID(t)
 
 	err := cc.Save(context.Background(), route, domainID, id)
@@ -103,7 +108,7 @@ func TestID(t *testing.T) {
 		{
 			desc:         "Retrieve non-existing channel",
 			domainID:     domainID,
-			channelRoute: "non-existing-route",
+			channelRoute: nonExistent,
 			channelID:    "",
 			err:          repoerr.ErrNotFound,
 		},
@@ -129,7 +134,7 @@ func TestRemove(t *testing.T) {
 	cc := setupChannelsClient(t)
 
 	domainID := testsutil.GenerateUUID(t)
-	route := "test-route"
+	route := testRoute
 	id := testsutil.GenerateUUID(t)
 
 	err := cc.Save(context.Background(), domainID, route, id)
@@ -150,7 +155,7 @@ func TestRemove(t *testing.T) {
 		{
 			desc:         "Remove non-existing channel",
 			domainID:     domainID,
-			channelRoute: "non-existing-route",
+			channelRoute: nonExistent,
 			err:          nil,
 		},
 		{
