@@ -6,7 +6,6 @@ package cache_test
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -27,7 +26,7 @@ func setupChannelsClient(t *testing.T) channels.Cache {
 	return cache.NewChannelsCache(redisClient, 10*time.Minute)
 }
 
-func TestSaveID(t *testing.T) {
+func TestSave(t *testing.T) {
 	cc := setupChannelsClient(t)
 
 	route := "test-route"
@@ -71,70 +70,7 @@ func TestSaveID(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := cc.SaveID(context.Background(), tc.channelRoute, tc.domainID, tc.channelID)
-			assert.True(t, errors.Contains(err, tc.err))
-		})
-	}
-}
-
-func TestSaveStatus(t *testing.T) {
-	cc := setupChannelsClient(t)
-
-	channelID := testsutil.GenerateUUID(t)
-
-	cases := []struct {
-		desc      string
-		channelID string
-		status    channels.Status
-		err       error
-	}{
-		{
-			desc:      "Save with enabled status",
-			channelID: channelID,
-			status:    channels.EnabledStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Save with disabled status",
-			channelID: testsutil.GenerateUUID(t),
-			status:    channels.DisabledStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Save with empty channel ID",
-			channelID: "",
-			status:    channels.EnabledStatus,
-			err:       repoerr.ErrCreateEntity,
-		},
-		{
-			desc:      "Save with all status",
-			channelID: testsutil.GenerateUUID(t),
-			status:    channels.AllStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Save with invalid status",
-			channelID: testsutil.GenerateUUID(t),
-			status:    channels.Status(6),
-			err:       repoerr.ErrCreateEntity,
-		},
-		{
-			desc:      "Save the same record",
-			channelID: channelID,
-			status:    channels.EnabledStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Save client with long id ",
-			channelID: strings.Repeat("a", 513*1024*1024),
-			status:    channels.EnabledStatus,
-			err:       repoerr.ErrCreateEntity,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := cc.SaveStatus(context.Background(), tc.channelID, tc.status)
+			err := cc.Save(context.Background(), tc.channelRoute, tc.domainID, tc.channelID)
 			assert.True(t, errors.Contains(err, tc.err))
 		})
 	}
@@ -147,7 +83,7 @@ func TestID(t *testing.T) {
 	route := "test-route"
 	id := testsutil.GenerateUUID(t)
 
-	err := cc.SaveID(context.Background(), route, domainID, id)
+	err := cc.Save(context.Background(), route, domainID, id)
 	assert.Nil(t, err, fmt.Sprintf("got unexpected error on saving channel ID: %s", err))
 
 	cases := []struct {
@@ -189,70 +125,14 @@ func TestID(t *testing.T) {
 	}
 }
 
-func TestStatus(t *testing.T) {
-	cc := setupChannelsClient(t)
-
-	enabledChannelID := testsutil.GenerateUUID(t)
-	err := cc.SaveStatus(context.Background(), enabledChannelID, channels.EnabledStatus)
-	assert.Nil(t, err, fmt.Sprintf("Unexpected error while trying to save: %s", err))
-
-	disabledChannelID := testsutil.GenerateUUID(t)
-	err = cc.SaveStatus(context.Background(), disabledChannelID, channels.DisabledStatus)
-	assert.Nil(t, err, fmt.Sprintf("Unexpected error while trying to save: %s", err))
-
-	allChannelID := testsutil.GenerateUUID(t)
-	err = cc.SaveStatus(context.Background(), allChannelID, channels.AllStatus)
-	assert.Nil(t, err, fmt.Sprintf("Unexpected error while trying to save: %s", err))
-
-	cases := []struct {
-		desc      string
-		channelID string
-		status    channels.Status
-		err       error
-	}{
-		{
-			desc:      "Get channel status from cache for enabled channel",
-			channelID: enabledChannelID,
-			status:    channels.EnabledStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Get channel status from cache for disabled channel",
-			channelID: disabledChannelID,
-			status:    channels.DisabledStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Get channel status from cache for all channel",
-			channelID: allChannelID,
-			status:    channels.AllStatus,
-			err:       nil,
-		},
-		{
-			desc:      "Get channel status from cache for non existing channel",
-			channelID: testsutil.GenerateUUID(t),
-			status:    channels.AllStatus,
-			err:       repoerr.ErrNotFound,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			status, err := cc.Status(context.Background(), tc.channelID)
-			assert.True(t, errors.Contains(err, tc.err))
-			assert.Equal(t, tc.status, status)
-		})
-	}
-}
-
-func TestRemoveID(t *testing.T) {
+func TestRemove(t *testing.T) {
 	cc := setupChannelsClient(t)
 
 	domainID := testsutil.GenerateUUID(t)
 	route := "test-route"
 	id := testsutil.GenerateUUID(t)
 
-	err := cc.SaveID(context.Background(), domainID, route, id)
+	err := cc.Save(context.Background(), domainID, route, id)
 	assert.Nil(t, err, fmt.Sprintf("got unexpected error on saving channel ID: %s", err))
 
 	cases := []struct {
@@ -288,7 +168,7 @@ func TestRemoveID(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := cc.RemoveID(context.Background(), tc.channelRoute, tc.domainID)
+			err := cc.Remove(context.Background(), tc.channelRoute, tc.domainID)
 			assert.True(t, errors.Contains(err, tc.err))
 
 			if tc.err == nil {
@@ -296,44 +176,6 @@ func TestRemoveID(t *testing.T) {
 				assert.Equal(t, "", id, fmt.Sprintf("expected channel ID to be empty after removal, got '%s'", id))
 				assert.True(t, errors.Contains(err, repoerr.ErrNotFound))
 			}
-		})
-	}
-}
-
-func TestRemoveStatus(t *testing.T) {
-	cc := setupChannelsClient(t)
-
-	channelID := testsutil.GenerateUUID(t)
-
-	err := cc.SaveStatus(context.Background(), channelID, channels.EnabledStatus)
-	assert.Nil(t, err, fmt.Sprintf("got unexpected error on saving channel status: %s", err))
-
-	cases := []struct {
-		desc      string
-		channelID string
-		err       error
-	}{
-		{
-			desc:      "Remove existing channel status",
-			channelID: channelID,
-			err:       nil,
-		},
-		{
-			desc:      "Remove non-existing channel status",
-			channelID: testsutil.GenerateUUID(t),
-			err:       nil,
-		},
-		{
-			desc:      "Remove with empty channel ID",
-			channelID: "",
-			err:       repoerr.ErrRemoveEntity,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := cc.RemoveStatus(context.Background(), tc.channelID)
-			assert.True(t, errors.Contains(err, tc.err))
 		})
 	}
 }

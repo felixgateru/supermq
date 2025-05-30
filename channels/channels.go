@@ -195,21 +195,12 @@ type Repository interface {
 
 // Cache contains channels caching interface.
 type Cache interface {
-	// SaveID stores the channelID for the given domain ID and channel route.
-	SaveID(ctx context.Context, channelRoute, domainID, channelID string) error
-
-	// SaveStatus stores the channel status for the given channel ID.
-	SaveStatus(ctx context.Context, channelID string, status Status) error
+	// Save stores the channelID for the given domain ID and channel route.
+	Save(ctx context.Context, channelRoute, domainID, channelID string) error
 
 	// ID retrieves the channelID for the given domain ID and channel route.
 	ID(ctx context.Context, channelRoute, domainID string) (string, error)
 
-	// Status retrieves the channel status for the given channel ID.
-	Status(ctx context.Context, channelID string) (Status, error)
-
-	// RemoveID removes the channel ID for the given domain ID and channel route.
-	RemoveID(ctx context.Context, channelRoute, domainID string) error
-
-	// RemoveStatus removes the channel status for the given channel ID.
-	RemoveStatus(ctx context.Context, channelID string) error
+	// Remove removes the channel ID for the given domain ID and channel route.
+	Remove(ctx context.Context, channelRoute, domainID string) error
 }
