@@ -19,6 +19,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testRoute   = "test-route"
+	nonExistent = "non-existing"
+)
+
 func setupDomainsClient(t *testing.T) domains.Cache {
 	opts, err := redis.ParseURL(redisURL)
 	assert.Nil(t, err, fmt.Sprintf("got unexpected error on parsing redis URL: %s", err))
@@ -99,7 +104,7 @@ func TestSaveStatus(t *testing.T) {
 func TestSaveID(t *testing.T) {
 	dc := setupDomainsClient(t)
 
-	route := "test-route"
+	route := testRoute
 	domainID := testsutil.GenerateUUID(t)
 
 	cases := []struct {
@@ -205,7 +210,7 @@ func TestStatus(t *testing.T) {
 func TestID(t *testing.T) {
 	dc := setupDomainsClient(t)
 
-	route := "test-route"
+	route := testRoute
 	domainID := testsutil.GenerateUUID(t)
 	err := dc.SaveID(context.Background(), route, domainID)
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error while trying to save: %s", err))
@@ -224,7 +229,7 @@ func TestID(t *testing.T) {
 		},
 		{
 			desc:     "Get domain ID from cache for non existing route",
-			route:    "non-existing-route",
+			route:    nonExistent,
 			domainID: "",
 			err:      repoerr.ErrNotFound,
 		},
@@ -294,7 +299,7 @@ func TestRemoveStatus(t *testing.T) {
 func TestRemoveID(t *testing.T) {
 	dc := setupDomainsClient(t)
 
-	route := "test-route"
+	route := testRoute
 	domainID := testsutil.GenerateUUID(t)
 	err := dc.SaveID(context.Background(), route, domainID)
 	assert.Nil(t, err, fmt.Sprintf("Unexpected error while trying to save: %s", err))
@@ -316,7 +321,7 @@ func TestRemoveID(t *testing.T) {
 		},
 		{
 			desc:  "Remove non existing domain ID from cache",
-			route: "non-existing-route",
+			route: nonExistent,
 			err:   nil,
 		},
 	}
