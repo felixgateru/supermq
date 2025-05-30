@@ -132,7 +132,7 @@ func (svc service) RetrieveByRoute(ctx context.Context, route, domainID string) 
 	if err != nil {
 		return channels.Channel{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-	if err := svc.cache.SaveID(ctx, route, domainID, chn.ID); err != nil {
+	if err := svc.cache.Save(ctx, route, domainID, chn.ID); err != nil {
 		return channels.Channel{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
