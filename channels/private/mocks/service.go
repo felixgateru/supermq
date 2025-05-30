@@ -189,8 +189,8 @@ func (_c *Service_RetrieveByID_Call) RunAndReturn(run func(ctx context.Context, 
 }
 
 // RetrieveByRoute provides a mock function for the type Service
-func (_mock *Service) RetrieveByRoute(ctx context.Context, domainID string, channelID string) (channels.Channel, error) {
-	ret := _mock.Called(ctx, domainID, channelID)
+func (_mock *Service) RetrieveByRoute(ctx context.Context, route string, domainID string) (channels.Channel, error) {
+	ret := _mock.Called(ctx, route, domainID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveByRoute")
@@ -199,15 +199,15 @@ func (_mock *Service) RetrieveByRoute(ctx context.Context, domainID string, chan
 	var r0 channels.Channel
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) (channels.Channel, error)); ok {
-		return returnFunc(ctx, domainID, channelID)
+		return returnFunc(ctx, route, domainID)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) channels.Channel); ok {
-		r0 = returnFunc(ctx, domainID, channelID)
+		r0 = returnFunc(ctx, route, domainID)
 	} else {
 		r0 = ret.Get(0).(channels.Channel)
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = returnFunc(ctx, domainID, channelID)
+		r1 = returnFunc(ctx, route, domainID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -221,13 +221,13 @@ type Service_RetrieveByRoute_Call struct {
 
 // RetrieveByRoute is a helper method to define mock.On call
 //   - ctx
+//   - route
 //   - domainID
-//   - channelID
-func (_e *Service_Expecter) RetrieveByRoute(ctx interface{}, domainID interface{}, channelID interface{}) *Service_RetrieveByRoute_Call {
-	return &Service_RetrieveByRoute_Call{Call: _e.mock.On("RetrieveByRoute", ctx, domainID, channelID)}
+func (_e *Service_Expecter) RetrieveByRoute(ctx interface{}, route interface{}, domainID interface{}) *Service_RetrieveByRoute_Call {
+	return &Service_RetrieveByRoute_Call{Call: _e.mock.On("RetrieveByRoute", ctx, route, domainID)}
 }
 
-func (_c *Service_RetrieveByRoute_Call) Run(run func(ctx context.Context, domainID string, channelID string)) *Service_RetrieveByRoute_Call {
+func (_c *Service_RetrieveByRoute_Call) Run(run func(ctx context.Context, route string, domainID string)) *Service_RetrieveByRoute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
@@ -239,7 +239,7 @@ func (_c *Service_RetrieveByRoute_Call) Return(channel channels.Channel, err err
 	return _c
 }
 
-func (_c *Service_RetrieveByRoute_Call) RunAndReturn(run func(ctx context.Context, domainID string, channelID string) (channels.Channel, error)) *Service_RetrieveByRoute_Call {
+func (_c *Service_RetrieveByRoute_Call) RunAndReturn(run func(ctx context.Context, route string, domainID string) (channels.Channel, error)) *Service_RetrieveByRoute_Call {
 	_c.Call.Return(run)
 	return _c
 }
