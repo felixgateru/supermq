@@ -30,6 +30,7 @@ var (
 
 type service struct {
 	repo       Repository
+	cache      Cache
 	policy     policies.Service
 	idProvider supermq.IDProvider
 	clients    grpcClientsV1.ClientsServiceClient
