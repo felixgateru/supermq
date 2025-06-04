@@ -234,7 +234,6 @@ paths:
         "500":
           $ref: "#/components/responses/ServiceError"
 
-
   /{domainID}/groups/{groupID}/enable:
     post:
       operationId: enableGroup
@@ -296,41 +295,6 @@ paths:
           description: Failed due to already disabled group.
         "415":
           description: Missing or invalid content type.
-        "422":
-          description: Database can't process request.
-        "500":
-          $ref: "#/components/responses/ServiceError"
-
-  /{domainID}/groups/{groupID}/hierarchy:
-    get:
-      operationId: listGroupHierarchy
-      summary: Lists groups hierarchy.
-      description: |
-        Lists groups heirarchy up to a max level of hierarchy that can be fetched in one
-        request ( max level = 5). Result can be filtered by metadata. Groups will
-        be returned as JSON array or JSON tree. Due to performance concerns, result
-        is returned in subsets.
-      tags:
-        - Groups
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: "auth.yaml#/components/parameters/DomainID"
-        - $ref: "#/components/parameters/GroupID"
-        - $ref: "#/components/parameters/Level"
-        - $ref: "#/components/parameters/Tree"
-        - $ref: "#/components/parameters/Direction"
-      responses:
-        "200":
-          $ref: "#/components/responses/GroupsHierarchyPageRes"
-        "400":
-          description: Failed due to malformed query parameters.
-        "401":
-          description: Missing or invalid access token provided.
-        "403":
-          description: Failed to perform authorization over the entity.
-        "404":
-          description: Group does not exist.
         "422":
           description: Database can't process request.
         "500":
@@ -1664,13 +1628,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/GroupsPage"
-
-    GroupsHierarchyPageRes:
-      description: Group hierarchy retrieved.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/GroupsHierarchyPage"
 
     MembersPageRes:
       description: Group members retrieved.
