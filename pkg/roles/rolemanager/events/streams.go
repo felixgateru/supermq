@@ -131,7 +131,6 @@ func (rmes *RoleManagerEventStore) ListAvailableActions(ctx context.Context, ses
 	}
 	e := listAvailableActionsEvent{
 		operationPrefix: rmes.operationPrefix,
-		total:           len(actions),
 		requestID:       middleware.GetReqID(ctx),
 	}
 	if err := rmes.Publish(ctx, rmes.streamID, e); err != nil {

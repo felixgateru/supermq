@@ -155,14 +155,12 @@ func (rare retrieveAllRolesEvent) Encode() (map[string]interface{}, error) {
 
 type listAvailableActionsEvent struct {
 	operationPrefix string
-	total           int
 	requestID       string
 }
 
 func (laae listAvailableActionsEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
 		"operation":  laae.operationPrefix + ListAvailableActions,
-		"total":      laae.total,
 		"request_id": laae.requestID,
 	}
 	return val, nil
