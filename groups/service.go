@@ -199,51 +199,11 @@ func (svc service) DisableGroup(ctx context.Context, session smqauthn.Session, i
 }
 
 func (svc service) RetrieveGroupHierarchy(ctx context.Context, session smqauthn.Session, id string, hm HierarchyPageMeta) (HierarchyPage, error) {
-	hp, err := svc.repo.RetrieveHierarchy(ctx, id, hm)
+	hp, err := svc.repo.RetrieveHierarchy(ctx, session.DomainID, session.UserID, id, hm)
 	if err != nil {
 		return HierarchyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
-	hids := svc.getGroupIDs(hp.Groups)
-	ids, err := svc.filterAllowedGroupIDsOfUserID(ctx, session.DomainID, session.UserID, hids)
-	if err != nil {
-		return HierarchyPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
-	}
-	hp.Groups = svc.allowedGroups(hp.Groups, ids)
 	return hp, nil
-}
-
-func (svc service) allowedGroups(gps []Group, ids []string) []Group {
-	aIDs := make(map[string]struct{}, len(ids))
-
-	for _, id := range ids {
-		aIDs[id] = struct{}{}
-	}
-
-	aGroups := []Group{}
-	for _, g := range gps {
-		ag := g
-		if _, ok := aIDs[g.ID]; !ok {
-			ag = Group{ID: "xxxx-xxxx-xxxx-xxxx", Level: g.Level}
-		}
-		aGroups = append(aGroups, ag)
-	}
-	return aGroups
-}
-
-func (svc service) getGroupIDs(gps []Group) []string {
-	hids := []string{}
-	for _, g := range gps {
-		hids = append(hids, g.ID)
-		if len(g.Children) > 0 {
-			children := make([]Group, len(g.Children))
-			for i, child := range g.Children {
-				children[i] = *child
-			}
-			cids := svc.getGroupIDs(children)
-			hids = append(hids, cids...)
-		}
-	}
-	return hids
 }
 
 func (svc service) AddParentGroup(ctx context.Context, session smqauthn.Session, id, parentID string) (retErr error) {
@@ -484,24 +444,6 @@ func (svc service) DeleteGroup(ctx context.Context, session smqauthn.Session, id
 	}
 
 	return nil
-}
-
-func (svc service) filterAllowedGroupIDsOfUserID(ctx context.Context, domainID, userID string, groupIDs []string) ([]string, error) {
-	var ids []string
-	allowedGroups, err := svc.repo.RetrieveUserGroups(ctx, domainID, userID, PageMeta{Limit: 1<<63 - 1})
-	if err != nil {
-		return []string{}, err
-	}
-	allowedIDs := svc.getGroupIDs(allowedGroups.Groups)
-
-	for _, gid := range groupIDs {
-		for _, id := range allowedIDs {
-			if id == gid {
-				ids = append(ids, id)
-			}
-		}
-	}
-	return ids, nil
 }
 
 func (svc service) changeGroupStatus(ctx context.Context, session smqauthn.Session, group Group) (Group, error) {
