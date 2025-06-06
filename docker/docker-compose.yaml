@@ -1020,13 +1020,13 @@ services:
           create_host_path: true
       # Domains gRPC mTLS client certificates
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_CERT:-ssl/certs/dummy/client_cert}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_CERT:+.crt}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_CERT:-ssl/certs/dummy/client_cert}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_CERT:+.crt}
         bind:
           create_host_path: true
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_KEY:-ssl/certs/dummy/client_key}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_KEY:+.key}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_KEY:-ssl/certs/dummy/client_key}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_KEY:+.key}
         bind:
           create_host_path: true
       - type: bind
@@ -1129,13 +1129,13 @@ services:
           create_host_path: true
       # Domains gRPC mTLS client certificates
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_CERT:-ssl/certs/dummy/client_cert}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_CERT:+.crt}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_CERT:-ssl/certs/dummy/client_cert}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_CERT:+.crt}
         bind:
           create_host_path: true
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_KEY:-ssl/certs/dummy/client_key}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_KEY:+.key}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_KEY:-ssl/certs/dummy/client_key}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_KEY:+.key}
         bind:
           create_host_path: true
       - type: bind
@@ -1227,13 +1227,13 @@ services:
           create_host_path: true
       # Domains gRPC mTLS client certificates
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_CERT:-ssl/certs/dummy/client_cert}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_CERT:+.crt}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_CERT:-ssl/certs/dummy/client_cert}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_CERT:+.crt}
         bind:
           create_host_path: true
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_KEY:-ssl/certs/dummy/client_key}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_KEY:+.key}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_KEY:-ssl/certs/dummy/client_key}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_KEY:+.key}
         bind:
           create_host_path: true
       - type: bind
@@ -1336,13 +1336,13 @@ services:
           create_host_path: true
       # Domains gRPC mTLS client certificates
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_CERT:-ssl/certs/dummy/client_cert}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_CERT:+.crt}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_CERT:-ssl/certs/dummy/client_cert}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_CERT:+.crt}
         bind:
           create_host_path: true
       - type: bind
-        source: ${SMQ_DOMAINS_GRPC_SERVER_KEY:-ssl/certs/dummy/client_key}
-        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_SERVER_KEY:+.key}
+        source: ${SMQ_DOMAINS_GRPC_CLIENT_KEY:-ssl/certs/dummy/client_key}
+        target: /domains-grpc-server${SMQ_DOMAINS_GRPC_CLIENT_KEY:+.key}
         bind:
           create_host_path: true
       - type: bind

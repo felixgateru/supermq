@@ -52,6 +52,8 @@ var (
 	errFailedPublishToMsgBroker = errors.New("failed to publish to supermq message broker")
 	errMalformedTopic           = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("malformed topic"))
 	errMissingTopicPub          = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to publish due to missing topic"))
+	errFailedResolveDomain      = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve domain route"))
+	errFailedResolveChannel     = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to resolve channel route"))
 )
 
 // Event implements events.Event interface.
@@ -124,9 +126,17 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errFailedPublish, errClientNotInitialized)
 	}
 
-	domainID, chanID, subtopic, err := messaging.ParsePublishTopic(*topic)
+	domain, channel, subtopic, err := messaging.ParsePublishTopic(*topic)
 	if err != nil {
 		return errors.Wrap(errMalformedTopic, err)
+	}
+	domainID, err := h.resolveDomain(ctx, domain)
+	if err != nil {
+		return errors.Wrap(errFailedResolveDomain, err)
+	}
+	channelID, err := h.resolveChannel(ctx, channel, domainID)
+	if err != nil {
+		return errors.Wrap(errFailedResolveChannel, err)
 	}
 
 	var clientID, clientType string
@@ -160,7 +170,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	msg := messaging.Message{
 		Protocol: protocol,
 		Domain:   domainID,
-		Channel:  chanID,
+		Channel:  channelID,
 		Subtopic: subtopic,
 		Payload:  *payload,
 		Created:  time.Now().UnixNano(),
@@ -207,4 +217,33 @@ func (h *handler) Unsubscribe(ctx context.Context, topics *[]string) error {
 // Disconnect - not used for HTTP.
 func (h *handler) Disconnect(ctx context.Context) error {
 	return nil
+}
+
+func (h *handler) resolveDomain(ctx context.Context, domain string) (string, error) {
+	if api.ValidateUUID(domain) == nil {
+		return domain, nil
+	}
+	d, err := h.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+		Route: domain,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return d.Entity.Id, nil
+}
+
+func (h *handler) resolveChannel(ctx context.Context, channel, domainID string) (string, error) {
+	if api.ValidateUUID(channel) == nil {
+		return channel, nil
+	}
+	c, err := h.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+		Route:    channel,
+		DomainId: domainID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return c.Entity.Id, nil
 }
