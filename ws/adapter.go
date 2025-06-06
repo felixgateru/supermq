@@ -27,7 +27,7 @@ var (
 	// ErrEmptyTopic indicate absence of clientKey in the request.
 	ErrEmptyTopic = errors.New("empty topic")
 	// errFailedResolveDomain indicates that the domain route could not be resolved.
-	errFailedResolveDomain  = errors.New("failed to resolve domain route")
+	errFailedResolveDomain = errors.New("failed to resolve domain route")
 	// errFailedResolveChannel indicates that the channel route could not be resolved.
 	errFailedResolveChannel = errors.New("failed to resolve channel route")
 )
