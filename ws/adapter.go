@@ -22,11 +22,14 @@ import (
 var (
 	// ErrFailedSubscription indicates that client couldn't subscribe to specified channel.
 	ErrFailedSubscription = errors.New("failed to subscribe to a channel")
-
+	// ErrFailedPublish indicates that client couldn't publish to specified channel.
 	ErrFailedSubscribe = errors.New("failed to unsubscribe from topic")
-
 	// ErrEmptyTopic indicate absence of clientKey in the request.
 	ErrEmptyTopic = errors.New("empty topic")
+	// errFailedResolveDomain indicates that the domain route could not be resolved.
+	errFailedResolveDomain  = errors.New("failed to resolve domain route")
+	// errFailedResolveChannel indicates that the channel route could not be resolved.
+	errFailedResolveChannel = errors.New("failed to resolve channel route")
 )
 
 // Service specifies web socket service API.
@@ -68,19 +71,19 @@ func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, 
 	if err != nil {
 		return errFailedResolveDomain
 	}
-	chanID, err := svc.resolveChannel(ctx, channel, domainID)
+	channelID, err := svc.resolveChannel(ctx, channel, domainID)
 	if err != nil {
 		return errFailedResolveChannel
 	}
 
-	clientID, err := svc.authorize(ctx, clientKey, domainID, chanID, connections.Subscribe)
+	clientID, err := svc.authorize(ctx, clientKey, domainID, channelID, connections.Subscribe)
 	if err != nil {
 		return svcerr.ErrAuthorization
 	}
 
 	c.id = clientID
 
-	subject := messaging.EncodeTopic(domainID, chanID, subtopic)
+	subject := messaging.EncodeTopic(domainID, channelID, subtopic)
 	subCfg := messaging.SubscriberConfig{
 		ID:       sessionID,
 		ClientID: clientID,
@@ -94,8 +97,16 @@ func (svc *adapterService) Subscribe(ctx context.Context, sessionID, clientKey, 
 	return nil
 }
 
-func (svc *adapterService) Unsubscribe(ctx context.Context, sessionID, domainID, chanID, subtopic string) error {
-	topic := messaging.EncodeTopic(domainID, chanID, subtopic)
+func (svc *adapterService) Unsubscribe(ctx context.Context, sessionID, domain, channel, subtopic string) error {
+	domainID, err := svc.resolveDomain(ctx, domain)
+	if err != nil {
+		return errors.Wrap(errFailedResolveDomain, err)
+	}
+	channelID, err := svc.resolveChannel(ctx, channel, domainID)
+	if err != nil {
+		return errors.Wrap(errFailedResolveChannel, err)
+	}
+	topic := messaging.EncodeTopic(domainID, channelID, subtopic)
 
 	if err := svc.pubsub.Unsubscribe(ctx, sessionID, topic); err != nil {
 		return errors.Wrap(ErrFailedSubscribe, err)
@@ -142,7 +153,6 @@ func (svc *adapterService) resolveDomain(ctx context.Context, domain string) (st
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
-
 	d, err := svc.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route: domain,
 	})
@@ -157,7 +167,6 @@ func (svc *adapterService) resolveChannel(ctx context.Context, channel, domainID
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
-
 	c, err := svc.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route:    channel,
 		DomainId: domainID,

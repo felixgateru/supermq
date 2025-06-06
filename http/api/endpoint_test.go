@@ -280,7 +280,6 @@ func TestPublish(t *testing.T) {
 			clientsCall.Unset()
 			channelsCall.Unset()
 			domainsCall.Unset()
-			channelsCall1.Unset()
 		})
 	}
 }
