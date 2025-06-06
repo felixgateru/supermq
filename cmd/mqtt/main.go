@@ -384,7 +384,7 @@ type beforeHandler struct {
 	channels grpcChannelsV1.ChannelsServiceClient
 }
 
-// This interceptor is used to replace domain and channel routes with relevent domain and channel IDs in the message topic.
+// This interceptor is used to replace domain and channel routes with relevant domain and channel IDs in the message topic.
 func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket, dir session.Direction) (packets.ControlPacket, error) {
 	switch pt := pkt.(type) {
 	case *packets.SubscribePacket:
