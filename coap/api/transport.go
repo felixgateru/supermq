@@ -36,8 +36,10 @@ const (
 )
 
 var (
-	errBadOptions       = errors.New("bad options")
-	errMethodNotAllowed = errors.New("method not allowed")
+	errBadOptions           = errors.New("bad options")
+	errMethodNotAllowed     = errors.New("method not allowed")
+	errFailedResolveDomain  = errors.New("failed to resolve domain route")
+	errFailedResolveChannel = errors.New("failed to resolve channel route")
 )
 
 var (
@@ -146,15 +148,25 @@ func decodeMessage(msg *mux.Message) (*messaging.Message, error) {
 		return &messaging.Message{}, err
 	}
 
-	var domainID, channelID, subTopic string
+	var domain, channel, subTopic string
 	switch msg.Code() {
 	case codes.GET:
-		domainID, channelID, subTopic, err = messaging.ParseSubscribeTopic(path)
+		domain, channel, subTopic, err = messaging.ParseSubscribeTopic(path)
 	case codes.POST:
-		domainID, channelID, subTopic, err = messaging.ParsePublishTopic(path)
+		domain, channel, subTopic, err = messaging.ParsePublishTopic(path)
 	}
 	if err != nil {
 		return &messaging.Message{}, err
+	}
+
+	domainID, err := resolveDomain(msg.Context(), domain)
+	if err != nil {
+		return &messaging.Message{}, errors.Wrap(errFailedResolveDomain, err)
+	}
+
+	channelID, err := resolveChannel(msg.Context(), channel, domainID)
+	if err != nil {
+		return &messaging.Message{}, errors.Wrap(errFailedResolveChannel, err)
 	}
 
 	ret := &messaging.Message{
@@ -186,4 +198,33 @@ func parseKey(msg *mux.Message) (string, error) {
 		return "", svcerr.ErrAuthorization
 	}
 	return vars[1], nil
+}
+
+func resolveDomain(ctx context.Context, domain string) (string, error) {
+	if api.ValidateUUID(domain) == nil {
+		return domain, nil
+	}
+	d, err := domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+		Route: domain,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return d.Entity.Id, nil
+}
+
+func resolveChannel(ctx context.Context, channel, domainID string) (string, error) {
+	if api.ValidateUUID(channel) == nil {
+		return channel, nil
+	}
+	c, err := channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+		Route:    channel,
+		DomainId: domainID,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return c.Entity.Id, nil
 }
