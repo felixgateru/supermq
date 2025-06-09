@@ -539,7 +539,7 @@ func (repo groupRepository) RetrieveHierarchy(ctx context.Context, domainID, use
 		"id":    groupID,
 		"level": hm.Level,
 	}
-	fmt.Println("Query:", query)
+
 	rows, err := repo.db.NamedQueryContext(ctx, query, parameters)
 	if err != nil {
 		return groups.HierarchyPage{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
@@ -860,7 +860,6 @@ func (repo groupRepository) retrieveGroups(ctx context.Context, domainID, userID
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
 	}
-	fmt.Println("Query:", q)
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbPageMeta)
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
