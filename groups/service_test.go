@@ -659,14 +659,12 @@ func TestRetrieveGroupHierarchy(t *testing.T) {
 	svc := newService(t)
 
 	cases := []struct {
-		desc                  string
-		id                    string
-		pageMeta              groups.HierarchyPageMeta
-		retrieveHierarchyRes  groups.HierarchyPage
-		retrieveHierarchyErr  error
-		retrieveUserGroupsRes groups.Page
-		retrieveUserGroupsErr error
-		err                   error
+		desc                 string
+		id                   string
+		pageMeta             groups.HierarchyPageMeta
+		retrieveHierarchyRes groups.HierarchyPage
+		retrieveHierarchyErr error
+		err                  error
 	}{
 		{
 			desc: "retrieve group hierarchy successfully",
@@ -684,9 +682,6 @@ func TestRetrieveGroupHierarchy(t *testing.T) {
 				},
 				Groups: []groups.Group{parentGroup},
 			},
-			retrieveUserGroupsRes: groups.Page{
-				Groups: []groups.Group{parentGroup, childGroup},
-			},
 			err: nil,
 		},
 		{
@@ -701,61 +696,28 @@ func TestRetrieveGroupHierarchy(t *testing.T) {
 			err:                  repoerr.ErrNotFound,
 		},
 		{
-			desc: "retrieve group hierarchy with failed to retrieve user groups",
-			id:   parentGroup.ID,
+			desc: "retrieve group hierarchy with invalid group ID",
+			id:   testsutil.GenerateUUID(t),
 			pageMeta: groups.HierarchyPageMeta{
 				Level:     1,
 				Direction: -1,
 				Tree:      false,
 			},
-			retrieveHierarchyRes: groups.HierarchyPage{
-				HierarchyPageMeta: groups.HierarchyPageMeta{
-					Level:     1,
-					Direction: -1,
-					Tree:      false,
-				},
-				Groups: []groups.Group{parentGroup},
-			},
-			retrieveUserGroupsErr: svcerr.ErrAuthorization,
-			err:                   svcerr.ErrAuthorization,
-		},
-		{
-			desc: "retrieve group hierarchy for group not allowed for user",
-			id:   parentGroup.ID,
-			pageMeta: groups.HierarchyPageMeta{
-				Level:     1,
-				Direction: -1,
-				Tree:      false,
-			},
-			retrieveHierarchyRes: groups.HierarchyPage{
-				HierarchyPageMeta: groups.HierarchyPageMeta{
-					Level:     1,
-					Direction: -1,
-					Tree:      false,
-				},
-				Groups: []groups.Group{parentGroup},
-			},
-			retrieveUserGroupsRes: groups.Page{
-				Groups: []groups.Group{{
-					ID: testsutil.GenerateUUID(t),
-				}},
-			},
-			err: nil,
+			retrieveHierarchyErr: nil,
+			err:                  nil,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			repoCall := repo.On("RetrieveHierarchy", context.Background(), tc.id, tc.pageMeta).Return(tc.retrieveHierarchyRes, tc.retrieveHierarchyErr)
-			repoCall1 := repo.On("RetrieveUserGroups", context.Background(), validSession.DomainID, validSession.UserID, groups.PageMeta{Limit: 1<<63 - 1}).Return(tc.retrieveUserGroupsRes, tc.retrieveUserGroupsErr)
+			repoCall := repo.On("RetrieveHierarchy", context.Background(), validSession.DomainID, validSession.UserID, tc.id, tc.pageMeta).Return(tc.retrieveHierarchyRes, tc.retrieveHierarchyErr)
 			_, err := svc.RetrieveGroupHierarchy(context.Background(), validSession, tc.id, tc.pageMeta)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected error %v to contain %v", err, tc.err))
 			if tc.err == nil {
-				ok := repo.AssertCalled(t, "RetrieveHierarchy", context.Background(), tc.id, tc.pageMeta)
+				ok := repo.AssertCalled(t, "RetrieveHierarchy", context.Background(), validSession.DomainID, validSession.UserID, tc.id, tc.pageMeta)
 				assert.True(t, ok, fmt.Sprintf("RetrieveHierarchy was not called on %s", tc.desc))
 			}
 			repoCall.Unset()
-			repoCall1.Unset()
 		})
 	}
 }

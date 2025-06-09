@@ -1356,10 +1356,12 @@ type Repository_RetrieveHierarchy_Call struct {
 
 // RetrieveHierarchy is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id string
+//   - domainID string
+//   - userID string
+//   - groupID string
 //   - hm groups.HierarchyPageMeta
-func (_e *Repository_Expecter) RetrieveHierarchy(ctx interface{}, id interface{}, hm interface{}) *Repository_RetrieveHierarchy_Call {
-	return &Repository_RetrieveHierarchy_Call{Call: _e.mock.On("RetrieveHierarchy", ctx, id, hm)}
+func (_e *Repository_Expecter) RetrieveHierarchy(ctx interface{}, domainID interface{}, userID interface{}, groupID interface{}, hm interface{}) *Repository_RetrieveHierarchy_Call {
+	return &Repository_RetrieveHierarchy_Call{Call: _e.mock.On("RetrieveHierarchy", ctx, domainID, userID, groupID, hm)}
 }
 
 func (_c *Repository_RetrieveHierarchy_Call) Run(run func(ctx context.Context, domainID string, userID string, groupID string, hm groups.HierarchyPageMeta)) *Repository_RetrieveHierarchy_Call {
@@ -1372,14 +1374,24 @@ func (_c *Repository_RetrieveHierarchy_Call) Run(run func(ctx context.Context, d
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 groups.HierarchyPageMeta
+		var arg2 string
 		if args[2] != nil {
-			arg2 = args[2].(groups.HierarchyPageMeta)
+			arg2 = args[2].(string)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		var arg4 groups.HierarchyPageMeta
+		if args[4] != nil {
+			arg4 = args[4].(groups.HierarchyPageMeta)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
+			arg4,
 		)
 	})
 	return _c
