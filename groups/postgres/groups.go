@@ -544,7 +544,7 @@ func (repo groupRepository) RetrieveHierarchy(ctx context.Context, domainID, use
 		"id":    groupID,
 		"level": hm.Level,
 	}
-	fmt.Println("Query:", query)
+
 	rows, err := repo.db.NamedQueryContext(ctx, query, parameters)
 	if err != nil {
 		return groups.HierarchyPage{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
