@@ -240,14 +240,6 @@ jobs:
               - "pkg/uuid/**"
               - "pkg/events/**"
 
-            ws:
-              - "ws/**"
-              - "cmd/ws/**"
-              - "auth.pb.go"
-              - "auth_grpc.pb.go"
-              - "clients/**"
-              - "pkg/messaging/**"
-
             notifications:
               - "notifications/**"
               - "cmd/notifications/**"
@@ -296,7 +288,6 @@ jobs:
             [[ "${{ steps.changes.outputs.pkg-ulid }}" == "true" ]] && modules+=("pkg-ulid")
             [[ "${{ steps.changes.outputs.pkg-uuid }}" == "true" ]] && modules+=("pkg-uuid")
             [[ "${{ steps.changes.outputs.users }}" == "true" ]] && modules+=("users")
-            [[ "${{ steps.changes.outputs.ws }}" == "true" ]] && modules+=("ws")
             [[ "${{ steps.changes.outputs.notifications }}" == "true" ]] && modules+=("notifications")
             [[ "${{ steps.changes.outputs.api }}" == "true" ]] && modules+=("api")
             [[ "${{ steps.changes.outputs.consumers }}" == "true" ]] && modules+=("consumers")
