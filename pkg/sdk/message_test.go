@@ -24,6 +24,7 @@ import (
 	dmocks "github.com/absmach/supermq/domains/mocks"
 	adapter "github.com/absmach/supermq/http"
 	"github.com/absmach/supermq/http/api"
+	httpmocks "github.com/absmach/supermq/http/mocks"
 	smqlog "github.com/absmach/supermq/logger"
 	authnmocks "github.com/absmach/supermq/pkg/authn/mocks"
 	"github.com/absmach/supermq/pkg/errors"
@@ -52,7 +53,7 @@ func setupMessages(t *testing.T) (*httptest.Server, *pubsub.PubSub) {
 	assert.Nil(t, err, fmt.Sprintf("unexpected error while setting up parser: %v", err))
 	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, parser, smqlog.NewMock())
 
-	mux := api.MakeHandler(smqlog.NewMock(), "")
+	mux := api.MakeHandler(context.Background(), svc, smqlog.NewMock(), "")
 	target := httptest.NewServer(mux)
 
 	ptUrl, _ := url.Parse(target.URL)

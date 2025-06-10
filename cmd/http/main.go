@@ -24,6 +24,7 @@ import (
 	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	adapter "github.com/absmach/supermq/http"
 	httpapi "github.com/absmach/supermq/http/api"
+	"github.com/absmach/supermq/http/middleware"
 	smqlog "github.com/absmach/supermq/logger"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/authn/authsvc"
@@ -185,16 +186,16 @@ func main() {
 	}()
 	tracer := tp.Tracer(svcName)
 
-	pub, err := brokers.NewPublisher(ctx, cfg.BrokerURL)
+	nps, err := brokers.NewPubSub(ctx, cfg.BrokerURL, logger)
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to connect to message broker: %s", err))
+		logger.Error(fmt.Sprintf("Failed to connect to message broker: %s", err))
 		exitCode = 1
 		return
 	}
-	defer pub.Close()
-	pub = brokerstracing.NewPublisher(httpServerConfig, tracer, pub)
+	defer nps.Close()
+	nps = brokerstracing.NewPubSub(httpServerConfig, tracer, nps)
 
-	pub, err = msgevents.NewPublisherMiddleware(ctx, pub, cfg.ESURL)
+	nps, err = msgevents.NewPubSubMiddleware(ctx, nps, cfg.ESURL)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create event store middleware: %s", err))
 		exitCode = 1
@@ -209,7 +210,7 @@ func main() {
 	}
 	targetServerCfg := server.Config{Port: targetHTTPPort}
 
-	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerCfg, httpapi.MakeHandler(logger, cfg.InstanceID), logger)
+	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerCfg, httpapi.MakeHandler(ctx, svc, logger, cfg.InstanceID), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, supermq.Version, logger, cancel)
@@ -221,7 +222,7 @@ func main() {
 	})
 
 	g.Go(func() error {
-		return proxyHTTP(ctx, httpServerConfig, logger, svc)
+		return proxyHTTP(ctx, httpServerConfig, logger, handler)
 	})
 
 	g.Go(func() error {
@@ -241,6 +242,16 @@ func newService(pub messaging.Publisher, authn smqauthn.Authentication, cacheCfg
 	svc := adapter.NewHandler(pub, authn, clients, channels, parser, logger)
 	svc = handler.NewTracing(tracer, svc)
 	svc = handler.LoggingMiddleware(svc, logger)
+	counter, latency := prometheus.MakeMetrics(svcName, "handler")
+	svc = handler.MetricsMiddleware(svc, counter, latency)
+
+	return svc
+}
+
+func newService(clientsClient grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, nps messaging.PubSub, logger *slog.Logger, tracer trace.Tracer) adapter.Service {
+	svc := adapter.NewService(clientsClient, channels, nps)
+	svc = middleware.Tracing(tracer, svc)
+	svc = middleware.Logging(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
 	svc = handler.MetricsMiddleware(svc, counter, latency)
 	return svc, nil

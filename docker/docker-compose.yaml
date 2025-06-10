@@ -364,7 +364,6 @@ services:
       - users
       - mqtt-adapter
       - http-adapter
-      - ws-adapter
       - coap-adapter
 
   clients-db:
