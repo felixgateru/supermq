@@ -103,7 +103,7 @@ func (svc *adapterService) authorize(ctx context.Context, clientKey, domainID, c
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if !authnRes.GetAuthenticated() {
-		return "", errors.Wrap(svcerr.ErrAuthentication, err)
+		return "", svcerr.ErrAuthentication
 	}
 
 	authzReq := &grpcChannelsV1.AuthzReq{
