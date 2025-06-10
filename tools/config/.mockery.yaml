@@ -97,6 +97,9 @@ packages:
   github.com/absmach/supermq/groups/private:
     interfaces:
       Service:
+  github.com/absmach/supermq/http:
+    interfaces:
+      Service:
   github.com/absmach/supermq/journal:
     interfaces:
       Repository:
