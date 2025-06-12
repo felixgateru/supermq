@@ -167,25 +167,31 @@ func (_c *Repository_DeleteDomain_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
-// DeleteInvitation provides a mock function for the type Repository
-func (_mock *Repository) DeleteInvitation(ctx context.Context, userID string, domainID string) error {
-	ret := _mock.Called(ctx, userID, domainID)
+// DeleteUserInvitation provides a mock function for the type Repository
+func (_mock *Repository) DeleteUserInvitation(ctx context.Context, domainID string, userID ...string) error {
+	var tmpRet mock.Arguments
+	if len(userID) > 0 {
+		tmpRet = _mock.Called(ctx, domainID, userID)
+	} else {
+		tmpRet = _mock.Called(ctx, domainID)
+	}
+	ret := tmpRet
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteInvitation")
+		panic("no return value specified for DeleteUserInvitation")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = returnFunc(ctx, userID, domainID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, ...string) error); ok {
+		r0 = returnFunc(ctx, domainID, userID...)
 	} else {
 		r0 = ret.Error(0)
 	}
 	return r0
 }
 
-// Repository_DeleteInvitation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteInvitation'
-type Repository_DeleteInvitation_Call struct {
+// Repository_DeleteUserInvitation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteUserInvitation'
+type Repository_DeleteUserInvitation_Call struct {
 	*mock.Call
 }
 
@@ -197,7 +203,7 @@ func (_e *Repository_Expecter) DeleteInvitation(ctx interface{}, userID interfac
 	return &Repository_DeleteInvitation_Call{Call: _e.mock.On("DeleteInvitation", ctx, userID, domainID)}
 }
 
-func (_c *Repository_DeleteInvitation_Call) Run(run func(ctx context.Context, userID string, domainID string)) *Repository_DeleteInvitation_Call {
+func (_c *Repository_DeleteUserInvitation_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUserInvitation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -220,12 +226,12 @@ func (_c *Repository_DeleteInvitation_Call) Run(run func(ctx context.Context, us
 	return _c
 }
 
-func (_c *Repository_DeleteInvitation_Call) Return(err error) *Repository_DeleteInvitation_Call {
+func (_c *Repository_DeleteUserInvitation_Call) Return(err error) *Repository_DeleteUserInvitation_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *Repository_DeleteInvitation_Call) RunAndReturn(run func(ctx context.Context, userID string, domainID string) error) *Repository_DeleteInvitation_Call {
+func (_c *Repository_DeleteUserInvitation_Call) RunAndReturn(run func(ctx context.Context, domainID string, userID ...string) error) *Repository_DeleteUserInvitation_Call {
 	_c.Call.Return(run)
 	return _c
 }
