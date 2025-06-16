@@ -47,7 +47,6 @@ var (
 
 // MakeHandler returns a HTTP handler for API endpoints.
 func MakeHandler(ctx context.Context, svc smqhttp.Service, logger *slog.Logger, instanceID string) http.Handler {
-
 	r := chi.NewRouter()
 	r.Post("/m/{domain}/c/{channel}", otelhttp.NewHandler(kithttp.NewServer(
 		sendMessageEndpoint(),

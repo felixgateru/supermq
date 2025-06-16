@@ -14,6 +14,7 @@ import (
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
 	chmocks "github.com/absmach/supermq/channels/mocks"
 	climocks "github.com/absmach/supermq/clients/mocks"
+	smqhttp "github.com/absmach/supermq/http"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
@@ -22,7 +23,6 @@ import (
 	"github.com/absmach/supermq/pkg/policies"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	smqhttp "github.com/absmach/supermq/http"
 )
 
 const (
