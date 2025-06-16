@@ -41,8 +41,10 @@ func messageHandler(ctx context.Context, svc smqhttp.Service, logger *slog.Logge
 			return
 		}
 
-		api.EncodeResponse(ctx, w, publishMessageRes{})
-
+		err = api.EncodeResponse(ctx, w, publishMessageRes{})
+		if err != nil {
+			encodeError(ctx, w, err)
+		}
 	}
 }
 

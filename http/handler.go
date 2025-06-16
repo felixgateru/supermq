@@ -110,6 +110,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 	if err != nil {
 		return err
 	}
+	fmt.Println("Got here")
 
 	clientID, clientType, err := h.authAccess(ctx, string(s.Password), domainID, chanID, connections.Publish)
 	if err != nil {
@@ -210,10 +211,25 @@ func (h *handler) Disconnect(ctx context.Context) error {
 }
 
 func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string, msgType connections.ConnType) (string, string, error) {
-	var clientID, clientType string
+	var clientID, clientType, secret string
 	switch {
-	case strings.HasPrefix(string(token), "Client"):
-		secret := strings.TrimPrefix(string(token), apiutil.ClientPrefix)
+	case strings.HasPrefix(string(token), apiutil.BearerPrefix):
+		token := strings.TrimPrefix(string(token), apiutil.BearerPrefix)
+		authnSession, err := h.authn.Authenticate(ctx, token)
+		if err != nil {
+			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNToken, err))
+			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientType = policies.UserType
+		clientID = authnSession.DomainUserID
+	default:
+		if token == "" {
+			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		secret = token
+		if strings.HasPrefix(string(token), "Client") {
+			secret = strings.TrimPrefix(string(token), apiutil.ClientPrefix)
+		}
 		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: secret})
 		if err != nil {
 			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNClient, secret, err))
@@ -225,17 +241,6 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 		}
 		clientType = policies.ClientType
 		clientID = authnRes.GetId()
-	case strings.HasPrefix(string(token), apiutil.BearerPrefix):
-		token := strings.TrimPrefix(string(token), apiutil.BearerPrefix)
-		authnSession, err := h.authn.Authenticate(ctx, token)
-		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNToken, err))
-			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
-		}
-		clientType = policies.UserType
-		clientID = authnSession.DomainUserID
-	default:
-		return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
