@@ -31,7 +31,7 @@ var (
 	errUpdatedAt     = errors.New("failed to parse 'updated_at' time")
 )
 
-func ToClient(data map[string]interface{}) (clients.Client, error) {
+func ToClient(data map[string]any) (clients.Client, error) {
 	var c clients.Client
 	id, ok := data["id"].(string)
 	if !ok {
@@ -81,7 +81,7 @@ func ToClient(data map[string]interface{}) (clients.Client, error) {
 		c.ParentGroup = parent
 	}
 
-	itags, ok := data["tags"].([]interface{})
+	itags, ok := data["tags"].([]any)
 	if ok {
 		tags, err := rconsumer.ToStrings(itags)
 		if err != nil {
@@ -90,7 +90,7 @@ func ToClient(data map[string]interface{}) (clients.Client, error) {
 		c.Tags = tags
 	}
 
-	meta, ok := data["metadata"].(map[string]interface{})
+	meta, ok := data["metadata"].(map[string]any)
 	if ok {
 		c.Metadata = meta
 	}
@@ -112,12 +112,12 @@ func ToClient(data map[string]interface{}) (clients.Client, error) {
 	return c, nil
 }
 
-func decodeCreateClientEvent(data map[string]interface{}) (clients.Client, []roles.RoleProvision, error) {
+func decodeCreateClientEvent(data map[string]any) (clients.Client, []roles.RoleProvision, error) {
 	c, err := ToClient(data)
 	if err != nil {
 		return clients.Client{}, []roles.RoleProvision{}, errors.Wrap(errDecodeCreateClientEvent, err)
 	}
-	irps, ok := data["roles_provisioned"].([]interface{})
+	irps, ok := data["roles_provisioned"].([]any)
 	if !ok {
 		return clients.Client{}, []roles.RoleProvision{}, errors.Wrap(errDecodeCreateClientEvent, errors.New("missing or invalid 'roles_provisioned'"))
 	}
@@ -129,7 +129,7 @@ func decodeCreateClientEvent(data map[string]interface{}) (clients.Client, []rol
 	return c, rps, nil
 }
 
-func decodeUpdateClientEvent(data map[string]interface{}) (clients.Client, error) {
+func decodeUpdateClientEvent(data map[string]any) (clients.Client, error) {
 	c, err := ToClient(data)
 	if err != nil {
 		return clients.Client{}, errors.Wrap(errDecodeUpdateClientEvent, err)
@@ -137,7 +137,7 @@ func decodeUpdateClientEvent(data map[string]interface{}) (clients.Client, error
 	return c, nil
 }
 
-func decodeChangeStatusClientEvent(data map[string]interface{}) (clients.Client, error) {
+func decodeChangeStatusClientEvent(data map[string]any) (clients.Client, error) {
 	g, err := ToClientStatus(data)
 	if err != nil {
 		return clients.Client{}, errors.Wrap(errDecodeChangeStatusClientEvent, err)
@@ -145,7 +145,7 @@ func decodeChangeStatusClientEvent(data map[string]interface{}) (clients.Client,
 	return g, nil
 }
 
-func ToClientStatus(data map[string]interface{}) (clients.Client, error) {
+func ToClientStatus(data map[string]any) (clients.Client, error) {
 	var c clients.Client
 	id, ok := data["id"].(string)
 	if !ok {
@@ -180,7 +180,7 @@ func ToClientStatus(data map[string]interface{}) (clients.Client, error) {
 	return c, nil
 }
 
-func decodeRemoveClientEvent(data map[string]interface{}) (clients.Client, error) {
+func decodeRemoveClientEvent(data map[string]any) (clients.Client, error) {
 	var g clients.Client
 	id, ok := data["id"].(string)
 	if !ok {
@@ -191,7 +191,7 @@ func decodeRemoveClientEvent(data map[string]interface{}) (clients.Client, error
 	return g, nil
 }
 
-func decodeSetParentGroupEvent(data map[string]interface{}) (clients.Client, error) {
+func decodeSetParentGroupEvent(data map[string]any) (clients.Client, error) {
 	id, ok := data["id"].(string)
 	if !ok {
 		return clients.Client{}, errors.Wrap(errDecodeSetParentGroupEvent, errID)
@@ -208,7 +208,7 @@ func decodeSetParentGroupEvent(data map[string]interface{}) (clients.Client, err
 	}, nil
 }
 
-func decodeRemoveParentGroupEvent(data map[string]interface{}) (clients.Client, error) {
+func decodeRemoveParentGroupEvent(data map[string]any) (clients.Client, error) {
 	id, ok := data["id"].(string)
 	if !ok {
 		return clients.Client{}, errors.Wrap(errDecodeRemoveParentGroupEvent, errID)
