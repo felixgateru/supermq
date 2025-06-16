@@ -42,7 +42,7 @@ type eventHandler struct {
 	rolesEventHandler rconsumer.EventHandler
 }
 
-func GroupsEventsSubscribe(ctx context.Context, repo clients.Repository, esURL, esConsumerName string, logger *slog.Logger) error {
+func ClientsEventsSubscribe(ctx context.Context, repo clients.Repository, esURL, esConsumerName string, logger *slog.Logger) error {
 	subscriber, err := store.NewSubscriber(ctx, esURL, logger)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func (es *eventHandler) Handle(ctx context.Context, event events.Event) error {
 	return es.rolesEventHandler.Handle(ctx, op, msg)
 }
 
-func (es *eventHandler) createClientHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) createClientHandler(ctx context.Context, data map[string]any) error {
 	c, rps, err := decodeCreateClientEvent(data)
 	if err != nil {
 		return errors.Wrap(errCreateClientEvent, err)
@@ -113,7 +113,7 @@ func (es *eventHandler) createClientHandler(ctx context.Context, data map[string
 	return nil
 }
 
-func (es *eventHandler) updateClientHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) updateClientHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeUpdateClientEvent(data)
 	if err != nil {
 		return errors.Wrap(errUpdateClientEvent, err)
@@ -126,7 +126,7 @@ func (es *eventHandler) updateClientHandler(ctx context.Context, data map[string
 	return nil
 }
 
-func (es *eventHandler) updateClientTagsHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) updateClientTagsHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeUpdateClientEvent(data)
 	if err != nil {
 		return errors.Wrap(errUpdateClientEvent, err)
@@ -139,7 +139,7 @@ func (es *eventHandler) updateClientTagsHandler(ctx context.Context, data map[st
 	return nil
 }
 
-func (es *eventHandler) changeStatusClientHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) changeStatusClientHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeChangeStatusClientEvent(data)
 	if err != nil {
 		return errors.Wrap(errChangeStatusClientEvent, err)
@@ -152,7 +152,7 @@ func (es *eventHandler) changeStatusClientHandler(ctx context.Context, data map[
 	return nil
 }
 
-func (es *eventHandler) removeClientHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) removeClientHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeRemoveClientEvent(data)
 	if err != nil {
 		return errors.Wrap(errRemoveClientEvent, err)
@@ -164,7 +164,7 @@ func (es *eventHandler) removeClientHandler(ctx context.Context, data map[string
 	return nil
 }
 
-func (es *eventHandler) setParentGroupHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) setParentGroupHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeSetParentGroupEvent(data)
 	if err != nil {
 		return errors.Wrap(errSetParentGroupEvent, err)
@@ -175,7 +175,7 @@ func (es *eventHandler) setParentGroupHandler(ctx context.Context, data map[stri
 	return nil
 }
 
-func (es *eventHandler) removeParentGroupHandler(ctx context.Context, data map[string]interface{}) error {
+func (es *eventHandler) removeParentGroupHandler(ctx context.Context, data map[string]any) error {
 	c, err := decodeRemoveParentGroupEvent(data)
 	if err != nil {
 		return errors.Wrap(errRemoveParentGroupEvent, err)
