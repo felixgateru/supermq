@@ -138,11 +138,11 @@ func decodeUpdateClientEvent(data map[string]any) (clients.Client, error) {
 }
 
 func decodeChangeStatusClientEvent(data map[string]any) (clients.Client, error) {
-	g, err := ToClientStatus(data)
+	c, err := ToClientStatus(data)
 	if err != nil {
 		return clients.Client{}, errors.Wrap(errDecodeChangeStatusClientEvent, err)
 	}
-	return g, nil
+	return c, nil
 }
 
 func ToClientStatus(data map[string]any) (clients.Client, error) {
@@ -181,14 +181,14 @@ func ToClientStatus(data map[string]any) (clients.Client, error) {
 }
 
 func decodeRemoveClientEvent(data map[string]any) (clients.Client, error) {
-	var g clients.Client
+	var c clients.Client
 	id, ok := data["id"].(string)
 	if !ok {
 		return clients.Client{}, errors.Wrap(errDecodeRemoveClientEvent, errID)
 	}
-	g.ID = id
+	c.ID = id
 
-	return g, nil
+	return c, nil
 }
 
 func decodeSetParentGroupEvent(data map[string]any) (clients.Client, error) {
