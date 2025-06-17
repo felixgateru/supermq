@@ -244,7 +244,7 @@ func TestPublish(t *testing.T) {
 			msg:         msg,
 			contentType: ctSenmlJSON,
 			key:         clientKey,
-			status:      http.StatusBadRequest,
+			status:      http.StatusForbidden,
 			authnRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
 			authzRes:    &grpcChannelsV1.AuthzRes{Authorized: false},
 		},
