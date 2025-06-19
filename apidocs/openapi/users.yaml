@@ -43,6 +43,7 @@ paths:
         be uniquely identified by its email address.
       requestBody:
         $ref: "#/components/requestBodies/UserCreateReq"
+      security: []
       responses:
         "201":
           $ref: "#/components/responses/UserCreateRes"
@@ -80,7 +81,7 @@ paths:
         - $ref: "#/components/parameters/LastName"
         - $ref: "#/components/parameters/Username"
         - $ref: "#/components/parameters/Email"
-        - $ref: "#/components/parameters/Tags"
+        - $ref: "#/components/parameters/Tag"
       security:
         - bearerAuth: []
       responses:
@@ -652,6 +653,9 @@ components:
               example: password
               minimum: 8
               description: Free-form account secret used for acquiring auth token(s).
+          required:
+            - username
+            - secret
         metadata:
           type: object
           example: { "domain": "example.com" }
@@ -665,8 +669,14 @@ components:
           description: User Status
           format: string
           example: enabled
+          enum:
+            - enabled
+            - disabled
       required:
         - credentials
+        - first_name
+        - last_name
+        - email
 
     User:
       type: object
@@ -1071,18 +1081,14 @@ components:
       required: false
       example: enabled
 
-    Tags:
-      name: tags
-      description: User tags.
+    Tag:
+      name: tag
+      description: User tag.
       in: query
       schema:
-        type: array
-        minItems: 0
-        uniqueItems: true
-        items:
-          type: string
+        type: string
       required: false
-      example: ["yello", "orange"]
+      example: "orange"
 
     GroupName:
       name: name
