@@ -1391,14 +1391,6 @@ components:
           operationId: getUser
           parameters:
             userID: $response.body#/id
-        get_groups:
-          operationId: listUsersInGroup
-          parameters:
-            groupID: $response.body#/id
-        get_channels:
-          operationId: listUsersInChannel
-          parameters:
-            channelID: $response.body#/id
         update:
           operationId: updateUser
           parameters:
@@ -1438,15 +1430,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/User"
-      links:
-        get_groups:
-          operationId: listUsersInGroup
-          parameters:
-            groupID: $response.body#/id
-        get_channels:
-          operationId: listUsersInChannel
-          parameters:
-            channelID: $response.body#/id
 
     UserPageRes:
       description: Data retrieved.
