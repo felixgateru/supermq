@@ -85,4 +85,3 @@ func (svc service) RetrieveByRoute(ctx context.Context, route string) (domains.D
 
 	return domains.Domain{ID: dom.ID}, nil
 }
-
