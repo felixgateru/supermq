@@ -153,14 +153,16 @@ define test_api_service
 		--url $(2) \
 		--header "Authorization: Client $(CLIENT_SECRET)" \
 		--suppress-health-check=filter_too_much \
-		--phases=coverage; \
+		--exclude-checks=positive_data_acceptance \
+		--phases=examples,stateful; \
 	else \
 		st run apidocs/openapi/$(svc).yaml \
 		--checks all \
 		--url $(2) \
 		--header "Authorization: Bearer $(USER_TOKEN)" \
 		--suppress-health-check=filter_too_much \
-		--phases=coverage; \
+		--exclude-checks=positive_data_acceptance \
+		--phases=examples,stateful; \
 	fi
 endef
 

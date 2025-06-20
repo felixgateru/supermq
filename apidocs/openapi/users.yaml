@@ -140,6 +140,8 @@ paths:
           description: Failed due to malformed query parameters.
         "401":
           description: Missing or invalid access token provided.
+        "403":
+          description: Failed to perform authorization over the entity."
         "404":
           description: A non-existent entity request.
         "422":
@@ -198,6 +200,8 @@ paths:
           description: Failed due to malformed query parameters.
         "401":
           description: Missing or invalid access token provided.
+        "403":
+          description: Failed to perform authorization over the entity."
         "404":
           description: A non-existent entity request.
         "405":
@@ -631,7 +635,7 @@ components:
           description: User's last name.
         email:
           type: string
-          example: "admin@example.com"
+          example: "user@example.com"
           description: User's email address will be used as its unique identifier.
         tags:
           type: array
@@ -645,8 +649,8 @@ components:
           properties:
             username:
               type: string
-              example: "admin"
-              description: User's username for example 'admin' will be used as its unique identifier.
+              example: "userName"
+              description: User's username for example 'userName' will be used as its unique identifier.
             secret:
               type: string
               format: password
@@ -1019,6 +1023,7 @@ components:
       in: header
       schema:
         type: string
+      example: "example.com"
       required: true
 
     UserID:
@@ -1203,8 +1208,12 @@ components:
       description: Metadata filter. Filtering is performed matching the parameter with metadata on top level. Parameter is json.
       in: query
       schema:
-        type: string
-        minimum: 0
+        type: object
+        properties:
+          key:
+            type: string
+            description: Metadata key to filter by.
+      example: { "key": "value" }
       required: false
 
     Limit:
@@ -1330,11 +1339,8 @@ components:
               email:
                 type: string
                 format: email
+                example: user@example.com
                 description: User email.
-              host:
-                type: string
-                example: examplehost
-                description: Email host.
 
     PasswordReset:
       description: Password reset request data, new password and token that is appended on password reset link received in email.
@@ -1347,13 +1353,13 @@ components:
                 type: string
                 format: password
                 description: New password.
-                example: 12345678
+                example: "12345678"
                 minimum: 8
               confirm_password:
                 type: string
                 format: password
                 description: New confirmation password.
-                example: 12345678
+                example: "12345678"
                 minimum: 8
               token:
                 type: string
