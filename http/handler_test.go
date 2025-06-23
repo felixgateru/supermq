@@ -26,6 +26,7 @@ import (
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging/mocks"
+	"github.com/absmach/supermq/pkg/topics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -74,10 +75,10 @@ func newHandler() session.Handler {
 	authn = new(authnmocks.Authentication)
 	clients = new(clmocks.ClientsServiceClient)
 	channels = new(chmocks.ChannelsServiceClient)
-	domains = new(dmocks.DomainsServiceClient)
 	publisher = new(mocks.PubSub)
+	resolver := topics.NewResolver(channels, domains)
 
-	return mhttp.NewHandler(publisher, authn, clients, channels, domains, logger)
+	return mhttp.NewHandler(publisher, authn, clients, channels, resolver, logger)
 }
 
 func TestAuthConnect(t *testing.T) {

@@ -38,6 +38,7 @@ import (
 	"github.com/absmach/supermq/pkg/prometheus"
 	"github.com/absmach/supermq/pkg/server"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
+	"github.com/absmach/supermq/pkg/topics"
 	"github.com/absmach/supermq/pkg/uuid"
 	"github.com/caarlos0/env/v11"
 	"go.opentelemetry.io/otel/trace"
@@ -221,7 +222,8 @@ func main() {
 }
 
 func newService(pub messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient, logger *slog.Logger, tracer trace.Tracer) session.Handler {
-	svc := adapter.NewHandler(pub, authn, clients, channels, domains, logger)
+	resolver := topics.NewResolver(channels, domains)
+	svc := adapter.NewHandler(pub, authn, clients, channels, resolver, logger)
 	svc = handler.NewTracing(tracer, svc)
 	svc = handler.LoggingMiddleware(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
