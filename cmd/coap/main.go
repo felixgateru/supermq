@@ -27,6 +27,7 @@ import (
 	"github.com/absmach/supermq/pkg/server"
 	coapserver "github.com/absmach/supermq/pkg/server/coap"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
+	"github.com/absmach/supermq/pkg/topics"
 	"github.com/absmach/supermq/pkg/uuid"
 	"github.com/caarlos0/env/v11"
 	"golang.org/x/sync/errgroup"
@@ -181,7 +182,8 @@ func main() {
 
 	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, httpapi.MakeHandler(cfg.InstanceID), logger)
 
-	cs := coapserver.NewServer(ctx, cancel, svcName, coapServerConfig, httpapi.MakeCoAPHandler(svc, channelsClient, domainsClient, logger), logger)
+	resolver := topics.NewResolver(channelsClient, domainsClient)
+	cs := coapserver.NewServer(ctx, cancel, svcName, coapServerConfig, httpapi.MakeCoAPHandler(svc, channelsClient, resolver, logger), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, supermq.Version, logger, cancel)

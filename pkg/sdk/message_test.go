@@ -30,6 +30,7 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	pubsub "github.com/absmach/supermq/pkg/messaging/mocks"
 	sdk "github.com/absmach/supermq/pkg/sdk"
+	"github.com/absmach/supermq/pkg/topics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -46,7 +47,8 @@ func setupMessages() (*httptest.Server, *pubsub.PubSub) {
 	domainsGRPCClient = new(dmocks.DomainsServiceClient)
 	pub := new(pubsub.PubSub)
 	authn := new(authnmocks.Authentication)
-	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, domainsGRPCClient, smqlog.NewMock())
+	resolver := topics.NewResolver(channelsGRPCClient, domainsGRPCClient)
+	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, resolver, smqlog.NewMock())
 
 	mux := api.MakeHandler(smqlog.NewMock(), "")
 	target := httptest.NewServer(mux)
