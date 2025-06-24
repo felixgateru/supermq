@@ -53,7 +53,7 @@ func (repo domainRepo) RetrieveInvitation(ctx context.Context, inviteeUserID, do
 }
 
 func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
-	query := pageQuery(pm)
+	query := pageQuery(pm, false)
 
 	q := fmt.Sprintf(`
 		SELECT
@@ -118,6 +118,79 @@ func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.In
 	return invPage, nil
 }
 
+func (repo domainRepo) RetrieveInviteeInvitations(ctx context.Context, inviteeUserID string, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
+	query := pageQuery(pm, true)
+
+	q := fmt.Sprintf(`
+		SELECT
+			i.invited_by,
+			i.invitee_user_id,
+			i.domain_id,
+			d."name"  AS domain_name,
+			i.role_id,
+			dr."name" AS role_name,
+			i.created_at,
+			i.updated_at,
+			i.confirmed_at,
+			i.rejected_at
+		FROM
+			invitations i
+		LEFT JOIN domains d ON
+			i.domain_id = d.id
+		LEFT JOIN domains_roles dr ON
+			dr.id = i.role_id
+		WHERE
+			i.invitee_user_id = :invitee_user_id
+		%s
+		LIMIT :limit OFFSET :offset;
+		`, query)
+
+	pm.InviteeUserID = inviteeUserID
+	rows, err := repo.db.NamedQueryContext(ctx, q, pm)
+	if err != nil {
+		return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+	}
+	defer rows.Close()
+
+	var items []domains.Invitation
+	for rows.Next() {
+		var dbinv dbInvitation
+		if err = rows.StructScan(&dbinv); err != nil {
+			return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+		}
+		items = append(items, toInvitation(dbinv))
+	}
+
+	tq := fmt.Sprintf(`
+		SELECT
+			COUNT(*)
+		FROM
+			invitations i
+		LEFT JOIN domains d ON
+
+			i.domain_id = d.id
+		LEFT JOIN domains_roles dr ON
+			dr.id = i.role_id
+		WHERE
+			i.invitee_user_id = :invitee_user_id
+		%s
+		`, query)
+
+	total, err := postgres.Total(ctx, repo.db, tq, pm)
+	if err != nil {
+		return domains.InvitationPage{}, postgres.HandleError(repoerr.ErrViewEntity, err)
+	}
+
+	invPage := domains.InvitationPage{
+		Total:       total,
+		Offset:      pm.Offset,
+		Limit:       pm.Limit,
+		Invitations: items,
+	}
+
+	return invPage, nil
+}
+
 func (repo domainRepo) UpdateConfirmation(ctx context.Context, invitation domains.Invitation) (err error) {
 	q := `UPDATE invitations SET confirmed_at = :confirmed_at, updated_at = :updated_at WHERE invitee_user_id = :invitee_user_id AND domain_id = :domain_id`
 
@@ -162,23 +235,17 @@ func (repo domainRepo) DeleteInvitation(ctx context.Context, inviteeUserID, doma
 	return nil
 }
 
-func pageQuery(pm domains.InvitationPageMeta) string {
+func pageQuery(pm domains.InvitationPageMeta, invitee bool) string {
 	var query []string
 	var emq string
 	if pm.DomainID != "" {
 		query = append(query, "i.domain_id = :domain_id")
-	}
-	if pm.InviteeUserID != "" {
-		query = append(query, "i.invitee_user_id = :invitee_user_id")
 	}
 	if pm.InvitedBy != "" {
 		query = append(query, "i.invited_by = :invited_by")
 	}
 	if pm.RoleID != "" {
 		query = append(query, "i.role_id = :role_id")
-	}
-	if pm.InvitedByOrUserID != "" {
-		query = append(query, "(i.invited_by = :invited_by_or_user_id OR i.invitee_user_id = :invited_by_or_user_id)")
 	}
 	if pm.State == domains.Accepted {
 		query = append(query, "i.confirmed_at IS NOT NULL")
@@ -188,6 +255,15 @@ func pageQuery(pm domains.InvitationPageMeta) string {
 	}
 	if pm.State == domains.Rejected {
 		query = append(query, "i.rejected_at IS NOT NULL")
+	}
+	if invitee && len(query) > 0 {
+		return fmt.Sprintf("AND %s", strings.Join(query, " AND "))
+	}
+	if pm.InviteeUserID != "" {
+		query = append(query, "i.invitee_user_id = :invitee_user_id")
+	}
+	if pm.InvitedByOrUserID != "" {
+		query = append(query, "(i.invited_by = :invited_by_or_user_id OR i.invitee_user_id = :invited_by_or_user_id)")
 	}
 
 	if len(query) > 0 {
