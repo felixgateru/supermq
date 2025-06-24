@@ -261,6 +261,9 @@ type Repository interface {
 	// RetrieveAllInvitations retrieves all invitations.
 	RetrieveAllInvitations(ctx context.Context, page InvitationPageMeta) (invitations InvitationPage, err error)
 
+	// // RetrieveInviteeInvitations retrieves all invitations for a specific invitee user ID.
+	RetrieveInviteeInvitations(ctx context.Context, inviteeUserID string, pm InvitationPageMeta) (InvitationPage, error) 
+
 	// UpdateConfirmation updates an invitation by setting the confirmation time.
 	UpdateConfirmation(ctx context.Context, invitation Invitation) (err error)
 

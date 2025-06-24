@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/0x6flab/namegenerator"
 	"github.com/absmach/supermq/domains"
 	"github.com/absmach/supermq/domains/postgres"
 	"github.com/absmach/supermq/internal/testsutil"
@@ -21,7 +22,10 @@ import (
 
 const roleName = "roleName"
 
-var invalidUUID = strings.Repeat("a", 37)
+var (
+	invalidUUID = strings.Repeat("a", 37)
+	namegen     = namegenerator.NewGenerator()
+)
 
 func TestSaveInvitation(t *testing.T) {
 	t.Cleanup(func() {
@@ -157,7 +161,7 @@ func TestSaveInvitation(t *testing.T) {
 	}
 }
 
-func TestInvitationRetrieve(t *testing.T) {
+func TestRetrieveInvitation(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -245,7 +249,7 @@ func TestInvitationRetrieve(t *testing.T) {
 	}
 }
 
-func TestInvitationRetrieveAll(t *testing.T) {
+func TestRetrieveAllInvitations(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -633,7 +637,252 @@ func TestInvitationRetrieveAll(t *testing.T) {
 	}
 }
 
-func TestInvitationUpdateConfirmation(t *testing.T) {
+func TestRetrieveInviteeInvitations(t *testing.T) {
+	t.Cleanup(func() {
+		_, err := db.Exec("DELETE FROM invitations")
+		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
+		_, err = db.Exec("DELETE FROM domains")
+		require.Nil(t, err, fmt.Sprintf("clean domains unexpected error: %s", err))
+	})
+	repo := postgres.NewRepository(database)
+
+	inviteeID := testsutil.GenerateUUID(t)
+
+	num := 10
+
+	var items []domains.Invitation
+	for range num {
+		dom := saveDomain(t, repo)
+		invitation := domains.Invitation{
+			InvitedBy:     testsutil.GenerateUUID(t),
+			InviteeUserID: inviteeID,
+			DomainID:      dom.ID,
+			DomainName:    dom.Name,
+			RoleID:        testsutil.GenerateUUID(t),
+			CreatedAt:     time.Now().UTC().Truncate(time.Microsecond),
+		}
+		err := repo.SaveInvitation(context.Background(), invitation)
+		require.Nil(t, err, fmt.Sprintf("create invitation unexpected error: %s", err))
+		items = append(items, invitation)
+	}
+	items[5].ConfirmedAt = time.Now().UTC().Truncate(time.Microsecond)
+	err := repo.UpdateConfirmation(context.Background(), items[5])
+	require.Nil(t, err, fmt.Sprintf("update invitation unexpected error: %s", err))
+
+	cases := []struct {
+		desc      string
+		inviteeID string
+		page      domains.InvitationPageMeta
+		response  domains.InvitationPage
+		err       error
+	}{
+		{
+			desc:      "retrieve invitee invitations successfully",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				Offset: 0,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       uint64(num),
+				Offset:      0,
+				Limit:       10,
+				Invitations: items[:10],
+			},
+			err: nil,
+		},
+		{
+			desc:      "retrieve invitee invitations with invalid invitee user id",
+			inviteeID: testsutil.GenerateUUID(t),
+			page: domains.InvitationPageMeta{
+				Offset: 0,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       0,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation(nil),
+			},
+			err: nil,
+		},
+		{
+			desc:      "retrieve invitee invitations  with offset out of range",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				Offset: 11,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       uint64(num),
+				Offset:      11,
+				Limit:       10,
+				Invitations: []domains.Invitation(nil),
+			},
+		},
+		{
+			desc:      "retrieve invitations with empty page",
+			inviteeID: inviteeID,
+			page:      domains.InvitationPageMeta{},
+			response: domains.InvitationPage{
+				Total:       uint64(num),
+				Offset:      0,
+				Limit:       0,
+				Invitations: []domains.Invitation(nil),
+			},
+		},
+		{
+			desc:      "retrieve invitations with domain",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				DomainID: items[0].DomainID,
+				Offset:   0,
+				Limit:    10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: items[:1],
+			},
+		},
+		{
+			desc: "retrieve invitations with invited_by",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				InvitedBy: items[0].InvitedBy,
+				Offset:    0,
+				Limit:     10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: items[:1],
+			},
+		},
+		{
+			desc: "retrieve invitations with role_id",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				RoleID: items[3].RoleID,
+				Offset: 0,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation{items[3]},
+			},
+		},
+		{
+			desc: "retrieve invitations with domain_id and invited_by",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				DomainID:  items[0].DomainID,
+				InvitedBy: items[0].InvitedBy,
+				Offset:    0,
+				Limit:     10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation{items[0]},
+			},
+		},
+		{
+			desc: "retrieve invitations with domain_id, invited_by and role_id",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				DomainID:      items[0].DomainID,
+				InvitedBy:     items[0].InvitedBy,
+				RoleID:        items[0].RoleID,
+				Offset:        0,
+				Limit:         10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation{items[0]},
+			},
+		},
+		{
+			desc: "retrieve invitations with invalid domain",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				DomainID: invalidUUID,
+				Offset:   0,
+				Limit:    10,
+			},
+			response: domains.InvitationPage{
+				Total:       0,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation(nil),
+			},
+		},
+		{
+			desc: "retrieve invitations with invalid invited_by",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				InvitedBy: invalidUUID,
+				Offset:    0,
+				Limit:     10,
+			},
+			response: domains.InvitationPage{
+				Total:       0,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation(nil),
+			},
+		},
+		{
+			desc: "retrieve invitations with invalid role_id",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				RoleID: invalidUUID,
+				Offset: 0,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       0,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation(nil),
+			},
+		},
+		{
+			desc: "retrieve invitations with accepted state",
+			inviteeID: inviteeID,
+			page: domains.InvitationPageMeta{
+				State:  domains.Accepted,
+				Offset: 0,
+				Limit:  10,
+			},
+			response: domains.InvitationPage{
+				Total:       1,
+				Offset:      0,
+				Limit:       10,
+				Invitations: []domains.Invitation{items[5]},
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			page, err := repo.RetrieveInviteeInvitations(context.Background(), tc.inviteeID, tc.page)
+			assert.Equal(t, tc.response.Total, page.Total, fmt.Sprintf("%s: expected %d got %d\n", tc.desc, tc.response.Total, page.Total))
+			assert.Equal(t, tc.response.Offset, page.Offset, fmt.Sprintf("%s: expected %d got %d\n", tc.desc, tc.response.Offset, page.Offset))
+			assert.Equal(t, tc.response.Limit, page.Limit, fmt.Sprintf("%s: expected %d got %d\n", tc.desc, tc.response.Limit, page.Limit))
+			assert.ElementsMatch(t, page.Invitations, tc.response.Invitations, fmt.Sprintf("%s: expected %+v got %+v\n", tc.desc, tc.response.Invitations, page.Invitations))
+			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+		})
+	}
+}
+
+func TestUpdateConfirmation(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -697,7 +946,7 @@ func TestInvitationUpdateConfirmation(t *testing.T) {
 	}
 }
 
-func TestInvitationUpdateRejection(t *testing.T) {
+func TestUpdateRejection(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -761,7 +1010,7 @@ func TestInvitationUpdateRejection(t *testing.T) {
 	}
 }
 
-func TestInvitationDelete(t *testing.T) {
+func TestDeleteInvitation(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -823,7 +1072,7 @@ func saveDomain(t *testing.T, repo domains.Repository) domains.Domain {
 	domain := domains.Domain{
 		ID:    testsutil.GenerateUUID(t),
 		Name:  "test",
-		Route: "test",
+		Route: testsutil.GenerateUUID(t),
 		Tags:  []string{"test"},
 		Metadata: map[string]interface{}{
 			"test": "test",
