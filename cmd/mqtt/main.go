@@ -441,7 +441,7 @@ func (bh beforeHandler) resolveDomain(ctx context.Context, domain string) (strin
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
-	resp, err := bh.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{Route: domain})
+	resp, err := bh.domains.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{Route: domain})
 	if err != nil {
 		return "", err
 	}
@@ -452,7 +452,7 @@ func (bh beforeHandler) resolveChannel(ctx context.Context, channel, domainID st
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
-	resp, err := bh.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+	resp, err := bh.channels.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})
