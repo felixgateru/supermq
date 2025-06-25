@@ -252,6 +252,24 @@ func (es *eventStore) ListInvitations(ctx context.Context, session authn.Session
 	return ip, nil
 }
 
+func (es *eventStore) ListInviteeInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
+	ip, err := es.svc.ListInviteeInvitations(ctx, session, pm)
+	if err != nil {
+		return ip, err
+	}
+
+	event := listInviteeInvitationsEvent{
+		InvitationPageMeta: pm,
+		session:            session,
+	}
+
+	if err := es.Publish(ctx, listInvitationsStream, event); err != nil {
+		return ip, err
+	}
+
+	return ip, nil
+}
+
 func (es *eventStore) AcceptInvitation(ctx context.Context, session authn.Session, domainID string) (domains.Invitation, error) {
 	inv, err := es.svc.AcceptInvitation(ctx, session, domainID)
 	if err != nil {
