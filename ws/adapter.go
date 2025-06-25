@@ -153,7 +153,7 @@ func (svc *adapterService) resolveDomain(ctx context.Context, domain string) (st
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
-	d, err := svc.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+	d, err := svc.domains.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{
 		Route: domain,
 	})
 	if err != nil {
@@ -167,7 +167,7 @@ func (svc *adapterService) resolveChannel(ctx context.Context, channel, domainID
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
-	c, err := svc.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+	c, err := svc.channels.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})

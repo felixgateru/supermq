@@ -204,7 +204,7 @@ func resolveDomain(ctx context.Context, domain string) (string, error) {
 	if api.ValidateUUID(domain) == nil {
 		return domain, nil
 	}
-	d, err := domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+	d, err := domains.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{
 		Route: domain,
 	})
 	if err != nil {
@@ -218,7 +218,7 @@ func resolveChannel(ctx context.Context, channel, domainID string) (string, erro
 	if api.ValidateUUID(channel) == nil {
 		return channel, nil
 	}
-	c, err := channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
+	c, err := channels.RetrieveIDByRoute(ctx, &grpcCommonV1.RetrieveIDByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})
