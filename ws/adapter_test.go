@@ -197,7 +197,7 @@ func TestSubscribe(t *testing.T) {
 		if strings.HasPrefix(tc.clientKey, "Client") {
 			authReq.ClientSecret = strings.TrimPrefix(tc.clientKey, "Client ")
 		}
-		domainsCall := domains.On("RetrieveByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: tc.domainID}}, nil)
+		domainsCall := domains.On("RetrieveIDByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: tc.domainID}}, nil)
 		clientsCall := clients.On("Authenticate", mock.Anything, authReq).Return(tc.authNRes, tc.authNErr)
 		channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 			ClientType: policies.ClientType,
@@ -206,7 +206,7 @@ func TestSubscribe(t *testing.T) {
 			ChannelId:  tc.chanID,
 			DomainId:   tc.domainID,
 		}).Return(tc.authZRes, tc.authZErr)
-		channelsCall1 := channels.On("RetrieveByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: tc.chanID}}, nil)
+		channelsCall1 := channels.On("RetrieveIDByRoute", mock.Anything, mock.Anything).Return(&grpcCommonV1.RetrieveEntityRes{Entity: &grpcCommonV1.EntityBasic{Id: tc.chanID}}, nil)
 		repocall := pubsub.On("Subscribe", mock.Anything, subConfig).Return(tc.subErr)
 		err := svc.Subscribe(context.Background(), sessionID, tc.clientKey, tc.domainID, tc.chanID, tc.subtopic, c)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
