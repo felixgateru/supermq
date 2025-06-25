@@ -12,6 +12,10 @@ type retrieveEntityRes struct {
 	status uint8
 }
 
+type retrieveIDByRouteRes struct {
+	id string
+}
+
 type retrieveStatusRes struct {
 	status uint8
 }

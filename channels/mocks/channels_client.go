@@ -375,6 +375,77 @@ func (_c *ChannelsServiceClient_RetrieveEntity_Call) RunAndReturn(run func(ctx c
 	return _c
 }
 
+// RetrieveIDByRoute provides a mock function for the type ChannelsServiceClient
+func (_mock *ChannelsServiceClient) RetrieveIDByRoute(ctx context.Context, in *v10.RetrieveIDByRouteReq, opts ...grpc.CallOption) (*v10.RetrieveEntityRes, error) {
+	var tmpRet mock.Arguments
+	if len(opts) > 0 {
+		tmpRet = _mock.Called(ctx, in, opts)
+	} else {
+		tmpRet = _mock.Called(ctx, in)
+	}
+	ret := tmpRet
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveIDByRoute")
+	}
+
+	var r0 *v10.RetrieveEntityRes
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *v10.RetrieveIDByRouteReq, []grpc.CallOption) (*v10.RetrieveEntityRes, error)); ok {
+		return returnFunc(ctx, in, opts)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *v10.RetrieveIDByRouteReq, ...grpc.CallOption) *v10.RetrieveEntityRes); ok {
+		r0 = returnFunc(ctx, in, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*v10.RetrieveEntityRes)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *v10.RetrieveIDByRouteReq, ...grpc.CallOption) error); ok {
+		r1 = returnFunc(ctx, in, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// ChannelsServiceClient_RetrieveIDByRoute_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveIDByRoute'
+type ChannelsServiceClient_RetrieveIDByRoute_Call struct {
+	*mock.Call
+}
+
+// RetrieveIDByRoute is a helper method to define mock.On call
+//   - ctx
+//   - in
+//   - opts
+func (_e *ChannelsServiceClient_Expecter) RetrieveIDByRoute(ctx interface{}, in interface{}, opts ...interface{}) *ChannelsServiceClient_RetrieveIDByRoute_Call {
+	return &ChannelsServiceClient_RetrieveIDByRoute_Call{Call: _e.mock.On("RetrieveIDByRoute",
+		append([]interface{}{ctx, in}, opts...)...)}
+}
+
+func (_c *ChannelsServiceClient_RetrieveIDByRoute_Call) Run(run func(ctx context.Context, in *v10.RetrieveIDByRouteReq, opts ...grpc.CallOption)) *ChannelsServiceClient_RetrieveIDByRoute_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]grpc.CallOption, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(grpc.CallOption)
+			}
+		}
+		run(args[0].(context.Context), args[1].(*v10.RetrieveIDByRouteReq), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *ChannelsServiceClient_RetrieveIDByRoute_Call) Return(retrieveEntityRes *v10.RetrieveEntityRes, err error) *ChannelsServiceClient_RetrieveIDByRoute_Call {
+	_c.Call.Return(retrieveEntityRes, err)
+	return _c
+}
+
+func (_c *ChannelsServiceClient_RetrieveIDByRoute_Call) RunAndReturn(run func(ctx context.Context, in *v10.RetrieveIDByRouteReq, opts ...grpc.CallOption) (*v10.RetrieveEntityRes, error)) *ChannelsServiceClient_RetrieveIDByRoute_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UnsetParentGroupFromChannels provides a mock function for the type ChannelsServiceClient
 func (_mock *ChannelsServiceClient) UnsetParentGroupFromChannels(ctx context.Context, in *v1.UnsetParentGroupFromChannelsReq, opts ...grpc.CallOption) (*v1.UnsetParentGroupFromChannelsRes, error) {
 	var tmpRet mock.Arguments
