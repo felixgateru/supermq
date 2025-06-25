@@ -53,7 +53,7 @@ func (repo domainRepo) RetrieveInvitation(ctx context.Context, inviteeUserID, do
 }
 
 func (repo domainRepo) RetrieveAllInvitations(ctx context.Context, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
-	query := pageQuery(pm, false)
+	query := pageQuery(pm)
 
 	q := fmt.Sprintf(`
 		SELECT
@@ -162,17 +162,23 @@ func (repo domainRepo) DeleteInvitation(ctx context.Context, inviteeUserID, doma
 	return nil
 }
 
-func pageQuery(pm domains.InvitationPageMeta, invitee bool) string {
+func pageQuery(pm domains.InvitationPageMeta) string {
 	var query []string
 	var emq string
 	if pm.DomainID != "" {
 		query = append(query, "i.domain_id = :domain_id")
+	}
+	if pm.InviteeUserID != "" {
+		query = append(query, "i.invitee_user_id = :invitee_user_id")
 	}
 	if pm.InvitedBy != "" {
 		query = append(query, "i.invited_by = :invited_by")
 	}
 	if pm.RoleID != "" {
 		query = append(query, "i.role_id = :role_id")
+	}
+	if pm.InvitedByOrUserID != "" {
+		query = append(query, "(i.invited_by = :invited_by_or_user_id OR i.invitee_user_id = :invited_by_or_user_id)")
 	}
 	if pm.State == domains.Accepted {
 		query = append(query, "i.confirmed_at IS NOT NULL")
@@ -182,15 +188,6 @@ func pageQuery(pm domains.InvitationPageMeta, invitee bool) string {
 	}
 	if pm.State == domains.Rejected {
 		query = append(query, "i.rejected_at IS NOT NULL")
-	}
-	if invitee && len(query) > 0 {
-		return fmt.Sprintf("AND %s", strings.Join(query, " AND "))
-	}
-	if pm.InviteeUserID != "" {
-		query = append(query, "i.invitee_user_id = :invitee_user_id")
-	}
-	if pm.InvitedByOrUserID != "" {
-		query = append(query, "(i.invited_by = :invited_by_or_user_id OR i.invitee_user_id = :invited_by_or_user_id)")
 	}
 
 	if len(query) > 0 {
