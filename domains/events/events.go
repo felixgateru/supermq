@@ -26,7 +26,7 @@ const (
 	invitationAccept      = invitationPrefix + "accept"
 	invitationReject      = invitationPrefix + "reject"
 	invitationList        = invitationPrefix + "list"
-	InvitationListInvitee = invitationPrefix + "list_invitee"
+	invitationListInvitee = invitationPrefix + "list_invitee"
 	invitationRetrieve    = invitationPrefix + "retrieve"
 	invitationDelete      = invitationPrefix + "delete"
 )
@@ -43,7 +43,7 @@ var (
 	_ events.Event = (*sendInvitationEvent)(nil)
 	_ events.Event = (*viewInvitationEvent)(nil)
 	_ events.Event = (*listInvitationsEvent)(nil)
-
+	_ events.Event = (*listInviteeInvitationsEvent)(nil)
 	_ events.Event = (*acceptInvitationEvent)(nil)
 	_ events.Event = (*rejectInvitationEvent)(nil)
 	_ events.Event = (*deleteInvitationEvent)(nil)
@@ -387,7 +387,7 @@ type listInviteeInvitationsEvent struct {
 
 func (lie listInviteeInvitationsEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":       InvitationListInvitee,
+		"operation":       invitationListInvitee,
 		"offset":          lie.Offset,
 		"limit":           lie.Limit,
 		"invitee_user_id": lie.InviteeUserID,
