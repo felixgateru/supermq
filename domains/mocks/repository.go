@@ -952,62 +952,6 @@ func (_c *Repository_RetrieveInvitation_Call) RunAndReturn(run func(ctx context.
 	return _c
 }
 
-// RetrieveInviteeInvitations provides a mock function for the type Repository
-func (_mock *Repository) RetrieveInviteeInvitations(ctx context.Context, inviteeUserID string, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {
-	ret := _mock.Called(ctx, inviteeUserID, pm)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RetrieveInviteeInvitations")
-	}
-
-	var r0 domains.InvitationPage
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domains.InvitationPageMeta) (domains.InvitationPage, error)); ok {
-		return returnFunc(ctx, inviteeUserID, pm)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, domains.InvitationPageMeta) domains.InvitationPage); ok {
-		r0 = returnFunc(ctx, inviteeUserID, pm)
-	} else {
-		r0 = ret.Get(0).(domains.InvitationPage)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, domains.InvitationPageMeta) error); ok {
-		r1 = returnFunc(ctx, inviteeUserID, pm)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repository_RetrieveInviteeInvitations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveInviteeInvitations'
-type Repository_RetrieveInviteeInvitations_Call struct {
-	*mock.Call
-}
-
-// RetrieveInviteeInvitations is a helper method to define mock.On call
-//   - ctx
-//   - inviteeUserID
-//   - pm
-func (_e *Repository_Expecter) RetrieveInviteeInvitations(ctx interface{}, inviteeUserID interface{}, pm interface{}) *Repository_RetrieveInviteeInvitations_Call {
-	return &Repository_RetrieveInviteeInvitations_Call{Call: _e.mock.On("RetrieveInviteeInvitations", ctx, inviteeUserID, pm)}
-}
-
-func (_c *Repository_RetrieveInviteeInvitations_Call) Run(run func(ctx context.Context, inviteeUserID string, pm domains.InvitationPageMeta)) *Repository_RetrieveInviteeInvitations_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(domains.InvitationPageMeta))
-	})
-	return _c
-}
-
-func (_c *Repository_RetrieveInviteeInvitations_Call) Return(invitationPage domains.InvitationPage, err error) *Repository_RetrieveInviteeInvitations_Call {
-	_c.Call.Return(invitationPage, err)
-	return _c
-}
-
-func (_c *Repository_RetrieveInviteeInvitations_Call) RunAndReturn(run func(ctx context.Context, inviteeUserID string, pm domains.InvitationPageMeta) (domains.InvitationPage, error)) *Repository_RetrieveInviteeInvitations_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RetrieveRole provides a mock function for the type Repository
 func (_mock *Repository) RetrieveRole(ctx context.Context, roleID string) (roles.Role, error) {
 	ret := _mock.Called(ctx, roleID)

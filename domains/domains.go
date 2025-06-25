@@ -207,6 +207,11 @@ type Service interface {
 	// By default, it will list invitations the current user has sent or received.
 	ListInvitations(ctx context.Context, session authn.Session, page InvitationPageMeta) (invitations InvitationPage, err error)
 
+	// ListInviteeInvitations returns a list of invitations for the invitee user.
+	// People who can list invitee invitations are:
+	// - members of the platform
+	ListInviteeInvitations(ctx context.Context, session authn.Session, page InvitationPageMeta) (invitations InvitationPage, err error)
+
 	// AcceptInvitation accepts an invitation by adding the user to the domain.
 	AcceptInvitation(ctx context.Context, session authn.Session, domainID string) (invitation Invitation, err error)
 
@@ -260,9 +265,6 @@ type Repository interface {
 
 	// RetrieveAllInvitations retrieves all invitations.
 	RetrieveAllInvitations(ctx context.Context, page InvitationPageMeta) (invitations InvitationPage, err error)
-
-	// // RetrieveInviteeInvitations retrieves all invitations for a specific invitee user ID.
-	RetrieveInviteeInvitations(ctx context.Context, inviteeUserID string, pm InvitationPageMeta) (InvitationPage, error) 
 
 	// UpdateConfirmation updates an invitation by setting the confirmation time.
 	UpdateConfirmation(ctx context.Context, invitation Invitation) (err error)

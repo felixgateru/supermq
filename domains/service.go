@@ -252,7 +252,8 @@ func (svc *service) ListInvitations(ctx context.Context, session authn.Session, 
 }
 
 func (svc *service) ListInviteeInvitations(ctx context.Context, session authn.Session, page InvitationPageMeta) (invitations InvitationPage, err error) {
-	ip, err := svc.repo.RetrieveInviteeInvitations(ctx, session.UserID, page)
+	page.InviteeUserID = session.UserID
+	ip, err := svc.repo.RetrieveAllInvitations(ctx, page)
 	if err != nil {
 		return InvitationPage{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
