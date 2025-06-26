@@ -167,8 +167,8 @@ func (_c *Repository_DeleteDomain_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
-// DeleteUserInvitation provides a mock function for the type Repository
-func (_mock *Repository) DeleteUserInvitation(ctx context.Context, domainID string, userID ...string) error {
+// DeleteUsersInvitation provides a mock function for the type Repository
+func (_mock *Repository) DeleteUsersInvitation(ctx context.Context, domainID string, userID ...string) error {
 	var tmpRet mock.Arguments
 	if len(userID) > 0 {
 		tmpRet = _mock.Called(ctx, domainID, userID)
@@ -178,7 +178,7 @@ func (_mock *Repository) DeleteUserInvitation(ctx context.Context, domainID stri
 	ret := tmpRet
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteUserInvitation")
+		panic("no return value specified for DeleteUsersInvitation")
 	}
 
 	var r0 error
@@ -190,8 +190,8 @@ func (_mock *Repository) DeleteUserInvitation(ctx context.Context, domainID stri
 	return r0
 }
 
-// Repository_DeleteUserInvitation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteUserInvitation'
-type Repository_DeleteUserInvitation_Call struct {
+// Repository_DeleteUsersInvitation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteUsersInvitation'
+type Repository_DeleteUsersInvitation_Call struct {
 	*mock.Call
 }
 
@@ -203,7 +203,7 @@ func (_e *Repository_Expecter) DeleteInvitation(ctx interface{}, userID interfac
 	return &Repository_DeleteInvitation_Call{Call: _e.mock.On("DeleteInvitation", ctx, userID, domainID)}
 }
 
-func (_c *Repository_DeleteUserInvitation_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUserInvitation_Call {
+func (_c *Repository_DeleteUsersInvitation_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUsersInvitation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -226,12 +226,12 @@ func (_c *Repository_DeleteUserInvitation_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Repository_DeleteUserInvitation_Call) Return(err error) *Repository_DeleteUserInvitation_Call {
+func (_c *Repository_DeleteUsersInvitation_Call) Return(err error) *Repository_DeleteUsersInvitation_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *Repository_DeleteUserInvitation_Call) RunAndReturn(run func(ctx context.Context, domainID string, userID ...string) error) *Repository_DeleteUserInvitation_Call {
+func (_c *Repository_DeleteUsersInvitation_Call) RunAndReturn(run func(ctx context.Context, domainID string, userID ...string) error) *Repository_DeleteUsersInvitation_Call {
 	_c.Call.Return(run)
 	return _c
 }

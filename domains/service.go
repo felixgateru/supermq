@@ -306,7 +306,7 @@ func (svc *service) RejectInvitation(ctx context.Context, session authn.Session,
 
 func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) error {
 	if session.UserID == inviteeUserID {
-		if err := svc.repo.DeleteUserInvitation(ctx, domainID, inviteeUserID); err != nil {
+		if err := svc.repo.DeleteUsersInvitation(ctx, domainID, inviteeUserID); err != nil {
 			return errors.Wrap(svcerr.ErrRemoveEntity, err)
 		}
 		return nil
@@ -325,7 +325,7 @@ func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session,
 		return errors.Wrap(svcerr.ErrRemoveEntity, svcerr.ErrInvitationAlreadyRejected)
 	}
 
-	if err := svc.repo.DeleteUserInvitation(ctx, domainID, inviteeUserID); err != nil {
+	if err := svc.repo.DeleteUsersInvitation(ctx, domainID, inviteeUserID); err != nil {
 		return errors.Wrap(svcerr.ErrRemoveEntity, err)
 	}
 
@@ -334,7 +334,7 @@ func (svc *service) DeleteInvitation(ctx context.Context, session authn.Session,
 
 // Add addition removal of user from invitations.
 func (svc *service) RemoveEntityMembers(ctx context.Context, session authn.Session, entityID string, members []string) error {
-	if err := svc.repo.DeleteUserInvitation(ctx, entityID, members...); err != nil && err != repoerr.ErrNotFound {
+	if err := svc.repo.DeleteUsersInvitation(ctx, entityID, members...); err != nil && err != repoerr.ErrNotFound {
 		return err
 	}
 
@@ -357,7 +357,7 @@ func (svc *service) RoleRemoveMembers(ctx context.Context, session authn.Session
 		}
 	}
 
-	if err := svc.repo.DeleteUserInvitation(ctx, entityID, members...); err != nil && err != repoerr.ErrNotFound {
+	if err := svc.repo.DeleteUsersInvitation(ctx, entityID, members...); err != nil && err != repoerr.ErrNotFound {
 		return err
 	}
 
