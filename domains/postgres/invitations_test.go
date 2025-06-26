@@ -823,7 +823,7 @@ func TestUserInvitationDelete(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := repo.DeleteUserInvitation(context.Background(), tc.domainID, tc.userIDs...)
+			err := repo.DeleteUsersInvitation(context.Background(), tc.domainID, tc.userIDs...)
 			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		})
 	}
