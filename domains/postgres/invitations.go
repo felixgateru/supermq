@@ -150,7 +150,7 @@ func (repo domainRepo) UpdateRejection(ctx context.Context, invitation domains.I
 	return nil
 }
 
-func (repo domainRepo) DeleteUserInvitation(ctx context.Context, domain string, inviteeUserIDs ...string) (err error) {
+func (repo domainRepo) DeleteUsersInvitation(ctx context.Context, domain string, inviteeUserIDs ...string) (err error) {
 	if len(inviteeUserIDs) == 0 {
 		return repoerr.ErrNotFound
 	}
