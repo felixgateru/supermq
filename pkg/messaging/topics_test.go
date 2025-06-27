@@ -47,6 +47,13 @@ var ParsePublisherTopicTestCases = []struct {
 		subtopic:  "",
 	},
 	{
+		desc:      "valid topic with trailing slash /m/domain123/c/channel456/devices/temp/",
+		topic:     "/m/domain123/c/channel456/devices/temp/",
+		domainID:  "domain123",
+		channelID: "channel456",
+		subtopic:  "devices.temp",
+	},
+	{
 		desc:      "invalid topic format (missing parts) /m/domain123/c/",
 		topic:     "/m/domain123/c/",
 		domainID:  "domain123",
@@ -126,6 +133,11 @@ var ParsePublisherTopicTestCases = []struct {
 		subtopic:  "",
 		expectErr: true,
 	},
+	{
+		desc:      "extra segment before prefix /extra/m/domain/c/channel",
+		topic:     "/extra/m/domain/c/channel",
+		expectErr: true,
+	},
 }
 
 func TestParsePublishTopic(t *testing.T) {
@@ -182,6 +194,13 @@ var ParseSubscribeTestCases = []struct {
 		domainID:  "domain123",
 		channelID: "channel456",
 		subtopic:  "",
+	},
+	{
+		desc:      "valid topic with trailing slash /m/domain123/c/channel456/devices/temp/",
+		topic:     "/m/domain123/c/channel456/devices/temp/",
+		domainID:  "domain123",
+		channelID: "channel456",
+		subtopic:  "devices.temp",
 	},
 	{
 		desc:      "invalid topic format (missing channel) /m/domain123/c/",
@@ -260,6 +279,11 @@ var ParseSubscribeTestCases = []struct {
 		domainID:  "",
 		channelID: "",
 		subtopic:  "",
+		expectErr: true,
+	},
+	{
+		desc:      "extra segment before prefix /extra/m/domain/c/channel",
+		topic:     "/extra/m/domain/c/channel",
 		expectErr: true,
 	},
 }
