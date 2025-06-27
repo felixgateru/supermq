@@ -34,7 +34,6 @@ import (
 	"github.com/absmach/supermq/pkg/messaging"
 	pubsub "github.com/absmach/supermq/pkg/messaging/mocks"
 	"github.com/absmach/supermq/pkg/policies"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -52,7 +51,7 @@ var (
 
 func newService(authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient) (session.Handler, *pubsub.PubSub) {
 	pub := new(pubsub.PubSub)
-	resolver := routes.NewResolver(channels, domains)
+	resolver := messaging.NewTopicResolver(channels, domains)
 	return server.NewHandler(pub, authn, clients, channels, resolver, smqlog.NewMock()), pub
 }
 

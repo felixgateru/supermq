@@ -36,7 +36,6 @@ import (
 	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/messaging/handler"
 	"github.com/absmach/supermq/pkg/prometheus"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/pkg/server"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
 	"github.com/absmach/supermq/pkg/uuid"
@@ -222,7 +221,7 @@ func main() {
 }
 
 func newService(pub messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient, logger *slog.Logger, tracer trace.Tracer) session.Handler {
-	resolver := routes.NewResolver(channels, domains)
+	resolver := messaging.NewTopicResolver(channels, domains)
 	svc := adapter.NewHandler(pub, authn, clients, channels, resolver, logger)
 	svc = handler.NewTracing(tracer, svc)
 	svc = handler.LoggingMiddleware(svc, logger)

@@ -25,8 +25,8 @@ import (
 	authnmocks "github.com/absmach/supermq/pkg/authn/mocks"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
+	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/messaging/mocks"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -76,7 +76,7 @@ func newHandler() session.Handler {
 	clients = new(clmocks.ClientsServiceClient)
 	channels = new(chmocks.ChannelsServiceClient)
 	publisher = new(mocks.PubSub)
-	resolver := routes.NewResolver(channels, domains)
+	resolver := messaging.NewTopicResolver(channels, domains)
 
 	return mhttp.NewHandler(publisher, authn, clients, channels, resolver, logger)
 }

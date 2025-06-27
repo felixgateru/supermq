@@ -22,7 +22,6 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/policies"
-	"github.com/absmach/supermq/pkg/routes"
 )
 
 var _ session.Handler = (*handler)(nil)
@@ -53,11 +52,11 @@ type handler struct {
 	channels grpcChannelsV1.ChannelsServiceClient
 	authn    smqauthn.Authentication
 	logger   *slog.Logger
-	resolver routes.Resolver
+	resolver messaging.TopicResolver
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver routes.Resolver) session.Handler {
+func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver messaging.TopicResolver) session.Handler {
 	return &handler{
 		logger:   logger,
 		pubsub:   pubsub,

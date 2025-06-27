@@ -13,7 +13,6 @@ import (
 
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/absmach/supermq/pkg/messaging"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/ws"
 	"github.com/go-chi/chi/v5"
 )
@@ -28,7 +27,7 @@ func generateSessionID() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func handshake(ctx context.Context, svc ws.Service, resolver routes.Resolver, logger *slog.Logger) http.HandlerFunc {
+func handshake(ctx context.Context, svc ws.Service, resolver messaging.TopicResolver, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := decodeRequest(r, resolver, logger)
 		if err != nil {
@@ -66,7 +65,7 @@ func handshake(ctx context.Context, svc ws.Service, resolver routes.Resolver, lo
 	}
 }
 
-func decodeRequest(r *http.Request, resolver routes.Resolver, logger *slog.Logger) (connReq, error) {
+func decodeRequest(r *http.Request, resolver messaging.TopicResolver, logger *slog.Logger) (connReq, error) {
 	authKey := r.Header.Get("Authorization")
 	if authKey == "" {
 		authKeys := r.URL.Query()["authorization"]
