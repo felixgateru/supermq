@@ -31,13 +31,14 @@ import (
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/absmach/supermq/pkg/grpcclient"
 	jaegerclient "github.com/absmach/supermq/pkg/jaeger"
+	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/messaging/brokers"
 	brokerstracing "github.com/absmach/supermq/pkg/messaging/brokers/tracing"
 	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/messaging/handler"
 	mqttpub "github.com/absmach/supermq/pkg/messaging/mqtt"
+	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/pkg/server"
-	"github.com/absmach/supermq/pkg/topics"
 	"github.com/absmach/supermq/pkg/uuid"
 	"github.com/caarlos0/env/v11"
 	"github.com/cenkalti/backoff/v4"
@@ -238,7 +239,7 @@ func main() {
 	}
 
 	beforeHandler := beforeHandler{
-		resolver: topics.NewResolver(channelsClient, domainsClient),
+		resolver: routes.NewResolver(channelsClient, domainsClient),
 	}
 
 	afterHandler := afterHandler{
@@ -370,7 +371,7 @@ func (ah afterHandler) Intercept(ctx context.Context, pkt packets.ControlPacket,
 }
 
 type beforeHandler struct {
-	resolver topics.Resolver
+	resolver routes.Resolver
 }
 
 // This interceptor is used to replace domain and channel routes with relevant domain and channel IDs in the message topic.
@@ -378,7 +379,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 	switch pt := pkt.(type) {
 	case *packets.SubscribePacket:
 		for i, topic := range pt.Topics {
-			ft, err := bh.resolver.ResolveMQTTTopic(ctx, topic)
+			ft, err := bh.resolveTopic(ctx, topic)
 			if err != nil {
 				return nil, err
 			}
@@ -388,7 +389,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 		return pt, nil
 	case *packets.UnsubscribePacket:
 		for i, topic := range pt.Topics {
-			ft, err := bh.resolver.ResolveMQTTTopic(ctx, topic)
+			ft, err := bh.resolveTopic(ctx, topic)
 			if err != nil {
 				return nil, err
 			}
@@ -396,7 +397,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 		}
 		return pt, nil
 	case *packets.PublishPacket:
-		ft, err := bh.resolver.ResolveMQTTTopic(ctx, pt.TopicName)
+		ft, err := bh.resolveTopic(ctx, pt.TopicName)
 		if err != nil {
 			return nil, err
 		}
@@ -406,4 +407,18 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 	}
 
 	return pkt, nil
+}
+
+func (bh beforeHandler) resolveTopic(ctx context.Context, topic string) (string, error) {
+	domain, channel, subtopic, err := messaging.ParseTopic(topic)
+	if err != nil {
+		return "", errors.Wrap(messaging.ErrMalformedTopic, err)
+	}
+
+	domainID, channelID, err := bh.resolver.Resolve(ctx, domain, channel)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("m/%s/c/%s%s", domainID, channelID, subtopic), nil
 }

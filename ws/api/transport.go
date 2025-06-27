@@ -10,7 +10,7 @@ import (
 	"net/http"
 
 	"github.com/absmach/supermq"
-	"github.com/absmach/supermq/pkg/topics"
+	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/ws"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
@@ -37,7 +37,7 @@ var (
 )
 
 // MakeHandler returns http handler with handshake endpoint.
-func MakeHandler(ctx context.Context, svc ws.Service, resolver topics.Resolver, l *slog.Logger, instanceID string) http.Handler {
+func MakeHandler(ctx context.Context, svc ws.Service, resolver routes.Resolver, l *slog.Logger, instanceID string) http.Handler {
 	logger = l
 
 	mux := chi.NewRouter()

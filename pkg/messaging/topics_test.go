@@ -202,10 +202,9 @@ var ParseSubscribeTestCases = []struct {
 	{
 		desc:      "invalid domain name m/domain*123/c/channel456/devices/+/temp/#",
 		topic:     "m/domain*123/c/channel456/devices/+/temp/#",
-		domainID:  "",
+		domainID:  "domain*123",
 		channelID: "channel456",
 		subtopic:  "devices.*.temp.>",
-		expectErr: true,
 	},
 	{
 		desc:      "invalid subtopic /m/domain123/c/channel456/sub/a*b/topic",

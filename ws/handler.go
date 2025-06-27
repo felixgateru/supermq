@@ -22,7 +22,7 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/policies"
-	smqtopics "github.com/absmach/supermq/pkg/topics"
+	"github.com/absmach/supermq/pkg/routes"
 )
 
 var _ session.Handler = (*handler)(nil)
@@ -53,11 +53,11 @@ type handler struct {
 	channels grpcChannelsV1.ChannelsServiceClient
 	authn    smqauthn.Authentication
 	logger   *slog.Logger
-	resolver smqtopics.Resolver
+	resolver routes.Resolver
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver smqtopics.Resolver) session.Handler {
+func NewHandler(pubsub messaging.PubSub, logger *slog.Logger, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver routes.Resolver) session.Handler {
 	return &handler{
 		logger:   logger,
 		pubsub:   pubsub,
@@ -93,9 +93,13 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		token = string(s.Password)
 	}
 
-	domainID, channelID, _, err := h.resolver.ResolveTopic(ctx, smqtopics.PubTopicType, *topic)
+	domain, channel, _, err := messaging.ParsePublishTopic(*topic)
 	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
+	}
+	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
+	if err != nil {
+		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
 	clientID, clientType, err := h.authAccess(ctx, token, domainID, channelID, connections.Publish)
@@ -122,15 +126,18 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	}
 
 	for _, topic := range *topics {
-		domainID, channelID, _, err := h.resolver.ResolveTopic(ctx, smqtopics.SubTopicType, topic)
+		domain, channel, _, err := messaging.ParseSubscribeTopic(topic)
 		if err != nil {
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+			return err
 		}
-		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Subscribe); err != nil {
+		domainID, chanID, err := h.resolver.Resolve(ctx, domain, channel)
+		if err != nil {
+			return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
+		}
+		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, chanID, connections.Subscribe); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -151,7 +158,11 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return nil
 	}
 
-	domainID, channelID, subtopic, err := h.resolver.ResolveTopic(ctx, smqtopics.PubTopicType, *topic)
+	domain, channel, subtopic, err := messaging.ParsePublishTopic(*topic)
+	if err != nil {
+		return errors.Wrap(errFailedPublish, err)
+	}
+	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}

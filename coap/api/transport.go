@@ -18,7 +18,7 @@ import (
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging"
-	"github.com/absmach/supermq/pkg/topics"
+	"github.com/absmach/supermq/pkg/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
@@ -51,11 +51,11 @@ type CoAPHandler struct {
 	logger   *slog.Logger
 	service  coap.Service
 	channels grpcChannelsV1.ChannelsServiceClient
-	resolver topics.Resolver
+	resolver routes.Resolver
 }
 
 // MakeCoAPHandler creates handler for CoAP messages.
-func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, resolver topics.Resolver, l *slog.Logger) mux.HandlerFunc {
+func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, resolver routes.Resolver, l *slog.Logger) mux.HandlerFunc {
 	h := &CoAPHandler{
 		logger:   l,
 		service:  svc,
@@ -145,13 +145,18 @@ func (h *CoAPHandler) decodeMessage(msg *mux.Message) (*messaging.Message, error
 		return &messaging.Message{}, err
 	}
 
-	var domainID, channelID, subTopic string
+	var domain, channel, subTopic string
 	switch msg.Code() {
 	case codes.GET:
-		domainID, channelID, subTopic, err = h.resolver.ResolveTopic(msg.Context(), topics.SubTopicType, path)
+		domain, channel, subTopic, err = messaging.ParseSubscribeTopic(path)
 	case codes.POST:
-		domainID, channelID, subTopic, err = h.resolver.ResolveTopic(msg.Context(), topics.PubTopicType, path)
+		domain, channel, subTopic, err = messaging.ParsePublishTopic(path)
 	}
+	if err != nil {
+		return &messaging.Message{}, err
+	}
+
+	domainID, channelID, err := h.resolver.Resolve(msg.Context(), domain, channel)
 	if err != nil {
 		return &messaging.Message{}, err
 	}

@@ -22,7 +22,7 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/policies"
-	"github.com/absmach/supermq/pkg/topics"
+	"github.com/absmach/supermq/pkg/routes"
 )
 
 var _ session.Handler = (*handler)(nil)
@@ -57,13 +57,13 @@ type handler struct {
 	publisher messaging.Publisher
 	clients   grpcClientsV1.ClientsServiceClient
 	channels  grpcChannelsV1.ChannelsServiceClient
-	resolver  topics.Resolver
+	resolver  routes.Resolver
 	authn     smqauthn.Authentication
 	logger    *slog.Logger
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(publisher messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver topics.Resolver, logger *slog.Logger) session.Handler {
+func NewHandler(publisher messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver routes.Resolver, logger *slog.Logger) session.Handler {
 	return &handler{
 		publisher: publisher,
 		authn:     authn,
@@ -122,9 +122,13 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errFailedPublish, errClientNotInitialized)
 	}
 
-	domainID, channelID, subtopic, err := h.resolver.ResolveTopic(ctx, topics.PubTopicType, *topic)
+	domain, channel, subtopic, err := messaging.ParsePublishTopic(*topic)
 	if err != nil {
 		return errors.Wrap(errMalformedTopic, err)
+	}
+	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
+	if err != nil {
+		return errors.Wrap(errFailedPublish, err)
 	}
 
 	var clientID, clientType string
