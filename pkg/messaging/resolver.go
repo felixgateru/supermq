@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	ErrEmptyRoute           = errors.New("empty route")
+	ErrEmptyRouteID         = errors.New("empty route or id")
 	ErrFailedResolveDomain  = errors.New("failed to resolve domain route")
 	ErrFailedResolveChannel = errors.New("failed to resolve channel route")
 )
@@ -40,7 +40,7 @@ func NewTopicResolver(channelsClient grpcChannelsV1.ChannelsServiceClient, domai
 
 func (r *resolver) Resolve(ctx context.Context, domain, channel string) (string, string, error) {
 	if domain == "" || channel == "" {
-		return "", "", ErrEmptyRoute
+		return "", "", ErrEmptyRouteID
 	}
 
 	domainID, err := r.resolveDomain(ctx, domain)
