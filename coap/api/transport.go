@@ -18,7 +18,6 @@ import (
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/messaging"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/message/codes"
@@ -51,11 +50,11 @@ type CoAPHandler struct {
 	logger   *slog.Logger
 	service  coap.Service
 	channels grpcChannelsV1.ChannelsServiceClient
-	resolver routes.Resolver
+	resolver messaging.TopicResolver
 }
 
 // MakeCoAPHandler creates handler for CoAP messages.
-func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, resolver routes.Resolver, l *slog.Logger) mux.HandlerFunc {
+func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, resolver messaging.TopicResolver, l *slog.Logger) mux.HandlerFunc {
 	h := &CoAPHandler{
 		logger:   l,
 		service:  svc,

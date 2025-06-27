@@ -37,7 +37,6 @@ import (
 	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/messaging/handler"
 	mqttpub "github.com/absmach/supermq/pkg/messaging/mqtt"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/pkg/server"
 	"github.com/absmach/supermq/pkg/uuid"
 	"github.com/caarlos0/env/v11"
@@ -239,7 +238,7 @@ func main() {
 	}
 
 	beforeHandler := beforeHandler{
-		resolver: routes.NewResolver(channelsClient, domainsClient),
+		resolver: messaging.NewTopicResolver(channelsClient, domainsClient),
 	}
 
 	afterHandler := afterHandler{
@@ -371,7 +370,7 @@ func (ah afterHandler) Intercept(ctx context.Context, pkt packets.ControlPacket,
 }
 
 type beforeHandler struct {
-	resolver routes.Resolver
+	resolver messaging.TopicResolver
 }
 
 // This interceptor is used to replace domain and channel routes with relevant domain and channel IDs in the message topic.

@@ -25,8 +25,8 @@ import (
 	smqlog "github.com/absmach/supermq/logger"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
 	authnMocks "github.com/absmach/supermq/pkg/authn/mocks"
+	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/messaging/mocks"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/ws"
 	"github.com/absmach/supermq/ws/api"
 	"github.com/gorilla/websocket"
@@ -52,7 +52,7 @@ func newService(clients grpcClientsV1.ClientsServiceClient, channels grpcChannel
 	return ws.New(clients, channels, pubsub), pubsub
 }
 
-func newHTTPServer(svc ws.Service, resolver routes.Resolver) *httptest.Server {
+func newHTTPServer(svc ws.Service, resolver messaging.TopicResolver) *httptest.Server {
 	mux := api.MakeHandler(context.Background(), svc, resolver, smqlog.NewMock(), instanceID)
 	return httptest.NewServer(mux)
 }
@@ -116,7 +116,7 @@ func TestHandshake(t *testing.T) {
 	channels := new(chmocks.ChannelsServiceClient)
 	authn := new(authnMocks.Authentication)
 	domains := new(dmocks.DomainsServiceClient)
-	resolver := routes.NewResolver(channels, domains)
+	resolver := messaging.NewTopicResolver(channels, domains)
 	svc, pubsub := newService(clients, channels)
 	target := newHTTPServer(svc, resolver)
 	defer target.Close()

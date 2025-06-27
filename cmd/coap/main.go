@@ -20,11 +20,11 @@ import (
 	domainsAuthz "github.com/absmach/supermq/pkg/domains/grpcclient"
 	"github.com/absmach/supermq/pkg/grpcclient"
 	jaegerclient "github.com/absmach/supermq/pkg/jaeger"
+	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/absmach/supermq/pkg/messaging/brokers"
 	brokerstracing "github.com/absmach/supermq/pkg/messaging/brokers/tracing"
 	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/prometheus"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/pkg/server"
 	coapserver "github.com/absmach/supermq/pkg/server/coap"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
@@ -182,7 +182,7 @@ func main() {
 
 	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, httpapi.MakeHandler(cfg.InstanceID), logger)
 
-	resolver := routes.NewResolver(channelsClient, domainsClient)
+	resolver := messaging.NewTopicResolver(channelsClient, domainsClient)
 	cs := coapserver.NewServer(ctx, cancel, svcName, coapServerConfig, httpapi.MakeCoAPHandler(svc, channelsClient, resolver, logger), logger)
 
 	if cfg.SendTelemetry {

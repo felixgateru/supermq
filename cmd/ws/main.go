@@ -29,7 +29,6 @@ import (
 	brokerstracing "github.com/absmach/supermq/pkg/messaging/brokers/tracing"
 	msgevents "github.com/absmach/supermq/pkg/messaging/events"
 	"github.com/absmach/supermq/pkg/prometheus"
-	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/pkg/server"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
 	"github.com/absmach/supermq/pkg/uuid"
@@ -194,7 +193,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	resolver := routes.NewResolver(channelsClient, domainsClient)
+	resolver := messaging.NewTopicResolver(channelsClient, domainsClient)
 
 	svc := newService(clientsClient, channelsClient, nps, logger, tracer)
 
