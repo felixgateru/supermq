@@ -419,6 +419,10 @@ func (bh beforeHandler) resolveTopic(ctx context.Context, topic string) (string,
 	if err != nil {
 		return "", err
 	}
+	rtopic := fmt.Sprintf("m/%s/c/%s", domainID, channelID)
+	if subtopic != "" {
+		rtopic = rtopic + "/" + subtopic
+	}
 
-	return fmt.Sprintf("m/%s/c/%s%s", domainID, channelID, subtopic), nil
+	return rtopic, nil
 }
