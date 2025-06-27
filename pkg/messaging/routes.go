@@ -19,6 +19,8 @@ var (
 	ErrFailedResolveChannel = errors.New("failed to resolve channel route")
 )
 
+// TopicResolver contains definitions for resolving domain and channel IDs
+// from their respective routes from the message topic.
 type TopicResolver interface {
 	Resolve(ctx context.Context, domain, channel string) (domainID string, channelID string, err error)
 }
@@ -28,6 +30,7 @@ type resolver struct {
 	domains  grpcDomainsV1.DomainsServiceClient
 }
 
+// NewTopicResolver creates a new instance of TopicResolver.
 func NewTopicResolver(channelsClient grpcChannelsV1.ChannelsServiceClient, domainsClient grpcDomainsV1.DomainsServiceClient) TopicResolver {
 	return &resolver{
 		channels: channelsClient,
