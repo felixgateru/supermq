@@ -1,6 +1,6 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-// Package topic contains SuperMQ definition for resolving topic domain and channel
+// Package route contains SuperMQ definition for resolving domain and channel route
 // parts in messaging topics.
-package topics
+package routes

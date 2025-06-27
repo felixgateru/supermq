@@ -12,7 +12,8 @@ import (
 	"net/http"
 
 	"github.com/absmach/supermq/pkg/errors"
-	"github.com/absmach/supermq/pkg/topics"
+	"github.com/absmach/supermq/pkg/messaging"
+	"github.com/absmach/supermq/pkg/routes"
 	"github.com/absmach/supermq/ws"
 	"github.com/go-chi/chi/v5"
 )
@@ -27,7 +28,7 @@ func generateSessionID() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func handshake(ctx context.Context, svc ws.Service, resolver topics.Resolver, logger *slog.Logger) http.HandlerFunc {
+func handshake(ctx context.Context, svc ws.Service, resolver routes.Resolver, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req, err := decodeRequest(r, resolver, logger)
 		if err != nil {
@@ -65,7 +66,7 @@ func handshake(ctx context.Context, svc ws.Service, resolver topics.Resolver, lo
 	}
 }
 
-func decodeRequest(r *http.Request, resolver topics.Resolver, logger *slog.Logger) (connReq, error) {
+func decodeRequest(r *http.Request, resolver routes.Resolver, logger *slog.Logger) (connReq, error) {
 	authKey := r.Header.Get("Authorization")
 	if authKey == "" {
 		authKeys := r.URL.Query()["authorization"]
@@ -78,9 +79,8 @@ func decodeRequest(r *http.Request, resolver topics.Resolver, logger *slog.Logge
 
 	domain := chi.URLParam(r, "domain")
 	channel := chi.URLParam(r, "channel")
-	st := chi.URLParam(r, "*")
 
-	domainID, channelID, subTopic, err := resolver.ResolveWSSubTopic(r.Context(), domain, channel, st)
+	domainID, channelID, err := resolver.Resolve(r.Context(), domain, channel)
 	if err != nil {
 		return connReq{}, err
 	}
@@ -89,7 +89,16 @@ func decodeRequest(r *http.Request, resolver topics.Resolver, logger *slog.Logge
 		clientKey: authKey,
 		channelID: channelID,
 		domainID:  domainID,
-		subtopic:  subTopic,
+	}
+
+	subTopic := chi.URLParam(r, "*")
+
+	if subTopic != "" {
+		subTopic, err := messaging.ParseSubscribeSubtopic(subTopic)
+		if err != nil {
+			return connReq{}, err
+		}
+		req.subtopic = subTopic
 	}
 
 	return req, nil
