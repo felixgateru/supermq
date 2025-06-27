@@ -138,18 +138,21 @@ func EncodeMessageMQTTTopic(m *Message) string {
 	return topic
 }
 
+// ParseTopic parses a messaging topic string and returns the domain ID, channel ID, and subtopic.
+// This is an optimized version with no regex and minimal allocations.
 func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	// location of string "m"
 	start := 0
 	// Handle both formats: "/m/domain/c/channel/subtopic" and "m/domain/c/channel/subtopic".
 	// If topic start with m/ then start is 0 , If topic start with /m/ then start is 1.
-	if len(topic) > 0 && topic[0] == '/' {
+	n := len(topic)
+	if n > 0 && topic[0] == '/' {
 		start = 1
 	}
 
 	// length check - minimum: "m/<domain_id>/c/" = 5 characters if ignore <domain_id> and in this case start will be 0
 	// length check - minimum: "/m/<domain_id>/c/" = 6 characters if ignore <domain_id> and in this case start will be 1
-	if len(topic) < start+5 {
+	if n < start+5 {
 		return "", "", "", ErrMalformedTopic
 	}
 	if topic[start] != 'm' || topic[start+1] != '/' {
@@ -159,7 +162,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 
 	// Find "/c/" to locate domain ID
 	cPos := -1
-	for i := pos; i <= len(topic)-3; i++ {
+	for i := pos; i <= n-3; i++ {
 		if topic[i] == '/' && topic[i+1] == 'c' && topic[i+2] == '/' {
 			cPos = i - pos
 			break
@@ -173,13 +176,13 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	pos = pos + cPos + 3
 
 	// Ensure channel exists
-	if pos >= len(topic) {
+	if pos >= n {
 		return "", "", "", ErrMalformedTopic
 	}
 
 	// Find '/' after channelID
 	nextSlash := -1
-	for i := pos; i < len(topic); i++ {
+	for i := pos; i < n; i++ {
 		if topic[i] == '/' {
 			nextSlash = i - pos
 			break
