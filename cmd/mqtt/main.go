@@ -378,7 +378,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 	switch pt := pkt.(type) {
 	case *packets.SubscribePacket:
 		for i, topic := range pt.Topics {
-			ft, err := bh.resolveTopic(ctx, topic)
+			ft, err := bh.resolver.ResolveTopic(ctx, topic)
 			if err != nil {
 				return nil, err
 			}
@@ -388,7 +388,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 		return pt, nil
 	case *packets.UnsubscribePacket:
 		for i, topic := range pt.Topics {
-			ft, err := bh.resolveTopic(ctx, topic)
+			ft, err := bh.resolver.ResolveTopic(ctx, topic)
 			if err != nil {
 				return nil, err
 			}
@@ -396,7 +396,7 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 		}
 		return pt, nil
 	case *packets.PublishPacket:
-		ft, err := bh.resolveTopic(ctx, pt.TopicName)
+		ft, err := bh.resolver.ResolveTopic(ctx, pt.TopicName)
 		if err != nil {
 			return nil, err
 		}
@@ -406,22 +406,4 @@ func (bh beforeHandler) Intercept(ctx context.Context, pkt packets.ControlPacket
 	}
 
 	return pkt, nil
-}
-
-func (bh beforeHandler) resolveTopic(ctx context.Context, topic string) (string, error) {
-	domain, channel, subtopic, err := messaging.ParseTopic(topic)
-	if err != nil {
-		return "", errors.Wrap(messaging.ErrMalformedTopic, err)
-	}
-
-	domainID, channelID, err := bh.resolver.Resolve(ctx, domain, channel)
-	if err != nil {
-		return "", err
-	}
-	rtopic := fmt.Sprintf("m/%s/c/%s", domainID, channelID)
-	if subtopic != "" {
-		rtopic = rtopic + "/" + subtopic
-	}
-
-	return rtopic, nil
 }

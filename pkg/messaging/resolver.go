@@ -5,6 +5,7 @@ package messaging
 
 import (
 	"context"
+	"fmt"
 
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
@@ -23,6 +24,7 @@ var (
 // from their respective routes from the message topic.
 type TopicResolver interface {
 	Resolve(ctx context.Context, domain, channel string) (domainID string, channelID string, err error)
+	ResolveTopic(ctx context.Context, topic string) (rtopic string, err error)
 }
 
 type resolver struct {
@@ -53,6 +55,24 @@ func (r *resolver) Resolve(ctx context.Context, domain, channel string) (string,
 	}
 
 	return domainID, channelID, nil
+}
+
+func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, error) {
+	domain, channel, subtopic, err := ParseTopic(topic)
+	if err != nil {
+		return "", errors.Wrap(ErrMalformedTopic, err)
+	}
+
+	domainID, channelID, err := r.Resolve(ctx, domain, channel)
+	if err != nil {
+		return "", err
+	}
+	rtopic := fmt.Sprintf("m/%s/c/%s", domainID, channelID)
+	if subtopic != "" {
+		rtopic = rtopic + "/" + subtopic
+	}
+
+	return rtopic, nil
 }
 
 func (r *resolver) resolveDomain(ctx context.Context, domain string) (string, error) {
