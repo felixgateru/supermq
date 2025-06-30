@@ -236,7 +236,7 @@ func listDomainInvitationsEndpoint(svc domains.Service) endpoint.Endpoint {
 		}
 		req.InvitationPageMeta.DomainID = session.DomainID
 
-		page, err := svc.ListInvitations(ctx, session, req.InvitationPageMeta)
+		page, err := svc.ListDomainInvitations(ctx, session, req.InvitationPageMeta)
 		if err != nil {
 			return nil, err
 		}
@@ -260,7 +260,7 @@ func listUserInvitationsEndpoint(svc domains.Service) endpoint.Endpoint {
 		}
 		session.DomainID = req.DomainID
 
-		page, err := svc.ListInviteeInvitations(ctx, session, req.InvitationPageMeta)
+		page, err := svc.ListInvitations(ctx, session, req.InvitationPageMeta)
 		if err != nil {
 			return nil, err
 		}

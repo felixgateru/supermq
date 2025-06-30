@@ -226,23 +226,6 @@ func (am *authorizationMiddleware) ViewInvitation(ctx context.Context, session a
 }
 
 func (am *authorizationMiddleware) ListInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
-	session.DomainUserID = auth.EncodeDomainUserID(session.DomainID, session.UserID)
-	if err := am.extAuthorize(ctx, session.UserID, policies.AdminPermission, policies.PlatformType, policies.SuperMQObject); err == nil {
-		session.SuperAdmin = true
-		page.DomainID = ""
-	}
-
-	if !session.SuperAdmin {
-		switch {
-		case page.DomainID != "":
-			if err := am.extAuthorize(ctx, session.DomainUserID, policies.AdminPermission, policies.DomainType, page.DomainID); err != nil {
-				return domains.InvitationPage{}, err
-			}
-		default:
-			page.InvitedByOrUserID = session.UserID
-		}
-	}
-
 	params := map[string]any{
 		"page": page,
 	}
@@ -253,19 +236,19 @@ func (am *authorizationMiddleware) ListInvitations(ctx context.Context, session 
 	return am.svc.ListInvitations(ctx, session, page)
 }
 
-func (am *authorizationMiddleware) ListInviteeInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
-	if err := am.extAuthorize(ctx, session.UserID, policies.MembershipPermission, policies.PlatformType, policies.SuperMQObject); err != nil {
+func (am *authorizationMiddleware) ListDomainInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
+	if err := am.extAuthorize(ctx, session.DomainUserID, policies.AdminPermission, policies.DomainType, page.DomainID); err != nil {
 		return domains.InvitationPage{}, err
 	}
 
 	params := map[string]any{
 		"page": page,
 	}
-	if err := am.callOut(ctx, session, domains.OpListInviteeInvitations.String(domains.OperationNames), params); err != nil {
+	if err := am.callOut(ctx, session, domains.OpListDomainInvitations.String(domains.OperationNames), params); err != nil {
 		return domains.InvitationPage{}, err
 	}
 
-	return am.svc.ListInviteeInvitations(ctx, session, page)
+	return am.svc.ListDomainInvitations(ctx, session, page)
 }
 
 func (am *authorizationMiddleware) AcceptInvitation(ctx context.Context, session authn.Session, domainID string) (inv domains.Invitation, err error) {

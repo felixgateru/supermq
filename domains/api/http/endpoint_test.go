@@ -1164,7 +1164,7 @@ func TestSendInvitation(t *testing.T) {
 	}
 }
 
-func TestListInvitations(t *testing.T) {
+func TestListDomainInvitations(t *testing.T) {
 	is, svc, auth := newDomainsServer()
 
 	cases := []struct {
@@ -1309,7 +1309,7 @@ func TestListInvitations(t *testing.T) {
 				tc.session = authn.Session{UserID: userID, DomainID: tc.domainID}
 			}
 			authnCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
-			repoCall := svc.On("ListInvitations", mock.Anything, tc.session, mock.Anything).Return(domains.InvitationPage{}, tc.svcErr)
+			repoCall := svc.On("ListDomainInvitations", mock.Anything, tc.session, mock.Anything).Return(domains.InvitationPage{}, tc.svcErr)
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,
@@ -1326,7 +1326,7 @@ func TestListInvitations(t *testing.T) {
 	}
 }
 
-func TestListInviteeInvitations(t *testing.T) {
+func TestListUserInvitations(t *testing.T) {
 	is, svc, auth := newDomainsServer()
 
 	cases := []struct {
@@ -1440,7 +1440,7 @@ func TestListInviteeInvitations(t *testing.T) {
 				tc.session = authn.Session{UserID: userID}
 			}
 			authnCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
-			repoCall := svc.On("ListInviteeInvitations", mock.Anything, tc.session, mock.Anything).Return(domains.InvitationPage{}, tc.svcErr)
+			repoCall := svc.On("ListInvitations", mock.Anything, tc.session, mock.Anything).Return(domains.InvitationPage{}, tc.svcErr)
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,
