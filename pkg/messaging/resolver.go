@@ -66,11 +66,7 @@ func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	rtopic := EncodeMessageMQTTTopic(&Message{
-		Domain:   domainID,
-		Channel:  channelID,
-		Subtopic: subtopic,
-	})
+	rtopic := EncodeAdapterTopic(domainID, channelID, subtopic)
 
 	return rtopic, nil
 }

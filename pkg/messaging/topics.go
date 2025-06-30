@@ -138,6 +138,14 @@ func EncodeMessageMQTTTopic(m *Message) string {
 	return topic
 }
 
+func EncodeAdapterTopic(domain, channel, subtopic string) string {
+	topic := fmt.Sprintf("%s/%s/%s/%s", string(MsgTopicPrefix), domain, string(ChannelTopicPrefix), channel)
+	if subtopic != "" {
+		topic = topic + "/" + subtopic
+	}
+	return topic
+}
+
 // ParseTopic parses a messaging topic string and returns the domain ID, channel ID, and subtopic.
 // This is an optimized version with no regex and minimal allocations.
 func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
