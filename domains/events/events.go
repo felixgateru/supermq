@@ -353,12 +353,11 @@ type listInvitationsEvent struct {
 
 func (lie listInvitationsEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":   invitationList,
-		"offset":      lie.Offset,
-		"limit":       lie.Limit,
-		"user_id":     lie.session.UserID,
-		"token_type":  lie.session.Type.String(),
-		"super_admin": lie.session.SuperAdmin,
+		"operation":  invitationList,
+		"offset":     lie.Offset,
+		"limit":      lie.Limit,
+		"user_id":    lie.session.UserID,
+		"token_type": lie.session.Type.String(),
 	}
 
 	if lie.InvitedBy != "" {
@@ -387,19 +386,19 @@ type listDomainInvitationsEvent struct {
 
 func (lie listDomainInvitationsEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":       invitationListDomain,
-		"offset":          lie.Offset,
-		"limit":           lie.Limit,
-		"invitee_user_id": lie.InviteeUserID,
-		"token_type":      lie.session.Type.String(),
-		"super_admin":     lie.session.SuperAdmin,
+		"operation":   invitationListDomain,
+		"offset":      lie.Offset,
+		"limit":       lie.Limit,
+		"domain_id":   lie.session.DomainID,
+		"token_type":  lie.session.Type.String(),
+		"super_admin": lie.session.SuperAdmin,
 	}
 
 	if lie.InvitedBy != "" {
 		val["invited_by"] = lie.InvitedBy
 	}
-	if lie.DomainID != "" {
-		val["domain_id"] = lie.DomainID
+	if lie.InviteeUserID != "" {
+		val["invitee_user_id"] = lie.InviteeUserID
 	}
 	if lie.RoleID != "" {
 		val["role_id"] = lie.RoleID
