@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	MsgTopicPrefix     = "m"
-	ChannelTopicPrefix = "c"
+	MsgTopicPrefix     = 'm'
+	ChannelTopicPrefix = 'c'
 )
 
 var (
@@ -115,11 +115,11 @@ func formatSubtopic(subtopic string) (string, error) {
 }
 
 func EncodeTopic(domainID string, channelID string, subtopic string) string {
-	return fmt.Sprintf("%s.%s", MsgTopicPrefix, EncodeTopicSuffix(domainID, channelID, subtopic))
+	return fmt.Sprintf("%s.%s", string(MsgTopicPrefix), EncodeTopicSuffix(domainID, channelID, subtopic))
 }
 
 func EncodeTopicSuffix(domainID string, channelID string, subtopic string) string {
-	subject := fmt.Sprintf("%s.%s.%s", domainID, ChannelTopicPrefix, channelID)
+	subject := fmt.Sprintf("%s.%s.%s", domainID, string(ChannelTopicPrefix), channelID)
 	if subtopic != "" {
 		subject = fmt.Sprintf("%s.%s", subject, subtopic)
 	}
@@ -131,7 +131,7 @@ func EncodeMessageTopic(m *Message) string {
 }
 
 func EncodeMessageMQTTTopic(m *Message) string {
-	topic := fmt.Sprintf("%s/%s/%s/%s", MsgTopicPrefix, m.GetDomain(), ChannelTopicPrefix, m.GetChannel())
+	topic := fmt.Sprintf("%s/%s/%s/%s", string(MsgTopicPrefix), m.GetDomain(), string(ChannelTopicPrefix), m.GetChannel())
 	if m.GetSubtopic() != "" {
 		topic = topic + "/" + strings.ReplaceAll(m.GetSubtopic(), ".", "/")
 	}
@@ -155,7 +155,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	if n < start+5 {
 		return "", "", "", ErrMalformedTopic
 	}
-	if topic[start] != MsgTopicPrefix[0] || topic[start+1] != '/' {
+	if topic[start] != MsgTopicPrefix || topic[start+1] != '/' {
 		return "", "", "", ErrMalformedTopic
 	}
 	pos := start + 2
@@ -163,7 +163,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	// Find "/c/" to locate domain ID
 	cPos := -1
 	for i := pos; i <= n-3; i++ {
-		if topic[i] == '/' && topic[i+1] == ChannelTopicPrefix[0] && topic[i+2] == '/' {
+		if topic[i] == '/' && topic[i+1] == ChannelTopicPrefix && topic[i+2] == '/' {
 			cPos = i - pos
 			break
 		}

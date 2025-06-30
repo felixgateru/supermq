@@ -5,7 +5,6 @@ package messaging
 
 import (
 	"context"
-	"fmt"
 
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
@@ -67,10 +66,11 @@ func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	rtopic := fmt.Sprintf("m/%s/c/%s", domainID, channelID)
-	if subtopic != "" {
-		rtopic = rtopic + "/" + subtopic
-	}
+	rtopic := EncodeMessageMQTTTopic(&Message{
+		Domain:   domainID,
+		Channel:  channelID,
+		Subtopic: subtopic,
+	})
 
 	return rtopic, nil
 }
