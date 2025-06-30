@@ -5,7 +5,6 @@ package authsvc
 
 import (
 	"context"
-	"fmt"
 
 	grpcAuthV1 "github.com/absmach/supermq/api/grpc/auth/v1"
 	"github.com/absmach/supermq/auth/api/grpc/auth"
@@ -85,8 +84,6 @@ func (a authorization) Authorize(ctx context.Context, pr authz.PolicyReq) error 
 func (a authorization) checkDomain(ctx context.Context, subjectType, subject, domainID string) error {
 	dom, err := a.domains.RetrieveEntity(ctx, domainID)
 	if err != nil {
-		fmt.Println("Error retrieving domain:", err)
-		fmt.Println("Error retrieving domain:", domainID)
 		return errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 
