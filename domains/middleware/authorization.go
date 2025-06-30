@@ -237,7 +237,7 @@ func (am *authorizationMiddleware) ListInvitations(ctx context.Context, session 
 }
 
 func (am *authorizationMiddleware) ListDomainInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
-	if err := am.extAuthorize(ctx, session.DomainUserID, policies.AdminPermission, policies.DomainType, page.DomainID); err != nil {
+	if err := am.extAuthorize(ctx, session.DomainUserID, policies.AdminPermission, policies.DomainType, session.DomainID); err != nil {
 		return domains.InvitationPage{}, err
 	}
 
