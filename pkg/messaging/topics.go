@@ -155,7 +155,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	if n < start+5 {
 		return "", "", "", ErrMalformedTopic
 	}
-	if topic[start] != 'm' || topic[start+1] != '/' {
+	if topic[start] != MsgTopicPrefix[0] || topic[start+1] != '/' {
 		return "", "", "", ErrMalformedTopic
 	}
 	pos := start + 2
@@ -163,7 +163,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	// Find "/c/" to locate domain ID
 	cPos := -1
 	for i := pos; i <= n-3; i++ {
-		if topic[i] == '/' && topic[i+1] == 'c' && topic[i+2] == '/' {
+		if topic[i] == '/' && topic[i+1] == ChannelTopicPrefix[0] && topic[i+2] == '/' {
 			cPos = i - pos
 			break
 		}
