@@ -53,6 +53,7 @@ type CoAPHandler struct {
 	resolver messaging.TopicResolver
 }
 
+// MakeCoAPHandler creates and returns a CoAP handler that processes CoAP requests for subscribing, unsubscribing, and publishing messages using the provided service, channels client, topic resolver, and logger.
 func MakeCoAPHandler(svc coap.Service, channelsClient grpcChannelsV1.ChannelsServiceClient, resolver messaging.TopicResolver, l *slog.Logger) mux.Handler {
 	return &CoAPHandler{
 		logger:   l,
@@ -177,6 +178,8 @@ func (h *CoAPHandler) sendResp(w mux.ResponseWriter, resp *pool.Message) {
 	}
 }
 
+// parseKey extracts the authorization key from the URI query option of a CoAP message.
+// Returns the key value if present and valid, or an authorization error if the query is missing or malformed.
 func parseKey(msg *mux.Message) (string, error) {
 	authKey, err := msg.Options().GetString(message.URIQuery)
 	if err != nil {

@@ -21,6 +21,7 @@ type coapServer struct {
 
 var _ server.Server = (*coapServer)(nil)
 
+// NewServer creates and returns a new CoAP server instance with the specified configuration, request handler, and logger.
 func NewServer(ctx context.Context, cancel context.CancelFunc, name string, config server.Config, handler mux.Handler, logger *slog.Logger) server.Server {
 	baseServer := server.NewBaseServer(ctx, cancel, name, config, logger)
 
