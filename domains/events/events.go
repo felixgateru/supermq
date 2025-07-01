@@ -372,7 +372,7 @@ func (lie listInvitationsEvent) Encode() (map[string]interface{}, error) {
 	if lie.RoleID != "" {
 		val["role_id"] = lie.RoleID
 	}
-	if lie.State.String() != "" {
+	if lie.State.String() != domains.UnknownState {
 		val["state"] = lie.State.String()
 	}
 
@@ -403,7 +403,7 @@ func (lie listDomainInvitationsEvent) Encode() (map[string]interface{}, error) {
 	if lie.RoleID != "" {
 		val["role_id"] = lie.RoleID
 	}
-	if lie.State.String() != "" {
+	if lie.State.String() != domains.UnknownState {
 		val["state"] = lie.State.String()
 	}
 
