@@ -761,7 +761,7 @@ func TestUpdateRejection(t *testing.T) {
 	}
 }
 
-func TestDeleteUesrsInvitation(t *testing.T) {
+func TestDeleteUsersInvitation(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
