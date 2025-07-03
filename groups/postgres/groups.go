@@ -864,6 +864,7 @@ func (repo groupRepository) retrieveGroups(ctx context.Context, domainID, userID
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
 	}
+	fmt.Println("Query:", q)
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbPageMeta)
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
@@ -942,17 +943,35 @@ GROUP BY
 ),
 direct_groups_with_subgroup AS (
 	SELECT
-		*
-	FROM direct_groups
-	WHERE EXISTS (
-		SELECT 1
-			FROM unnest(direct_groups.actions) AS action
-		WHERE action LIKE 'subgroup_%%'
-	)
+		g.*,
+		gr.entity_id AS entity_id,
+		grm.member_id AS member_id,
+		gr.id AS role_id,
+		gr."name" AS role_name,
+		array_agg(DISTINCT all_actions."action") AS actions
+	FROM
+		groups_role_members grm
+	JOIN
+		groups_role_actions gra ON gra.role_id = grm.role_id
+	JOIN
+		groups_roles gr ON gr.id = grm.role_id
+	JOIN
+		"groups" g ON g.id = gr.entity_id
+	JOIN
+		groups_role_actions all_actions ON all_actions.role_id = grm.role_id
+	LEFT JOIN "groups" g2
+		ON g2.path <@ g.path AND nlevel(g2.path) = nlevel(g.path) + 1
+	WHERE
+		g2.path IS NULL
+		AND grm.member_id = '%s'
+		AND g.domain_id = '%s'
+		AND gra."action" LIKE 'subgroup_%%'
+	GROUP BY
+		gr.entity_id, grm.member_id, gr.id, gr."name", g."path", g.id
 ),
 indirect_child_groups AS (
-	SELECT DISTINCT ON (indirect_child_groups.id)
-		indirect_child_groups.id AS child_id,
+	SELECT
+		DISTINCT indirect_child_groups.id as child_id,
 		indirect_child_groups.*,
 		dgws.id as access_provider_id,
 		dgws.role_id as access_provider_role_id,
@@ -1087,7 +1106,7 @@ final_groups AS (
 	 GROUP BY
 		dg.id, d.id, dr.id
 )
-		`, userID, domainID, domainID, userID, domainID)
+		`, userID, domainID, userID, domainID, domainID, userID, domainID)
 }
 
 func buildQuery(gm groups.PageMeta, ids ...string) string {
