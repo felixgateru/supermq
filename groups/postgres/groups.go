@@ -864,7 +864,6 @@ func (repo groupRepository) retrieveGroups(ctx context.Context, domainID, userID
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
 	}
-	fmt.Println("Query:", q)
 	rows, err := repo.db.NamedQueryContext(ctx, q, dbPageMeta)
 	if err != nil {
 		return groups.Page{}, errors.Wrap(repoerr.ErrFailedToRetrieveAllGroups, err)
