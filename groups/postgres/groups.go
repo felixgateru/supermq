@@ -961,10 +961,10 @@ direct_groups_with_subgroup AS (
 	LEFT JOIN "groups" g2
 		ON g2.path <@ g.path AND nlevel(g2.path) = nlevel(g.path) + 1
 	WHERE
-		g2.path IS NULL
-		AND grm.member_id = '%s'
+		grm.member_id = '%s'
 		AND g.domain_id = '%s'
 		AND gra."action" LIKE 'subgroup_%%'
+		AND g2.path IS NULL
 	GROUP BY
 		gr.entity_id, grm.member_id, gr.id, gr."name", g."path", g.id
 ),
