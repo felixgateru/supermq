@@ -26,7 +26,6 @@ var (
 	pathReplacer         = strings.NewReplacer("/", ".")
 )
 
-
 func ParsePublishTopic(topic string) (domainID, chanID, subtopic string, err error) {
 	domainID, chanID, subtopic, err = ParseTopic(topic)
 	if err != nil {
