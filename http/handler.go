@@ -121,7 +121,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errFailedPublish, errClientNotInitialized)
 	}
 
-	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic, false)
+	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return errors.Wrap(errMalformedTopic, err)
 	}
