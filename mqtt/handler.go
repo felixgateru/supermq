@@ -112,7 +112,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return ErrClientNotInitialized
 	}
 
-	domainID, chanID, _, err := h.parser.ParsePublishTopic(ctx, *topic, false)
+	domainID, chanID, _, err := h.parser.ParsePublishTopic(ctx, *topic)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	}
 
 	for _, topic := range *topics {
-		domainID, chanID, _, err := h.parser.ParseSubscribeTopic(ctx, topic, false)
+		domainID, chanID, _, err := h.parser.ParseSubscribeTopic(ctx, topic)
 		if err != nil {
 			return err
 		}
@@ -163,7 +163,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 	h.logger.Info(fmt.Sprintf(LogInfoPublished, s.ID, *topic))
 
-	domainID, chanID, subTopic, err := h.parser.ParsePublishTopic(ctx, *topic, false)
+	domainID, chanID, subTopic, err := h.parser.ParsePublishTopic(ctx, *topic)
 	if err != nil {
 		return errors.Wrap(ErrFailedPublish, err)
 	}

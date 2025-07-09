@@ -22,7 +22,7 @@ var (
 // TopicResolver contains definitions for resolving domain and channel IDs
 // from their respective routes from the message topic.
 type TopicResolver interface {
-	Resolve(ctx context.Context, domain, channel string) (domainID string, channelID string, err error)
+	Resolve(ctx context.Context, domain, channel string) (domainID string, channelID string, isRoute bool, err error)
 	ResolveTopic(ctx context.Context, topic string) (rtopic string, err error)
 }
 
@@ -39,21 +39,22 @@ func NewTopicResolver(channelsClient grpcChannelsV1.ChannelsServiceClient, domai
 	}
 }
 
-func (r *resolver) Resolve(ctx context.Context, domain, channel string) (string, string, error) {
+func (r *resolver) Resolve(ctx context.Context, domain, channel string) (string, string, bool, error) {
 	if domain == "" || channel == "" {
-		return "", "", ErrEmptyRouteID
+		return "", "", false, ErrEmptyRouteID
 	}
 
-	domainID, err := r.resolveDomain(ctx, domain)
+	domainID, isdomainRoute, err := r.resolveDomain(ctx, domain)
 	if err != nil {
-		return "", "", errors.Wrap(ErrFailedResolveDomain, err)
+		return "", "", false, errors.Wrap(ErrFailedResolveDomain, err)
 	}
-	channelID, err := r.resolveChannel(ctx, channel, domainID)
+	channelID, isChannelRoute, err := r.resolveChannel(ctx, channel, domainID)
 	if err != nil {
-		return "", "", errors.Wrap(ErrFailedResolveChannel, err)
+		return "", "", false, errors.Wrap(ErrFailedResolveChannel, err)
 	}
+	isRoute := isdomainRoute || isChannelRoute
 
-	return domainID, channelID, nil
+	return domainID, channelID, isRoute, nil
 }
 
 func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, error) {
@@ -62,7 +63,7 @@ func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, erro
 		return "", errors.Wrap(ErrMalformedTopic, err)
 	}
 
-	domainID, channelID, err := r.Resolve(ctx, domain, channel)
+	domainID, channelID, _, err := r.Resolve(ctx, domain, channel)
 	if err != nil {
 		return "", err
 	}
@@ -71,33 +72,33 @@ func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, erro
 	return rtopic, nil
 }
 
-func (r *resolver) resolveDomain(ctx context.Context, domain string) (string, error) {
+func (r *resolver) resolveDomain(ctx context.Context, domain string) (string, bool, error) {
 	if validateUUID(domain) == nil {
-		return domain, nil
+		return domain, false, nil
 	}
 	d, err := r.domains.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route: domain,
 	})
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return d.Entity.Id, nil
+	return d.Entity.Id, true, nil
 }
 
-func (r *resolver) resolveChannel(ctx context.Context, channel, domainID string) (string, error) {
+func (r *resolver) resolveChannel(ctx context.Context, channel, domainID string) (string, bool, error) {
 	if validateUUID(channel) == nil {
-		return channel, nil
+		return channel, false, nil
 	}
 	c, err := r.channels.RetrieveByRoute(ctx, &grpcCommonV1.RetrieveByRouteReq{
 		Route:    channel,
 		DomainId: domainID,
 	})
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 
-	return c.Entity.Id, nil
+	return c.Entity.Id, true, nil
 }
 
 func validateUUID(extID string) (err error) {
