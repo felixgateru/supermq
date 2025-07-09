@@ -44,6 +44,7 @@ func TestResolve(t *testing.T) {
 		channel     string
 		domainID    string
 		channelID   string
+		isRoute     bool
 		domainsErr  error
 		channelsErr error
 		err         error
@@ -54,6 +55,7 @@ func TestResolve(t *testing.T) {
 			channel:   channelID,
 			domainID:  domainID,
 			channelID: channelID,
+			isRoute:   false,
 			err:       nil,
 		},
 		{
@@ -62,6 +64,7 @@ func TestResolve(t *testing.T) {
 			channel:   channelID,
 			domainID:  domainID,
 			channelID: channelID,
+			isRoute:   true,
 			err:       nil,
 		},
 		{
@@ -70,6 +73,7 @@ func TestResolve(t *testing.T) {
 			channel:   validRoute,
 			domainID:  domainID,
 			channelID: channelID,
+			isRoute:   true,
 			err:       nil,
 		},
 		{
@@ -78,6 +82,7 @@ func TestResolve(t *testing.T) {
 			channel:   validRoute,
 			domainID:  domainID,
 			channelID: channelID,
+			isRoute:   true,
 			err:       nil,
 		},
 		{
@@ -127,11 +132,12 @@ func TestResolve(t *testing.T) {
 					Id: tc.channelID,
 				},
 			}, tc.channelsErr)
-			domainID, channelID, err := resolver.Resolve(context.Background(), tc.domain, tc.channel)
+			domainID, channelID, isRoute, err := resolver.Resolve(context.Background(), tc.domain, tc.channel)
 			assert.True(t, errors.Contains(err, tc.err), "expected error %v, got %v", tc.err, err)
 			if err == nil {
 				assert.Equal(t, tc.domainID, domainID, "expected domain ID %s, got %s", tc.domainID, domainID)
 				assert.Equal(t, tc.channelID, channelID, "expected channel ID %s, got %s", tc.channelID, channelID)
+				assert.Equal(t, tc.isRoute, isRoute, "expected isRoute %t, got %t", tc.isRoute, isRoute)
 			}
 			domainsCall.Unset()
 			channelsCall.Unset()

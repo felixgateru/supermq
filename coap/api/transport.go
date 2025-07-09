@@ -141,9 +141,9 @@ func (h *CoAPHandler) decodeMessage(msg *mux.Message) (*messaging.Message, error
 	var domainID, channelID, subTopic string
 	switch msg.Code() {
 	case codes.GET:
-		domainID, channelID, subTopic, err = h.parser.ParseSubscribeTopic(msg.Context(), path, true)
+		domainID, channelID, subTopic, err = h.parser.ParseSubscribeTopic(msg.Context(), path)
 	case codes.POST:
-		domainID, channelID, subTopic, err = h.parser.ParsePublishTopic(msg.Context(), path, true)
+		domainID, channelID, subTopic, err = h.parser.ParsePublishTopic(msg.Context(), path)
 	}
 	if err != nil {
 		return &messaging.Message{}, err
