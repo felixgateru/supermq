@@ -92,7 +92,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		token = string(s.Password)
 	}
 
-	domainID, channelID, _, err := h.parser.ParsePublishTopic(ctx, *topic)
+	domainID, channelID, _, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
@@ -121,7 +121,7 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	}
 
 	for _, topic := range *topics {
-		domainID, channelID, _, err := h.parser.ParseSubscribeTopic(ctx, topic)
+		domainID, channelID, _, err := h.parser.ParseSubscribeTopic(ctx, topic, true)
 		if err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return nil
 	}
 
-	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic)
+	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return errors.Wrap(errFailedPublish, err)
 	}

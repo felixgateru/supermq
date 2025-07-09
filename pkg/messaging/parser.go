@@ -5,7 +5,6 @@ package messaging
 
 import (
 	"context"
-	"time"
 
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
@@ -15,7 +14,6 @@ import (
 
 var (
 	ErrCreateCache = errors.New("failed to create cache")
-	cacheDuration  = time.Minute * 10
 
 	DefaultCacheConfig = CacheConfig{
 		NumCounters: 2e5,     // 200k
@@ -41,8 +39,8 @@ type parsedTopic struct {
 // It uses a cache to store parsed topics for quick retrieval.
 // It also resolves domain and channel IDs if requested.
 type TopicParser interface {
-	ParsePublishTopic(ctx context.Context, topic string) (domainID, channelID, subtopic string, err error)
-	ParseSubscribeTopic(ctx context.Context, topic string) (domainID, channelID, subtopic string, err error)
+	ParsePublishTopic(ctx context.Context, topic string, resolve bool) (domainID, channelID, subtopic string, err error)
+	ParseSubscribeTopic(ctx context.Context, topic string, resolve bool) (domainID, channelID, subtopic string, err error)
 }
 
 type parser struct {
@@ -67,20 +65,22 @@ func NewTopicParser(cfg CacheConfig, channels grpcChannelsV1.ChannelsServiceClie
 	}, nil
 }
 
-func (p *parser) ParsePublishTopic(ctx context.Context, topic string) (string, string, string, error) {
+func (p *parser) ParsePublishTopic(ctx context.Context, topic string, resolve bool) (string, string, string, error) {
 	val, ok := p.cache.Get(topic)
 	if ok {
 		return val.domainID, val.channelID, val.subtopic, val.err
 	}
-	domain, channel, subtopic, err := ParsePublishTopic(topic)
+	domainID, channelID, subtopic, err := ParsePublishTopic(topic)
 	if err != nil {
 		p.saveToCache(topic, "", "", "", err)
 		return "", "", "", err
 	}
-
-	domainID, channelID, isRoute, err := p.resolver.Resolve(ctx, domain, channel)
-	if err != nil {
-		return "", "", "", err
+	var isRoute bool
+	if resolve {
+		domainID, channelID, isRoute, err = p.resolver.Resolve(ctx, domainID, channelID)
+		if err != nil {
+			return "", "", "", err
+		}
 	}
 	if !isRoute {
 		p.saveToCache(topic, domainID, channelID, subtopic, nil)
@@ -89,27 +89,28 @@ func (p *parser) ParsePublishTopic(ctx context.Context, topic string) (string, s
 	return domainID, channelID, subtopic, nil
 }
 
-func (p *parser) ParseSubscribeTopic(ctx context.Context, topic string) (string, string, string, error) {
-	domain, channel, subtopic, err := ParseSubscribeTopic(topic)
+func (p *parser) ParseSubscribeTopic(ctx context.Context, topic string, resolve bool) (string, string, string, error) {
+	domainID, channelID, subtopic, err := ParseSubscribeTopic(topic)
 	if err != nil {
 		return "", "", "", err
 	}
-	domainID, channelID, _, err := p.resolver.Resolve(ctx, domain, channel)
-	if err != nil {
-		p.saveToCache(topic, "", "", "", err)
-		return "", "", "", err
+	if resolve {
+		domainID, channelID, _, err = p.resolver.Resolve(ctx, domainID, channelID)
+		if err != nil {
+			return "", "", "", err
+		}
 	}
 
 	return domainID, channelID, subtopic, nil
 }
 
 func (p *parser) saveToCache(topic string, domainID, channelID, subtopic string, err error) {
-	p.cache.SetWithTTL(topic, &parsedTopic{
+	p.cache.Set(topic, &parsedTopic{
 		domainID:  domainID,
 		channelID: channelID,
 		subtopic:  subtopic,
 		err:       err,
-	}, 0, cacheDuration)
+	}, 0)
 }
 
 func costFunc(val *parsedTopic) int64 {
