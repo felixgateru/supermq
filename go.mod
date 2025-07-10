@@ -1,6 +1,6 @@
 module github.com/absmach/supermq
 
-go 1.24.4
+go 1.24.5
 
 require (
 	github.com/0x6flab/namegenerator v1.4.0
@@ -13,6 +13,7 @@ require (
 	github.com/authzed/spicedb v1.44.4
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/cenkalti/backoff/v4 v4.3.0
+	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	github.com/fatih/color v1.18.0
 	github.com/go-chi/chi/v5 v5.2.2
@@ -33,7 +34,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/ory/dockertest/v3 v3.12.0
 	github.com/pelletier/go-toml v1.9.5
-	github.com/plgd-dev/go-coap/v3 v3.3.6
+	github.com/plgd-dev/go-coap/v3 v3.4.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.11.0
@@ -50,7 +51,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.37.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.16.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
@@ -81,6 +82,7 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/golib/memfile v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
