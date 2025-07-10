@@ -18,11 +18,9 @@ const (
 	traceLevelStr = "DEBUG-4"
 )
 
-var (
-	customLevelNames = map[slog.Leveler]string{
-		LevelTrace: traceStr,
-	}
-)
+var customLevelNames = map[slog.Leveler]string{
+	LevelTrace: traceStr,
+}
 
 // New returns wrapped slog logger.
 func New(w io.Writer, levelText string) (*slog.Logger, error) {
@@ -43,7 +41,6 @@ func New(w io.Writer, levelText string) (*slog.Logger, error) {
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.LevelKey {
 				lvl := a.Value.Any().(slog.Level)
-
 				if name, ok := customLevelNames[lvl]; ok {
 					return slog.Attr{Key: slog.LevelKey, Value: slog.StringValue(name)}
 				}
