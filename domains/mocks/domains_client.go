@@ -248,12 +248,12 @@ type DomainsServiceClient_RetrieveStatus_Call struct {
 	*mock.Call
 }
 
-// RetrieveEntity is a helper method to define mock.On call
+// RetrieveStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - in *v10.RetrieveEntityReq
 //   - opts ...grpc.CallOption
-func (_e *DomainsServiceClient_Expecter) RetrieveEntity(ctx interface{}, in interface{}, opts ...interface{}) *DomainsServiceClient_RetrieveEntity_Call {
-	return &DomainsServiceClient_RetrieveEntity_Call{Call: _e.mock.On("RetrieveEntity",
+func (_e *DomainsServiceClient_Expecter) RetrieveStatus(ctx interface{}, in interface{}, opts ...interface{}) *DomainsServiceClient_RetrieveStatus_Call {
+	return &DomainsServiceClient_RetrieveStatus_Call{Call: _e.mock.On("RetrieveStatus",
 		append([]interface{}{ctx, in}, opts...)...)}
 }
 

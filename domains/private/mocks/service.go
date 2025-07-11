@@ -195,11 +195,11 @@ type Service_RetrieveStatus_Call struct {
 	*mock.Call
 }
 
-// RetrieveEntity is a helper method to define mock.On call
+// RetrieveStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-func (_e *Service_Expecter) RetrieveEntity(ctx interface{}, id interface{}) *Service_RetrieveEntity_Call {
-	return &Service_RetrieveEntity_Call{Call: _e.mock.On("RetrieveEntity", ctx, id)}
+func (_e *Service_Expecter) RetrieveStatus(ctx interface{}, id interface{}) *Service_RetrieveStatus_Call {
+	return &Service_RetrieveStatus_Call{Call: _e.mock.On("RetrieveStatus", ctx, id)}
 }
 
 func (_c *Service_RetrieveStatus_Call) Run(run func(ctx context.Context, id string)) *Service_RetrieveStatus_Call {
