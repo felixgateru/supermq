@@ -25,7 +25,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	DomainsService_DeleteUserFromDomains_FullMethodName = "/domains.v1.DomainsService/DeleteUserFromDomains"
 	DomainsService_RetrieveStatus_FullMethodName        = "/domains.v1.DomainsService/RetrieveStatus"
-	DomainsService_RetrieveByRoute_FullMethodName       = "/domains.v1.DomainsService/RetrieveByRoute"
+	DomainsService_RetrieveIDByRoute_FullMethodName     = "/domains.v1.DomainsService/RetrieveIDByRoute"
 )
 
 // DomainsServiceClient is the client API for DomainsService service.
@@ -37,7 +37,7 @@ const (
 type DomainsServiceClient interface {
 	DeleteUserFromDomains(ctx context.Context, in *DeleteUserReq, opts ...grpc.CallOption) (*DeleteUserRes, error)
 	RetrieveStatus(ctx context.Context, in *v1.RetrieveEntityReq, opts ...grpc.CallOption) (*v1.RetrieveEntityRes, error)
-	RetrieveByRoute(ctx context.Context, in *v1.RetrieveByRouteReq, opts ...grpc.CallOption) (*v1.RetrieveEntityRes, error)
+	RetrieveIDByRoute(ctx context.Context, in *v1.RetrieveIDByRouteReq, opts ...grpc.CallOption) (*v1.RetrieveEntityRes, error)
 }
 
 type domainsServiceClient struct {
@@ -87,7 +87,7 @@ func (c *domainsServiceClient) RetrieveIDByRoute(ctx context.Context, in *v1.Ret
 type DomainsServiceServer interface {
 	DeleteUserFromDomains(context.Context, *DeleteUserReq) (*DeleteUserRes, error)
 	RetrieveStatus(context.Context, *v1.RetrieveEntityReq) (*v1.RetrieveEntityRes, error)
-	RetrieveByRoute(context.Context, *v1.RetrieveByRouteReq) (*v1.RetrieveEntityRes, error)
+	RetrieveIDByRoute(context.Context, *v1.RetrieveIDByRouteReq) (*v1.RetrieveEntityRes, error)
 	mustEmbedUnimplementedDomainsServiceServer()
 }
 

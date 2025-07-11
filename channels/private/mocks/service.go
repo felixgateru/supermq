@@ -252,12 +252,12 @@ type Service_RetrieveIDByRoute_Call struct {
 	*mock.Call
 }
 
-// RetrieveByRoute is a helper method to define mock.On call
+// RetrieveIDByRoute is a helper method to define mock.On call
 //   - ctx context.Context
 //   - route string
 //   - domainID string
-func (_e *Service_Expecter) RetrieveByRoute(ctx interface{}, route interface{}, domainID interface{}) *Service_RetrieveByRoute_Call {
-	return &Service_RetrieveByRoute_Call{Call: _e.mock.On("RetrieveByRoute", ctx, route, domainID)}
+func (_e *Service_Expecter) RetrieveIDByRoute(ctx interface{}, route interface{}, domainID interface{}) *Service_RetrieveIDByRoute_Call {
+	return &Service_RetrieveIDByRoute_Call{Call: _e.mock.On("RetrieveIDByRoute", ctx, route, domainID)}
 }
 
 func (_c *Service_RetrieveIDByRoute_Call) Run(run func(ctx context.Context, route string, domainID string)) *Service_RetrieveIDByRoute_Call {
