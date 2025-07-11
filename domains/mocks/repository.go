@@ -195,12 +195,13 @@ type Repository_DeleteUsersInvitation_Call struct {
 	*mock.Call
 }
 
-// DeleteInvitation is a helper method to define mock.On call
+// DeleteUsersInvitation is a helper method to define mock.On call
 //   - ctx context.Context
-//   - userID string
 //   - domainID string
-func (_e *Repository_Expecter) DeleteInvitation(ctx interface{}, userID interface{}, domainID interface{}) *Repository_DeleteInvitation_Call {
-	return &Repository_DeleteInvitation_Call{Call: _e.mock.On("DeleteInvitation", ctx, userID, domainID)}
+//   - userID ...string
+func (_e *Repository_Expecter) DeleteUsersInvitation(ctx interface{}, domainID interface{}, userID ...interface{}) *Repository_DeleteUsersInvitation_Call {
+	return &Repository_DeleteUsersInvitation_Call{Call: _e.mock.On("DeleteUsersInvitation",
+		append([]interface{}{ctx, domainID}, userID...)...)}
 }
 
 func (_c *Repository_DeleteUsersInvitation_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUsersInvitation_Call {
@@ -213,14 +214,16 @@ func (_c *Repository_DeleteUsersInvitation_Call) Run(run func(ctx context.Contex
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
+		var arg2 []string
+		var variadicArgs []string
+		if len(args) > 2 {
+			variadicArgs = args[2].([]string)
 		}
+		arg2 = variadicArgs
 		run(
 			arg0,
 			arg1,
-			arg2,
+			arg2...,
 		)
 	})
 	return _c
