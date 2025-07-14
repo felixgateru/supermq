@@ -8,6 +8,7 @@ package handler
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/absmach/mgate/pkg/session"
@@ -46,7 +47,9 @@ func (lm *loggingMiddleware) AuthPublish(ctx context.Context, topic *string, pay
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("topic", *topic),
+		}
+		if topic != nil {
+			args = append(args, slog.String("topic", *topic))
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
@@ -63,7 +66,9 @@ func (lm *loggingMiddleware) AuthSubscribe(ctx context.Context, topics *[]string
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.Any("topics", *topics),
+		}
+		if topics != nil {
+			args = append(args, slog.String("topics", strings.Join(*topics, ", ")))
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
@@ -113,7 +118,9 @@ func (lm *loggingMiddleware) Publish(ctx context.Context, topic *string, payload
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.String("topic", *topic),
+		}
+		if topic != nil {
+			args = append(args, slog.String("topic", *topic))
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
@@ -130,7 +137,9 @@ func (lm *loggingMiddleware) Subscribe(ctx context.Context, topics *[]string) (e
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.Any("topics", topics),
+		}
+		if topics != nil {
+			args = append(args, slog.String("topics", strings.Join(*topics, ", ")))
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
@@ -147,7 +156,9 @@ func (lm *loggingMiddleware) Unsubscribe(ctx context.Context, topics *[]string) 
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
-			slog.Any("topics", topics),
+		}
+		if topics != nil {
+			args = append(args, slog.String("topics", strings.Join(*topics, ", ")))
 		}
 		if err != nil {
 			args = append(args, slog.String("error", err.Error()))
