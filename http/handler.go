@@ -56,19 +56,19 @@ type handler struct {
 	publisher messaging.Publisher
 	clients   grpcClientsV1.ClientsServiceClient
 	channels  grpcChannelsV1.ChannelsServiceClient
-	resolver  messaging.TopicResolver
+	parser    messaging.TopicParser
 	authn     smqauthn.Authentication
 	logger    *slog.Logger
 }
 
 // NewHandler creates new Handler entity.
-func NewHandler(publisher messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver messaging.TopicResolver, logger *slog.Logger) session.Handler {
+func NewHandler(publisher messaging.Publisher, authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, parser messaging.TopicParser, logger *slog.Logger) session.Handler {
 	return &handler{
 		publisher: publisher,
 		authn:     authn,
 		clients:   clients,
 		channels:  channels,
-		resolver:  resolver,
+		parser:    parser,
 		logger:    logger,
 	}
 }
@@ -121,13 +121,9 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errFailedPublish, errClientNotInitialized)
 	}
 
-	domain, channel, subtopic, err := messaging.ParsePublishTopic(*topic)
+	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return errors.Wrap(errMalformedTopic, err)
-	}
-	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
-	if err != nil {
-		return errors.Wrap(errFailedPublish, err)
 	}
 
 	var clientID, clientType string
@@ -136,11 +132,11 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
 		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: secret})
 		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, err))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, err))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		if !authnRes.Authenticated {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, svcerr.ErrAuthentication))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, svcerr.ErrAuthentication))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.ClientType
@@ -149,7 +145,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNToken, *topic, err))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNToken, *topic, err))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.UserType

@@ -7,7 +7,10 @@ type deleteUserRes struct {
 	deleted bool
 }
 
-type retrieveEntityRes struct {
-	id     string
+type retrieveIDByRouteRes struct {
+	id string
+}
+
+type retrieveStatusRes struct {
 	status uint8
 }

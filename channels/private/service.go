@@ -22,7 +22,7 @@ type Service interface {
 	UnsetParentGroupFromChannels(ctx context.Context, parentGroupID string) error
 	RemoveClientConnections(ctx context.Context, clientID string) error
 	RetrieveByID(ctx context.Context, id string) (channels.Channel, error)
-	RetrieveByRoute(ctx context.Context, route, domainID string) (channels.Channel, error)
+	RetrieveIDByRoute(ctx context.Context, route, domainID string) (string, error)
 }
 
 type service struct {
@@ -40,11 +40,11 @@ func New(repo channels.Repository, cache channels.Cache, evaluator policies.Eval
 }
 
 func (svc service) Authorize(ctx context.Context, req channels.AuthzReq) error {
-	d, err := svc.domains.RetrieveEntity(ctx, req.DomainID)
+	status, err := svc.domains.RetrieveStatus(ctx, req.DomainID)
 	if err != nil {
 		return errors.Wrap(svcerr.ErrAuthorization, err)
 	}
-	if d.Status != dom.EnabledStatus {
+	if status != dom.EnabledStatus {
 		return errors.Wrap(svcerr.ErrAuthorization, errDisabledDomain)
 	}
 	switch req.ClientType {
@@ -123,18 +123,18 @@ func (svc service) RetrieveByID(ctx context.Context, id string) (channels.Channe
 	return svc.repo.RetrieveByID(ctx, id)
 }
 
-func (svc service) RetrieveByRoute(ctx context.Context, route, domainID string) (channels.Channel, error) {
+func (svc service) RetrieveIDByRoute(ctx context.Context, route, domainID string) (string, error) {
 	id, err := svc.cache.ID(ctx, route, domainID)
 	if err == nil {
-		return channels.Channel{ID: id}, nil
+		return id, nil
 	}
 	chn, err := svc.repo.RetrieveByRoute(ctx, route, domainID)
 	if err != nil {
-		return channels.Channel{}, errors.Wrap(svcerr.ErrViewEntity, err)
+		return "", errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	if err := svc.cache.Save(ctx, route, domainID, chn.ID); err != nil {
-		return channels.Channel{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+		return "", errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	return channels.Channel{ID: chn.ID}, nil
+	return chn.ID, nil
 }

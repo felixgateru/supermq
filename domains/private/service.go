@@ -14,9 +14,9 @@ import (
 const defLimit = 100
 
 type Service interface {
-	RetrieveEntity(ctx context.Context, id string) (domains.Domain, error)
+	RetrieveStatus(ctx context.Context, id string) (domains.Status, error)
 	DeleteUserFromDomains(ctx context.Context, id string) error
-	RetrieveByRoute(ctx context.Context, route string) (domains.Domain, error)
+	RetrieveIDByRoute(ctx context.Context, route string) (string, error)
 }
 
 var _ Service = (*service)(nil)
@@ -33,21 +33,21 @@ type service struct {
 	cache domains.Cache
 }
 
-func (svc service) RetrieveEntity(ctx context.Context, id string) (domains.Domain, error) {
+func (svc service) RetrieveStatus(ctx context.Context, id string) (domains.Status, error) {
 	status, err := svc.cache.Status(ctx, id)
 	if err == nil {
-		return domains.Domain{ID: id, Status: status}, nil
+		return status, nil
 	}
 	dom, err := svc.repo.RetrieveDomainByID(ctx, id)
 	if err != nil {
-		return domains.Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
+		return domains.AllStatus, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	status = dom.Status
 	if err := svc.cache.SaveStatus(ctx, id, status); err != nil {
-		return domains.Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+		return domains.AllStatus, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	return domains.Domain{ID: dom.ID, Status: dom.Status}, nil
+	return dom.Status, nil
 }
 
 func (svc service) DeleteUserFromDomains(ctx context.Context, id string) (err error) {
@@ -70,18 +70,18 @@ func (svc service) DeleteUserFromDomains(ctx context.Context, id string) (err er
 	return nil
 }
 
-func (svc service) RetrieveByRoute(ctx context.Context, route string) (domains.Domain, error) {
+func (svc service) RetrieveIDByRoute(ctx context.Context, route string) (string, error) {
 	id, err := svc.cache.ID(ctx, route)
 	if err == nil {
-		return domains.Domain{ID: id}, nil
+		return id, nil
 	}
 	dom, err := svc.repo.RetrieveDomainByRoute(ctx, route)
 	if err != nil {
-		return domains.Domain{}, errors.Wrap(svcerr.ErrViewEntity, err)
+		return "", errors.Wrap(svcerr.ErrViewEntity, err)
 	}
 	if err := svc.cache.SaveID(ctx, route, dom.ID); err != nil {
-		return domains.Domain{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
+		return "", errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 
-	return domains.Domain{ID: dom.ID}, nil
+	return dom.ID, nil
 }

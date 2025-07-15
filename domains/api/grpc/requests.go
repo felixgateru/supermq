@@ -19,11 +19,11 @@ func (req deleteUserPoliciesReq) validate() error {
 	return nil
 }
 
-type retrieveEntityReq struct {
+type retrieveStatusReq struct {
 	ID string
 }
 
-func (req retrieveEntityReq) validate() error {
+func (req retrieveStatusReq) validate() error {
 	if req.ID == "" {
 		return apiutil.ErrMissingID
 	}
@@ -31,11 +31,11 @@ func (req retrieveEntityReq) validate() error {
 	return nil
 }
 
-type retrieveByRouteReq struct {
+type retrieveIDByRouteReq struct {
 	Route string
 }
 
-func (req retrieveByRouteReq) validate() error {
+func (req retrieveIDByRouteReq) validate() error {
 	if req.Route == "" {
 		return apiutil.ErrMissingRoute
 	}
