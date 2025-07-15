@@ -108,12 +108,16 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return errClientNotInitialized
 	}
 
-	domainID, chanID, _, err := messaging.ParsePublishTopic(*topic)
+	domain, channel, _, err := messaging.ParsePublishTopic(*topic)
 	if err != nil {
-		return err
+		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
+	}
+	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
+	if err != nil {
+		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
-	clientID, clientType, err := h.authAccess(ctx, string(s.Password), domainID, chanID, connections.Publish)
+	clientID, clientType, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish)
 	if err != nil {
 		return err
 	}
@@ -136,9 +140,13 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	}
 
 	for _, topic := range *topics {
-		domainID, chanID, _, err := messaging.ParseSubscribeTopic(topic)
+		domain, channel, _, err := messaging.ParseSubscribeTopic(topic)
 		if err != nil {
 			return err
+		}
+		domainID, chanID, err := h.resolver.Resolve(ctx, domain, channel)
+		if err != nil {
+			return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 		}
 		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, chanID, connections.Subscribe); err != nil {
 			return err
@@ -171,34 +179,6 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	domainID, channelID, subtopic, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return errors.Wrap(errMalformedTopic, err)
-	}
-
-	var clientID, clientType string
-	switch {
-	case strings.HasPrefix(string(s.Password), "Client"):
-		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
-		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: secret})
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, err))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
-		}
-		if !authnRes.Authenticated {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, *topic, svcerr.ErrAuthentication))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
-		}
-		clientType = policies.ClientType
-		clientID = authnRes.GetId()
-	case strings.HasPrefix(string(s.Password), apiutil.BearerPrefix):
-		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
-		authnSession, err := h.authn.Authenticate(ctx, token)
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNToken, *topic, err))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
-		}
-		clientType = policies.UserType
-		clientID = authnSession.DomainUserID
-	default:
-		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
 	msg := messaging.Message{
@@ -246,7 +226,7 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 		token := strings.TrimPrefix(string(token), apiutil.BearerPrefix)
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNToken, err))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNToken, err))
 			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.UserType
@@ -261,11 +241,11 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 		}
 		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{ClientSecret: secret})
 		if err != nil {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNClient, secret, err))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, err))
 			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		if !authnRes.Authenticated {
-			h.logger.Info(fmt.Sprintf(logInfoFailedAuthNClient, secret, svcerr.ErrAuthentication))
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, svcerr.ErrAuthentication))
 			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.ClientType

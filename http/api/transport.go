@@ -5,6 +5,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -43,31 +44,23 @@ var (
 	errUnauthorizedAccess = errors.New("missing or invalid credentials provided")
 	errMalformedSubtopic  = errors.New("malformed subtopic")
 	errGenSessionID       = errors.New("failed to generate session id")
+	errMethodNotAllowed   = errors.New("method not allowed")
 )
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(ctx context.Context, svc smqhttp.Service, logger *slog.Logger, instanceID string) http.Handler {
+func MakeHandler(ctx context.Context, svc smqhttp.Service, resolver messaging.TopicResolver, logger *slog.Logger, instanceID string) http.Handler {
 	r := chi.NewRouter()
-	r.Post("/m/{domain}/c/{channel}", otelhttp.NewHandler(kithttp.NewServer(
-		sendMessageEndpoint(),
-		decodeRequest,
-		api.EncodeResponse,
-		opts...,
-	), "publish").ServeHTTP)
 
-	r.Post("/m/{domain}/c/{channel}/*", otelhttp.NewHandler(kithttp.NewServer(
-		sendMessageEndpoint(),
-		decodeRequest,
-		api.EncodeResponse,
-		opts...,
-	), "publish").ServeHTTP)
+	r.Handle("/m/{domain}/c/{channel}", messageHandler(ctx, svc, resolver, logger))
+	r.Handle("/m/{domain}/c/{channel}/*", messageHandler(ctx, svc, resolver, logger))
+
 	r.Get("/health", supermq.Health("http", instanceID))
 	r.Handle("/metrics", promhttp.Handler())
 
 	return r
 }
 
-func decodePublishReq(_ context.Context, r *http.Request) (interface{}, error) {
+func decodePublishReq(_ context.Context, r *http.Request) (any, error) {
 	ct := r.Header.Get("Content-Type")
 	if ct != ctSenmlJSON && ct != contentType && ct != ctSenmlCBOR {
 		return nil, errors.Wrap(apiutil.ErrValidation, apiutil.ErrUnsupportedContentType)
@@ -93,7 +86,7 @@ func decodePublishReq(_ context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func decodeWSReq(r *http.Request, logger *slog.Logger) (connReq, error) {
+func decodeWSReq(r *http.Request, resolver messaging.TopicResolver, logger *slog.Logger) (connReq, error) {
 	authKey := r.Header.Get("Authorization")
 	if authKey == "" {
 		authKeys := r.URL.Query()["authorization"]
@@ -104,12 +97,17 @@ func decodeWSReq(r *http.Request, logger *slog.Logger) (connReq, error) {
 		authKey = authKeys[0]
 	}
 
-	domainID := chi.URLParam(r, "domainID")
-	chanID := chi.URLParam(r, "chanID")
+	domain := chi.URLParam(r, "domain")
+	channel := chi.URLParam(r, "channel")
+
+	domainID, channelID, err := resolver.Resolve(r.Context(), domain, channel)
+	if err != nil {
+		return connReq{}, err
+	}
 
 	req := connReq{
 		clientKey: authKey,
-		chanID:    chanID,
+		channelID: channelID,
 		domainID:  domainID,
 	}
 
@@ -136,5 +134,12 @@ func encodeError(ctx context.Context, w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusBadRequest)
 	default:
 		api.EncodeError(ctx, err, w)
+		return
+	}
+
+	if errorVal, ok := err.(errors.Error); ok {
+		if err := json.NewEncoder(w).Encode(errorVal); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }

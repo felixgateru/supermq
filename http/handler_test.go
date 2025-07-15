@@ -76,6 +76,7 @@ func newHandler(t *testing.T) session.Handler {
 	authn = new(authnmocks.Authentication)
 	clients = new(clmocks.ClientsServiceClient)
 	channels = new(chmocks.ChannelsServiceClient)
+	domains = new(dmocks.DomainsServiceClient)
 	publisher = new(mocks.PubSub)
 	parser, err := messaging.NewTopicParser(messaging.DefaultCacheConfig, channels, domains)
 	assert.Nil(t, err, fmt.Sprintf("unexpected error while creating topic parser: %v", err))

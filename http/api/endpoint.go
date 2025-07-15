@@ -16,18 +16,18 @@ import (
 	apiutil "github.com/absmach/supermq/api/http/util"
 	smqhttp "github.com/absmach/supermq/http"
 	"github.com/absmach/supermq/pkg/errors"
+	"github.com/absmach/supermq/pkg/messaging"
 	"github.com/go-kit/kit/endpoint"
 )
 
-func messageHandler(ctx context.Context, svc smqhttp.Service, logger *slog.Logger) http.HandlerFunc {
+func messageHandler(ctx context.Context, svc smqhttp.Service, resolver messaging.TopicResolver, logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isWebSocketRequest(r) {
-			handleWebSocket(ctx, svc, logger, w, r)
+			handleWebSocket(ctx, svc, resolver, logger, w, r)
 			return
 		}
-		// Handle HTTP POST for publishing messages
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			encodeError(ctx, w, errMethodNotAllowed)
 			return
 		}
 		req, err := decodePublishReq(ctx, r)
@@ -59,8 +59,8 @@ func sendMessageEndpoint() endpoint.Endpoint {
 	}
 }
 
-func handleWebSocket(ctx context.Context, svc smqhttp.Service, logger *slog.Logger, w http.ResponseWriter, r *http.Request) {
-	req, err := decodeWSReq(r, logger)
+func handleWebSocket(ctx context.Context, svc smqhttp.Service, resolver messaging.TopicResolver, logger *slog.Logger, w http.ResponseWriter, r *http.Request) {
+	req, err := decodeWSReq(r, resolver, logger)
 	if err != nil {
 		encodeError(ctx, w, err)
 		return
@@ -82,17 +82,17 @@ func handleWebSocket(ctx context.Context, svc smqhttp.Service, logger *slog.Logg
 	client := smqhttp.NewClient(logger, conn, sessionID)
 
 	client.SetCloseHandler(func(code int, text string) error {
-		return svc.Unsubscribe(ctx, sessionID, req.domainID, req.chanID, req.subtopic)
+		return svc.Unsubscribe(ctx, sessionID, req.domainID, req.channelID, req.subtopic)
 	})
 
 	go client.Start(ctx)
 
-	if err := svc.Subscribe(ctx, sessionID, req.clientKey, req.domainID, req.chanID, req.subtopic, client); err != nil {
+	if err := svc.Subscribe(ctx, sessionID, req.clientKey, req.domainID, req.channelID, req.subtopic, client); err != nil {
 		conn.Close()
 		return
 	}
 
-	logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.chanID))
+	logger.Debug(fmt.Sprintf("Successfully upgraded communication to WS on channel %s", req.channelID))
 }
 
 func isWebSocketRequest(r *http.Request) bool {

@@ -53,7 +53,7 @@ func setupMessages(t *testing.T) (*httptest.Server, *pubsub.PubSub) {
 	assert.Nil(t, err, fmt.Sprintf("unexpected error while setting up parser: %v", err))
 	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, parser, smqlog.NewMock())
 
-	mux := api.MakeHandler(context.Background(), svc, smqlog.NewMock(), "")
+	mux := api.MakeHandler(context.Background(), svc,resolver, smqlog.NewMock(), "")
 	target := httptest.NewServer(mux)
 
 	ptUrl, _ := url.Parse(target.URL)

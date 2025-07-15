@@ -21,7 +21,6 @@ import (
 	"github.com/absmach/supermq"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
-	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	adapter "github.com/absmach/supermq/http"
 	httpapi "github.com/absmach/supermq/http/api"
 	"github.com/absmach/supermq/http/middleware"
@@ -210,7 +209,7 @@ func main() {
 	}
 	targetServerCfg := server.Config{Port: targetHTTPPort}
 
-	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerCfg, httpapi.MakeHandler(ctx, svc, logger, cfg.InstanceID), logger)
+	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerCfg, httpapi.MakeHandler(ctx, svc, resolver, logger, cfg.InstanceID), logger)
 
 	if cfg.SendTelemetry {
 		chc := chclient.New(svcName, supermq.Version, logger, cancel)

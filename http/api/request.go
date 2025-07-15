@@ -26,7 +26,7 @@ func (req publishReq) validate() error {
 
 type connReq struct {
 	clientKey string
-	chanID    string
+	channelID string
 	domainID  string
 	subtopic  string
 }
