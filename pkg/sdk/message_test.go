@@ -48,12 +48,14 @@ func setupMessages(t *testing.T) (*httptest.Server, *pubsub.PubSub) {
 	domainsGRPCClient = new(dmocks.DomainsServiceClient)
 	pub := new(pubsub.PubSub)
 	authn := new(authnmocks.Authentication)
+	svc := new(httpmocks.Service)
 
 	parser, err := messaging.NewTopicParser(messaging.DefaultCacheConfig, channelsGRPCClient, domainsGRPCClient)
 	assert.Nil(t, err, fmt.Sprintf("unexpected error while setting up parser: %v", err))
 	handler := adapter.NewHandler(pub, authn, clientsGRPCClient, channelsGRPCClient, parser, smqlog.NewMock())
+	resolver := messaging.NewTopicResolver(channelsGRPCClient, domainsGRPCClient)
 
-	mux := api.MakeHandler(context.Background(), svc,resolver, smqlog.NewMock(), "")
+	mux := api.MakeHandler(context.Background(), svc, resolver, smqlog.NewMock(), "")
 	target := httptest.NewServer(mux)
 
 	ptUrl, _ := url.Parse(target.URL)

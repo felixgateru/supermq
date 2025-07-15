@@ -20,6 +20,7 @@ import (
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
 	grpcCommonV1 "github.com/absmach/supermq/api/grpc/common/v1"
+	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	apiutil "github.com/absmach/supermq/api/http/util"
 	chmocks "github.com/absmach/supermq/channels/mocks"
 	climocks "github.com/absmach/supermq/clients/mocks"
@@ -96,7 +97,7 @@ func newService(clients grpcClientsV1.ClientsServiceClient, channels grpcChannel
 	return server.NewService(clients, channels, pubsub)
 }
 
-func newHandler(authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, resolver messaging.TopicResolver) (session.Handler, *pubsub.PubSub, error) {
+func newHandler(authn smqauthn.Authentication, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient) (session.Handler, *pubsub.PubSub, error) {
 	pub := new(pubsub.PubSub)
 	parser, err := messaging.NewTopicParser(messaging.DefaultCacheConfig, channels, domains)
 	if err != nil {
@@ -167,9 +168,11 @@ func TestPublish(t *testing.T) {
 	msg := `[{"n":"current","t":-1,"v":1.6}]`
 	msgJSON := `{"field1":"val1","field2":"val2"}`
 	msgCBOR := `81A3616E6763757272656E746174206176FB3FF999999999999A`
-	svc, pub, err := newService(authn, clients, channels, domains)
+	handler, pubsub, err := newHandler(authn, clients, channels, domains)
 	assert.Nil(t, err, fmt.Sprintf("failed to create service with err: %v", err))
-	target := newTargetHTTPServer()
+	resolver := messaging.NewTopicResolver(channels, domains)
+	svc := newService(clients, channels, pubsub)
+	target := newTargetHTTPServer(resolver, svc)
 	defer target.Close()
 	ts, err := newProxyHTPPServer(handler, target)
 	assert.Nil(t, err, fmt.Sprintf("failed to create proxy server with err: %v", err))
@@ -339,7 +342,8 @@ func TestHandshake(t *testing.T) {
 	authn := new(authnMocks.Authentication)
 	domains := new(dmocks.DomainsServiceClient)
 	resolver := messaging.NewTopicResolver(channels, domains)
-	handler, pubsub := newHandler(authn, clients, channels, resolver)
+	handler, pubsub, err := newHandler(authn, clients, channels, domains)
+	assert.Nil(t, err, fmt.Sprintf("failed to create handler with err: %v", err))
 	svc := newService(clients, channels, pubsub)
 	target := newTargetHTTPServer(resolver, svc)
 	defer target.Close()

@@ -21,6 +21,7 @@ import (
 	"github.com/absmach/supermq"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
+	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	adapter "github.com/absmach/supermq/http"
 	httpapi "github.com/absmach/supermq/http/api"
 	"github.com/absmach/supermq/http/middleware"
@@ -201,12 +202,15 @@ func main() {
 		return
 	}
 
-	svc, err := newService(pub, authn, cacheConfig, clientsClient, channelsClient, domainsClient, logger, tracer)
+	resolver := messaging.NewTopicResolver(channelsClient, domainsClient)
+	handler, err := newHandler(nps, authn, cacheConfig, clientsClient, channelsClient, domainsClient, logger, tracer)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create service: %s", err))
 		exitCode = 1
 		return
 	}
+	svc := newService(clientsClient, channelsClient, nps, logger, tracer)
+
 	targetServerCfg := server.Config{Port: targetHTTPPort}
 
 	hs := httpserver.NewServer(ctx, cancel, svcName, targetServerCfg, httpapi.MakeHandler(ctx, svc, resolver, logger, cfg.InstanceID), logger)
@@ -233,18 +237,18 @@ func main() {
 	}
 }
 
-func newService(pub messaging.Publisher, authn smqauthn.Authentication, cacheCfg messaging.CacheConfig, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient, logger *slog.Logger, tracer trace.Tracer) (session.Handler, error) {
+func newHandler(pub messaging.Publisher, authn smqauthn.Authentication, cacheCfg messaging.CacheConfig, clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, domains grpcDomainsV1.DomainsServiceClient, logger *slog.Logger, tracer trace.Tracer) (session.Handler, error) {
 	parser, err := messaging.NewTopicParser(cacheCfg, channels, domains)
 	if err != nil {
 		return nil, err
 	}
-	svc := adapter.NewHandler(pub, authn, clients, channels, parser, logger)
-	svc = handler.NewTracing(tracer, svc)
-	svc = handler.LoggingMiddleware(svc, logger)
+	h := adapter.NewHandler(pub, authn, clients, channels, parser, logger)
+	h = handler.NewTracing(tracer, h)
+	h = handler.LoggingMiddleware(h, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "handler")
-	svc = handler.MetricsMiddleware(svc, counter, latency)
+	h = handler.MetricsMiddleware(h, counter, latency)
 
-	return svc
+	return h, nil
 }
 
 func newService(clientsClient grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, nps messaging.PubSub, logger *slog.Logger, tracer trace.Tracer) adapter.Service {
@@ -252,8 +256,9 @@ func newService(clientsClient grpcClientsV1.ClientsServiceClient, channels grpcC
 	svc = middleware.Tracing(tracer, svc)
 	svc = middleware.Logging(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
-	svc = handler.MetricsMiddleware(svc, counter, latency)
-	return svc, nil
+	svc = middleware.Metrics(svc, counter, latency)
+
+	return svc
 }
 
 func proxyHTTP(ctx context.Context, cfg server.Config, logger *slog.Logger, sessionHandler session.Handler) error {

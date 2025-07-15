@@ -139,7 +139,7 @@ func TestAuthConnect(t *testing.T) {
 }
 
 func TestAuthPublish(t *testing.T) {
-	handler := newHandler()
+	handler := newHandler(t)
 
 	clientKeySession := session.Session{
 		Password: []byte("Client " + clientKey),
@@ -278,7 +278,7 @@ func TestAuthPublish(t *testing.T) {
 }
 
 func TestAuthSubscribe(t *testing.T) {
-	handler := newHandler()
+	handler := newHandler(t)
 
 	clientKeySession := session.Session{
 		Password: []byte("Client " + clientKey),

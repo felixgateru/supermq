@@ -100,7 +100,7 @@ func decodeWSReq(r *http.Request, resolver messaging.TopicResolver, logger *slog
 	domain := chi.URLParam(r, "domain")
 	channel := chi.URLParam(r, "channel")
 
-	domainID, channelID, err := resolver.Resolve(r.Context(), domain, channel)
+	domainID, channelID, _, err := resolver.Resolve(r.Context(), domain, channel)
 	if err != nil {
 		return connReq{}, err
 	}

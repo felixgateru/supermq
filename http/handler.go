@@ -108,11 +108,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return errClientNotInitialized
 	}
 
-	domain, channel, _, err := messaging.ParsePublishTopic(*topic)
-	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
-	}
-	domainID, channelID, err := h.resolver.Resolve(ctx, domain, channel)
+	domainID, channelID, _, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
@@ -140,15 +136,11 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	}
 
 	for _, topic := range *topics {
-		domain, channel, _, err := messaging.ParseSubscribeTopic(topic)
+		domainID, channelID, _, err := h.parser.ParseSubscribeTopic(ctx, topic, true)
 		if err != nil {
 			return err
 		}
-		domainID, chanID, err := h.resolver.Resolve(ctx, domain, channel)
-		if err != nil {
-			return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
-		}
-		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, chanID, connections.Subscribe); err != nil {
+		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Subscribe); err != nil {
 			return err
 		}
 	}
