@@ -14,9 +14,9 @@ type HealthInfo struct {
 	// Status contains adapter status.
 	Status string `json:"status"`
 
-	//Protocol contains the protocol used.
+	// Protocol contains the protocol used.
 	Protocol string `json:"protocol"`
 
-	// Timestamp is the time when the health check was performed.
+	// Timestamp of health check.
 	Timestamp time.Time `json:"timestamp"`
 }
