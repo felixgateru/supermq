@@ -192,23 +192,6 @@ func (lm *loggingMiddleware) SendInvitation(ctx context.Context, session authn.S
 	return lm.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (lm *loggingMiddleware) ViewDomainInvitation(ctx context.Context, session authn.Session, inviteeUserID string) (invitation domains.Invitation, err error) {
-	defer func(begin time.Time) {
-		args := []any{
-			slog.String("duration", time.Since(begin).String()),
-			slog.String("invitee_user_id", inviteeUserID),
-			slog.String("domain_id", session.DomainID),
-		}
-		if err != nil {
-			args = append(args, slog.String("error", err.Error()))
-			lm.logger.Warn("View invitation failed", args...)
-			return
-		}
-		lm.logger.Info("View invitation completed successfully", args...)
-	}(time.Now())
-	return lm.svc.ViewDomainInvitation(ctx, session, inviteeUserID)
-}
-
 func (lm *loggingMiddleware) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
 	defer func(begin time.Time) {
 		args := []any{

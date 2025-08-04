@@ -13,22 +13,21 @@ import (
 )
 
 const (
-	domainPrefix             = "domain."
-	domainCreate             = domainPrefix + "create"
-	domainRetrieve           = domainPrefix + "retrieve"
-	domainUpdate             = domainPrefix + "update"
-	domainEnable             = domainPrefix + "enable"
-	domainDisable            = domainPrefix + "disable"
-	domainFreeze             = domainPrefix + "freeze"
-	domainList               = domainPrefix + "list"
-	invitationPrefix         = "invitation."
-	invitationSend           = invitationPrefix + "send"
-	invitationAccept         = invitationPrefix + "accept"
-	invitationReject         = invitationPrefix + "reject"
-	invitationList           = invitationPrefix + "list"
-	invitationListDomain     = invitationPrefix + "list_domain"
-	invitationRetrieveDomain = invitationPrefix + "retrieve_domain"
-	invitationDelete         = invitationPrefix + "delete"
+	domainPrefix         = "domain."
+	domainCreate         = domainPrefix + "create"
+	domainRetrieve       = domainPrefix + "retrieve"
+	domainUpdate         = domainPrefix + "update"
+	domainEnable         = domainPrefix + "enable"
+	domainDisable        = domainPrefix + "disable"
+	domainFreeze         = domainPrefix + "freeze"
+	domainList           = domainPrefix + "list"
+	invitationPrefix     = "invitation."
+	invitationSend       = invitationPrefix + "send"
+	invitationAccept     = invitationPrefix + "accept"
+	invitationReject     = invitationPrefix + "reject"
+	invitationList       = invitationPrefix + "list"
+	invitationListDomain = invitationPrefix + "list_domain"
+	invitationDelete     = invitationPrefix + "delete"
 )
 
 var (
@@ -41,7 +40,6 @@ var (
 	_ events.Event = (*freezeDomainEvent)(nil)
 	_ events.Event = (*listDomainsEvent)(nil)
 	_ events.Event = (*sendInvitationEvent)(nil)
-	_ events.Event = (*viewInvitationEvent)(nil)
 	_ events.Event = (*listInvitationsEvent)(nil)
 	_ events.Event = (*listDomainInvitationsEvent)(nil)
 	_ events.Event = (*acceptInvitationEvent)(nil)
@@ -319,28 +317,6 @@ func (sie sendInvitationEvent) Encode() (map[string]interface{}, error) {
 		"role_id":         sie.invitation.RoleID,
 		"token_type":      sie.session.Type.String(),
 		"super_admin":     sie.session.SuperAdmin,
-	}
-
-	return val, nil
-}
-
-type viewInvitationEvent struct {
-	inviteeUserID string
-	domainID      string
-	roleID        string
-	roleName      string
-	session       authn.Session
-}
-
-func (vie viewInvitationEvent) Encode() (map[string]interface{}, error) {
-	val := map[string]interface{}{
-		"operation":       invitationRetrieveDomain,
-		"invitee_user_id": vie.inviteeUserID,
-		"domain_id":       vie.domainID,
-		"role_id":         vie.roleID,
-		"role_name":       vie.roleName,
-		"token_type":      vie.session.Type.String(),
-		"super_admin":     vie.session.SuperAdmin,
 	}
 
 	return val, nil

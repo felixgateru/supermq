@@ -93,16 +93,6 @@ func (tm *tracingMiddleware) SendInvitation(ctx context.Context, session authn.S
 	return tm.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (tm *tracingMiddleware) ViewDomainInvitation(ctx context.Context, session authn.Session, inviteeUserID string) (invitation domains.Invitation, err error) {
-	ctx, span := tracing.StartSpan(ctx, tm.tracer, "view_invitation", trace.WithAttributes(
-		attribute.String("invitee_user_id", inviteeUserID),
-		attribute.String("domain_id", session.DomainID),
-	))
-	defer span.End()
-
-	return tm.svc.ViewDomainInvitation(ctx, session, inviteeUserID)
-}
-
 func (tm *tracingMiddleware) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
 	ctx, span := tracing.StartSpan(ctx, tm.tracer, "list_invitations", trace.WithAttributes(
 		attribute.Int("limit", int(pm.Limit)),

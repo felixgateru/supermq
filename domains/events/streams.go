@@ -16,21 +16,20 @@ import (
 )
 
 const (
-	supermqPrefix                  = "supermq."
-	createStream                   = supermqPrefix + domainCreate
-	retrieveStream                 = supermqPrefix + domainRetrieve
-	updateStream                   = supermqPrefix + domainUpdate
-	enableStream                   = supermqPrefix + domainEnable
-	disableStream                  = supermqPrefix + domainDisable
-	freezeStream                   = supermqPrefix + domainFreeze
-	listStream                     = supermqPrefix + domainList
-	sendInvitationStream           = supermqPrefix + invitationSend
-	acceptInvitationStream         = supermqPrefix + invitationAccept
-	rejectInvitationStream         = supermqPrefix + invitationReject
-	listInvitationsStream          = supermqPrefix + invitationList
-	listDomainInvitationsStream    = supermqPrefix + invitationListDomain
-	retrieveDomainInvitationStream = supermqPrefix + invitationRetrieveDomain
-	deleteInvitationStream         = supermqPrefix + invitationDelete
+	supermqPrefix               = "supermq."
+	createStream                = supermqPrefix + domainCreate
+	retrieveStream              = supermqPrefix + domainRetrieve
+	updateStream                = supermqPrefix + domainUpdate
+	enableStream                = supermqPrefix + domainEnable
+	disableStream               = supermqPrefix + domainDisable
+	freezeStream                = supermqPrefix + domainFreeze
+	listStream                  = supermqPrefix + domainList
+	sendInvitationStream        = supermqPrefix + invitationSend
+	acceptInvitationStream      = supermqPrefix + invitationAccept
+	rejectInvitationStream      = supermqPrefix + invitationReject
+	listInvitationsStream       = supermqPrefix + invitationList
+	listDomainInvitationsStream = supermqPrefix + invitationListDomain
+	deleteInvitationStream      = supermqPrefix + invitationDelete
 )
 
 var _ domains.Service = (*eventStore)(nil)
@@ -212,26 +211,6 @@ func (es *eventStore) SendInvitation(ctx context.Context, session authn.Session,
 	}
 
 	return es.Publish(ctx, sendInvitationStream, event)
-}
-
-func (es *eventStore) ViewDomainInvitation(ctx context.Context, session authn.Session, userID string) (domains.Invitation, error) {
-	invitation, err := es.svc.ViewDomainInvitation(ctx, session, userID)
-	if err != nil {
-		return invitation, err
-	}
-
-	event := viewInvitationEvent{
-		inviteeUserID: userID,
-		roleID:        invitation.RoleID,
-		roleName:      invitation.RoleName,
-		session:       session,
-	}
-
-	if err := es.Publish(ctx, retrieveDomainInvitationStream, event); err != nil {
-		return invitation, err
-	}
-
-	return invitation, nil
 }
 
 func (es *eventStore) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (domains.InvitationPage, error) {

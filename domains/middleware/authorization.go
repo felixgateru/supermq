@@ -206,22 +206,6 @@ func (am *authorizationMiddleware) SendInvitation(ctx context.Context, session a
 	return am.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (am *authorizationMiddleware) ViewDomainInvitation(ctx context.Context, session authn.Session, inviteeUserID string) (invitation domains.Invitation, err error) {
-	if err := am.checkAdmin(ctx, session); err != nil {
-		return domains.Invitation{}, err
-	}
-
-	params := map[string]any{
-		"invitee_user_id": inviteeUserID,
-		"domain":          session.DomainID,
-	}
-	if err := am.callOut(ctx, session, domains.OpViewDomainInvitation.String(domains.OperationNames), params); err != nil {
-		return domains.Invitation{}, err
-	}
-
-	return am.svc.ViewDomainInvitation(ctx, session, inviteeUserID)
-}
-
 func (am *authorizationMiddleware) ListInvitations(ctx context.Context, session authn.Session, page domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {
 	params := map[string]any{
 		"page": page,
