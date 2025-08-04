@@ -13,22 +13,22 @@ import (
 )
 
 const (
-	domainPrefix         = "domain."
-	domainCreate         = domainPrefix + "create"
-	domainRetrieve       = domainPrefix + "retrieve"
-	domainUpdate         = domainPrefix + "update"
-	domainEnable         = domainPrefix + "enable"
-	domainDisable        = domainPrefix + "disable"
-	domainFreeze         = domainPrefix + "freeze"
-	domainList           = domainPrefix + "list"
-	invitationPrefix     = "invitation."
-	invitationSend       = invitationPrefix + "send"
-	invitationAccept     = invitationPrefix + "accept"
-	invitationReject     = invitationPrefix + "reject"
-	invitationList       = invitationPrefix + "list"
-	invitationListDomain = invitationPrefix + "list_domain"
-	invitationRetrieve   = invitationPrefix + "retrieve"
-	invitationDelete     = invitationPrefix + "delete"
+	domainPrefix             = "domain."
+	domainCreate             = domainPrefix + "create"
+	domainRetrieve           = domainPrefix + "retrieve"
+	domainUpdate             = domainPrefix + "update"
+	domainEnable             = domainPrefix + "enable"
+	domainDisable            = domainPrefix + "disable"
+	domainFreeze             = domainPrefix + "freeze"
+	domainList               = domainPrefix + "list"
+	invitationPrefix         = "invitation."
+	invitationSend           = invitationPrefix + "send"
+	invitationAccept         = invitationPrefix + "accept"
+	invitationReject         = invitationPrefix + "reject"
+	invitationList           = invitationPrefix + "list"
+	invitationListDomain     = invitationPrefix + "list_domain"
+	invitationRetrieveDomain = invitationPrefix + "retrieve_domain"
+	invitationDelete         = invitationPrefix + "delete"
 )
 
 var (
@@ -334,7 +334,7 @@ type viewInvitationEvent struct {
 
 func (vie viewInvitationEvent) Encode() (map[string]interface{}, error) {
 	val := map[string]interface{}{
-		"operation":       invitationRetrieve,
+		"operation":       invitationRetrieveDomain,
 		"invitee_user_id": vie.inviteeUserID,
 		"domain_id":       vie.domainID,
 		"role_id":         vie.roleID,

@@ -201,9 +201,9 @@ func sendInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 	}
 }
 
-func viewInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
+func viewDomainInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(invitationReq)
+		req := request.(retrieveDomainInvitationReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}
@@ -211,8 +211,7 @@ func viewInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, svcerr.ErrAuthorization
 		}
-		session.DomainID = req.domainID
-		invitation, err := svc.ViewInvitation(ctx, session, req.userID, req.domainID)
+		invitation, err := svc.ViewDomainInvitation(ctx, session, req.userID)
 		if err != nil {
 			return nil, err
 		}
@@ -311,7 +310,7 @@ func rejectInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 
 func deleteInvitationEndpoint(svc domains.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(invitationReq)
+		req := request.(deleteInvitationReq)
 		if err := req.validate(); err != nil {
 			return nil, errors.Wrap(apiutil.ErrValidation, err)
 		}

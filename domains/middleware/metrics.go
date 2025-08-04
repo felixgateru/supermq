@@ -101,12 +101,12 @@ func (mm *metricsMiddleware) SendInvitation(ctx context.Context, session authn.S
 	return mm.svc.SendInvitation(ctx, session, invitation)
 }
 
-func (mm *metricsMiddleware) ViewInvitation(ctx context.Context, session authn.Session, userID, domainID string) (invitation domains.Invitation, err error) {
+func (mm *metricsMiddleware) ViewDomainInvitation(ctx context.Context, session authn.Session, userID string) (invitation domains.Invitation, err error) {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "view_invitation").Add(1)
 		mm.latency.With("method", "view_invitation").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return mm.svc.ViewInvitation(ctx, session, userID, domainID)
+	return mm.svc.ViewDomainInvitation(ctx, session, userID)
 }
 
 func (mm *metricsMiddleware) ListInvitations(ctx context.Context, session authn.Session, pm domains.InvitationPageMeta) (invs domains.InvitationPage, err error) {

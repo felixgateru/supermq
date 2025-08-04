@@ -1457,7 +1457,7 @@ func TestListUserInvitations(t *testing.T) {
 	}
 }
 
-func TestViewInvitation(t *testing.T) {
+func TestViewDomainInvitation(t *testing.T) {
 	is, svc, auth := newDomainsServer()
 
 	cases := []struct {
@@ -1524,7 +1524,7 @@ func TestViewInvitation(t *testing.T) {
 				tc.session = authn.Session{UserID: userID, DomainID: domainID, DomainUserID: domainID + "_" + userID}
 			}
 			authnCall := auth.On("Authenticate", mock.Anything, tc.token).Return(tc.session, tc.authnErr)
-			repoCall := svc.On("ViewInvitation", mock.Anything, tc.session, tc.userID, tc.domainID).Return(domains.Invitation{}, tc.svcErr)
+			repoCall := svc.On("ViewDomainInvitation", mock.Anything, tc.session, tc.userID).Return(domains.Invitation{}, tc.svcErr)
 			req := testRequest{
 				client:      is.Client(),
 				method:      http.MethodGet,

@@ -263,8 +263,16 @@ func decodeAcceptInvitationReq(_ context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func decodeInvitationReq(_ context.Context, r *http.Request) (interface{}, error) {
-	req := invitationReq{
+func decodeRetrieveDomainInvitationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	req := retrieveDomainInvitationReq{
+		userID: chi.URLParam(r, "userID"),
+	}
+
+	return req, nil
+}
+
+func decodeDeleteInvitationReq(_ context.Context, r *http.Request) (interface{}, error) {
+	req := deleteInvitationReq{
 		userID:   chi.URLParam(r, "userID"),
 		domainID: chi.URLParam(r, "domainID"),
 	}

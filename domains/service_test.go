@@ -773,7 +773,7 @@ func TestViewInvitation(t *testing.T) {
 			repoCall := drepo.On("RetrieveInvitation", context.Background(), mock.Anything, mock.Anything).Return(tc.resp, tc.retrieveInvitationErr)
 			repoCall1 := drepo.On("RoleListActions", context.Background(), tc.resp.RoleID).Return(tc.resp.Actions, tc.listRolesErr)
 			repoCall2 := drepo.On("RetrieveRole", context.Background(), tc.resp.RoleID).Return(roles.Role{}, tc.retrieveRoleErr)
-			inv, err := svc.ViewInvitation(context.Background(), tc.session, tc.userID, tc.domainID)
+			inv, err := svc.ViewDomainInvitation(context.Background(), tc.session, tc.userID)
 			assert.True(t, errors.Contains(err, tc.err))
 			assert.Equal(t, tc.resp, inv, tc.desc)
 			repoCall.Unset()

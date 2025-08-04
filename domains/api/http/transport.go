@@ -103,14 +103,14 @@ func MakeHandler(svc domains.Service, authn authn.Authentication, mux *chi.Mux, 
 			), "list_domain_invitations").ServeHTTP)
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Get("/", otelhttp.NewHandler(kithttp.NewServer(
-					viewInvitationEndpoint(svc),
-					decodeInvitationReq,
+					viewDomainInvitationEndpoint(svc),
+					decodeRetrieveDomainInvitationReq,
 					api.EncodeResponse,
 					opts...,
 				), "view_invitation").ServeHTTP)
 				r.Delete("/", otelhttp.NewHandler(kithttp.NewServer(
 					deleteInvitationEndpoint(svc),
-					decodeInvitationReq,
+					decodeDeleteInvitationReq,
 					api.EncodeResponse,
 					opts...,
 				), "delete_invitation").ServeHTTP)

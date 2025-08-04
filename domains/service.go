@@ -224,8 +224,8 @@ func (svc *service) resendInvitation(ctx context.Context, invitation Invitation)
 	return nil
 }
 
-func (svc *service) ViewInvitation(ctx context.Context, session authn.Session, inviteeUserID, domainID string) (invitation Invitation, err error) {
-	inv, err := svc.repo.RetrieveInvitation(ctx, inviteeUserID, domainID)
+func (svc *service) ViewDomainInvitation(ctx context.Context, session authn.Session, inviteeUserID string) (invitation Invitation, err error) {
+	inv, err := svc.repo.RetrieveInvitation(ctx, inviteeUserID, session.DomainID)
 	if err != nil {
 		return Invitation{}, errors.Wrap(svcerr.ErrViewEntity, err)
 	}
