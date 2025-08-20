@@ -49,7 +49,8 @@ var (
 
 func newService(clients grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient) (ws.Service, *mocks.PubSub) {
 	pubsub := new(mocks.PubSub)
-	return ws.New(clients, channels, pubsub), pubsub
+	authn := new(authnMocks.Authentication)
+	return ws.New(clients, channels, authn, pubsub), pubsub
 }
 
 func newHTTPServer(svc ws.Service, resolver messaging.TopicResolver) *httptest.Server {

@@ -16,7 +16,6 @@ import (
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
 	apiutil "github.com/absmach/supermq/api/http/util"
-	"github.com/absmach/supermq/pkg/authn"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/errors"
@@ -85,20 +84,12 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return errClientNotInitialized
 	}
 
-	var token string
-	switch {
-	case strings.HasPrefix(string(s.Password), "Client"):
-		token = strings.ReplaceAll(string(s.Password), "Client ", "")
-	default:
-		token = string(s.Password)
-	}
-
 	domainID, channelID, _, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
-	clientID, clientType, err := h.authAccess(ctx, token, domainID, channelID, connections.Publish)
+	clientID, clientType, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish)
 	if err != nil {
 		return err
 	}
@@ -195,18 +186,28 @@ func (h *handler) Disconnect(ctx context.Context) error {
 }
 
 func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string, msgType connections.ConnType) (string, string, error) {
-	if strings.HasPrefix(token, "Client") {
-		token = extractClientSecret(token)
+	var clientID, clientType string
+	switch {
+	case strings.HasPrefix(token, apiutil.BearerPrefix):
+		token := strings.TrimPrefix(token, apiutil.BearerPrefix)
+		authnSession, err := h.authn.Authenticate(ctx, token)
+		if err != nil {
+			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientType = policies.UserType
+		clientID = authnSession.UserID
+	default:
+		secret := strings.TrimPrefix(token, apiutil.ClientPrefix)
+		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret)})
+		if err != nil {
+			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		if !authnRes.Authenticated {
+			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientType = policies.ClientType
+		clientID = authnRes.GetId()
 	}
-	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: authn.AuthPack(authn.DomainAuth, domainID, token)})
-	if err != nil {
-		return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
-	}
-	if !authnRes.GetAuthenticated() {
-		return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
-	}
-	clientType := policies.ClientType
-	clientID := authnRes.GetId()
 
 	ar := &grpcChannelsV1.AuthzReq{
 		Type:       uint32(msgType),
@@ -224,13 +225,4 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 	}
 
 	return clientID, clientType, nil
-}
-
-// extractClientSecret returns value of the client secret. If there is no client key - an empty value is returned.
-func extractClientSecret(token string) string {
-	if !strings.HasPrefix(token, apiutil.ClientPrefix) {
-		return ""
-	}
-
-	return strings.TrimPrefix(token, apiutil.ClientPrefix)
 }
