@@ -147,12 +147,13 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 
 	msg := messaging.Message{
-		Protocol: protocol,
-		Domain:   domainID,
-		Channel:  channelID,
-		Subtopic: subtopic,
-		Payload:  *payload,
-		Created:  time.Now().UnixNano(),
+		Protocol:  protocol,
+		Domain:    domainID,
+		Channel:   channelID,
+		Subtopic:  subtopic,
+		Publisher: clientID,
+		Payload:   *payload,
+		Created:   time.Now().UnixNano(),
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
@@ -168,10 +169,6 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 	if !res.GetAuthorized() {
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthorization)
-	}
-
-	if clientType == policies.ClientType {
-		msg.Publisher = clientID
 	}
 
 	if err := h.publisher.Publish(ctx, messaging.EncodeMessageTopic(&msg), &msg); err != nil {

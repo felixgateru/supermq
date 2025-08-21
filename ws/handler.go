@@ -89,12 +89,12 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
-	clientID, clientType, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish)
+	clientID, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish)
 	if err != nil {
 		return err
 	}
 
-	if s.Username == "" && clientType == policies.ClientType {
+	if s.Username == "" {
 		s.Username = clientID
 	}
 
@@ -117,7 +117,7 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 		if err != nil {
 			return err
 		}
-		if _, _, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Subscribe); err != nil {
+		if _, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Subscribe); err != nil {
 			return err
 		}
 	}
@@ -185,14 +185,14 @@ func (h *handler) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string, msgType connections.ConnType) (string, string, error) {
+func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string, msgType connections.ConnType) (string, error) {
 	var clientID, clientType string
 	switch {
 	case strings.HasPrefix(token, apiutil.BearerPrefix):
 		token := strings.TrimPrefix(token, apiutil.BearerPrefix)
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
-			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.UserType
 		clientID = authnSession.UserID
@@ -200,10 +200,10 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 		secret := strings.TrimPrefix(token, apiutil.ClientPrefix)
 		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret)})
 		if err != nil {
-			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		if !authnRes.Authenticated {
-			return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.ClientType
 		clientID = authnRes.GetId()
@@ -218,11 +218,11 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
-		return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
+		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 	}
 	if !res.GetAuthorized() {
-		return "", "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	return clientID, clientType, nil
+	return clientID, nil
 }
