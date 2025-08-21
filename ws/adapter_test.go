@@ -16,7 +16,7 @@ import (
 	chmocks "github.com/absmach/supermq/channels/mocks"
 	climocks "github.com/absmach/supermq/clients/mocks"
 	"github.com/absmach/supermq/internal/testsutil"
-	"github.com/absmach/supermq/pkg/authn"
+	smqauthn "github.com/absmach/supermq/pkg/authn"
 	authnmocks "github.com/absmach/supermq/pkg/authn/mocks"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/errors"
@@ -30,7 +30,6 @@ import (
 )
 
 const (
-	chanID       = "1"
 	invalidID    = "invalidID"
 	invalidKey   = "invalidKey"
 	id           = "1"
@@ -45,6 +44,7 @@ var (
 	domainID = testsutil.GenerateUUID(&testing.T{})
 	clientID = testsutil.GenerateUUID(&testing.T{})
 	userID   = testsutil.GenerateUUID(&testing.T{})
+	chanID   = testsutil.GenerateUUID(&testing.T{})
 	msg      = messaging.Message{
 		Channel:   chanID,
 		Domain:    domainID,
@@ -80,7 +80,7 @@ func TestSubscribe(t *testing.T) {
 		clientID   string
 		authNRes   *grpcClientsV1.AuthnRes
 		authNErr   error
-		authNRes1  authn.Session
+		authNRes1  smqauthn.Session
 		authZRes   *grpcChannelsV1.AuthzRes
 		authZErr   error
 		subErr     error
@@ -104,7 +104,7 @@ func TestSubscribe(t *testing.T) {
 			domainID:  domainID,
 			clientID:  userID,
 			subtopic:  subTopic,
-			authNRes1: authn.Session{UserID: userID},
+			authNRes1: smqauthn.Session{UserID: userID},
 			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
 			err:       nil,
 		},
@@ -114,7 +114,7 @@ func TestSubscribe(t *testing.T) {
 			chanID:    chanID,
 			domainID:  domainID,
 			subtopic:  subTopic,
-			authNRes1: authn.Session{},
+			authNRes1: smqauthn.Session{},
 			authNErr:  svcerr.ErrAuthentication,
 			err:       svcerr.ErrAuthorization,
 		},
@@ -232,10 +232,10 @@ func TestSubscribe(t *testing.T) {
 			ClientID: tc.clientID,
 			Handler:  c,
 		}
-		authReq := &grpcClientsV1.AuthnReq{Token: authn.AuthPack(authn.DomainAuth, tc.domainID, tc.authKey)}
+		authReq := &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, tc.authKey)}
 		tc.clientType = policies.ClientType
 		if strings.HasPrefix(tc.authKey, "Client") {
-			authReq.Token = authn.AuthPack(authn.DomainAuth, tc.domainID, strings.TrimPrefix(tc.authKey, "Client "))
+			authReq.Token = smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, strings.TrimPrefix(tc.authKey, "Client "))
 		}
 		if strings.HasPrefix(tc.authKey, apiutil.BearerPrefix) {
 			tc.clientType = policies.UserType
