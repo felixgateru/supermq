@@ -109,7 +109,7 @@ func TestSubscribe(t *testing.T) {
 			err:       nil,
 		},
 		{
-			desc:      "subscribe to cahnnel with invalid token",
+			desc:      "subscribe to channel with invalid token",
 			authKey:   invalidToken,
 			chanID:    chanID,
 			domainID:  domainID,

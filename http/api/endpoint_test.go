@@ -244,7 +244,7 @@ func TestPublish(t *testing.T) {
 			authnRes:    &grpcClientsV1.AuthnRes{Authenticated: false},
 		},
 		{
-			desc:        "publish message with  valid bearer token",
+			desc:        "publish message with valid bearer token",
 			domainID:    domainID,
 			chanID:      chanID,
 			clientID:    userID,
