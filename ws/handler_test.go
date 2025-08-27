@@ -82,6 +82,9 @@ func TestAuthPublish(t *testing.T) {
 	clientKeySession := session.Session{
 		Password: []byte("Client " + clientKey),
 	}
+	unauthorizedKeySession := session.Session{
+		Password: []byte("Client " + clientKey),
+	}
 	invalidClientKeySession := session.Session{
 		Password: []byte("Client " + invalidKey),
 	}
@@ -159,7 +162,7 @@ func TestAuthPublish(t *testing.T) {
 		},
 		{
 			desc:       "publish with unauthorized client key",
-			session:    &clientKeySession,
+			session:    &unauthorizedKeySession,
 			topic:      &topic,
 			authKey:    clientKey,
 			payload:    &payload,
@@ -287,6 +290,9 @@ func TestAuthSubscribe(t *testing.T) {
 	invalidClientKeySession := session.Session{
 		Password: []byte("Client " + invalidKey),
 	}
+	unauthorizedKeySession := session.Session{
+		Password: []byte("Client " + clientKey),
+	}
 
 	tokenSession := session.Session{
 		Password: []byte(apiutil.BearerPrefix + validToken),
@@ -358,7 +364,7 @@ func TestAuthSubscribe(t *testing.T) {
 		},
 		{
 			desc:       "subscribe with unauthorized client key",
-			session:    &clientKeySession,
+			session:    &unauthorizedKeySession,
 			topics:     &topics,
 			authKey:    clientKey,
 			clientType: policies.ClientType,

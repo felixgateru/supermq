@@ -91,9 +91,9 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
-	clientID, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish, topicType)
+	clientID, err := h.authAccess(ctx, s.Username, string(s.Password), domainID, channelID, connections.Publish, topicType)
 	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		return err
 	}
 
 	if s.Username == "" {
@@ -119,7 +119,7 @@ func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Subscribe, topicType); err != nil {
+		if _, err := h.authAccess(ctx, s.Username, string(s.Password), domainID, channelID, connections.Subscribe, topicType); err != nil {
 			return err
 		}
 	}
@@ -190,24 +190,38 @@ func (h *handler) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string, msgType connections.ConnType, topicType messaging.TopicType) (string, error) {
+func (h *handler) authAccess(ctx context.Context, username, password, domainID, chanID string, msgType connections.ConnType, topicType messaging.TopicType) (string, error) {
 	var clientID, clientType string
+	var err error
 	switch {
-	case strings.HasPrefix(token, apiutil.BearerPrefix):
-		token := strings.TrimPrefix(token, apiutil.BearerPrefix)
+	case strings.HasPrefix(password, apiutil.BearerPrefix):
+		token := strings.TrimPrefix(password, apiutil.BearerPrefix)
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.UserType
 		clientID = authnSession.UserID
-	default:
-		secret := strings.TrimPrefix(token, apiutil.ClientPrefix)
-		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret)})
+	case username != "" && password != "":
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
 		if err != nil {
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
-		if !authnRes.Authenticated {
+		clientType = policies.ClientType
+	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
+		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
+		if err != nil {
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
+		if err != nil {
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientType = policies.ClientType
+	default:
+		secret := strings.TrimPrefix(password, apiutil.ClientPrefix)
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
+		if err != nil {
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 		}
 		clientType = policies.ClientType
@@ -220,11 +234,11 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
+		Type:       uint32(msgType),
 		ClientId:   clientID,
 		ClientType: clientType,
-		ChannelId:  channelID,
-		Type:       uint32(msgType),
+		ChannelId:  chanID,
+		DomainId:   domainID,
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
@@ -235,6 +249,18 @@ func (h *handler) authAccess(ctx context.Context, token, domainID, chanID string
 	}
 
 	return clientID, nil
+}
+
+func (h *handler) clientAuthenticate(ctx context.Context, token string) (string, error) {
+	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
+	if err != nil {
+		return "", svcerr.ErrAuthentication
+	}
+	if !authnRes.Authenticated {
+		return "", svcerr.ErrAuthentication
+	}
+
+	return authnRes.GetId(), nil
 }
 
 // decodeAuth decodes the base64 encoded string in the format "clientID:secret".

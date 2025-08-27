@@ -61,7 +61,7 @@ func handshake(ctx context.Context, svc ws.Service, resolver messaging.TopicReso
 
 		go client.Start(ctx)
 
-		if err := svc.Subscribe(ctx, sessionID, req.authKey, req.domainID, req.channelID, req.subtopic, topicType, client); err != nil {
+		if err := svc.Subscribe(ctx, sessionID, req.username, req.password, req.domainID, req.channelID, req.subtopic, topicType, client); err != nil {
 			conn.Close()
 			return
 		}
@@ -80,7 +80,6 @@ func decodeRequest(r *http.Request, resolver messaging.TopicResolver, logger *sl
 			password = r.Header.Get(authzHeaderKey)
 		default:
 			logger.Debug("Missing authorization key.")
-			fmt.Println("Missing authorization key.")
 			return connReq{}, errUnauthorizedAccess
 		}
 	}
@@ -94,7 +93,8 @@ func decodeRequest(r *http.Request, resolver messaging.TopicResolver, logger *sl
 	}
 
 	req := connReq{
-		authKey:   authKey,
+		username:  username,
+		password:  password,
 		channelID: channelID,
 		domainID:  domainID,
 	}
