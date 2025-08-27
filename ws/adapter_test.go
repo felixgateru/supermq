@@ -5,9 +5,9 @@ package ws_test
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
@@ -70,11 +70,10 @@ func TestSubscribe(t *testing.T) {
 
 	c := ws.NewClient(slog.Default(), nil, sessionID)
 
-	encodedPass := base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientKey))
-
 	cases := []struct {
 		desc       string
-		authKey    string
+		username   string
+		password   string
 		chanID     string
 		domainID   string
 		subtopic   string
@@ -90,7 +89,7 @@ func TestSubscribe(t *testing.T) {
 	}{
 		{
 			desc:     "subscribe to channel with valid clientKey, chanID, subtopic",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -101,7 +100,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:      "subscribe to channel with valid token, chanID, subtopic",
-			authKey:   token,
+			password:  token,
 			chanID:    chanID,
 			domainID:  domainID,
 			clientID:  userID,
@@ -112,7 +111,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:      "subscribe to channel with invalid token",
-			authKey:   invalidToken,
+			password:  invalidToken,
 			chanID:    chanID,
 			domainID:  domainID,
 			subtopic:  subTopic,
@@ -122,7 +121,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe again to channel with valid clientKey, chanID, subtopic",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -133,7 +132,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with subscribe set to fail",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -145,7 +144,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with invalid clientKey",
-			authKey:  invalidKey,
+			password: invalidKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -156,7 +155,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with empty channel",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   "",
 			domainID: domainID,
 			clientID: clientID,
@@ -165,7 +164,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with empty clientKey",
-			authKey:  "",
+			password: "",
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -174,7 +173,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with empty clientKey and empty channel",
-			authKey:  "",
+			password: "",
 			chanID:   "",
 			domainID: domainID,
 			clientID: clientID,
@@ -183,7 +182,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with invalid channel",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   invalidID,
 			domainID: domainID,
 			clientID: clientID,
@@ -195,7 +194,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with failed authentication",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -205,7 +204,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with failed authorization",
-			authKey:  clientKey,
+			password: clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -216,7 +215,7 @@ func TestSubscribe(t *testing.T) {
 		},
 		{
 			desc:     "subscribe to channel with valid clientKey prefixed with 'client_', chanID, subtopic",
-			authKey:  "Client " + clientKey,
+			password: "Client " + clientKey,
 			chanID:   chanID,
 			domainID: domainID,
 			clientID: clientID,
@@ -234,16 +233,16 @@ func TestSubscribe(t *testing.T) {
 			ClientID: tc.clientID,
 			Handler:  c,
 		}
-		authReq := &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, tc.authKey)}
+		authReq := &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, tc.password)}
 		tc.clientType = policies.ClientType
-		if strings.HasPrefix(tc.authKey, "Client") {
-			authReq.Token = smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, strings.TrimPrefix(tc.authKey, "Client "))
+		if strings.HasPrefix(tc.password, "Client") {
+			authReq.Token = smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, strings.TrimPrefix(tc.password, "Client "))
 		}
-		if strings.HasPrefix(tc.authKey, apiutil.BearerPrefix) {
+		if strings.HasPrefix(tc.password, apiutil.BearerPrefix) {
 			tc.clientType = policies.UserType
 		}
 		clientsCall := clients.On("Authenticate", mock.Anything, authReq).Return(tc.authNRes, tc.authNErr)
-		authCall := auth.On("Authenticate", mock.Anything, strings.TrimPrefix(tc.authKey, apiutil.BearerPrefix)).Return(tc.authNRes1, tc.authNErr)
+		authCall := auth.On("Authenticate", mock.Anything, strings.TrimPrefix(tc.password, apiutil.BearerPrefix)).Return(tc.authNRes1, tc.authNErr)
 		channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 			ClientType: tc.clientType,
 			ClientId:   tc.clientID,
@@ -252,7 +251,7 @@ func TestSubscribe(t *testing.T) {
 			DomainId:   tc.domainID,
 		}).Return(tc.authZRes, tc.authZErr)
 		repoCall := pubsub.On("Subscribe", mock.Anything, subConfig).Return(tc.subErr)
-		err := svc.Subscribe(context.Background(), sessionID, tc.authKey, tc.domainID, tc.chanID, tc.subtopic, c)
+		err := svc.Subscribe(context.Background(), sessionID, tc.username, tc.password, tc.domainID, tc.chanID, tc.subtopic, c)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		repoCall.Unset()
 		clientsCall.Unset()
