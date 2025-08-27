@@ -47,9 +47,9 @@ var (
 	errClientNotInitialized     = errors.New("client is not initialized")
 	errFailedPublish            = errors.New("failed to publish")
 	errFailedPublishToMsgBroker = errors.New("failed to publish to supermq message broker")
-	errInvalidAuthFormat        = errors.New("invalid basic auth format")
 	errMalformedTopic           = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("malformed topic"))
 	errMissingTopicPub          = mgate.NewHTTPProxyError(http.StatusBadRequest, errors.New("failed to publish due to missing topic"))
+	errInvalidAuthFormat        = errors.New("invalid basic auth format")
 )
 
 // Event implements events.Event interface.
@@ -120,9 +120,46 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errMalformedTopic, err)
 	}
 
-	clientID, clientType, err := h.authAccess(ctx, *s, *topic, channelID, domainID)
-	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+	var clientID, clientType string
+	switch {
+	case s.Username != "" && len(s.Password) == 0:
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, s.Username, string(s.Password)))
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		}
+		clientType = policies.ClientType
+	case strings.HasPrefix(string(s.Password), apiutil.BasicAuthPrefix):
+		username, password, err := decodeAuth(strings.TrimPrefix(string(s.Password), apiutil.BasicAuthPrefix))
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		}
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, username, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		}
+		clientType = policies.ClientType
+	case strings.HasPrefix(string(s.Password), "Client"):
+		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
+		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		}
+		clientType = policies.ClientType
+	case strings.HasPrefix(string(s.Password), apiutil.BearerPrefix):
+		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
+		authnSession, err := h.authn.Authenticate(ctx, token)
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNToken, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		}
+		clientType = policies.UserType
+		clientID = authnSession.UserID
+	default:
+		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
 	// Health topics are not published to message broker.
@@ -139,6 +176,21 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		Publisher: clientID,
 		Payload:   *payload,
 		Created:   time.Now().UnixNano(),
+	}
+
+	ar := &grpcChannelsV1.AuthzReq{
+		DomainId:   domainID,
+		ClientId:   clientID,
+		ClientType: clientType,
+		ChannelId:  msg.Channel,
+		Type:       uint32(connections.Publish),
+	}
+	res, err := h.channels.Authorize(ctx, ar)
+	if err != nil {
+		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
+	}
+	if !res.GetAuthorized() {
+		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthorization)
 	}
 
 	if err := h.publisher.Publish(ctx, messaging.EncodeMessageTopic(&msg), &msg); err != nil {
@@ -165,70 +217,8 @@ func (h *handler) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-func (h *handler) authAccess(ctx context.Context, s session.Session, topic, channelID, domainID string) (string, string, error) {
-	var clientID, clientType string
-	var err error
-	switch {
-	case strings.HasPrefix(string(s.Password), "Client"):
-		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
-		clientID, err = h.clientAuthenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret)})
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, topic, err))
-			return "", "", err
-		}
-		clientType = policies.ClientType
-	case strings.HasPrefix(string(s.Password), apiutil.BearerPrefix):
-		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
-		authnSession, err := h.authn.Authenticate(ctx, token)
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNToken, topic, err))
-			return "", "", svcerr.ErrAuthentication
-		}
-		clientType = policies.UserType
-		clientID = authnSession.DomainUserID
-	case s.Username != "" && string(s.Password) != "":
-		clientID, err = h.clientAuthenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.BasicAuth, s.Username, string(s.Password))})
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, string(s.Password), topic, err))
-			return "", "", err
-		}
-		clientType = policies.ClientType
-	case s.Username == "" && string(s.Password) != "":
-		cid, secret, err := decodeAuth(string(s.Password))
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, topic, err))
-			return "", "", err
-		}
-		clientID, err = h.clientAuthenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.BasicAuth, cid, secret)})
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, secret, topic, err))
-			return "", "", err
-		}
-		clientType = policies.ClientType
-	default:
-		return "", "", svcerr.ErrAuthentication
-	}
-
-	ar := &grpcChannelsV1.AuthzReq{
-		DomainId:   domainID,
-		ClientId:   clientID,
-		ClientType: clientType,
-		ChannelId:  channelID,
-		Type:       uint32(connections.Publish),
-	}
-	res, err := h.channels.Authorize(ctx, ar)
-	if err != nil {
-		return "", "", err
-	}
-	if !res.GetAuthorized() {
-		return "", "", svcerr.ErrAuthorization
-	}
-
-	return clientID, clientType, nil
-}
-
-func (h *handler) clientAuthenticate(ctx context.Context, req *grpcClientsV1.AuthnReq) (string, error) {
-	authnRes, err := h.clients.Authenticate(ctx, req)
+func (h *handler) clientAuthenticate(ctx context.Context, token string) (string, error) {
+	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
 	if err != nil {
 		return "", svcerr.ErrAuthentication
 	}
@@ -239,6 +229,7 @@ func (h *handler) clientAuthenticate(ctx context.Context, req *grpcClientsV1.Aut
 	return authnRes.GetId(), nil
 }
 
+// decodeAuth decodes the base64 encoded string in the format "clientID:secret".
 func decodeAuth(s string) (string, string, error) {
 	db, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
