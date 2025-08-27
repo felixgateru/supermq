@@ -5,6 +5,7 @@ package ws_test
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -53,7 +54,9 @@ var (
 		Protocol:  protocol,
 		Payload:   []byte(`[{"n":"current","t":-5,"v":1.2}]`),
 	}
-	sessionID = "sessionID"
+	sessionID           = "sessionID"
+	validEncodedCreds   = base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientID, clientKey)))
+	invalidEncodedCreds = base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", invalidID, invalidKey)))
 )
 
 func newService() (ws.Service, *mocks.PubSub, *climocks.ClientsServiceClient, *chmocks.ChannelsServiceClient, *authnmocks.Authentication) {
@@ -80,6 +83,7 @@ func TestSubscribe(t *testing.T) {
 		clientType string
 		clientID   string
 		topicType  messaging.TopicType
+		authNToken string
 		authNRes   *grpcClientsV1.AuthnRes
 		authNErr   error
 		authNRes1  smqauthn.Session
@@ -89,16 +93,17 @@ func TestSubscribe(t *testing.T) {
 		err        error
 	}{
 		{
-			desc:      "subscribe to channel with valid clientKey, chanID, subtopic",
-			authKey:   clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with valid clientKey, chanID, subtopic",
+			authKey:     clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 		{
 			desc:      "subscribe to channel with valid token, chanID, subtopic",
@@ -124,41 +129,44 @@ func TestSubscribe(t *testing.T) {
 			err:       svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe again to channel with valid clientKey, chanID, subtopic",
-			authKey:   clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe again to channel with valid clientKey, chanID, subtopic",
+			authKey:     clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 		{
-			desc:      "subscribe to channel with subscribe set to fail",
-			authKey:   clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with subscribe set to fail",
+			authKey:     clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			subErr:    ws.ErrFailedSubscription,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       ws.ErrFailedSubscription,
+			subErr:      ws.ErrFailedSubscription,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         ws.ErrFailedSubscription,
 		},
 		{
-			desc:      "subscribe to channel with invalid clientKey",
-			authKey:   invalidKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with invalid clientKey",
+			authKey:     invalidKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Authenticated: false},
-			authNErr:  svcerr.ErrAuthentication,
-			err:       svcerr.ErrAuthorization,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, invalidKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Authenticated: false},
+			authNErr:    svcerr.ErrAuthentication,
+			err:         svcerr.ErrAuthorization,
 		},
 		{
 			desc:      "subscribe to channel with empty channel",
@@ -191,52 +199,56 @@ func TestSubscribe(t *testing.T) {
 			err:       svcerr.ErrAuthentication,
 		},
 		{
-			desc:      "subscribe to channel with invalid channel",
-			authKey:   clientKey,
-			chanID:    invalidID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with invalid channel",
+			authKey:     clientKey,
+			chanID:      invalidID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			authZErr:  svcerr.ErrAuthorization,
-			err:       svcerr.ErrAuthorization,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: false},
+			authZErr:    svcerr.ErrAuthorization,
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with failed authentication",
-			authKey:   clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with failed authentication",
+			authKey:     clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Authenticated: false},
-			err:       svcerr.ErrAuthorization,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Authenticated: false},
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with failed authorization",
-			authKey:   clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with failed authorization",
+			authKey:     clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: false},
-			err:       svcerr.ErrAuthorization,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: false},
+			err:         svcerr.ErrAuthorization,
 		},
 		{
-			desc:      "subscribe to channel with valid clientKey prefixed with 'client_', chanID, subtopic",
-			authKey:   "Client " + clientKey,
-			chanID:    chanID,
-			domainID:  domainID,
-			clientID:  clientID,
-			subtopic:  subTopic,
+			desc:        "subscribe to channel with valid clientKey prefixed with 'client_', chanID, subtopic",
+			authKey:     "Client " + clientKey,
+			chanID:      chanID,
+			domainID:    domainID,
+			clientID:    clientID,
+			subtopic:    subTopic,
 			topicType: messaging.MessageType,
-			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			authZRes:  &grpcChannelsV1.AuthzRes{Authorized: true},
-			err:       nil,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:    &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:    &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:         nil,
 		},
 		{
 			desc:      "subscribe to health check topic with empty channel and valid clientKey",
@@ -268,6 +280,56 @@ func TestSubscribe(t *testing.T) {
 			authNRes:  &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
 			err:       svcerr.ErrAuthentication,
 		},
+		{
+			desc:       "subscribe to channel with basic auth",
+			username:   clientID,
+			password:   clientKey,
+			chanID:     chanID,
+			domainID:   domainID,
+			clientID:   clientID,
+			subtopic:   subTopic,
+			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, clientKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:   &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:        nil,
+		},
+		{
+			desc:       "subscribe to channel with basic auth and invalid credentials",
+			username:   invalidID,
+			password:   invalidKey,
+			chanID:     chanID,
+			domainID:   domainID,
+			clientID:   invalidID,
+			subtopic:   subTopic,
+			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, invalidID, invalidKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
+			authNErr:   svcerr.ErrAuthentication,
+			err:        svcerr.ErrAuthorization,
+		},
+		{
+			desc:       "subscribe to channel with b64 encoded credentials",
+			password:   apiutil.BasicAuthPrefix + validEncodedCreds,
+			chanID:     chanID,
+			domainID:   domainID,
+			clientID:   clientID,
+			subtopic:   subTopic,
+			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, clientKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			authZRes:   &grpcChannelsV1.AuthzRes{Authorized: true},
+			err:        nil,
+		},
+		{
+			desc:       "subscribe to channel with b64 encoded credentials and invalid credentials",
+			password:   apiutil.BasicAuthPrefix + invalidEncodedCreds,
+			chanID:     chanID,
+			domainID:   domainID,
+			clientID:   invalidID,
+			subtopic:   subTopic,
+			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, invalidID, invalidKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
+			authNErr:   svcerr.ErrAuthentication,
+			err:        svcerr.ErrAuthorization,
+		},
 	}
 
 	for _, tc := range cases {
@@ -277,15 +339,11 @@ func TestSubscribe(t *testing.T) {
 			ClientID: tc.clientID,
 			Handler:  c,
 		}
-		authReq := &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, tc.password)}
 		tc.clientType = policies.ClientType
-		if strings.HasPrefix(tc.password, "Client") {
-			authReq.Token = smqauthn.AuthPack(smqauthn.DomainAuth, tc.domainID, strings.TrimPrefix(tc.password, "Client "))
-		}
 		if strings.HasPrefix(tc.password, apiutil.BearerPrefix) {
 			tc.clientType = policies.UserType
 		}
-		clientsCall := clients.On("Authenticate", mock.Anything, authReq).Return(tc.authNRes, tc.authNErr)
+		clientsCall := clients.On("Authenticate", mock.Anything, &grpcClientsV1.AuthnReq{Token: tc.authNToken}).Return(tc.authNRes, tc.authNErr)
 		authCall := auth.On("Authenticate", mock.Anything, strings.TrimPrefix(tc.password, apiutil.BearerPrefix)).Return(tc.authNRes1, tc.authNErr)
 		channelsCall := channels.On("Authorize", mock.Anything, &grpcChannelsV1.AuthzReq{
 			ClientType: tc.clientType,
