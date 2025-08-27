@@ -122,7 +122,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	var clientID, clientType string
 	switch {
-	case s.Username != "" && len(s.Password) == 0:
+	case s.Username != "" && string(s.Password) != "":
 		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, s.Username, string(s.Password)))
 		if err != nil {
 			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
