@@ -209,6 +209,7 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		}
 		clientType = policies.ClientType
 	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
+		fmt.Println("basic:", password)
 		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
 		if err != nil {
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
