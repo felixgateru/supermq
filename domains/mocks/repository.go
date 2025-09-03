@@ -167,8 +167,8 @@ func (_c *Repository_DeleteDomain_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
-// DeleteUsersInvitation provides a mock function for the type Repository
-func (_mock *Repository) DeleteUsersInvitation(ctx context.Context, domainID string, userID ...string) error {
+// DeleteUsersInvitations provides a mock function for the type Repository
+func (_mock *Repository) DeleteUsersInvitations(ctx context.Context, domainID string, userID ...string) error {
 	var tmpRet mock.Arguments
 	if len(userID) > 0 {
 		tmpRet = _mock.Called(ctx, domainID, userID)
@@ -178,7 +178,7 @@ func (_mock *Repository) DeleteUsersInvitation(ctx context.Context, domainID str
 	ret := tmpRet
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeleteUsersInvitation")
+		panic("no return value specified for DeleteUsersInvitations")
 	}
 
 	var r0 error
@@ -190,21 +190,21 @@ func (_mock *Repository) DeleteUsersInvitation(ctx context.Context, domainID str
 	return r0
 }
 
-// Repository_DeleteUsersInvitation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteUsersInvitation'
-type Repository_DeleteUsersInvitation_Call struct {
+// Repository_DeleteUsersInvitations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteUsersInvitations'
+type Repository_DeleteUsersInvitations_Call struct {
 	*mock.Call
 }
 
-// DeleteUsersInvitation is a helper method to define mock.On call
+// DeleteUsersInvitations is a helper method to define mock.On call
 //   - ctx context.Context
 //   - domainID string
 //   - userID ...string
-func (_e *Repository_Expecter) DeleteUsersInvitation(ctx interface{}, domainID interface{}, userID ...interface{}) *Repository_DeleteUsersInvitation_Call {
-	return &Repository_DeleteUsersInvitation_Call{Call: _e.mock.On("DeleteUsersInvitation",
+func (_e *Repository_Expecter) DeleteUsersInvitations(ctx interface{}, domainID interface{}, userID ...interface{}) *Repository_DeleteUsersInvitations_Call {
+	return &Repository_DeleteUsersInvitations_Call{Call: _e.mock.On("DeleteUsersInvitations",
 		append([]interface{}{ctx, domainID}, userID...)...)}
 }
 
-func (_c *Repository_DeleteUsersInvitation_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUsersInvitation_Call {
+func (_c *Repository_DeleteUsersInvitations_Call) Run(run func(ctx context.Context, domainID string, userID ...string)) *Repository_DeleteUsersInvitations_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -229,12 +229,12 @@ func (_c *Repository_DeleteUsersInvitation_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *Repository_DeleteUsersInvitation_Call) Return(err error) *Repository_DeleteUsersInvitation_Call {
+func (_c *Repository_DeleteUsersInvitations_Call) Return(err error) *Repository_DeleteUsersInvitations_Call {
 	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *Repository_DeleteUsersInvitation_Call) RunAndReturn(run func(ctx context.Context, domainID string, userID ...string) error) *Repository_DeleteUsersInvitation_Call {
+func (_c *Repository_DeleteUsersInvitations_Call) RunAndReturn(run func(ctx context.Context, domainID string, userID ...string) error) *Repository_DeleteUsersInvitations_Call {
 	_c.Call.Return(run)
 	return _c
 }

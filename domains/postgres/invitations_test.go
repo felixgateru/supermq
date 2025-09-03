@@ -761,7 +761,7 @@ func TestUpdateRejection(t *testing.T) {
 	}
 }
 
-func TestDeleteUsersInvitation(t *testing.T) {
+func TestDeleteUsersInvitations(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM invitations")
 		require.Nil(t, err, fmt.Sprintf("clean invitations unexpected error: %s", err))
@@ -823,7 +823,7 @@ func TestDeleteUsersInvitation(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			err := repo.DeleteUsersInvitation(context.Background(), tc.domainID, tc.userIDs...)
+			err := repo.DeleteUsersInvitations(context.Background(), tc.domainID, tc.userIDs...)
 			assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 		})
 	}
