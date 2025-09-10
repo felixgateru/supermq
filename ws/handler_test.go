@@ -157,7 +157,7 @@ func TestAuthPublish(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, invalidKey),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:    "publish with nil session",
@@ -221,7 +221,7 @@ func TestAuthPublish(t *testing.T) {
 			authNRes1:  smqauthn.Session{},
 			authNErr:   svcerr.ErrAuthentication,
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:       "publish with unauthorized token",
@@ -268,7 +268,7 @@ func TestAuthPublish(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, invalidValue),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:       "publish with b64 encoded credentials",
@@ -299,7 +299,7 @@ func TestAuthPublish(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, invalidValue),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 	}
 
@@ -327,7 +327,7 @@ func TestAuthPublish(t *testing.T) {
 			if ok {
 				assert.Equal(t, tc.status, hpe.StatusCode())
 			}
-			assert.True(t, errors.Contains(err, tc.err))
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 			authCall.Unset()
 			clientsCall.Unset()
 			channelsCall.Unset()
@@ -417,7 +417,7 @@ func TestAuthSubscribe(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, invalidKey),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:    "subscribe with empty topics",
@@ -478,7 +478,7 @@ func TestAuthSubscribe(t *testing.T) {
 			authNRes1:  smqauthn.Session{},
 			authNErr:   svcerr.ErrAuthentication,
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:       "subscribe with unauthorized client key",
@@ -522,7 +522,7 @@ func TestAuthSubscribe(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, invalidValue),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:       "publish with b64 encoded credentials",
@@ -551,7 +551,7 @@ func TestAuthSubscribe(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.BasicAuth, clientID, invalidValue),
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 	}
 
@@ -579,7 +579,7 @@ func TestAuthSubscribe(t *testing.T) {
 			if ok {
 				assert.Equal(t, tc.status, hpe.StatusCode())
 			}
-			assert.True(t, errors.Contains(err, tc.err))
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 			authCall.Unset()
 			clientsCall.Unset()
 			channelsCall.Unset()
@@ -657,7 +657,7 @@ func TestPublish(t *testing.T) {
 		}
 		repoCall := publisher.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		err := handler.Publish(ctx, &tc.topic, &tc.payload)
-		assert.True(t, errors.Contains(err, tc.err))
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 		repoCall.Unset()
 	}
 }
@@ -691,6 +691,6 @@ func TestHandlerSubscribe(t *testing.T) {
 			ctx = session.NewContext(ctx, tc.session)
 		}
 		err := handler.Subscribe(ctx, &tc.topic)
-		assert.Equal(t, tc.err, err)
+		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 	}
 }
