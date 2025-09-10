@@ -61,7 +61,6 @@ type parsedTopic struct {
 	domainID  string
 	channelID string
 	subtopic  string
-	topicType TopicType
 	err       error
 }
 
@@ -98,11 +97,11 @@ func NewTopicParser(cfg CacheConfig, channels grpcChannelsV1.ChannelsServiceClie
 func (p *parser) ParsePublishTopic(ctx context.Context, topic string, resolve bool) (string, string, string, TopicType, error) {
 	val, ok := p.cache.Get(topic)
 	if ok {
-		return val.domainID, val.channelID, val.subtopic, val.topicType, val.err
+		return val.domainID, val.channelID, val.subtopic, MessageType, val.err
 	}
 	domainID, channelID, subtopic, topicType, err := ParsePublishTopic(topic)
 	if err != nil {
-		p.saveToCache(topic, "", "", "", InvalidType, err)
+		p.saveToCache(topic, "", "", "", err)
 		return "", "", "", InvalidType, err
 	}
 	var isRoute bool
@@ -112,8 +111,8 @@ func (p *parser) ParsePublishTopic(ctx context.Context, topic string, resolve bo
 			return "", "", "", InvalidType, err
 		}
 	}
-	if !isRoute {
-		p.saveToCache(topic, domainID, channelID, subtopic, topicType, nil)
+	if !isRoute && topicType == MessageType {
+		p.saveToCache(topic, domainID, channelID, subtopic, nil)
 	}
 
 	return domainID, channelID, subtopic, topicType, nil
@@ -134,12 +133,11 @@ func (p *parser) ParseSubscribeTopic(ctx context.Context, topic string, resolve 
 	return domainID, channelID, subtopic, topicType, nil
 }
 
-func (p *parser) saveToCache(topic string, domainID, channelID, subtopic string, topicType TopicType, err error) {
+func (p *parser) saveToCache(topic string, domainID, channelID, subtopic string, err error) {
 	p.cache.Set(topic, &parsedTopic{
 		domainID:  domainID,
 		channelID: channelID,
 		subtopic:  subtopic,
-		topicType: topicType,
 		err:       err,
 	}, 0)
 }
@@ -205,7 +203,7 @@ func (r *resolver) ResolveTopic(ctx context.Context, topic string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	rtopic := EncodeAdapterTopic(domainID, channelID, subtopic, topicType)
+	rtopic := encodeAdapterTopic(domainID, channelID, subtopic, topicType)
 
 	return rtopic, nil
 }
@@ -360,7 +358,7 @@ func EncodeMessageMQTTTopic(m *Message) string {
 	return topic
 }
 
-func EncodeAdapterTopic(domain, channel, subtopic string, topicType TopicType) string {
+func encodeAdapterTopic(domain, channel, subtopic string, topicType TopicType) string {
 	switch topicType {
 	case HealthType:
 		return fmt.Sprintf("%s/%s", string(HealthTopicPrefix), domain)

@@ -798,6 +798,7 @@ func TestParserPublishTopic(t *testing.T) {
 		channel     string
 		domainID    string
 		channelID   string
+		subtopic    string
 		topicType   messaging.TopicType
 		domainsErr  error
 		channelsErr error
@@ -811,6 +812,7 @@ func TestParserPublishTopic(t *testing.T) {
 			channel:   uchannelID,
 			domainID:  udomainID,
 			channelID: uchannelID,
+			subtopic:  subtopic,
 			topicType: messaging.MessageType,
 			err:       nil,
 		},
@@ -821,6 +823,7 @@ func TestParserPublishTopic(t *testing.T) {
 			channel:   channelID,
 			domainID:  domainID,
 			channelID: channelID,
+			subtopic:  subtopic,
 			topicType: messaging.MessageType,
 			err:       nil,
 		},
@@ -850,6 +853,7 @@ func TestParserPublishTopic(t *testing.T) {
 			channel:   validRoute,
 			domainID:  domainID,
 			channelID: channelID,
+			subtopic:  subtopic,
 			topicType: messaging.MessageType,
 			err:       nil,
 		},
@@ -863,6 +867,17 @@ func TestParserPublishTopic(t *testing.T) {
 			channelID:  "",
 			domainsErr: svcerr.ErrNotFound,
 			err:        messaging.ErrFailedResolveDomain,
+		},
+		{
+			desc:      "valid uncached healthcheck topic",
+			topic:     fmt.Sprintf(healthTopicFmt, domainID),
+			domain:    domainID,
+			channel:   "",
+			domainID:  domainID,
+			channelID: "",
+			subtopic:  "",
+			topicType: messaging.HealthType,
+			err:       nil,
 		},
 	}
 	for _, tc := range cases {
@@ -882,7 +897,7 @@ func TestParserPublishTopic(t *testing.T) {
 			if err == nil {
 				assert.Equal(t, tc.domainID, domainID, "expected domainID %s, got %s", tc.domainID, domainID)
 				assert.Equal(t, tc.channelID, channelID, "expected channelID %s, got %s", tc.channelID, channelID)
-				assert.Equal(t, subtopic, "subtopic", "expected subtopic %s, got %s", "subtopic", subtopic)
+				assert.Equal(t, tc.subtopic, subtopic, "expected subtopic %s, got %s", tc.subtopic, subtopic)
 				assert.Equal(t, tc.topicType, topicType, "expected topic type %v, got %v", tc.topicType, topicType)
 			}
 			domainsCall.Unset()
