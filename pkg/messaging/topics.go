@@ -61,7 +61,6 @@ type parsedTopic struct {
 	domainID  string
 	channelID string
 	subtopic  string
-	topicType TopicType
 	err       error
 }
 
@@ -134,12 +133,11 @@ func (p *parser) ParseSubscribeTopic(ctx context.Context, topic string, resolve 
 	return domainID, channelID, subtopic, topicType, nil
 }
 
-func (p *parser) saveToCache(topic string, domainID, channelID, subtopic string, topicType TopicType, err error) {
+func (p *parser) saveToCache(topic string, domainID, channelID, subtopic string, err error) {
 	p.cache.Set(topic, &parsedTopic{
 		domainID:  domainID,
 		channelID: channelID,
 		subtopic:  subtopic,
-		topicType: topicType,
 		err:       err,
 	}, 0)
 }
