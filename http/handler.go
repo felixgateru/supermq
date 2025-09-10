@@ -187,7 +187,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusBadRequest, err)
+		return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
 	}
 	if !res.GetAuthorized() {
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthorization)

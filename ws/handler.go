@@ -198,31 +198,31 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		token := strings.TrimPrefix(password, apiutil.BearerPrefix)
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientType = policies.UserType
 		clientID = authnSession.UserID
 	case username != "" && password != "":
 		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientType = policies.ClientType
 	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientType = policies.ClientType
 	default:
 		secret := strings.TrimPrefix(password, apiutil.ClientPrefix)
 		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientType = policies.ClientType
 		clientID = authnRes.GetId()

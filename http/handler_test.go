@@ -391,7 +391,7 @@ func TestPublish(t *testing.T) {
 			channelID:  chanID,
 			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
 			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			status:     http.StatusBadRequest,
+			status:     http.StatusUnauthorized,
 			authNErr:   nil,
 			authZRes:   &grpcChannelsV1.AuthzRes{Authorized: false},
 			authZErr:   svcerr.ErrAuthorization,
