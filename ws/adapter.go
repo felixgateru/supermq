@@ -110,31 +110,31 @@ func (svc *adapterService) authorize(ctx context.Context, username, password, do
 		token := strings.TrimPrefix(password, apiutil.BearerPrefix)
 		authnSession, err := svc.authn.Authenticate(ctx, token)
 		if err != nil {
-			return "", svcerr.ErrAuthentication
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientType = policies.UserType
 		clientID = authnSession.UserID
 	case username != "" && password != "":
 		clientID, err = svc.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
 		if err != nil {
-			return "", svcerr.ErrAuthentication
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientType = policies.ClientType
 	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
 		if err != nil {
-			return "", svcerr.ErrAuthentication
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientID, err = svc.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
 		if err != nil {
-			return "", svcerr.ErrAuthentication
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientType = policies.ClientType
 	default:
 		secret := strings.TrimPrefix(password, apiutil.ClientPrefix)
 		clientID, err = svc.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
 		if err != nil {
-			return "", svcerr.ErrAuthentication
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientType = policies.ClientType
 		clientID = authnRes.GetId()
