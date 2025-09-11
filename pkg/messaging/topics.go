@@ -177,18 +177,18 @@ func (r *resolver) Resolve(ctx context.Context, domain, channel string) (string,
 		return "", "", false, ErrEmptyRouteID
 	}
 
-	domainID, isdomainRoute, err := r.resolveDomain(ctx, domain)
+	domainID, isDomainRoute, err := r.resolveDomain(ctx, domain)
 	if err != nil {
 		return "", "", false, errors.Wrap(ErrFailedResolveDomain, err)
 	}
 	if channel == "" {
-		return domainID, "", isdomainRoute, nil
+		return domainID, "", isDomainRoute, nil
 	}
 	channelID, isChannelRoute, err := r.resolveChannel(ctx, channel, domainID)
 	if err != nil {
 		return "", "", false, errors.Wrap(ErrFailedResolveChannel, err)
 	}
-	isRoute := isdomainRoute || isChannelRoute
+	isRoute := isDomainRoute || isChannelRoute
 
 	return domainID, channelID, isRoute, nil
 }
@@ -390,7 +390,7 @@ func ParseTopic(topic string) (domainID, chanID, subtopic string, topicType Topi
 
 	// Healthcheck: "hc/<domain_id>"
 	// Check first because it's shortest and avoids extra work.
-	if n >= start+3 && topic[start] == HealthTopicPrefix[0] && topic[start+1] == HealthTopicPrefix[1] && topic[start+2] == '/' {
+	if n > start+3 && topic[start:start+2] == HealthTopicPrefix {
 		if n == start+3 {
 			// "hc/" with no domain
 			return "", "", "", InvalidType, ErrMalformedTopic
