@@ -29,10 +29,10 @@ type Service interface {
 
 	// Subscribes to channel with specified id, domainID, subtopic and adds subscription to
 	// service map of subscriptions under given ID.
-	Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, topicType messaging.TopicType, c Client) error
+	Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, c Client) error
 
 	// Unsubscribe method is used to stop observing resource.
-	Unsubscribe(ctx context.Context, key, domainID, chanID, subptopic, token string, topicType messaging.TopicType) error
+	Unsubscribe(ctx context.Context, key, domainID, chanID, subptopic, token string) error
 
 	// DisconnectHandler method is used to disconnected the client
 	DisconnectHandler(ctx context.Context, domainID, chanID, subptopic, token string) error
@@ -93,7 +93,7 @@ func (svc *adapterService) Publish(ctx context.Context, key string, msg *messagi
 	return svc.pubsub.Publish(ctx, messaging.EncodeMessageTopic(msg), msg)
 }
 
-func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, topicType messaging.TopicType, c Client) error {
+func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, c Client) error {
 	authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{
 		Token: authn.AuthPack(authn.DomainAuth, domainID, key),
 	})
@@ -102,11 +102,6 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 	}
 	if !authnRes.Authenticated {
 		return svcerr.ErrAuthentication
-	}
-
-	// Health topics do not subscribe to the message broker.
-	if topicType == messaging.HealthType {
-		return nil
 	}
 
 	clientID := authnRes.GetId()
@@ -135,7 +130,7 @@ func (svc *adapterService) Subscribe(ctx context.Context, key, domainID, chanID,
 	return svc.pubsub.Subscribe(ctx, subCfg)
 }
 
-func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string, topicType messaging.TopicType) error {
+func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string) error {
 	authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{
 		Token: authn.AuthPack(authn.DomainAuth, domainID, key),
 	})
@@ -144,11 +139,6 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, key, domainID, chanI
 	}
 	if !authnRes.Authenticated {
 		return svcerr.ErrAuthentication
-	}
-
-	// Health topics do not subscribe to the message broker.
-	if topicType == messaging.HealthType {
-		return nil
 	}
 
 	authzRes, err := svc.channels.Authorize(ctx, &grpcChannelsV1.AuthzReq{

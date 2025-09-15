@@ -42,23 +42,23 @@ func (mm *metricsMiddleware) Publish(ctx context.Context, key string, msg *messa
 }
 
 // Subscribe instruments Subscribe method with metrics.
-func (mm *metricsMiddleware) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, topicType messaging.TopicType, c coap.Client) error {
+func (mm *metricsMiddleware) Subscribe(ctx context.Context, key, domainID, chanID, subtopic string, c coap.Client) error {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "subscribe").Add(1)
 		mm.latency.With("method", "subscribe").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.Subscribe(ctx, key, domainID, chanID, subtopic, topicType, c)
+	return mm.svc.Subscribe(ctx, key, domainID, chanID, subtopic, c)
 }
 
 // Unsubscribe instruments Unsubscribe method with metrics.
-func (mm *metricsMiddleware) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string, topicType messaging.TopicType) error {
+func (mm *metricsMiddleware) Unsubscribe(ctx context.Context, key, domainID, chanID, subtopic, token string) error {
 	defer func(begin time.Time) {
 		mm.counter.With("method", "unsubscribe").Add(1)
 		mm.latency.With("method", "unsubscribe").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return mm.svc.Unsubscribe(ctx, key, domainID, chanID, subtopic, token, topicType)
+	return mm.svc.Unsubscribe(ctx, key, domainID, chanID, subtopic, token)
 }
 
 // DisconnectHandler instruments DisconnectHandler method with metrics.

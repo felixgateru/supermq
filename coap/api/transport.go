@@ -124,9 +124,9 @@ func (h *CoAPHandler) handleGet(m *mux.Message, w mux.ResponseWriter, topicType 
 		w.Conn().AddOnClose(func() {
 			_ = h.service.DisconnectHandler(context.Background(), msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), c.Token())
 		})
-		return h.service.Subscribe(w.Conn().Context(), key, msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), topicType, c)
+		return h.service.Subscribe(w.Conn().Context(), key, msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), c)
 	}
-	return h.service.Unsubscribe(w.Conn().Context(), key, msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), m.Token().String(), topicType)
+	return h.service.Unsubscribe(w.Conn().Context(), key, msg.GetDomain(), msg.GetChannel(), msg.GetSubtopic(), m.Token().String())
 }
 
 func (h *CoAPHandler) decodeMessage(msg *mux.Message) (*messaging.Message, messaging.TopicType, error) {
