@@ -421,6 +421,7 @@ func TestListUsers(t *testing.T) {
 		desc              string
 		query             string
 		token             string
+		pageMeta          users.Page
 		listUsersResponse users.UsersPage
 		status            int
 		authnRes          smqauthn.Session
@@ -431,6 +432,12 @@ func TestListUsers(t *testing.T) {
 			desc:   "list users as admin with valid token",
 			token:  validToken,
 			status: http.StatusOK,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
@@ -459,6 +466,12 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:  "list users with offset",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset: 1,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Offset: 1,
@@ -482,6 +495,12 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:  "list users with limit",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  1,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Limit: 1,
@@ -511,23 +530,96 @@ func TestListUsers(t *testing.T) {
 			err:      apiutil.ErrLimitSize,
 		},
 		{
-			desc:  "list users with name",
+			desc:  "list users with username",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset:   0,
+				Limit:    10,
+				Order:    api.DefOrder,
+				Dir:      api.DefDir,
+				Username: "username",
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
 				},
 				Users: []users.User{user},
 			},
-			query:    "name=username",
+			query:    "username=username",
 			status:   http.StatusOK,
 			authnRes: verifiedSession,
 			err:      nil,
 		},
 		{
-			desc:     "list users with duplicate name",
+			desc:     "list users with duplicate username",
 			token:    validToken,
-			query:    "name=1&name=2",
+			query:    "username=1&username=2",
+			status:   http.StatusBadRequest,
+			authnRes: verifiedSession,
+			err:      apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:  "list users with first name",
+			token: validToken,
+			pageMeta: users.Page{
+				Offset:    0,
+				Limit:     10,
+				Order:     api.DefOrder,
+				Dir:       api.DefDir,
+				FirstName: "firstname",
+			},
+			listUsersResponse: users.UsersPage{
+				Page: users.Page{
+					Total: 1,
+				},
+				Users: []users.User{user},
+			},
+			query:    "first_name=firstname",
+			status:   http.StatusOK,
+			authnRes: verifiedSession,
+			err:      nil,
+		},
+		{
+			desc:     "list users with duplicate firstname",
+			token:    validToken,
+			query:    "status=invalid",
+			status:   http.StatusBadRequest,
+			authnRes: verifiedSession,
+			err:      svcerr.ErrInvalidStatus,
+		},
+		{
+			desc:     "list users with duplicate status",
+			token:    validToken,
+			query:    "status=enabled&status=disabled",
+			status:   http.StatusBadRequest,
+			authnRes: verifiedSession,
+			err:      apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:  "list users with lastname",
+			token: validToken,
+			pageMeta: users.Page{
+				Offset:   0,
+				Limit:    10,
+				Order:    api.DefOrder,
+				Dir:      api.DefDir,
+				LastName: "lastname",
+			},
+			listUsersResponse: users.UsersPage{
+				Page: users.Page{
+					Total: 1,
+				},
+				Users: []users.User{user},
+			},
+			query:    "last_name=lastname",
+			status:   http.StatusOK,
+			authnRes: verifiedSession,
+			err:      nil,
+		},
+		{
+			desc:     "list users with duplicate lastname",
+			token:    validToken,
+			query:    "last_name=lastname1&last_name=lastname2",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -535,6 +627,13 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:  "list users with status",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+				Status: users.EnabledStatus,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
@@ -552,7 +651,7 @@ func TestListUsers(t *testing.T) {
 			query:    "status=invalid",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
-			err:      svcerr.ErrInvalidStatus,
+			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:     "list users with duplicate status",
@@ -563,15 +662,51 @@ func TestListUsers(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with tags",
+			desc:  "list users with single tag",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+				Tags:   users.TagsQuery{Elements: []string{"tag1"}, Operator: users.OrOp},
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
 				},
 				Users: []users.User{user},
 			},
-			query:    "tag=tag1,tag2",
+			query:    "tags=tag1",
+			status:   http.StatusOK,
+			authnRes: verifiedSession,
+			err:      nil,
+		},
+		{
+			desc:     "list users with duplicate permissions",
+			token:    validToken,
+			query:    "permission=view&permission=view",
+			status:   http.StatusBadRequest,
+			authnRes: verifiedSession,
+			err:      apiutil.ErrInvalidQueryParams,
+		},
+		{
+			desc:  "list users with multiple tags and AND operator",
+			token: validToken,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+				Tags:   users.TagsQuery{Elements: []string{"tag1", "tag2", "tag3"}, Operator: users.AndOp},
+			},
+			listUsersResponse: users.UsersPage{
+				Page: users.Page{
+					Total: 1,
+				},
+				Users: []users.User{user},
+			},
+			query:    "tags=tag1-tag2-tag3",
 			status:   http.StatusOK,
 			authnRes: verifiedSession,
 			err:      nil,
@@ -579,7 +714,7 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:     "list users with duplicate tags",
 			token:    validToken,
-			query:    "tag=tag1&tag=tag2",
+			query:    "tags=tag1&tags=tag2",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
 			err:      apiutil.ErrInvalidQueryParams,
@@ -587,6 +722,13 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:  "list users with metadata",
 			token: validToken,
+			pageMeta: users.Page{
+				Offset:   0,
+				Limit:    10,
+				Order:    api.DefOrder,
+				Dir:      api.DefDir,
+				Metadata: users.Metadata{"domain": "example.com"},
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
@@ -615,68 +757,21 @@ func TestListUsers(t *testing.T) {
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
-			desc:  "list users with permissions",
+			desc:  "list users with email",
 			token: validToken,
+			query: fmt.Sprintf("email=%s", user.Email),
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+				Email:  user.Email,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
 				},
 				Users: []users.User{user},
-			},
-			query:    "permission=view",
-			status:   http.StatusOK,
-			authnRes: verifiedSession,
-			err:      nil,
-		},
-		{
-			desc:     "list users with duplicate permissions",
-			token:    validToken,
-			query:    "permission=view&permission=view",
-			status:   http.StatusBadRequest,
-			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
-		},
-		{
-			desc:     "list users with duplicate list perms",
-			token:    validToken,
-			query:    "list_perms=true&list_perms=true",
-			status:   http.StatusBadRequest,
-			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
-		},
-		{
-			desc:  "list users with email",
-			token: validToken,
-			query: fmt.Sprintf("email=%s", user.Email),
-			listUsersResponse: users.UsersPage{
-				Page: users.Page{
-					Total: 1,
-				},
-				Users: []users.User{user},
-			},
-			status:   http.StatusOK,
-			authnRes: verifiedSession,
-			err:      nil,
-		},
-		{
-			desc:     "list users with duplicate email",
-			token:    validToken,
-			query:    "email=1&email=2",
-			status:   http.StatusBadRequest,
-			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
-		},
-		{
-			desc:  "list users with email",
-			token: validToken,
-			query: fmt.Sprintf("email=%s", user.Email),
-			listUsersResponse: users.UsersPage{
-				Page: users.Page{
-					Total: 1,
-				},
-				Users: []users.User{
-					user,
-				},
 			},
 			status:   http.StatusOK,
 			authnRes: smqauthn.Session{UserID: validID, DomainID: validID, Verified: true},
@@ -692,6 +787,12 @@ func TestListUsers(t *testing.T) {
 		},
 		{
 			desc: "list users with order",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  "username",
+				Dir:    api.DefDir,
+			},
 			listUsersResponse: users.UsersPage{
 				Page: users.Page{
 					Total: 1,
@@ -743,7 +844,7 @@ func TestListUsers(t *testing.T) {
 			}
 
 			authnCall := authn.On("Authenticate", mock.Anything, tc.token).Return(tc.authnRes, tc.authnErr)
-			svcCall := svc.On("ListUsers", mock.Anything, tc.authnRes, mock.Anything).Return(tc.listUsersResponse, tc.err)
+			svcCall := svc.On("ListUsers", mock.Anything, tc.authnRes, tc.pageMeta).Return(tc.listUsersResponse, tc.err)
 			res, err := req.make()
 			assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 			var bodyRes respBody
