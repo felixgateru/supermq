@@ -63,9 +63,13 @@ func decodeListChannels(_ context.Context, r *http.Request) (any, error) {
 		return listChannelsReq{}, errors.Wrap(apiutil.ErrValidation, err)
 	}
 
-	tag, err := apiutil.ReadStringQuery(r, api.TagKey, "")
+	tags, err := apiutil.ReadStringQuery(r, api.TagsKey, "")
 	if err != nil {
 		return nil, errors.Wrap(apiutil.ErrValidation, err)
+	}
+	var tq channels.TagsQuery
+	if tags != "" {
+		tq = channels.ToTagsQuery(tags)
 	}
 
 	s, err := apiutil.ReadStringQuery(r, api.StatusKey, api.DefGroupStatus)
@@ -156,23 +160,22 @@ func decodeListChannels(_ context.Context, r *http.Request) (any, error) {
 
 	req := listChannelsReq{
 		Page: channels.Page{
-			Name:           name,
-			Tag:            tag,
-			Status:         status,
-			Metadata:       meta,
-			RoleName:       roleName,
-			RoleID:         roleID,
-			Actions:        actions,
-			AccessType:     accessType,
-			Order:          order,
-			Dir:            dir,
-			Offset:         offset,
-			Limit:          limit,
-			Group:          groupID,
-			Client:         clientID,
-			ConnectionType: connectionType,
-			ID:             id,
-			OnlyTotal:      ot,
+			Name:       name,
+			Tags:       tq,
+			Status:     status,
+			Metadata:   meta,
+			RoleName:   roleName,
+			RoleID:     roleID,
+			Actions:    actions,
+			AccessType: accessType,
+			Order:      order,
+			Dir:        dir,
+			Offset:     offset,
+			Limit:      limit,
+			Group:      groupID,
+			Client:     clientID,
+			ID:         id,
+			OnlyTotal:  ot,
 		},
 		userID: userID,
 	}
