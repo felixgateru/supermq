@@ -43,12 +43,13 @@ var (
 	namegen         = namegenerator.NewGenerator()
 	validTimestamp  = time.Now().UTC().Truncate(time.Millisecond)
 	validClient     = clients.Client{
-		ID:        testsutil.GenerateUUID(&testing.T{}),
-		Domain:    testsutil.GenerateUUID(&testing.T{}),
-		Name:      namegen.Generate(),
-		Metadata:  map[string]any{"key": "value"},
-		CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
-		Status:    clients.EnabledStatus,
+		ID:              testsutil.GenerateUUID(&testing.T{}),
+		Domain:          testsutil.GenerateUUID(&testing.T{}),
+		Name:            namegen.Generate(),
+		PublicMetadata:  map[string]any{"key": "value"},
+		PrivateMetadata: map[string]any{"key": "value"},
+		CreatedAt:       time.Now().UTC().Truncate(time.Microsecond),
+		Status:          clients.EnabledStatus,
 	}
 	invalidID         = strings.Repeat("a", 37)
 	directAccess      = "direct"
@@ -133,8 +134,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: clientIdentity,
 						Secret:   secret,
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: nil,
@@ -149,8 +151,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 				{
 					ID:     testsutil.GenerateUUID(t),
@@ -159,8 +162,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 				{
 					ID:     testsutil.GenerateUUID(t),
@@ -169,8 +173,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: nil,
@@ -186,8 +191,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: clientIdentity,
 						Secret:   secret,
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: errClientSecretNotAvailable,
@@ -202,8 +208,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 				{
 					ID:     testsutil.GenerateUUID(t),
@@ -213,8 +220,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: clientIdentity,
 						Secret:   secret,
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: errClientSecretNotAvailable,
@@ -229,8 +237,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: "withoutdomain-client@example.com",
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: nil,
@@ -246,8 +255,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: "invalidid-client@example.com",
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: repoerr.ErrCreateEntity,
@@ -262,8 +272,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 				{
 					ID:     invalidName,
@@ -272,8 +283,9 @@ func TestClientsSave(t *testing.T) {
 					Credentials: clients.Credentials{
 						Secret: testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: repoerr.ErrCreateEntity,
@@ -289,8 +301,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: "invalidname-client@example.com",
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: repoerr.ErrCreateEntity,
@@ -305,8 +318,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: "invaliddomainid-client@example.com",
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: repoerr.ErrCreateEntity,
@@ -321,8 +335,9 @@ func TestClientsSave(t *testing.T) {
 						Identity: invalidName,
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
-					Status:   clients.EnabledStatus,
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: repoerr.ErrCreateEntity,
@@ -338,7 +353,8 @@ func TestClientsSave(t *testing.T) {
 						Identity: "",
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: clients.Metadata{},
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
 				},
 			},
 			err: nil,
@@ -353,13 +369,14 @@ func TestClientsSave(t *testing.T) {
 						Identity: "missing-client-secret@example.com",
 						Secret:   "",
 					},
-					Metadata: clients.Metadata{},
+					PublicMetadata:  map[string]any{"key": "value"},
+					PrivateMetadata: map[string]any{"key": "value"},
 				},
 			},
 			err: nil,
 		},
 		{
-			desc: "add a client with invalid metadata",
+			desc: "add a client with invalid public metadata",
 			clients: []clients.Client{
 				{
 					ID:   testsutil.GenerateUUID(t),
@@ -368,7 +385,24 @@ func TestClientsSave(t *testing.T) {
 						Identity: fmt.Sprintf("%s@example.com", namegen.Generate()),
 						Secret:   testsutil.GenerateUUID(t),
 					},
-					Metadata: map[string]any{
+					PublicMetadata: map[string]any{
+						"key": make(chan int),
+					},
+				},
+			},
+			err: errors.ErrMalformedEntity,
+		},
+		{
+			desc: "add a client with invalid private metadata",
+			clients: []clients.Client{
+				{
+					ID:   testsutil.GenerateUUID(t),
+					Name: namegen.Generate(),
+					Credentials: clients.Credentials{
+						Identity: fmt.Sprintf("%s@example.com", namegen.Generate()),
+						Secret:   testsutil.GenerateUUID(t),
+					},
+					PublicMetadata: map[string]any{
 						"key": make(chan int),
 					},
 				},
@@ -379,12 +413,13 @@ func TestClientsSave(t *testing.T) {
 			desc: "add client with duplicate name",
 			clients: []clients.Client{
 				{
-					ID:        duplicateClientID,
-					Domain:    validClient.Domain,
-					Name:      validClient.Name,
-					Metadata:  map[string]any{"key": "different_value"},
-					CreatedAt: validTimestamp,
-					Status:    clients.EnabledStatus,
+					ID:              duplicateClientID,
+					Domain:          validClient.Domain,
+					Name:            validClient.Name,
+					PublicMetadata:  map[string]any{"key": "different_value"},
+					PrivateMetadata: map[string]any{},
+					CreatedAt:       validTimestamp,
+					Status:          clients.EnabledStatus,
 				},
 			},
 			err: nil,
@@ -418,9 +453,10 @@ func TestClientsRetrieveBySecret(t *testing.T) {
 			Identity: clientIdentity,
 			Secret:   testsutil.GenerateUUID(t),
 		},
-		Domain:   testsutil.GenerateUUID(t),
-		Metadata: clients.Metadata{},
-		Status:   clients.EnabledStatus,
+		Domain:          testsutil.GenerateUUID(t),
+		PublicMetadata:  clients.Metadata{},
+		PrivateMetadata: clients.Metadata{},
+		Status:          clients.EnabledStatus,
 	}
 
 	_, err := repo.Save(context.Background(), client)
@@ -487,9 +523,11 @@ func TestClientsRetrieveBySecret(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		res, err := repo.RetrieveBySecret(context.Background(), tc.secret, tc.id, tc.prefix)
-		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
-		assert.Equal(t, res, tc.response, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, res))
+		t.Run(tc.desc, func(t *testing.T) {
+			res, err := repo.RetrieveBySecret(context.Background(), tc.secret, tc.id, tc.prefix)
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
+			assert.Equal(t, res, tc.response, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.response, res))
+		})
 	}
 }
 
@@ -507,8 +545,13 @@ func TestRetrieveByID(t *testing.T) {
 			Identity: clientIdentity,
 			Secret:   testsutil.GenerateUUID(t),
 		},
-		Metadata: clients.Metadata{},
-		Status:   clients.EnabledStatus,
+		PublicMetadata: clients.Metadata{
+			"key": "value",
+		},
+		PrivateMetadata: clients.Metadata{
+			"key": "value",
+		},
+		Status: clients.EnabledStatus,
 	}
 
 	_, err := repo.Save(context.Background(), client)
@@ -546,7 +589,8 @@ func TestRetrieveByID(t *testing.T) {
 			if err == nil {
 				assert.Equal(t, client.ID, cli.ID)
 				assert.Equal(t, client.Name, cli.Name)
-				assert.Equal(t, client.Metadata, cli.Metadata)
+				assert.Equal(t, client.PublicMetadata, cli.PublicMetadata)
+				assert.Equal(t, client.PrivateMetadata, cli.PrivateMetadata)
 				assert.Equal(t, client.Credentials.Identity, cli.Credentials.Identity)
 				assert.Equal(t, client.Credentials.Secret, cli.Credentials.Secret)
 				assert.Equal(t, client.Status, cli.Status)
@@ -576,11 +620,12 @@ func TestUpdate(t *testing.T) {
 			desc:   "update client successfully",
 			update: "all",
 			client: clients.Client{
-				ID:        validClient.ID,
-				Name:      namegen.Generate(),
-				Metadata:  map[string]any{"key": "value"},
-				UpdatedAt: validTimestamp,
-				UpdatedBy: testsutil.GenerateUUID(t),
+				ID:              validClient.ID,
+				Name:            namegen.Generate(),
+				PublicMetadata:  map[string]any{"key": "value"},
+				PrivateMetadata: map[string]any{"key": "value"},
+				UpdatedAt:       validTimestamp,
+				UpdatedBy:       testsutil.GenerateUUID(t),
 			},
 			err: nil,
 		},
@@ -596,13 +641,24 @@ func TestUpdate(t *testing.T) {
 			err: nil,
 		},
 		{
-			desc:   "update client metadata",
-			update: "metadata",
+			desc:   "update client public metadata",
+			update: "public_metadata",
 			client: clients.Client{
-				ID:        validClient.ID,
-				Metadata:  map[string]any{"key1": "value1"},
-				UpdatedAt: validTimestamp,
-				UpdatedBy: testsutil.GenerateUUID(t),
+				ID:             validClient.ID,
+				PublicMetadata: map[string]any{"key1": "value1"},
+				UpdatedAt:      validTimestamp,
+				UpdatedBy:      testsutil.GenerateUUID(t),
+			},
+			err: nil,
+		},
+		{
+			desc:   "update client private metadata",
+			update: "private_metadata",
+			client: clients.Client{
+				ID:              validClient.ID,
+				PrivateMetadata: map[string]any{"key1": "value1"},
+				UpdatedAt:       validTimestamp,
+				UpdatedBy:       testsutil.GenerateUUID(t),
 			},
 			err: nil,
 		},
@@ -610,11 +666,12 @@ func TestUpdate(t *testing.T) {
 			desc:   "update client with invalid ID",
 			update: "all",
 			client: clients.Client{
-				ID:        testsutil.GenerateUUID(t),
-				Name:      namegen.Generate(),
-				Metadata:  map[string]any{"key": "value"},
-				UpdatedAt: validTimestamp,
-				UpdatedBy: testsutil.GenerateUUID(t),
+				ID:              testsutil.GenerateUUID(t),
+				Name:            namegen.Generate(),
+				PublicMetadata:  map[string]any{"key": "value"},
+				PrivateMetadata: map[string]any{"key": "value"},
+				UpdatedAt:       validTimestamp,
+				UpdatedBy:       testsutil.GenerateUUID(t),
 			},
 			err: repoerr.ErrNotFound,
 		},
@@ -622,10 +679,11 @@ func TestUpdate(t *testing.T) {
 			desc:   "update client with empty ID",
 			update: "all",
 			client: clients.Client{
-				Name:      namegen.Generate(),
-				Metadata:  map[string]any{"key": "value"},
-				UpdatedAt: validTimestamp,
-				UpdatedBy: testsutil.GenerateUUID(t),
+				Name:            namegen.Generate(),
+				PublicMetadata:  map[string]any{"key": "value"},
+				PrivateMetadata: map[string]any{"key": "value"},
+				UpdatedAt:       validTimestamp,
+				UpdatedBy:       testsutil.GenerateUUID(t),
 			},
 			err: repoerr.ErrNotFound,
 		},
@@ -642,11 +700,14 @@ func TestUpdate(t *testing.T) {
 				switch tc.update {
 				case "all":
 					assert.Equal(t, tc.client.Name, client.Name, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.Name, client.Name))
-					assert.Equal(t, tc.client.Metadata, client.Metadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.Metadata, client.Metadata))
+					assert.Equal(t, tc.client.PublicMetadata, client.PublicMetadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.PublicMetadata, client.PublicMetadata))
+					assert.Equal(t, tc.client.PrivateMetadata, client.PrivateMetadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.PrivateMetadata, client.PrivateMetadata))
 				case "name":
 					assert.Equal(t, tc.client.Name, client.Name, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.Name, client.Name))
-				case "metadata":
-					assert.Equal(t, tc.client.Metadata, client.Metadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.Metadata, client.Metadata))
+				case "public_metadata":
+					assert.Equal(t, tc.client.PublicMetadata, client.PublicMetadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.PublicMetadata, client.PublicMetadata))
+				case "private_metadata":
+					assert.Equal(t, tc.client.PrivateMetadata, client.PrivateMetadata, fmt.Sprintf("%s: expected %v got %v\n", tc.desc, tc.client.PrivateMetadata, client.PrivateMetadata))
 				}
 			}
 		})
@@ -1057,7 +1118,7 @@ func TestRetrieveAll(t *testing.T) {
 				Secret:   testsutil.GenerateUUID(t),
 			},
 			Tags: namegen.GenerateMultiple(5),
-			Metadata: clients.Metadata{
+			PublicMetadata: clients.Metadata{
 				"department": namegen.Generate(),
 			},
 			Status:    clients.EnabledStatus,
@@ -1109,6 +1170,8 @@ func TestRetrieveAll(t *testing.T) {
 			pm: clients.Page{
 				Offset: 50,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1122,16 +1185,18 @@ func TestRetrieveAll(t *testing.T) {
 		{
 			desc: "with limit only",
 			pm: clients.Page{
-				Limit:  50,
+				Limit:  10,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
 					Total:  nClients,
 					Offset: 0,
-					Limit:  50,
+					Limit:  10,
 				},
-				Clients: expectedClients[:50],
+				Clients: expectedClients[:10],
 			},
 		},
 		{
@@ -1140,6 +1205,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  nClients,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1156,6 +1223,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 50,
 				Limit:  50,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1172,6 +1241,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 1000,
 				Limit:  50,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1188,6 +1259,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 170,
 				Limit:  50,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1199,12 +1272,14 @@ func TestRetrieveAll(t *testing.T) {
 			},
 		},
 		{
-			desc: "with metadata",
+			desc: "with public metadata",
 			pm: clients.Page{
 				Offset:   0,
 				Limit:    nClients,
-				Metadata: expectedClients[0].Metadata,
+				Metadata: expectedClients[0].PublicMetadata,
 				Status:   clients.AllStatus,
+				Order:    defOrder,
+				Dir:      defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1224,6 +1299,8 @@ func TestRetrieveAll(t *testing.T) {
 					"faculty": namegen.Generate(),
 				},
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1243,6 +1320,8 @@ func TestRetrieveAll(t *testing.T) {
 					"faculty": make(chan int),
 				},
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1261,6 +1340,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Name:   expectedClients[0].Name,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1295,6 +1376,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:    nClients,
 				Identity: expectedClients[0].Credentials.Identity,
 				Status:   clients.AllStatus,
+				Order:    defOrder,
+				Dir:      defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1329,6 +1412,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Domain: expectedClients[0].Domain,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1346,6 +1431,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Domain: testsutil.GenerateUUID(t),
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1362,6 +1449,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: clients.EnabledStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1378,6 +1467,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  nClients,
 				Status: clients.DisabledStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1394,6 +1485,8 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  nClients,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1427,6 +1520,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Tag:    expectedClients[0].Tags[0],
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1444,6 +1539,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Tag:    namegen.Generate(),
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1459,12 +1556,14 @@ func TestRetrieveAll(t *testing.T) {
 			pm: clients.Page{
 				Offset:   0,
 				Limit:    nClients,
-				Metadata: expectedClients[0].Metadata,
+				Metadata: expectedClients[0].PublicMetadata,
 				Name:     expectedClients[0].Name,
 				Tag:      expectedClients[0].Tags[0],
 				Identity: expectedClients[0].Credentials.Identity,
 				Domain:   expectedClients[0].Domain,
 				Status:   clients.AllStatus,
+				Order:    defOrder,
+				Dir:      defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1482,6 +1581,8 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				ID:     expectedClients[0].ID,
 				Status: clients.AllStatus,
+				Order:  defOrder,
+				Dir:    defDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1543,718 +1644,6 @@ func TestRetrieveAll(t *testing.T) {
 	}
 }
 
-func TestRetrieveUserClients(t *testing.T) {
-	t.Cleanup(func() {
-		_, err := db.Exec("DELETE FROM clients")
-		require.Nil(t, err, fmt.Sprintf("clean clients unexpected error: %s", err))
-		_, err = db.Exec("DELETE FROM groups")
-		require.Nil(t, err, fmt.Sprintf("clean groups unexpected error: %s", err))
-		_, err = db.Exec("DELETE FROM domains")
-		require.Nil(t, err, fmt.Sprintf("clean clients unexpected error: %s", err))
-	})
-
-	repo := postgres.NewRepository(database)
-
-	nClients := uint64(10)
-
-	emptyGroupParam := ""
-	userID := testsutil.GenerateUUID(t)
-	domainMemberID := testsutil.GenerateUUID(t)
-	groupMemberID := testsutil.GenerateUUID(t)
-	channelID := testsutil.GenerateUUID(t)
-	domain := generateDomain(t, userID, domainMemberID)
-	group := generateGroup(t, userID, groupMemberID, domain.ID)
-	groupClient := clients.Client{}
-	parentGroupClient := clients.Client{}
-	connectedClient := clients.Client{}
-	directClients := []clients.Client{}
-	domainClients := []clients.Client{}
-	for i := range nClients {
-		client := clients.Client{
-			ID:     testsutil.GenerateUUID(t),
-			Domain: domain.ID,
-			Name:   namegen.Generate(),
-			Credentials: clients.Credentials{
-				Identity: namegen.Generate() + emailSuffix,
-				Secret:   testsutil.GenerateUUID(t),
-			},
-			Tags: namegen.GenerateMultiple(5),
-			Metadata: clients.Metadata{
-				"department": namegen.Generate(),
-			},
-			Status:    clients.EnabledStatus,
-			CreatedAt: time.Now().UTC().Truncate(time.Microsecond),
-		}
-		if i == 1 {
-			client.ParentGroup = group.ID
-		}
-		_, err := repo.Save(context.Background(), client)
-		require.Nil(t, err, fmt.Sprintf("add new client: expected nil got %s\n", err))
-		newRolesProvision := []roles.RoleProvision{
-			{
-				Role: roles.Role{
-					ID:        testsutil.GenerateUUID(t) + "_" + client.ID,
-					Name:      "admin",
-					EntityID:  client.ID,
-					CreatedAt: validTimestamp,
-					CreatedBy: userID,
-				},
-				OptionalActions: availableActions,
-				OptionalMembers: []string{userID},
-			},
-		}
-		npr, err := repo.AddRoles(context.Background(), newRolesProvision)
-		require.Nil(t, err, fmt.Sprintf("add roles unexpected error: %s", err))
-		directClient := client
-		directClient.RoleID = npr[0].Role.ID
-		directClient.RoleName = npr[0].Role.Name
-		directClient.AccessType = directAccess
-		directClient.AccessProviderRoleActions = []string{}
-		directClients = append(directClients, directClient)
-		if i == 1 {
-			parentGroupClient = directClient
-			parentGroupClient.ParentGroupPath = group.ID
-			client.ParentGroupPath = group.ID
-			groupClient = client
-			groupClient.AccessType = directGroupAccess
-			groupClient.AccessProviderId = group.ID
-			groupClient.AccessProviderRoleId = group.Roles[0].RoleID
-			groupClient.AccessProviderRoleName = group.Roles[0].RoleName
-			groupClient.AccessProviderRoleActions = groupAvailableActions
-		}
-		if i == 2 {
-			conn := clients.Connection{
-				ClientID:  client.ID,
-				ChannelID: channelID,
-				DomainID:  client.Domain,
-				Type:      connections.Publish,
-			}
-			err = repo.AddConnections(context.Background(), []clients.Connection{conn})
-			assert.Nil(t, err, fmt.Sprintf("add connection unexpected error: %s", err))
-			connectedClient = client
-			connectedClient.RoleID = npr[0].Role.ID
-			connectedClient.RoleName = npr[0].Role.Name
-			connectedClient.AccessType = directAccess
-			connectedClient.AccessProviderRoleActions = []string{}
-			connectedClient.ConnectionTypes = []connections.ConnType{connections.Publish}
-		}
-		domainClient := client
-		domainClient.AccessType = domainAccess
-		domainClient.AccessProviderId = domain.ID
-		domainClient.AccessProviderRoleId = domain.Roles[0].RoleID
-		domainClient.AccessProviderRoleName = domain.Roles[0].RoleName
-		domainClient.AccessProviderRoleActions = domainAvailableActions
-		domainClients = append(domainClients, domainClient)
-	}
-
-	cases := []struct {
-		desc     string
-		domainID string
-		userID   string
-		pm       clients.Page
-		response clients.ClientsPage
-		err      error
-	}{
-		{
-			desc:     "retrieve clients with empty page",
-			domainID: domain.ID,
-			userID:   userID,
-			pm:       clients.Page{},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  10,
-					Offset: 0,
-					Limit:  0,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with offset and limit",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 5,
-				Limit:  10,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  nClients,
-					Offset: 5,
-					Limit:  10,
-				},
-				Clients: directClients[5:10],
-			},
-		},
-		{
-			desc:     "retrieve clients with member id of parent group wth direct group access",
-			domainID: domain.ID,
-			userID:   groupMemberID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  10,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  10,
-				},
-				Clients: []clients.Client{groupClient},
-			},
-		},
-		{
-			desc:     "retrieve clients with member id of domain with domain access",
-			domainID: domain.ID,
-			userID:   domainMemberID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  10,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  10,
-					Offset: 0,
-					Limit:  10,
-				},
-				Clients: domainClients,
-			},
-		},
-		{
-			desc:     "retrieve clients connected to a channel",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:  0,
-				Limit:   10,
-				Channel: channelID,
-				Status:  clients.AllStatus,
-				Order:   defOrder,
-				Dir:     defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  10,
-				},
-				Clients: []clients.Client{connectedClient},
-			},
-		},
-		{
-			desc:     "retrieve clients with offset out of range and limit",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 1000,
-				Limit:  50,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  nClients,
-					Offset: 1000,
-					Limit:  50,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with metadata",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    nClients,
-				Metadata: directClients[0].Metadata,
-				Status:   clients.AllStatus,
-				Order:    defOrder,
-				Dir:      defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong metadata",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Metadata: clients.Metadata{
-					"faculty": namegen.Generate(),
-				},
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with invalid metadata",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Metadata: clients.Metadata{
-					"faculty": make(chan int),
-				},
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  uint64(nClients),
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-			err: repoerr.ErrMalformedEntity,
-		},
-		{
-			desc:     "retrieve clients with name",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Name:   directClients[0].Name,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong name",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Name:   namegen.Generate(),
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve cliens with identity",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    nClients,
-				Identity: directClients[0].Credentials.Identity,
-				Status:   clients.AllStatus,
-				Order:    defOrder,
-				Dir:      defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong identity",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    nClients,
-				Identity: namegen.Generate(),
-				Status:   clients.AllStatus,
-				Order:    defOrder,
-				Dir:      defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with tag",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Tag:    directClients[0].Tags[0],
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  uint64(nClients),
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong tags",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Tag:    namegen.Generate(),
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with multiple parameters",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    nClients,
-				Metadata: directClients[0].Metadata,
-				Name:     directClients[0].Name,
-				Tag:      directClients[0].Tags[0],
-				Identity: directClients[0].Credentials.Identity,
-				Status:   clients.AllStatus,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with id",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				ID:     directClients[0].ID,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong id",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				ID:     testsutil.GenerateUUID(t),
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong domain id",
-			domainID: testsutil.GenerateUUID(t),
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong user id",
-			domainID: domain.ID,
-			userID:   testsutil.GenerateUUID(t),
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with parent group",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Group:  &group.ID,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{parentGroupClient},
-			},
-			err: nil,
-		},
-		{
-			desc:     "retrieve clients with no parent group",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				Group:  &emptyGroupParam,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{},
-			},
-		},
-		{
-			desc:     "retrieve clients with access type",
-			domainID: domain.ID,
-			userID:   domainMemberID,
-			pm: clients.Page{
-				Offset:     0,
-				Limit:      10,
-				AccessType: domainAccess,
-				Status:     clients.AllStatus,
-				Order:      defOrder,
-				Dir:        defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  10,
-					Offset: 0,
-					Limit:  10,
-				},
-				Clients: domainClients,
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong access type",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:     0,
-				Limit:      nClients,
-				AccessType: domainAccess,
-				Status:     clients.AllStatus,
-				Order:      defOrder,
-				Dir:        defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{},
-			},
-		},
-		{
-			desc:     "retrieve clients with role ID",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				RoleID: directClients[0].RoleID,
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  1,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client{directClients[0]},
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong role ID",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset: 0,
-				Limit:  nClients,
-				RoleID: testsutil.GenerateUUID(t),
-				Status: clients.AllStatus,
-				Order:  defOrder,
-				Dir:    defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-		{
-			desc:     "retrieve clients with role name",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    1,
-				RoleName: directClients[0].RoleName,
-				Status:   clients.AllStatus,
-				Order:    defOrder,
-				Dir:      defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  10,
-					Offset: 0,
-					Limit:  1,
-				},
-				Clients: directClients[0:1],
-			},
-		},
-		{
-			desc:     "retrieve clients with wrong role name",
-			domainID: domain.ID,
-			userID:   userID,
-			pm: clients.Page{
-				Offset:   0,
-				Limit:    nClients,
-				RoleName: namegen.Generate(),
-				Status:   clients.AllStatus,
-				Order:    defOrder,
-				Dir:      defDir,
-			},
-			response: clients.ClientsPage{
-				Page: clients.Page{
-					Total:  0,
-					Offset: 0,
-					Limit:  nClients,
-				},
-				Clients: []clients.Client(nil),
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			page, err := repo.RetrieveUserClients(context.Background(), tc.domainID, tc.userID, tc.pm)
-			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected %s to contain %s\n", err, tc.err))
-			if err == nil {
-				assert.Equal(t, tc.response.Total, page.Total)
-				assert.Equal(t, tc.response.Offset, page.Offset)
-				assert.Equal(t, tc.response.Limit, page.Limit)
-				expected := stripClientDetails(tc.response.Clients)
-				got := stripClientDetails(page.Clients)
-				assert.ElementsMatch(t, expected, got, fmt.Sprintf("expected %+v got %+v\n", expected, got))
-			}
-		})
-	}
-}
-
 func TestSearchClients(t *testing.T) {
 	t.Cleanup(func() {
 		_, err := db.Exec("DELETE FROM clients")
@@ -2277,9 +1666,12 @@ func TestSearchClients(t *testing.T) {
 				Identity: username,
 				Secret:   testsutil.GenerateUUID(t),
 			},
-			Metadata:  clients.Metadata{},
-			Status:    clients.EnabledStatus,
-			CreatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
+			PublicMetadata: clients.Metadata{
+				"department": namegen.Generate(),
+			},
+			PrivateMetadata: clients.Metadata{},
+			Status:          clients.EnabledStatus,
+			CreatedAt:       baseTime.Add(time.Duration(i) * time.Microsecond),
 		}
 		_, err := repo.Save(context.Background(), client)
 		require.Nil(t, err, fmt.Sprintf("save client unexpected error: %s", err))
@@ -2658,10 +2050,10 @@ func TestRetrieveByIDs(t *testing.T) {
 				Identity: name + emailSuffix,
 				Secret:   testsutil.GenerateUUID(t),
 			},
-			Tags:      namegen.GenerateMultiple(5),
-			Metadata:  map[string]any{"name": name},
-			CreatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
-			Status:    clients.EnabledStatus,
+			Tags:           namegen.GenerateMultiple(5),
+			PublicMetadata: map[string]any{"name": name},
+			CreatedAt:      baseTime.Add(time.Duration(i) * time.Microsecond),
+			Status:         clients.EnabledStatus,
 		}
 		_, err := repo.Save(context.Background(), client)
 		require.Nil(t, err, fmt.Sprintf("add new client: expected nil got %s\n", err))
@@ -3286,13 +2678,13 @@ func TestRetrieveParentGroupClients(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		name := namegen.Generate()
 		client := clients.Client{
-			ID:          testsutil.GenerateUUID(t),
-			Domain:      testsutil.GenerateUUID(t),
-			ParentGroup: parentID,
-			Name:        name,
-			Metadata:    map[string]any{"name": name},
-			CreatedAt:   baseTime.Add(time.Duration(i) * time.Microsecond),
-			Status:      clients.EnabledStatus,
+			ID:             testsutil.GenerateUUID(t),
+			Domain:         testsutil.GenerateUUID(t),
+			ParentGroup:    parentID,
+			Name:           name,
+			PublicMetadata: map[string]any{"name": name},
+			CreatedAt:      baseTime.Add(time.Duration(i) * time.Microsecond),
+			Status:         clients.EnabledStatus,
 		}
 		items = append(items, client)
 	}
@@ -3354,13 +2746,13 @@ func TestUnsetParentGroupFromClients(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		name := namegen.Generate()
 		client := clients.Client{
-			ID:          testsutil.GenerateUUID(t),
-			Domain:      testsutil.GenerateUUID(t),
-			ParentGroup: parentID,
-			Name:        name,
-			Metadata:    map[string]any{"name": name},
-			CreatedAt:   baseTime.Add(time.Duration(i) * time.Microsecond),
-			Status:      clients.EnabledStatus,
+			ID:             testsutil.GenerateUUID(t),
+			Domain:         testsutil.GenerateUUID(t),
+			ParentGroup:    parentID,
+			Name:           name,
+			PublicMetadata: map[string]any{"name": name},
+			CreatedAt:      baseTime.Add(time.Duration(i) * time.Microsecond),
+			Status:         clients.EnabledStatus,
 		}
 		items = append(items, client)
 	}
@@ -3407,7 +2799,10 @@ func generateClient(t *testing.T, status clients.Status, repo clients.Repository
 			Secret:   testsutil.GenerateUUID(t),
 		},
 		Tags: namegen.GenerateMultiple(5),
-		Metadata: clients.Metadata{
+		PublicMetadata: clients.Metadata{
+			"name": namegen.Generate(),
+		},
+		PrivateMetadata: clients.Metadata{
 			"name": namegen.Generate(),
 		},
 		Status:    status,
