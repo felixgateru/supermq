@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"strings"
 	"testing"
@@ -735,7 +736,7 @@ func TestListUsers(t *testing.T) {
 				},
 				Users: []users.User{user},
 			},
-			query:    "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&",
+			query:    "metadata=" + url.PathEscape(`{"domain": "example.com"}`),
 			status:   http.StatusOK,
 			authnRes: verifiedSession,
 			err:      nil,
@@ -751,7 +752,7 @@ func TestListUsers(t *testing.T) {
 		{
 			desc:     "list users with duplicate metadata",
 			token:    validToken,
-			query:    "metadata=%7B%22domain%22%3A%20%22example.com%22%7D&metadata=%7B%22domain%22%3A%20%22example.com%22%7D",
+			query:    fmt.Sprintf("metadata=%s&metadata=%s", url.PathEscape(`{"domain": "example.com"}`), url.PathEscape(`{"domain": "example.com"}`)),
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
 			err:      apiutil.ErrInvalidQueryParams,
