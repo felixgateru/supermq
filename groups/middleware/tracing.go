@@ -10,7 +10,7 @@ import (
 	"github.com/absmach/supermq/groups"
 	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/roles"
-	rmTrace "github.com/absmach/supermq/pkg/roles/rolemanager/tracing"
+	rmMW "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
 	"github.com/absmach/supermq/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -21,12 +21,12 @@ var _ groups.Service = (*tracingMiddleware)(nil)
 type tracingMiddleware struct {
 	tracer trace.Tracer
 	svc    groups.Service
-	rmTrace.RoleManagerTracing
+	rmMW.RoleManagerTracing
 }
 
 // NewTracing returns a new groups service with tracing capabilities.
 func NewTracing(svc groups.Service, tracer trace.Tracer) groups.Service {
-	return &tracingMiddleware{tracer, svc, rmTrace.NewRoleManagerTracing("group", svc, tracer)}
+	return &tracingMiddleware{tracer, svc, rmMW.NewTracing("group", svc, tracer)}
 }
 
 // CreateGroup traces the "CreateGroup" operation of the wrapped groups.Service.

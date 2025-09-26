@@ -29,7 +29,7 @@ func NewLogging(svc clients.Service, logger *slog.Logger) clients.Service {
 	return &loggingMiddleware{
 		logger:                       logger,
 		svc:                          svc,
-		RoleManagerLoggingMiddleware: rmMW.NewRoleManagerLoggingMiddleware("clients", svc, logger),
+		RoleManagerLoggingMiddleware: rmMW.NewLogging("clients", svc, logger),
 	}
 }
 

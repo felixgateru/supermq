@@ -79,7 +79,7 @@ func NewAuthorization(entityType string,
 		return nil, err
 	}
 
-	ram, err := rmMW.NewRoleManagerAuthorizationMiddleware(entityType, svc, authz, rolesOpPerm, callout)
+	ram, err := rmMW.NewAuthorization(entityType, svc, authz, rolesOpPerm, callout)
 	if err != nil {
 		return nil, err
 	}

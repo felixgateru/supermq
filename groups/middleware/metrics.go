@@ -25,7 +25,7 @@ type metricsMiddleware struct {
 
 // NewMetrics instruments policies service by tracking request count and latency.
 func NewMetrics(svc groups.Service, counter metrics.Counter, latency metrics.Histogram) groups.Service {
-	rmm := rmMW.NewRoleManagerMetricsMiddleware("group", svc, counter, latency)
+	rmm := rmMW.NewMetrics("group", svc, counter, latency)
 	return &metricsMiddleware{
 		counter:                      counter,
 		latency:                      latency,

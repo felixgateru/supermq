@@ -27,7 +27,7 @@ type loggingMiddleware struct {
 
 // NewLogging adds logging facilities to the core service.
 func NewLogging(svc domains.Service, logger *slog.Logger) domains.Service {
-	rmlm := rmMW.NewRoleManagerLoggingMiddleware("domains", svc, logger)
+	rmlm := rmMW.NewLogging("domains", svc, logger)
 	return &loggingMiddleware{
 		logger:                       logger,
 		svc:                          svc,

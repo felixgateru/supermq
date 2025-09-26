@@ -25,7 +25,7 @@ type loggingMiddleware struct {
 
 // NewLogging adds logging facilities to the groups service.
 func NewLogging(svc groups.Service, logger *slog.Logger) groups.Service {
-	return &loggingMiddleware{logger, svc, rmMW.NewRoleManagerLoggingMiddleware("groups", svc, logger)}
+	return &loggingMiddleware{logger, svc, rmMW.NewLogging("groups", svc, logger)}
 }
 
 // CreateGroup logs the create_group request. It logs the group name, id and token and the time it took to complete the request.

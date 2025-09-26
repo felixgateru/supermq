@@ -30,7 +30,7 @@ func NewMetrics(svc channels.Service, counter metrics.Counter, latency metrics.H
 		counter:                      counter,
 		latency:                      latency,
 		svc:                          svc,
-		RoleManagerMetricsMiddleware: rmMW.NewRoleManagerMetricsMiddleware("channels", svc, counter, latency),
+		RoleManagerMetricsMiddleware: rmMW.NewMetrics("channels", svc, counter, latency),
 	}
 }
 

@@ -1,7 +1,7 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-package tracing
+package middleware
 
 import (
 	"context"
@@ -19,7 +19,8 @@ type RoleManagerTracing struct {
 	tracer  trace.Tracer
 }
 
-func NewRoleManagerTracing(svcName string, svc roles.RoleManager, tracer trace.Tracer) RoleManagerTracing {
+// NewTracing adds tracing facilities to the core service.
+func NewTracing(svcName string, svc roles.RoleManager, tracer trace.Tracer) RoleManagerTracing {
 	return RoleManagerTracing{svcName, svc, tracer}
 }
 

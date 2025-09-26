@@ -27,7 +27,7 @@ type loggingMiddleware struct {
 
 // NewLogging adds logging facilities to the channels service.
 func NewLogging(svc channels.Service, logger *slog.Logger) channels.Service {
-	return &loggingMiddleware{logger, svc, rmMW.NewRoleManagerLoggingMiddleware("channels", svc, logger)}
+	return &loggingMiddleware{logger, svc, rmMW.NewLogging("channels", svc, logger)}
 }
 
 func (lm *loggingMiddleware) CreateChannels(ctx context.Context, session authn.Session, clients ...channels.Channel) (cs []channels.Channel, rps []roles.RoleProvision, err error) {
