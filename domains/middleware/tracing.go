@@ -9,7 +9,7 @@ import (
 	"github.com/absmach/supermq/domains"
 	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/roles"
-	rmMW "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
+	rolemw "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
 	"github.com/absmach/supermq/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -20,12 +20,12 @@ var _ domains.Service = (*tracingMiddleware)(nil)
 type tracingMiddleware struct {
 	tracer trace.Tracer
 	svc    domains.Service
-	rmMW.RoleManagerTracing
+	rolemw.RoleManagerTracing
 }
 
 // NewTracing returns a new domains service with tracing capabilities.
 func NewTracing(svc domains.Service, tracer trace.Tracer) domains.Service {
-	return &tracingMiddleware{tracer, svc, rmMW.NewTracing("domain", svc, tracer)}
+	return &tracingMiddleware{tracer, svc, rolemw.NewTracing("domain", svc, tracer)}
 }
 
 func (tm *tracingMiddleware) CreateDomain(ctx context.Context, session authn.Session, d domains.Domain) (domains.Domain, []roles.RoleProvision, error) {

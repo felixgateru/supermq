@@ -9,7 +9,7 @@ import (
 	"github.com/absmach/supermq/clients"
 	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/roles"
-	rmMW "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
+	rolemw "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
 	"github.com/absmach/supermq/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -20,7 +20,7 @@ var _ clients.Service = (*tracingMiddleware)(nil)
 type tracingMiddleware struct {
 	tracer trace.Tracer
 	svc    clients.Service
-	rmMW.RoleManagerTracing
+	rolemw.RoleManagerTracing
 }
 
 // NewTracing returns a new clients service with tracing capabilities.
@@ -28,7 +28,7 @@ func NewTracing(svc clients.Service, tracer trace.Tracer) clients.Service {
 	return &tracingMiddleware{
 		tracer:             tracer,
 		svc:                svc,
-		RoleManagerTracing: rmMW.NewTracing("group", svc, tracer),
+		RoleManagerTracing: rolemw.NewTracing("group", svc, tracer),
 	}
 }
 

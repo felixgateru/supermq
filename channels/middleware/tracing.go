@@ -10,7 +10,7 @@ import (
 	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/connections"
 	"github.com/absmach/supermq/pkg/roles"
-	rmMW "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
+	rolemw "github.com/absmach/supermq/pkg/roles/rolemanager/middleware"
 	"github.com/absmach/supermq/pkg/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -21,12 +21,12 @@ var _ channels.Service = (*tracingMiddleware)(nil)
 type tracingMiddleware struct {
 	tracer trace.Tracer
 	svc    channels.Service
-	rmMW.RoleManagerTracing
+	rolemw.RoleManagerTracing
 }
 
 // NewTracing returns a new channels service with tracing capabilities.
 func NewTracing(svc channels.Service, tracer trace.Tracer) channels.Service {
-	return &tracingMiddleware{tracer, svc, rmMW.NewTracing("channels", svc, tracer)}
+	return &tracingMiddleware{tracer, svc, rolemw.NewTracing("channels", svc, tracer)}
 }
 
 // CreateChannels traces the "CreateChannels" operation of the wrapped policies.Service.
