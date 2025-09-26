@@ -22,6 +22,7 @@ type RoleManagerMetricsMiddleware struct {
 	latency metrics.Histogram
 }
 
+// NewRoleManagerMetricsMiddleware instruments core service by tracking request count and latency.
 func NewRoleManagerMetricsMiddleware(svcName string, svc roles.RoleManager, counter metrics.Counter, latency metrics.Histogram) RoleManagerMetricsMiddleware {
 	return RoleManagerMetricsMiddleware{
 		svcName: svcName,

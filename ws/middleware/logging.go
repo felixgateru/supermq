@@ -19,8 +19,8 @@ type loggingMiddleware struct {
 	svc    ws.Service
 }
 
-// LoggingMiddleware adds logging facilities to the websocket service.
-func LoggingMiddleware(svc ws.Service, logger *slog.Logger) ws.Service {
+// NewLogging adds logging facilities to the websocket service.
+func NewLogging(svc ws.Service, logger *slog.Logger) ws.Service {
 	return &loggingMiddleware{logger, svc}
 }
 

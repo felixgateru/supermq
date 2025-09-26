@@ -25,8 +25,8 @@ type metricsMiddleware struct {
 	rmMW.RoleManagerMetricsMiddleware
 }
 
-// MetricsMiddleware instruments core service by tracking request count and latency.
-func MetricsMiddleware(svc domains.Service, counter metrics.Counter, latency metrics.Histogram) domains.Service {
+// NewMetrics instruments core service by tracking request count and latency.
+func NewMetrics(svc domains.Service, counter metrics.Counter, latency metrics.Histogram) domains.Service {
 	rmmw := rmMW.NewRoleManagerMetricsMiddleware("domains", svc, counter, latency)
 
 	return &metricsMiddleware{

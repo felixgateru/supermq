@@ -21,8 +21,8 @@ type metricsMiddleware struct {
 	svc     certs.Service
 }
 
-// MetricsMiddleware instruments core service by tracking request count and latency.
-func MetricsMiddleware(svc certs.Service, counter metrics.Counter, latency metrics.Histogram) certs.Service {
+// NewMetrics instruments core service by tracking request count and latency.
+func NewMetrics(svc certs.Service, counter metrics.Counter, latency metrics.Histogram) certs.Service {
 	return &metricsMiddleware{
 		counter: counter,
 		latency: latency,

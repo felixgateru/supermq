@@ -23,8 +23,8 @@ type tracingMiddleware struct {
 	svc    ws.Service
 }
 
-// TracingMiddleware returns a new websocket service with tracing capabilities.
-func TracingMiddleware(tracer trace.Tracer, svc ws.Service) ws.Service {
+// NewTracing returns a new websocket service with tracing capabilities.
+func NewTracing(tracer trace.Tracer, svc ws.Service) ws.Service {
 	return &tracingMiddleware{
 		tracer: tracer,
 		svc:    svc,

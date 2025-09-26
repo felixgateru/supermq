@@ -23,6 +23,7 @@ type RoleManagerLoggingMiddleware struct {
 	logger  *slog.Logger
 }
 
+// NewRoleManagerLoggingMiddleware adds logging facilities to the core service.
 func NewRoleManagerLoggingMiddleware(svcName string, svc roles.RoleManager, logger *slog.Logger) RoleManagerLoggingMiddleware {
 	return RoleManagerLoggingMiddleware{
 		svcName: svcName,

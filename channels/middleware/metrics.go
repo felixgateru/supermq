@@ -24,8 +24,8 @@ type metricsMiddleware struct {
 	rmMW.RoleManagerMetricsMiddleware
 }
 
-// MetricsMiddleware returns a new metrics middleware wrapper.
-func MetricsMiddleware(svc channels.Service, counter metrics.Counter, latency metrics.Histogram) channels.Service {
+// NewMetrics returns a new metrics middleware wrapper.
+func NewMetrics(svc channels.Service, counter metrics.Counter, latency metrics.Histogram) channels.Service {
 	return &metricsMiddleware{
 		counter:                      counter,
 		latency:                      latency,

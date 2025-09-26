@@ -239,10 +239,10 @@ func main() {
 
 func newService(clientsClient grpcClientsV1.ClientsServiceClient, channels grpcChannelsV1.ChannelsServiceClient, authn authn.Authentication, nps messaging.PubSub, logger *slog.Logger, tracer trace.Tracer) ws.Service {
 	svc := ws.New(clientsClient, channels, authn, nps)
-	svc = middleware.TracingMiddleware(tracer, svc)
-	svc = middleware.LoggingMiddleware(svc, logger)
+	svc = middleware.NewTracing(tracer, svc)
+	svc = middleware.NewLogging(svc, logger)
 	counter, latency := prometheus.MakeMetrics("ws_adapter", "api")
-	svc = middleware.MetricsMiddleware(svc, counter, latency)
+	svc = middleware.NewMetrics(svc, counter, latency)
 	return svc
 }
 

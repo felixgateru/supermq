@@ -359,16 +359,16 @@ func newService(ctx context.Context, db *sqlx.DB, dbConfig pgclient.Config, auth
 		return nil, nil, err
 	}
 
-	csvc = middleware.TracingMiddleware(csvc, tracer)
+	csvc = middleware.NewTracing(csvc, tracer)
 
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
-	csvc = middleware.MetricsMiddleware(csvc, counter, latency)
+	csvc = middleware.NewMetrics(csvc, counter, latency)
 
-	csvc, err = middleware.AuthorizationMiddleware(policies.ClientType, csvc, authz, repo, clients.NewOperationPermissionMap(), clients.NewRolesOperationPermissionMap(), clients.NewExternalOperationPermissionMap(), callout)
+	csvc, err = middleware.NewAuthorization(policies.ClientType, csvc, authz, repo, clients.NewOperationPermissionMap(), clients.NewRolesOperationPermissionMap(), clients.NewExternalOperationPermissionMap(), callout)
 	if err != nil {
 		return nil, nil, err
 	}
-	csvc = middleware.LoggingMiddleware(csvc, logger)
+	csvc = middleware.NewLogging(csvc, logger)
 
 	isvc := pClients.New(repo, cache, pe, ps)
 

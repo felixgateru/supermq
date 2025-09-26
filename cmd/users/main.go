@@ -296,12 +296,12 @@ func newService(ctx context.Context, authz smqauthz.Authorization, token grpcTok
 	if err != nil {
 		return nil, err
 	}
-	svc = middleware.AuthorizationMiddleware(svc, authz, c.SelfRegister)
+	svc = middleware.NewAuthorization(svc, authz, c.SelfRegister)
 
-	svc = middleware.TracingMiddleware(svc, tracer)
-	svc = middleware.LoggingMiddleware(svc, logger)
+	svc = middleware.NewTracing(svc, tracer)
+	svc = middleware.NewLogging(svc, logger)
 	counter, latency := prometheus.MakeMetrics(svcName, "api")
-	svc = middleware.MetricsMiddleware(svc, counter, latency)
+	svc = middleware.NewMetrics(svc, counter, latency)
 
 	userID, err := createAdmin(ctx, c, repo, hsr, svc)
 	if err != nil {

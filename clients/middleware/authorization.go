@@ -48,8 +48,8 @@ type authorizationMiddleware struct {
 	rmMW.RoleManagerAuthorizationMiddleware
 }
 
-// AuthorizationMiddleware adds authorization to the clients service.
-func AuthorizationMiddleware(
+// NewAuthorization adds authorization to the clients service.
+func NewAuthorization(
 	entityType string,
 	svc clients.Service,
 	authz smqauthz.Authorization,

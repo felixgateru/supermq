@@ -24,8 +24,8 @@ type tracingMiddleware struct {
 	rmTrace.RoleManagerTracing
 }
 
-// TracingMiddleware returns a new groups service with tracing capabilities.
-func TracingMiddleware(svc groups.Service, tracer trace.Tracer) groups.Service {
+// NewTracing returns a new groups service with tracing capabilities.
+func NewTracing(svc groups.Service, tracer trace.Tracer) groups.Service {
 	return &tracingMiddleware{tracer, svc, rmTrace.NewRoleManagerTracing("group", svc, tracer)}
 }
 
