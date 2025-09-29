@@ -29,11 +29,7 @@ var _ session.Handler = (*handler)(nil)
 
 type ctxKey string
 
-const (
-	protocol                = "http"
-	clientIDCtxKey   ctxKey = "client_id"
-	clientTypeCtxKey ctxKey = "client_type"
-)
+const protocol = "http"
 
 // Log message formats.
 const (

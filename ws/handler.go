@@ -225,7 +225,6 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
 		clientType = policies.ClientType
-		clientID = authnRes.GetId()
 	}
 
 	// Health check topics do not require channel authorization.
@@ -254,7 +253,7 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 func (h *handler) clientAuthenticate(ctx context.Context, token string) (string, error) {
 	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
 	if err != nil {
-		return "", svcerr.ErrAuthentication
+		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if !authnRes.Authenticated {
 		return "", svcerr.ErrAuthentication
