@@ -222,7 +222,7 @@ func TestPublish(t *testing.T) {
 			err:       svcerr.ErrAuthentication,
 		},
 		{
-			desc:       "publish  with key and subtopic successfully",
+			desc:       "publish with key and subtopic successfully",
 			topic:      &subtopic,
 			payload:    &payload,
 			password:   clientKey,
@@ -309,7 +309,7 @@ func TestPublish(t *testing.T) {
 			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
 			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: false},
 			authNErr:   svcerr.ErrAuthentication,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:      "publish with  token and failed to authenticate",
@@ -350,7 +350,7 @@ func TestPublish(t *testing.T) {
 			authNRes:   &grpcClientsV1.AuthnRes{},
 			authNErr:   svcerr.ErrAuthentication,
 			status:     http.StatusUnauthorized,
-			err:        svcerr.ErrAuthentication,
+			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
 			desc:       "publish with encoded credentials",

@@ -191,7 +191,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 }
 
 func (h *handler) authAccess(ctx context.Context, username, password, domainID, chanID string, msgType connections.ConnType, topicType messaging.TopicType) (string, error) {
-	var clientID, clientType string
+	var clientID, clientType, authReq string
 	var err error
 	switch {
 	case strings.HasPrefix(password, apiutil.BearerPrefix):
@@ -203,28 +203,25 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		clientType = policies.UserType
 		clientID = authnSession.UserID
 	case username != "" && password != "":
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
-		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
-		}
+		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
 	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
 		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
+			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
-		if err != nil {
-			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
-		}
+		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
 	default:
-		secret := strings.TrimPrefix(password, apiutil.ClientPrefix)
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
+		authReq = smqauthn.AuthPack(smqauthn.DomainAuth, domainID, strings.TrimPrefix(password, apiutil.ClientPrefix))
+		clientType = policies.ClientType
+	}
+
+	if clientType == policies.ClientType {
+		clientID, err = h.clientAuthenticate(ctx, authReq)
 		if err != nil {
 			return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 		}
-		clientType = policies.ClientType
 	}
 
 	// Health check topics do not require channel authorization.
