@@ -27,8 +27,6 @@ import (
 
 var _ session.Handler = (*handler)(nil)
 
-type ctxKey string
-
 const protocol = "http"
 
 // Log message formats.
@@ -116,14 +114,10 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errMalformedTopic, err)
 	}
 
-	var clientID, clientType string
+	var clientID, clientType, authReq string
 	switch {
 	case s.Username != "" && string(s.Password) != "":
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, s.Username, string(s.Password)))
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
-		}
+		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, s.Username, string(s.Password))
 		clientType = policies.ClientType
 	case strings.HasPrefix(string(s.Password), apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(string(s.Password), apiutil.BasicAuthPrefix))
@@ -131,19 +125,10 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
 		}
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.BasicAuth, username, password))
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, username, *topic, err))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
-		}
+		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
 	case strings.HasPrefix(string(s.Password), "Client"):
-		secret := strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix)
-		clientID, err = h.clientAuthenticate(ctx, smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret))
-		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
-			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
-		}
+		authReq = smqauthn.AuthPack(smqauthn.DomainAuth, domainID, strings.TrimPrefix(string(s.Password), apiutil.ClientPrefix))
 		clientType = policies.ClientType
 	case strings.HasPrefix(string(s.Password), apiutil.BearerPrefix):
 		token := strings.TrimPrefix(string(s.Password), apiutil.BearerPrefix)
@@ -156,6 +141,14 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		clientID = authnSession.UserID
 	default:
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+	}
+
+	if clientType == policies.ClientType {
+		clientID, err = h.clientAuthenticate(ctx, authReq)
+		if err != nil {
+			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthNClient, s.Username, *topic, err))
+			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
+		}
 	}
 
 	// Health topics are not published to message broker.
@@ -216,7 +209,7 @@ func (h *handler) Disconnect(ctx context.Context) error {
 func (h *handler) clientAuthenticate(ctx context.Context, token string) (string, error) {
 	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
 	if err != nil {
-		return "", svcerr.ErrAuthentication
+		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 	if !authnRes.Authenticated {
 		return "", svcerr.ErrAuthentication
