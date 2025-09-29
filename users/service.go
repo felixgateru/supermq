@@ -5,7 +5,6 @@ package users
 
 import (
 	"context"
-	"fmt"
 	"net/mail"
 	"time"
 
@@ -341,7 +340,7 @@ func (svc service) UpdateEmail(ctx context.Context, session authn.Session, userI
 		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, err)
 	}
 	if oldUsr.Email == email {
-		return User{}, fmt.Errorf("current email is same as update requested email")
+		return User{}, errors.Wrap(svcerr.ErrUpdateEntity, svcerr.ErrUpdateSameEmail)
 	}
 
 	usr := User{
