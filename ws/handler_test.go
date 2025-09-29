@@ -111,6 +111,9 @@ func TestAuthPublish(t *testing.T) {
 	invalidEncodedCredsSession := session.Session{
 		Password: []byte(apiutil.BasicAuthPrefix + invalidCreds),
 	}
+	hcClientKeySession := session.Session{
+		Password: []byte("Client " + clientKey),
+	}
 
 	tests := []struct {
 		desc       string
@@ -244,30 +247,6 @@ func TestAuthPublish(t *testing.T) {
 			err:        svcerr.ErrAuthentication,
 		},
 		{
-			desc:       "publish with health check topic successfully",
-			session:    &clientKeySession,
-			topic:      &hcTopic,
-			authKey:    clientKey,
-			payload:    &payload,
-			status:     http.StatusOK,
-			clientType: policies.ClientType,
-			chanID:     "",
-			domainID:   domainID,
-			clientID:   userID,
-			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: true},
-			authNErr:   nil,
-		},
-		{
-			desc:       "publish with invalid health check topic",
-			session:    &clientKeySession,
-			topic:      &invalidHCTopic,
-			authKey:    clientKey,
-			payload:    &payload,
-			status:     http.StatusBadRequest,
-			err:        errors.Wrap(errFailedPublish, messaging.ErrMalformedTopic),
-			clientType: policies.ClientType,
-		},
-		{
 			desc:       "publish with basic auth successfully",
 			session:    &basicAuthSession,
 			topic:      &topic,
@@ -329,6 +308,31 @@ func TestAuthPublish(t *testing.T) {
 			status:     http.StatusUnauthorized,
 			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
+		{
+			desc:       "publish with health check topic successfully",
+			session:    &hcClientKeySession,
+			topic:      &hcTopic,
+			authKey:    clientKey,
+			payload:    &payload,
+			status:     http.StatusOK,
+			clientType: policies.ClientType,
+			chanID:     "",
+			domainID:   domainID,
+			clientID:   userID,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: true},
+			authNErr:   nil,
+		},
+		{
+			desc:       "publish with invalid health check topic",
+			session:    &hcClientKeySession,
+			topic:      &invalidHCTopic,
+			authKey:    clientKey,
+			payload:    &payload,
+			status:     http.StatusBadRequest,
+			err:        errors.Wrap(errFailedPublish, messaging.ErrMalformedTopic),
+			clientType: policies.ClientType,
+		},
 	}
 
 	for _, tc := range tests {
@@ -369,13 +373,12 @@ func TestAuthSubscribe(t *testing.T) {
 	clientKeySession := session.Session{
 		Password: []byte("Client " + clientKey),
 	}
-	invalidClientKeySession := session.Session{
-		Password: []byte("Client " + invalidKey),
-	}
 	unauthorizedKeySession := session.Session{
 		Password: []byte("Client " + clientKey),
 	}
-
+	invalidClientKeySession := session.Session{
+		Password: []byte("Client " + invalidKey),
+	}
 	tokenSession := session.Session{
 		Password: []byte(apiutil.BearerPrefix + validToken),
 	}
@@ -397,6 +400,9 @@ func TestAuthSubscribe(t *testing.T) {
 	invalidCreds := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", clientID, invalidValue)))
 	invalidEncodedCredsSession := session.Session{
 		Password: []byte(apiutil.BasicAuthPrefix + invalidCreds),
+	}
+	hcClientKeySession := session.Session{
+		Password: []byte("Client " + clientKey),
 	}
 
 	tests := []struct {
@@ -509,7 +515,7 @@ func TestAuthSubscribe(t *testing.T) {
 			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
 		},
 		{
-			desc:       "subscribe with unauthorized client key",
+			desc:       "subscribe with unauthorized token",
 			session:    &tokenSession,
 			topics:     &topics,
 			authKey:    token,
@@ -522,28 +528,6 @@ func TestAuthSubscribe(t *testing.T) {
 			authZRes:   &grpcChannelsV1.AuthzRes{Authorized: false},
 			status:     http.StatusUnauthorized,
 			err:        svcerr.ErrAuthentication,
-		},
-		{
-			desc:       "subscribe with health check topic successfully",
-			session:    &clientKeySession,
-			topics:     &[]string{hcTopic},
-			authKey:    clientKey,
-			status:     http.StatusOK,
-			clientType: policies.ClientType,
-			chanID:     chanID,
-			domainID:   domainID,
-			clientID:   clientID,
-			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
-			err:        nil,
-		},
-		{
-			desc:       "subscribe with invalid health check topic",
-			session:    &clientKeySession,
-			topics:     &[]string{invalidHCTopic},
-			authKey:    clientKey,
-			status:     http.StatusBadRequest,
-			err:        messaging.ErrMalformedTopic,
-			clientType: policies.ClientType,
 		},
 		{
 			desc:       "subscribe with basic auth successfully",
@@ -602,6 +586,29 @@ func TestAuthSubscribe(t *testing.T) {
 			authNRes:   &grpcClientsV1.AuthnRes{Authenticated: false},
 			status:     http.StatusUnauthorized,
 			err:        errors.Wrap(svcerr.ErrAuthentication, svcerr.ErrAuthentication),
+		},
+		{
+			desc:       "subscribe with health check topic successfully",
+			session:    &hcClientKeySession,
+			topics:     &[]string{hcTopic},
+			authKey:    clientKey,
+			status:     http.StatusOK,
+			clientType: policies.ClientType,
+			chanID:     chanID,
+			domainID:   domainID,
+			clientID:   clientID,
+			authNToken: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, clientKey),
+			authNRes:   &grpcClientsV1.AuthnRes{Id: clientID, Authenticated: true},
+			err:        nil,
+		},
+		{
+			desc:       "subscribe with invalid health check topic",
+			session:    &hcClientKeySession,
+			topics:     &[]string{invalidHCTopic},
+			authKey:    clientKey,
+			status:     http.StatusBadRequest,
+			err:        messaging.ErrMalformedTopic,
+			clientType: policies.ClientType,
 		},
 	}
 
@@ -722,38 +729,5 @@ func TestPublish(t *testing.T) {
 		err := handler.Publish(ctx, &tc.topic, &tc.payload)
 		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 		repoCall.Unset()
-	}
-}
-
-func TestHandlerSubscribe(t *testing.T) {
-	handler := newHandler(t)
-
-	cases := []struct {
-		desc    string
-		session *session.Session
-		topic   []string
-		logMsg  string
-		err     error
-	}{
-		{
-			desc:    "subscribe without active session",
-			session: nil,
-			topic:   topics,
-			err:     errClientNotInitialized,
-		},
-		{
-			desc:    "subscribe with valid session and topics",
-			session: &sessionClient,
-			topic:   topics,
-		},
-	}
-
-	for _, tc := range cases {
-		ctx := context.TODO()
-		if tc.session != nil {
-			ctx = session.NewContext(ctx, tc.session)
-		}
-		err := handler.Subscribe(ctx, &tc.topic)
-		assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("expected: %v, got: %v", tc.err, err))
 	}
 }

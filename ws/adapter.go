@@ -137,7 +137,6 @@ func (svc *adapterService) authorize(ctx context.Context, username, password, do
 			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
 		clientType = policies.ClientType
-		clientID = authnRes.GetId()
 	}
 
 	// Health check topics do not require channel authorization.
