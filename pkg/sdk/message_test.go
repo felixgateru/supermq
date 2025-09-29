@@ -122,7 +122,7 @@ func TestSendMessage(t *testing.T) {
 			secret:   "",
 			authRes:  &grpcClientsV1.AuthnRes{Authenticated: false, Id: ""},
 			svcErr:   nil,
-			err:      errors.NewSDKErrorWithStatus( svcerr.ErrAuthentication, http.StatusUnauthorized),
+			err:      errors.NewSDKErrorWithStatus(svcerr.ErrAuthentication, http.StatusUnauthorized),
 		},
 		{
 			desc:     "publish message with invalid client key",
