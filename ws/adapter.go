@@ -103,37 +103,30 @@ func (svc *adapterService) Unsubscribe(ctx context.Context, sessionID, domainID,
 // authorize checks if the authKey is authorized to access the channel
 // and returns the clientID or userID if it is.
 func (svc *adapterService) authorize(ctx context.Context, username, password, domainID, chanID string, msgType connections.ConnType, topicType messaging.TopicType) (string, error) {
-	var clientID, clientType, authReq string
+	var token, clientType string
 	var err error
 	switch {
 	case strings.HasPrefix(password, apiutil.BearerPrefix):
-		token := strings.TrimPrefix(password, apiutil.BearerPrefix)
-		authnSession, err := svc.authn.Authenticate(ctx, token)
-		if err != nil {
-			return "", errors.Wrap(svcerr.ErrAuthentication, err)
-		}
+		token = strings.TrimPrefix(password, apiutil.BearerPrefix)
 		clientType = policies.UserType
-		clientID = authnSession.UserID
 	case username != "" && password != "":
-		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
+		token = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
 	case strings.HasPrefix(password, apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(password, apiutil.BasicAuthPrefix))
 		if err != nil {
 			return "", errors.Wrap(svcerr.ErrAuthentication, err)
 		}
-		authReq = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
+		token = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
 	default:
-		authReq = smqauthn.AuthPack(smqauthn.DomainAuth, domainID, strings.TrimPrefix(password, apiutil.ClientPrefix))
+		token = smqauthn.AuthPack(smqauthn.DomainAuth, domainID, strings.TrimPrefix(password, apiutil.ClientPrefix))
 		clientType = policies.ClientType
 	}
 
-	if clientType == policies.ClientType {
-		clientID, err = svc.clientAuthenticate(ctx, authReq)
-		if err != nil {
-			return "", errors.Wrap(svcerr.ErrAuthentication, err)
-		}
+	clientID, err := svc.authenticate(ctx, clientType, token)
+	if err != nil {
+		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 
 	// Health check topics do not require channel authorization.
@@ -159,14 +152,25 @@ func (svc *adapterService) authorize(ctx context.Context, username, password, do
 	return clientID, nil
 }
 
-func (svc *adapterService) clientAuthenticate(ctx context.Context, token string) (string, error) {
-	authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
-	if err != nil {
-		return "", errors.Wrap(svcerr.ErrAuthentication, err)
-	}
-	if !authnRes.Authenticated {
-		return "", svcerr.ErrAuthentication
-	}
+func (svc *adapterService) authenticate(ctx context.Context, authType, token string) (string, error) {
+	switch authType {
+	case policies.UserType:
+		authnSession, err := svc.authn.Authenticate(ctx, token)
+		if err != nil {
+			return "", err
+		}
+		return authnSession.UserID, nil
+	case policies.ClientType:
+		authnRes, err := svc.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
+		if err != nil {
+			return "", err
+		}
+		if !authnRes.Authenticated {
+			return "", svcerr.ErrAuthentication
+		}
 
-	return authnRes.GetId(), nil
+		return authnRes.GetId(), nil
+	default:
+		return "", errInvalidClientType
+	}
 }
