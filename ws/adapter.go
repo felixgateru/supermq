@@ -124,19 +124,19 @@ func (svc *adapterService) authorize(ctx context.Context, username, password, do
 		clientType = policies.ClientType
 	}
 
-	clientID, err := svc.authenticate(ctx, clientType, token)
+	id, err := svc.authenticate(ctx, clientType, token)
 	if err != nil {
 		return "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}
 
 	// Health check topics do not require channel authorization.
 	if topicType == messaging.HealthType {
-		return clientID, nil
+		return id, nil
 	}
 
 	authzReq := &grpcChannelsV1.AuthzReq{
 		ClientType: clientType,
-		ClientId:   clientID,
+		ClientId:   id,
 		Type:       uint32(msgType),
 		ChannelId:  chanID,
 		DomainId:   domainID,
@@ -149,7 +149,7 @@ func (svc *adapterService) authorize(ctx context.Context, username, password, do
 		return "", errors.Wrap(svcerr.ErrAuthorization, err)
 	}
 
-	return clientID, nil
+	return id, nil
 }
 
 func (svc *adapterService) authenticate(ctx context.Context, authType, token string) (string, error) {

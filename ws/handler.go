@@ -213,19 +213,19 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		clientType = policies.ClientType
 	}
 
-	clientID, err := h.authenticate(ctx, clientType, token)
+	id, err := h.authenticate(ctx, clientType, token)
 	if err != nil {
 		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 	}
 
 	// Health check topics do not require channel authorization.
 	if topicType == messaging.HealthType {
-		return clientID, nil
+		return id, nil
 	}
 
 	ar := &grpcChannelsV1.AuthzReq{
 		Type:       uint32(msgType),
-		ClientId:   clientID,
+		ClientId:   id,
 		ClientType: clientType,
 		ChannelId:  chanID,
 		DomainId:   domainID,
@@ -238,7 +238,7 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
-	return clientID, nil
+	return id, nil
 }
 
 func (h *handler) authenticate(ctx context.Context, authType, token string) (string, error) {
