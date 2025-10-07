@@ -31,8 +31,8 @@ const protocol = "http"
 
 // Log message formats.
 const (
-	logInfoPublished   = "published with client_type %s client_id %s to the topic %s"
-	logInfoFailedAuthN = "failed to authenticate client_type %s for topic %s with error %s"
+	publishedInfoFmt = "published with client_type %s client_id %s to the topic %s"
+	failedAuthnFmt   = "failed to authenticate client_type %s for topic %s with error %s"
 )
 
 // Error wrappers for MQTT errors.
@@ -123,7 +123,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 	case strings.HasPrefix(pass, apiutil.BasicAuthPrefix):
 		username, password, err := decodeAuth(strings.TrimPrefix(pass, apiutil.BasicAuthPrefix))
 		if err != nil {
-			h.logger.Warn(fmt.Sprintf(logInfoFailedAuthN, policies.ClientType, *topic, err))
+			h.logger.Warn(fmt.Sprintf(failedAuthnFmt, policies.ClientType, *topic, err))
 			return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
 		}
 		token = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
@@ -140,13 +140,13 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 
 	id, err := h.authenticate(ctx, clientType, token)
 	if err != nil {
-		h.logger.Warn(fmt.Sprintf(logInfoFailedAuthN, clientType, *topic, err))
+		h.logger.Warn(fmt.Sprintf(failedAuthnFmt, clientType, *topic, err))
 		return mgate.NewHTTPProxyError(http.StatusUnauthorized, err)
 	}
 
 	// Health topics are not published to message broker.
 	if topicType == messaging.HealthType {
-		h.logger.Info(fmt.Sprintf(logInfoPublished, clientType, id, *topic))
+		h.logger.Info(fmt.Sprintf(publishedInfoFmt, clientType, id, *topic))
 		return nil
 	}
 
@@ -179,7 +179,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return errors.Wrap(errFailedPublishToMsgBroker, err)
 	}
 
-	h.logger.Info(fmt.Sprintf(logInfoPublished, clientType, id, *topic))
+	h.logger.Info(fmt.Sprintf(publishedInfoFmt, clientType, id, *topic))
 
 	return nil
 }
