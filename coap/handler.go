@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	mgate "github.com/absmach/mgate/pkg/http"
+	mgate "github.com/absmach/mgate/pkg/coap"
 	"github.com/absmach/mgate/pkg/session"
 	grpcChannelsV1 "github.com/absmach/supermq/api/grpc/channels/v1"
 	grpcClientsV1 "github.com/absmach/supermq/api/grpc/clients/v1"
@@ -77,7 +77,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 
 	domainID, channelID, _, topicType, err := h.parser.ParsePublishTopic(ctx, *topic, true)
 	if err != nil {
-		return mgate.NewHTTPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
+		return mgate.NewCOAPProxyError(http.StatusBadRequest, errors.Wrap(errFailedPublish, err))
 	}
 
 	clientID, err := h.authAccess(ctx, string(s.Password), domainID, channelID, connections.Publish, topicType)
@@ -157,10 +157,10 @@ func (h *handler) Disconnect(ctx context.Context) error {
 func (h *handler) authAccess(ctx context.Context, secret, domainID, chanID string, msgType connections.ConnType, topicType messaging.TopicType) (string, error) {
 	authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: smqauthn.AuthPack(smqauthn.DomainAuth, domainID, secret)})
 	if err != nil {
-		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		return "", mgate.NewCOAPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 	if !authnRes.Authenticated {
-		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		return "", mgate.NewCOAPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
 	if topicType == messaging.HealthType {
@@ -176,10 +176,10 @@ func (h *handler) authAccess(ctx context.Context, secret, domainID, chanID strin
 	}
 	res, err := h.channels.Authorize(ctx, ar)
 	if err != nil {
-		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
+		return "", mgate.NewCOAPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 	}
 	if !res.GetAuthorized() {
-		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
+		return "", mgate.NewCOAPProxyError(http.StatusUnauthorized, svcerr.ErrAuthentication)
 	}
 
 	return authnRes.GetId(), nil
