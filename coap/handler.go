@@ -26,13 +26,11 @@ var _ session.Handler = (*handler)(nil)
 
 // Log message formats.
 const (
-	LogInfoSubscribed   = "subscribed with client_id %s to topics %s"
-	LogInfoConnected    = "connected with client_id %s"
-	LogInfoDisconnected = "disconnected client_id %s and username %s"
-	LogInfoPublished    = "published with client_id %s to the topic %s"
+	subscribedInfoFmt = "subscribed with client_id %s to topics %s"
+	publishedInfoFmt  = "published with client_id %s to the topic %s"
 )
 
-// Error wrappers for MQTT errors.
+// Error wrappers for COAP errors.
 var (
 	errClientNotInitialized = errors.New("client is not initialized")
 	errMissingTopicPub      = errors.New("failed to publish due to missing topic")
@@ -40,7 +38,6 @@ var (
 	errFailedPublish        = errors.New("failed to publish")
 )
 
-// Event implements events.Event interface.
 type handler struct {
 	clients  grpcClientsV1.ClientsServiceClient
 	channels grpcChannelsV1.ChannelsServiceClient
@@ -90,7 +87,7 @@ func (h *handler) AuthPublish(ctx context.Context, topic *string, payload *[]byt
 }
 
 // AuthSubscribe is called on device publish,
-// prior forwarding to the MQTT broker.
+// prior forwarding to the COAP broker.
 func (h *handler) AuthSubscribe(ctx context.Context, topics *[]string) error {
 	s, ok := session.FromContext(ctx)
 	if !ok {
@@ -129,7 +126,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		return nil
 	}
 
-	h.logger.Info(fmt.Sprintf(LogInfoPublished, s.Username, *topic))
+	h.logger.Info(fmt.Sprintf(publishedInfoFmt, s.Username, *topic))
 
 	return nil
 }
@@ -140,7 +137,7 @@ func (h *handler) Subscribe(ctx context.Context, topics *[]string) error {
 	if !ok {
 		return errClientNotInitialized
 	}
-	h.logger.Info(fmt.Sprintf(LogInfoSubscribed, s.Username, strings.Join(*topics, ",")))
+	h.logger.Info(fmt.Sprintf(subscribedInfoFmt, s.Username, strings.Join(*topics, ",")))
 	return nil
 }
 
