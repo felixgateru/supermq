@@ -684,12 +684,25 @@ func TestListUsers(t *testing.T) {
 			err:      nil,
 		},
 		{
-			desc:     "list users with duplicate permissions",
-			token:    validToken,
-			query:    "permission=view&permission=view",
-			status:   http.StatusBadRequest,
+			desc:  "list users with multiple tags and OR operator",
+			token: validToken,
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Order:  api.DefOrder,
+				Dir:    api.DefDir,
+				Tags:   users.TagsQuery{Elements: []string{"tag1", "tag2", "tag3"}, Operator: users.OrOp},
+			},
+			listUsersResponse: users.UsersPage{
+				Page: users.Page{
+					Total: 1,
+				},
+				Users: []users.User{user},
+			},
+			query:    "tags=tag1,tag2,tag3",
+			status:   http.StatusOK,
 			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
+			err:      nil,
 		},
 		{
 			desc:  "list users with multiple tags and AND operator",
@@ -747,7 +760,7 @@ func TestListUsers(t *testing.T) {
 			query:    "metadata=invalid",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
+			err:      apiutil.ErrValidation,
 		},
 		{
 			desc:     "list users with duplicate metadata",
@@ -775,7 +788,7 @@ func TestListUsers(t *testing.T) {
 				Users: []users.User{user},
 			},
 			status:   http.StatusOK,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: validID, Verified: true},
+			authnRes: verifiedSession,
 			err:      nil,
 		},
 		{
@@ -783,7 +796,7 @@ func TestListUsers(t *testing.T) {
 			token:    validToken,
 			query:    "email=1&email=2",
 			status:   http.StatusBadRequest,
-			authnRes: smqauthn.Session{UserID: validID, DomainID: validID, Verified: true},
+			authnRes: verifiedSession,
 			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
