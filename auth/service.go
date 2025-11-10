@@ -15,6 +15,7 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/policies"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 const (
@@ -85,7 +86,7 @@ type Authn interface {
 	Identify(ctx context.Context, token string) (Key, error)
 
 	// RetrieveJWKS retrieves a JWKs to validate issued tokens.
-	RetrieveJWKS() (JWKS, error)
+	RetrieveJWKS() jwk.Set
 }
 
 // Service specifies an API that must be fulfilled by the domain service
@@ -201,7 +202,7 @@ func (svc service) Identify(ctx context.Context, token string) (Key, error) {
 	}
 }
 
-func (svc service) RetrieveJWKS() (JWKS, error) {
+func (svc service) RetrieveJWKS() jwk.Set {
 	return svc.tokenizer.RetrieveJWKS()
 }
 
