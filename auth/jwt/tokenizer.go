@@ -6,6 +6,7 @@ package jwt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/pkg/errors"
@@ -89,6 +90,7 @@ func (tok *tokenizer) Parse(token string) (auth.Key, error) {
 	if err != nil {
 		return auth.Key{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
+	fmt.Printf("Parsed token: %+v\n", tkn)
 
 	key, err := ToKey(tkn)
 	if err != nil {
@@ -140,10 +142,12 @@ func ToKey(tkn jwt.Token) (auth.Key, error) {
 	}
 	kType, ok := tType.(float64)
 	if !ok {
+		fmt.Println("Error thrown here 2")
 		return auth.Key{}, errInvalidType
 	}
 	kt := auth.KeyType(kType)
 	if !kt.Validate() {
+		fmt.Println("Error thrown here 3")
 		return auth.Key{}, errInvalidType
 	}
 
