@@ -61,6 +61,9 @@ packages:
       Tokenizer:
       PATS:
       PATSRepository:
+      TokensRepository:
+      TokensCache:
+      Tokenizer:
       Service:
   github.com/absmach/supermq/channels:
     interfaces:
