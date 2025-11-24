@@ -95,7 +95,7 @@ type config struct {
 	SpicedbPreSharedKey        string        `env:"SMQ_SPICEDB_PRE_SHARED_KEY"            envDefault:"12345678"`
 	PasswordResetURLPrefix     string        `env:"SMQ_PASSWORD_RESET_URL_PREFIX"         envDefault:"http://localhost/password/reset"`
 	PasswordResetEmailTemplate string        `env:"SMQ_PASSWORD_RESET_EMAIL_TEMPLATE"     envDefault:"reset-password-email.tmpl"`
-	EmailTemplate              string        `env:"SM_EMAIL_TEMPLATE"                     envDefault:"email.tmpl"`
+	EmailTemplate              string        `env:"SMQ_EMAIL_TEMPLATE"                    envDefault:"email.tmpl"`
 	VerificationURLPrefix      string        `env:"SMQ_VERIFICATION_URL_PREFIX"           envDefault:"http://localhost/verify-email"`
 	VerificationEmailTemplate  string        `env:"SMQ_VERIFICATION_EMAIL_TEMPLATE"       envDefault:"verification-email.tmpl"`
 	PassRegex                  *regexp.Regexp
