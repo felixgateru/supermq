@@ -154,7 +154,10 @@ func main() {
 		return
 	}
 
-	keyManager, err := keymanager.NewKeyManager(ctx, keyManagerCfg, ulid.New())
+	// Create public key repository
+	publicKeyRepo := apostgres.NewPublicKeyRepo(db)
+
+	keyManager, err := keymanager.NewKeyManager(ctx, keyManagerCfg, ulid.New(), publicKeyRepo)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to init key manager : %s\n", err.Error()))
 		exitCode = 1

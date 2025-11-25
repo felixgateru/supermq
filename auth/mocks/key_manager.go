@@ -9,6 +9,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	mock "github.com/stretchr/testify/mock"
@@ -150,16 +152,16 @@ func (_c *KeyManager_PublicJWKS_Call) RunAndReturn(run func() []jwk.Key) *KeyMan
 }
 
 // Rotate provides a mock function for the type KeyManager
-func (_mock *KeyManager) Rotate() error {
-	ret := _mock.Called()
+func (_mock *KeyManager) Rotate(ctx context.Context) error {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Rotate")
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func() error); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -172,13 +174,20 @@ type KeyManager_Rotate_Call struct {
 }
 
 // Rotate is a helper method to define mock.On call
-func (_e *KeyManager_Expecter) Rotate() *KeyManager_Rotate_Call {
-	return &KeyManager_Rotate_Call{Call: _e.mock.On("Rotate")}
+//   - ctx context.Context
+func (_e *KeyManager_Expecter) Rotate(ctx interface{}) *KeyManager_Rotate_Call {
+	return &KeyManager_Rotate_Call{Call: _e.mock.On("Rotate", ctx)}
 }
 
-func (_c *KeyManager_Rotate_Call) Run(run func()) *KeyManager_Rotate_Call {
+func (_c *KeyManager_Rotate_Call) Run(run func(ctx context.Context)) *KeyManager_Rotate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -188,7 +197,7 @@ func (_c *KeyManager_Rotate_Call) Return(err error) *KeyManager_Rotate_Call {
 	return _c
 }
 
-func (_c *KeyManager_Rotate_Call) RunAndReturn(run func() error) *KeyManager_Rotate_Call {
+func (_c *KeyManager_Rotate_Call) RunAndReturn(run func(ctx context.Context) error) *KeyManager_Rotate_Call {
 	_c.Call.Return(run)
 	return _c
 }
