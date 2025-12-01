@@ -128,7 +128,7 @@ func (h *handler) Publish(ctx context.Context, topic *string, payload *[]byte) e
 		}
 		token = smqauthn.AuthPack(smqauthn.BasicAuth, username, password)
 		clientType = policies.ClientType
-	case strings.HasPrefix(pass, "Client"):
+	case strings.HasPrefix(pass, apiutil.ClientPrefix):
 		token = smqauthn.AuthPack(smqauthn.DomainAuth, domainID, strings.TrimPrefix(pass, apiutil.ClientPrefix))
 		clientType = policies.ClientType
 	case strings.HasPrefix(pass, apiutil.BearerPrefix):
