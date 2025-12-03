@@ -2414,7 +2414,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 			pm: channels.Page{
 				Offset: 0,
 				Limit:  nChannels,
-				Tag:    directChannels[0].Tags[0],
+				Tags:   channels.TagsQuery{Elements: []string{directChannels[0].Tags[0]}, Operator: channels.OrOp},
 				Status: channels.AllStatus,
 				Order:  defOrder,
 				Dir:    ascDir,
@@ -2435,7 +2435,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 			pm: channels.Page{
 				Offset: 0,
 				Limit:  nChannels,
-				Tag:    namegen.Generate(),
+				Tags:   channels.TagsQuery{Elements: []string{namegen.Generate()}, Operator: channels.OrOp},
 				Status: channels.AllStatus,
 				Order:  defOrder,
 				Dir:    ascDir,
@@ -2458,7 +2458,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:    nChannels,
 				Metadata: directChannels[0].Metadata,
 				Name:     directChannels[0].Name,
-				Tag:      directChannels[0].Tags[0],
+				Tags:     channels.TagsQuery{Elements: []string{directChannels[0].Tags[0]}, Operator: channels.OrOp},
 				Status:   channels.AllStatus,
 			},
 			response: channels.ChannelsPage{

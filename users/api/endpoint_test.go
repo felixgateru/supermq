@@ -653,7 +653,7 @@ func TestListUsers(t *testing.T) {
 			query:    "status=invalid",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
-			err:      apiutil.ErrInvalidQueryParams,
+			err:      svcerr.ErrInvalidStatus,
 		},
 		{
 			desc:     "list users with duplicate status",
@@ -761,7 +761,7 @@ func TestListUsers(t *testing.T) {
 			query:    "metadata=invalid",
 			status:   http.StatusBadRequest,
 			authnRes: verifiedSession,
-			err:      apiutil.ErrValidation,
+			err:      apiutil.ErrInvalidQueryParams,
 		},
 		{
 			desc:     "list users with duplicate metadata",
