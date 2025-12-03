@@ -53,10 +53,11 @@ func TestUsersSave(t *testing.T) {
 	email := first_name + "@example.com"
 
 	externalUser := users.User{
-		ID:             testsutil.GenerateUUID(t),
-		FirstName:      namesgen.Generate(),
-		LastName:       namesgen.Generate(),
-		PublicMetadata: users.Metadata{},
+		ID:              testsutil.GenerateUUID(t),
+		FirstName:       namesgen.Generate(),
+		LastName:        namesgen.Generate(),
+		PublicMetadata:  users.Metadata{},
+		PrivateMetadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -340,10 +341,11 @@ func TestRetrieveByID(t *testing.T) {
 	require.Nil(t, err, fmt.Sprintf("failed to save users %s", user.ID))
 
 	externalUser := users.User{
-		ID:             testsutil.GenerateUUID(t),
-		FirstName:      namesgen.Generate(),
-		LastName:       namesgen.Generate(),
-		PublicMetadata: users.Metadata{},
+		ID:              testsutil.GenerateUUID(t),
+		FirstName:       namesgen.Generate(),
+		LastName:        namesgen.Generate(),
+		PublicMetadata:  users.Metadata{},
+		PrivateMetadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -1523,7 +1525,7 @@ func TestUpdate(t *testing.T) {
 			update: "public_metadata",
 			userID: user1.ID,
 			userReq: users.UserReq{
-				Metadata: &malformedMetadata,
+				PublicMetadata: &malformedMetadata,
 			},
 			err: repoerr.ErrMalformedEntity,
 		},
@@ -1532,10 +1534,10 @@ func TestUpdate(t *testing.T) {
 			update: "metadata",
 			userID: user3.ID,
 			userReq: users.UserReq{
-				Metadata: &users.Metadata{},
+				PublicMetadata: &users.Metadata{},
 			},
 			userRes: users.User{
-				Metadata: users.Metadata{},
+				PublicMetadata: users.Metadata{},
 			},
 			err: nil,
 		},
@@ -1544,7 +1546,7 @@ func TestUpdate(t *testing.T) {
 			update: "metadata",
 			userID: user2.ID,
 			userReq: users.UserReq{
-				Metadata: &updatedMetadata,
+				PublicMetadata: &updatedMetadata,
 			},
 			err: repoerr.ErrNotFound,
 		},

@@ -997,7 +997,7 @@ func TestRetrieveByIDsWithRoles(t *testing.T) {
 				Secret:   testsutil.GenerateUUID(t),
 			},
 			Tags: namegen.GenerateMultiple(5),
-			Metadata: clients.Metadata{
+			PublicMetadata: clients.Metadata{
 				"department": namegen.Generate(),
 			},
 			Status:    clients.EnabledStatus,
@@ -1178,7 +1178,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 50,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1195,7 +1195,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  10,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1213,7 +1213,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1231,7 +1231,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  50,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1249,7 +1249,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  50,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1267,7 +1267,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  50,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1286,7 +1286,7 @@ func TestRetrieveAll(t *testing.T) {
 				Metadata: expectedClients[0].PublicMetadata,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1307,7 +1307,7 @@ func TestRetrieveAll(t *testing.T) {
 				},
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1328,7 +1328,7 @@ func TestRetrieveAll(t *testing.T) {
 				},
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1348,7 +1348,7 @@ func TestRetrieveAll(t *testing.T) {
 				Name:   expectedClients[0].Name,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1384,7 +1384,7 @@ func TestRetrieveAll(t *testing.T) {
 				Identity: expectedClients[0].Credentials.Identity,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1420,7 +1420,7 @@ func TestRetrieveAll(t *testing.T) {
 				Domain: expectedClients[0].Domain,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1439,7 +1439,7 @@ func TestRetrieveAll(t *testing.T) {
 				Domain: testsutil.GenerateUUID(t),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1457,7 +1457,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  10,
 				Status: clients.EnabledStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1475,7 +1475,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Status: clients.DisabledStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1493,7 +1493,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  nClients,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1528,7 +1528,7 @@ func TestRetrieveAll(t *testing.T) {
 				Tag:    expectedClients[0].Tags[0],
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1547,7 +1547,7 @@ func TestRetrieveAll(t *testing.T) {
 				Tag:    namegen.Generate(),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1570,7 +1570,7 @@ func TestRetrieveAll(t *testing.T) {
 				Domain:   expectedClients[0].Domain,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1589,7 +1589,7 @@ func TestRetrieveAll(t *testing.T) {
 				ID:     expectedClients[0].ID,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1829,7 +1829,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Secret:   testsutil.GenerateUUID(t),
 			},
 			Tags: namegen.GenerateMultiple(5),
-			Metadata: clients.Metadata{
+			PublicMetadata: clients.Metadata{
 				"department": namegen.Generate(),
 			},
 			Status:    clients.EnabledStatus,
@@ -2036,7 +2036,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset:   0,
 				Limit:    nClients,
-				Metadata: directClients[0].Metadata,
+				Metadata: directClients[0].PublicMetadata,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
 				Dir:      ascDir,
@@ -2230,7 +2230,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset:   0,
 				Limit:    nClients,
-				Metadata: directClients[0].Metadata,
+				Metadata: directClients[0].PublicMetadata,
 				Name:     directClients[0].Name,
 				Tag:      directClients[0].Tags[0],
 				Identity: directClients[0].Credentials.Identity,
