@@ -813,6 +813,14 @@ func TestListChannels(t *testing.T) {
 			desc:     "list channels with client ID",
 			domainID: validID,
 			token:    validToken,
+			pageMeta: channels.Page{
+				Offset:  0,
+				Limit:   10,
+				Order:   api.DefOrder,
+				Dir:     api.DefDir,
+				Actions: []string{},
+				Client:  validID,
+			},
 			listChannelsResponse: channels.ChannelsPage{
 				Page: channels.Page{
 					Total: 1,
@@ -827,6 +835,15 @@ func TestListChannels(t *testing.T) {
 			desc:     "list channels with client ID and connection type publish",
 			domainID: validID,
 			token:    validToken,
+			pageMeta: channels.Page{
+				Offset:         0,
+				Limit:          10,
+				Order:          api.DefOrder,
+				Dir:            api.DefDir,
+				Actions:        []string{},
+				Client:         validID,
+				ConnectionType: "publish",
+			},
 			listChannelsResponse: channels.ChannelsPage{
 				Page: channels.Page{
 					Total: 1,
@@ -841,6 +858,15 @@ func TestListChannels(t *testing.T) {
 			desc:     "list channels with client ID and connection type subscribe",
 			domainID: validID,
 			token:    validToken,
+			pageMeta: channels.Page{
+				Offset:         0,
+				Limit:          10,
+				Order:          api.DefOrder,
+				Dir:            api.DefDir,
+				Actions:        []string{},
+				Client:         validID,
+				ConnectionType: "subscribe",
+			},
 			listChannelsResponse: channels.ChannelsPage{
 				Page: channels.Page{
 					Total: 1,
