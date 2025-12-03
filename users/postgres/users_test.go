@@ -50,10 +50,11 @@ func TestUsersSave(t *testing.T) {
 	email := first_name + "@example.com"
 
 	externalUser := users.User{
-		ID:             testsutil.GenerateUUID(t),
-		FirstName:      namesgen.Generate(),
-		LastName:       namesgen.Generate(),
-		PublicMetadata: users.Metadata{},
+		ID:              testsutil.GenerateUUID(t),
+		FirstName:       namesgen.Generate(),
+		LastName:        namesgen.Generate(),
+		PublicMetadata:  users.Metadata{},
+		PrivateMetadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -336,10 +337,11 @@ func TestRetrieveByID(t *testing.T) {
 	require.Nil(t, err, fmt.Sprintf("failed to save users %s", user.ID))
 
 	externalUser := users.User{
-		ID:             testsutil.GenerateUUID(t),
-		FirstName:      namesgen.Generate(),
-		LastName:       namesgen.Generate(),
-		PublicMetadata: users.Metadata{},
+		ID:              testsutil.GenerateUUID(t),
+		FirstName:       namesgen.Generate(),
+		LastName:        namesgen.Generate(),
+		PublicMetadata:  users.Metadata{},
+		PrivateMetadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
