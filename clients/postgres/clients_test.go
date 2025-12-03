@@ -1963,7 +1963,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  nClients,
-				Tag:    directClients[0].Tags[0],
+				Tags:   clients.TagsQuery{Elements: []string{directClients[0].Tags[0]}, Operator: clients.OrOp},
 				Status: clients.AllStatus,
 				Order:  defOrder,
 				Dir:    defDir,
@@ -1984,7 +1984,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  nClients,
-				Tag:    namegen.Generate(),
+				Tags:   clients.TagsQuery{Elements: []string{namegen.Generate()}, Operator: clients.OrOp},
 				Status: clients.AllStatus,
 				Order:  defOrder,
 				Dir:    defDir,
@@ -2007,7 +2007,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:    nClients,
 				Metadata: directClients[0].Metadata,
 				Name:     directClients[0].Name,
-				Tag:      directClients[0].Tags[0],
+				Tags:     clients.TagsQuery{Elements: []string{directClients[0].Tags[0]}, Operator: clients.OrOp},
 				Identity: directClients[0].Credentials.Identity,
 				Status:   clients.AllStatus,
 			},
