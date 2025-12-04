@@ -68,12 +68,12 @@ func (ms *metricsMiddleware) Identify(ctx context.Context, token string) (auth.K
 	return ms.svc.Identify(ctx, token)
 }
 
-func (ms *metricsMiddleware) RetrieveJWKS() []jwk.Key {
+func (ms *metricsMiddleware) RetrieveJWKS(ctx context.Context) []jwk.Key {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "retrieve_jwks").Add(1)
 		ms.latency.With("method", "retrieve_jwks").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return ms.svc.RetrieveJWKS()
+	return ms.svc.RetrieveJWKS(ctx)
 }
 
 func (ms *metricsMiddleware) Authorize(ctx context.Context, pr policies.Policy) error {

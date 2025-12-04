@@ -62,8 +62,8 @@ func (tm *tracingMiddleware) Identify(ctx context.Context, token string) (auth.K
 	return tm.svc.Identify(ctx, token)
 }
 
-func (tm *tracingMiddleware) RetrieveJWKS() []jwk.Key {
-	return tm.svc.RetrieveJWKS()
+func (tm *tracingMiddleware) RetrieveJWKS(ctx context.Context) []jwk.Key {
+	return tm.svc.RetrieveJWKS(ctx)
 }
 
 func (tm *tracingMiddleware) Authorize(ctx context.Context, pr policies.Policy) error {

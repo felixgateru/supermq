@@ -34,9 +34,9 @@ type PublicKey struct {
 type KeyManager interface {
 	SignJWT(token jwt.Token) ([]byte, error)
 
-	ParseJWT(token string) (jwt.Token, error)
+	ParseJWT(ctx context.Context, token string) (jwt.Token, error)
 
-	PublicJWKS() []jwk.Key
+	PublicJWKS(ctx context.Context) []jwk.Key
 
 	Rotate(ctx context.Context) error
 }
@@ -46,14 +46,11 @@ type PublicKeyRepository interface {
 	// Save stores a public key in the database.
 	Save(ctx context.Context, key PublicKey) error
 
-	// Retrieve gets a public key by its ID.
-	Retrieve(ctx context.Context, kid string) (PublicKey, error)
-
-	// RetrieveActive gets all active public keys.
-	RetrieveActive(ctx context.Context) ([]PublicKey, error)
+	// RetrieveAll gets all active public keys.
+	RetrieveAll(ctx context.Context) ([]PublicKey, error)
 
 	// Retire marks a public key as retired.
-	Retire(ctx context.Context, kid string) error
+	Retire(ctx context.Context, kid string, retiredAt time.Time) error
 
 	// PurgeExpired removes all expired public keys from the database.
 	PurgeExpired(ctx context.Context, expiredBefore time.Time) error

@@ -101,14 +101,14 @@ func (lm *loggingMiddleware) Identify(ctx context.Context, token string) (id aut
 	return lm.svc.Identify(ctx, token)
 }
 
-func (lm *loggingMiddleware) RetrieveJWKS() (jwks []jwk.Key) {
+func (lm *loggingMiddleware) RetrieveJWKS(ctx context.Context) (jwks []jwk.Key) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 		}
 		lm.logger.Info("Retrieve JWKS completed successfully", args...)
 	}(time.Now())
-	return lm.svc.RetrieveJWKS()
+	return lm.svc.RetrieveJWKS(ctx)
 }
 
 func (lm *loggingMiddleware) Authorize(ctx context.Context, pr policies.Policy) (err error) {

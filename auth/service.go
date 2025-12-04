@@ -86,7 +86,7 @@ type Authn interface {
 	Identify(ctx context.Context, token string) (Key, error)
 
 	// RetrieveJWKS retrieves a JWKs to validate issued tokens.
-	RetrieveJWKS() []jwk.Key
+	RetrieveJWKS(ctx context.Context) []jwk.Key
 }
 
 // Service specifies an API that must be fulfilled by the domain service
@@ -149,7 +149,7 @@ func (svc service) Issue(ctx context.Context, token string, key Key) (Token, err
 }
 
 func (svc service) Revoke(ctx context.Context, token, id string) error {
-	issuerID, _, err := svc.authenticate(token)
+	issuerID, _, err := svc.authenticate(ctx, token)
 	if err != nil {
 		return errors.Wrap(errRevoke, err)
 	}
@@ -160,7 +160,7 @@ func (svc service) Revoke(ctx context.Context, token, id string) error {
 }
 
 func (svc service) RetrieveKey(ctx context.Context, token, id string) (Key, error) {
-	issuerID, _, err := svc.authenticate(token)
+	issuerID, _, err := svc.authenticate(ctx, token)
 	if err != nil {
 		return Key{}, errors.Wrap(errRetrieve, err)
 	}
@@ -173,7 +173,7 @@ func (svc service) RetrieveKey(ctx context.Context, token, id string) (Key, erro
 }
 
 func (svc service) Identify(ctx context.Context, token string) (Key, error) {
-	key, err := svc.tokenizer.Parse(token)
+	key, err := svc.tokenizer.Parse(ctx, token)
 	if errors.Contains(err, ErrExpiry) {
 		err = svc.keys.Remove(ctx, key.Issuer, key.ID)
 		return Key{}, errors.Wrap(svcerr.ErrAuthentication, errors.Wrap(ErrKeyExpired, err))
@@ -202,8 +202,8 @@ func (svc service) Identify(ctx context.Context, token string) (Key, error) {
 	}
 }
 
-func (svc service) RetrieveJWKS() []jwk.Key {
-	return svc.tokenizer.RetrieveJWKS()
+func (svc service) RetrieveJWKS(ctx context.Context) []jwk.Key {
+	return svc.tokenizer.RetrieveJWKS(ctx)
 }
 
 func (svc service) Authorize(ctx context.Context, pr policies.Policy) error {
@@ -333,7 +333,7 @@ func (svc service) invitationKey(ctx context.Context, key Key) (Token, error) {
 }
 
 func (svc service) refreshKey(ctx context.Context, token string, key Key) (Token, error) {
-	k, err := svc.tokenizer.Parse(token)
+	k, err := svc.tokenizer.Parse(ctx, token)
 	if err != nil {
 		return Token{}, errors.Wrap(errRetrieve, err)
 	}
@@ -410,7 +410,7 @@ func (svc service) getUserRole(ctx context.Context, userID string) (role Role) {
 }
 
 func (svc service) userKey(ctx context.Context, token string, key Key) (Token, error) {
-	id, sub, err := svc.authenticate(token)
+	id, sub, err := svc.authenticate(ctx, token)
 	if err != nil {
 		return Token{}, errors.Wrap(errIssueUser, err)
 	}
@@ -441,8 +441,8 @@ func (svc service) userKey(ctx context.Context, token string, key Key) (Token, e
 	return Token{AccessToken: tkn}, nil
 }
 
-func (svc service) authenticate(token string) (string, string, error) {
-	key, err := svc.tokenizer.Parse(token)
+func (svc service) authenticate(ctx context.Context, token string) (string, string, error) {
+	key, err := svc.tokenizer.Parse(ctx, token)
 	if err != nil {
 		return "", "", errors.Wrap(svcerr.ErrAuthentication, err)
 	}

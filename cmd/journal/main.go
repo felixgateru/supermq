@@ -48,7 +48,6 @@ const (
 	envPrefixDomains = "SMQ_DOMAINS_GRPC_"
 	defDB            = "journal"
 	defSvcHTTPPort   = "9021"
-	jwksURL          = "http://auth:9001/keys/.well-known/jwks.json"
 )
 
 type config struct {
@@ -58,6 +57,7 @@ type config struct {
 	SendTelemetry bool    `env:"SMQ_SEND_TELEMETRY"      envDefault:"true"`
 	InstanceID    string  `env:"SMQ_JOURNAL_INSTANCE_ID" envDefault:""`
 	TraceRatio    float64 `env:"SMQ_JAEGER_TRACE_RATIO"  envDefault:"1.0"`
+	JWKSURL       string  `env:"SMQ_AUTH_JWKS_URL"       envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 }
 
 func main() {
@@ -106,8 +106,8 @@ func main() {
 		return
 	}
 
-	authn := jwksAuthn.NewAuthentication(jwksURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + jwksURL)
+	authn := jwksAuthn.NewAuthentication(cfg.JWKSURL)
+	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
 
 	domsGrpcCfg := grpcclient.Config{}

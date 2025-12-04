@@ -75,7 +75,6 @@ const (
 	defDB                 = "groups"
 	defSvcHTTPPort        = "9004"
 	defSvcgRPCPort        = "7004"
-	jwksURL               = "http://auth:9001/keys/.well-known/jwks.json"
 )
 
 type config struct {
@@ -90,6 +89,7 @@ type config struct {
 	SpicedbPort         string  `env:"SMQ_SPICEDB_PORT"              envDefault:"50051"`
 	SpicedbSchemaFile   string  `env:"SMQ_SPICEDB_SCHEMA_FILE"       envDefault:"schema.zed"`
 	SpicedbPreSharedKey string  `env:"SMQ_SPICEDB_PRE_SHARED_KEY"    envDefault:"12345678"`
+	JWKSURL             string  `env:"SMQ_AUTH_JWKS_URL"             envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 	PermissionsFile     string  `env:"SMQ_PERMISSIONS_FILE"          envDefault:"permission.yaml"`
 }
 
@@ -158,8 +158,8 @@ func main() {
 		return
 	}
 
-	authn := jwksAuthn.NewAuthentication(jwksURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + jwksURL)
+	authn := jwksAuthn.NewAuthentication(cfg.JWKSURL)
+	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
 
 	domsGrpcCfg := grpcclient.Config{}

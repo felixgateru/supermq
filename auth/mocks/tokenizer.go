@@ -9,6 +9,8 @@
 package mocks
 
 import (
+	"context"
+
 	"github.com/absmach/supermq/auth"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	mock "github.com/stretchr/testify/mock"
@@ -102,8 +104,8 @@ func (_c *Tokenizer_Issue_Call) RunAndReturn(run func(key auth.Key) (string, err
 }
 
 // Parse provides a mock function for the type Tokenizer
-func (_mock *Tokenizer) Parse(token string) (auth.Key, error) {
-	ret := _mock.Called(token)
+func (_mock *Tokenizer) Parse(ctx context.Context, token string) (auth.Key, error) {
+	ret := _mock.Called(ctx, token)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Parse")
@@ -111,16 +113,16 @@ func (_mock *Tokenizer) Parse(token string) (auth.Key, error) {
 
 	var r0 auth.Key
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (auth.Key, error)); ok {
-		return returnFunc(token)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (auth.Key, error)); ok {
+		return returnFunc(ctx, token)
 	}
-	if returnFunc, ok := ret.Get(0).(func(string) auth.Key); ok {
-		r0 = returnFunc(token)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) auth.Key); ok {
+		r0 = returnFunc(ctx, token)
 	} else {
 		r0 = ret.Get(0).(auth.Key)
 	}
-	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
-		r1 = returnFunc(token)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, token)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -133,19 +135,25 @@ type Tokenizer_Parse_Call struct {
 }
 
 // Parse is a helper method to define mock.On call
+//   - ctx context.Context
 //   - token string
-func (_e *Tokenizer_Expecter) Parse(token interface{}) *Tokenizer_Parse_Call {
-	return &Tokenizer_Parse_Call{Call: _e.mock.On("Parse", token)}
+func (_e *Tokenizer_Expecter) Parse(ctx interface{}, token interface{}) *Tokenizer_Parse_Call {
+	return &Tokenizer_Parse_Call{Call: _e.mock.On("Parse", ctx, token)}
 }
 
-func (_c *Tokenizer_Parse_Call) Run(run func(token string)) *Tokenizer_Parse_Call {
+func (_c *Tokenizer_Parse_Call) Run(run func(ctx context.Context, token string)) *Tokenizer_Parse_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 string
+		var arg0 context.Context
 		if args[0] != nil {
-			arg0 = args[0].(string)
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
 		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
@@ -156,22 +164,22 @@ func (_c *Tokenizer_Parse_Call) Return(key auth.Key, err error) *Tokenizer_Parse
 	return _c
 }
 
-func (_c *Tokenizer_Parse_Call) RunAndReturn(run func(token string) (auth.Key, error)) *Tokenizer_Parse_Call {
+func (_c *Tokenizer_Parse_Call) RunAndReturn(run func(ctx context.Context, token string) (auth.Key, error)) *Tokenizer_Parse_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // RetrieveJWKS provides a mock function for the type Tokenizer
-func (_mock *Tokenizer) RetrieveJWKS() []jwk.Key {
-	ret := _mock.Called()
+func (_mock *Tokenizer) RetrieveJWKS(ctx context.Context) []jwk.Key {
+	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveJWKS")
 	}
 
 	var r0 []jwk.Key
-	if returnFunc, ok := ret.Get(0).(func() []jwk.Key); ok {
-		r0 = returnFunc()
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []jwk.Key); ok {
+		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]jwk.Key)
@@ -186,13 +194,20 @@ type Tokenizer_RetrieveJWKS_Call struct {
 }
 
 // RetrieveJWKS is a helper method to define mock.On call
-func (_e *Tokenizer_Expecter) RetrieveJWKS() *Tokenizer_RetrieveJWKS_Call {
-	return &Tokenizer_RetrieveJWKS_Call{Call: _e.mock.On("RetrieveJWKS")}
+//   - ctx context.Context
+func (_e *Tokenizer_Expecter) RetrieveJWKS(ctx interface{}) *Tokenizer_RetrieveJWKS_Call {
+	return &Tokenizer_RetrieveJWKS_Call{Call: _e.mock.On("RetrieveJWKS", ctx)}
 }
 
-func (_c *Tokenizer_RetrieveJWKS_Call) Run(run func()) *Tokenizer_RetrieveJWKS_Call {
+func (_c *Tokenizer_RetrieveJWKS_Call) Run(run func(ctx context.Context)) *Tokenizer_RetrieveJWKS_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
 	})
 	return _c
 }
@@ -202,7 +217,7 @@ func (_c *Tokenizer_RetrieveJWKS_Call) Return(keys []jwk.Key) *Tokenizer_Retriev
 	return _c
 }
 
-func (_c *Tokenizer_RetrieveJWKS_Call) RunAndReturn(run func() []jwk.Key) *Tokenizer_RetrieveJWKS_Call {
+func (_c *Tokenizer_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) []jwk.Key) *Tokenizer_RetrieveJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

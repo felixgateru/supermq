@@ -80,12 +80,13 @@ func (tok *tokenizer) Issue(key auth.Key) (string, error) {
 	return string(signedTkn), nil
 }
 
-func (tok *tokenizer) Parse(token string) (auth.Key, error) {
+func (tok *tokenizer) Parse(ctx context.Context, token string) (auth.Key, error) {
 	if len(token) >= 3 && token[:3] == patPrefix {
 		return auth.Key{Type: auth.PersonalAccessToken}, nil
 	}
 
-	tkn, err := tok.validateToken(token)
+	tkn, err := tok.validateToken(ctx,
+		token)
 	if err != nil {
 		return auth.Key{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -98,8 +99,8 @@ func (tok *tokenizer) Parse(token string) (auth.Key, error) {
 	return key, nil
 }
 
-func (tok *tokenizer) validateToken(token string) (jwt.Token, error) {
-	tkn, err := tok.keyManager.ParseJWT(token)
+func (tok *tokenizer) validateToken(ctx context.Context, token string) (jwt.Token, error) {
+	tkn, err := tok.keyManager.ParseJWT(ctx, token)
 	if err != nil {
 		if errors.Contains(err, errJWTExpiryKey) {
 			return nil, auth.ErrExpiry
@@ -120,8 +121,8 @@ func (tok *tokenizer) validateToken(token string) (jwt.Token, error) {
 	return tkn, nil
 }
 
-func (tok *tokenizer) RetrieveJWKS() []jwk.Key {
-	return tok.keyManager.PublicJWKS()
+func (tok *tokenizer) RetrieveJWKS(ctx context.Context) []jwk.Key {
+	return tok.keyManager.PublicJWKS(ctx)
 }
 
 func ToKey(tkn jwt.Token) (auth.Key, error) {

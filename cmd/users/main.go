@@ -69,7 +69,6 @@ const (
 	envPrefixGoogle  = "SMQ_GOOGLE_"
 	defDB            = "users"
 	defSvcHTTPPort   = "9002"
-	jwksURL          = "http://auth:9001/keys/.well-known/jwks.json"
 	defSvcGRPCPort   = "7002"
 )
 
@@ -98,6 +97,7 @@ type config struct {
 	PasswordResetEmailTemplate string        `env:"SMQ_PASSWORD_RESET_EMAIL_TEMPLATE"     envDefault:"reset-password-email.tmpl"`
 	VerificationURLPrefix      string        `env:"SMQ_VERIFICATION_URL_PREFIX"           envDefault:"http://localhost/verify-email"`
 	VerificationEmailTemplate  string        `env:"SMQ_VERIFICATION_EMAIL_TEMPLATE"       envDefault:"verification-email.tmpl"`
+	JWKSURL                    string        `env:"SMQ_AUTH_JWKS_URL"                     envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 	PassRegex                  *regexp.Regexp
 }
 
@@ -195,8 +195,8 @@ func main() {
 	defer tokenHandler.Close()
 	logger.Info("Token service client successfully connected to auth gRPC server " + tokenHandler.Secure())
 
-	authn := jwksAuthn.NewAuthentication(jwksURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + jwksURL)
+	authn := jwksAuthn.NewAuthentication(cfg.JWKSURL)
+	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
 
 	domsGrpcCfg := grpcclient.Config{}

@@ -73,7 +73,7 @@ func newService(t *testing.T) (auth.Service, string) {
 	idProvider := uuid.NewMock()
 	tokenizer = new(mocks.Tokenizer)
 
-	token, _, err := signToken(issuerName, accessKey, false)
+	token, _, err := signToken(t, issuerName, accessKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing access key expected to succeed: %s", err))
 
 	return auth.New(krepo, patsrepo, cache, hasher, idProvider, tokenizer, pEvaluator, pService, loginDuration, refreshDuration, invalidDuration), token
@@ -97,7 +97,7 @@ func TestIssue(t *testing.T) {
 		Type:      auth.APIKey,
 		Role:      auth.UserRole,
 	}
-	apiToken, _, err := signToken(issuerName, apikey, false)
+	apiToken, _, err := signToken(t, issuerName, apikey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing API key expected to succeed: %s", err))
 
 	refreshkey := auth.Key{
@@ -107,7 +107,7 @@ func TestIssue(t *testing.T) {
 		Type:      auth.RefreshKey,
 		Role:      auth.UserRole,
 	}
-	refreshToken, _, err := signToken(issuerName, refreshkey, false)
+	refreshToken, _, err := signToken(t, issuerName, refreshkey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing refresh key expected to succeed: %s", err))
 
 	cases := []struct {
@@ -381,7 +381,7 @@ func TestRevoke(t *testing.T) {
 		IssuedAt: time.Now(),
 		Subject:  userID,
 	}
-	apiToken, _, err := signToken(issuerName, apikey, false)
+	apiToken, _, err := signToken(t, issuerName, apikey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing API key expected to succeed: %s", err))
 
 	cases := []struct {
@@ -443,7 +443,7 @@ func TestRetrieve(t *testing.T) {
 		IssuedAt: time.Now(),
 	}
 
-	apiToken, _, err := signToken(issuerName, apiKey, false)
+	apiToken, _, err := signToken(t, issuerName, apiKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing API key expected to succeed: %s", err))
 
 	recoveryKey := auth.Key{
@@ -452,7 +452,7 @@ func TestRetrieve(t *testing.T) {
 		Role:     auth.UserRole,
 		IssuedAt: time.Now(),
 	}
-	resetToken, _, err := signToken(issuerName, recoveryKey, false)
+	resetToken, _, err := signToken(t, issuerName, recoveryKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing recovery key expected to succeed: %s", err))
 
 	cases := []struct {
@@ -517,7 +517,7 @@ func TestIdentify(t *testing.T) {
 		Subject:  userID,
 		IssuedAt: time.Now(),
 	}
-	refreshToken, _, err := signToken(issuerName, refreshKey, false)
+	refreshToken, _, err := signToken(t, issuerName, refreshKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing refresh key expected to succeed: %s", err))
 
 	recoveryKey := auth.Key{
@@ -526,7 +526,7 @@ func TestIdentify(t *testing.T) {
 		IssuedAt: time.Now(),
 		Subject:  userID,
 	}
-	recoverySecret, _, err := signToken(issuerName, recoveryKey, false)
+	recoverySecret, _, err := signToken(t, issuerName, recoveryKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing recovery key expected to succeed: %s", err))
 
 	apiKey := auth.Key{
@@ -536,7 +536,7 @@ func TestIdentify(t *testing.T) {
 		IssuedAt:  time.Now(),
 		ExpiresAt: time.Now().Add(time.Minute),
 	}
-	apiSecret, _, err := signToken(issuerName, apiKey, false)
+	apiSecret, _, err := signToken(t, issuerName, apiKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing API key expected to succeed: %s", err))
 
 	exp0 := time.Now().UTC().Add(-10 * time.Second).Round(time.Second)
@@ -548,7 +548,7 @@ func TestIdentify(t *testing.T) {
 		IssuedAt:  exp0,
 		ExpiresAt: exp1,
 	}
-	expSecret, _, err := signToken(issuerName, expiredKey, false)
+	expSecret, _, err := signToken(t, issuerName, expiredKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing expired API key expected to succeed: %s", err))
 
 	key := auth.Key{
@@ -558,7 +558,7 @@ func TestIdentify(t *testing.T) {
 		Subject:   userID,
 		Role:      auth.UserRole,
 	}
-	invalidTokenType, _, err := signToken(issuerName, key, false)
+	invalidTokenType, _, err := signToken(t, issuerName, key, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing invalid token type key expected to succeed: %s", err))
 
 	cases := []struct {
@@ -647,7 +647,7 @@ func TestAuthorize(t *testing.T) {
 
 	exp1 := time.Now().Add(-2 * time.Second)
 	expKey := auth.Key{Type: auth.APIKey, Role: auth.UserRole, IssuedAt: time.Now(), ExpiresAt: exp1}
-	expSecret, _, err := signToken(issuerName, expKey, false)
+	expSecret, _, err := signToken(t, issuerName, expKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing expired key expected to succeed: %s", err))
 
 	emptySubjectKey := auth.Key{
@@ -656,7 +656,7 @@ func TestAuthorize(t *testing.T) {
 		Role:     auth.UserRole,
 		IssuedAt: time.Now(),
 	}
-	emptySubject, _, err := signToken(issuerName, emptySubjectKey, false)
+	emptySubject, _, err := signToken(t, issuerName, emptySubjectKey, false)
 	assert.Nil(t, err, fmt.Sprintf("Issuing empty subject key expected to succeed: %s", err))
 
 	cases := []struct {
@@ -1037,7 +1037,7 @@ func TestDecodeDomainUserID(t *testing.T) {
 	}
 }
 
-func newToken(issuerName string, key auth.Key) jwt.Token {
+func newToken(t *testing.T, issuerName string, key auth.Key) jwt.Token {
 	builder := jwt.NewBuilder()
 	builder.
 		Issuer(issuerName).
@@ -1052,12 +1052,13 @@ func newToken(issuerName string, key auth.Key) jwt.Token {
 	if key.ID != "" {
 		builder.JwtID(key.ID)
 	}
-	tkn, _ := builder.Build()
+	tkn, err := builder.Build()
+	assert.Nil(t, err, fmt.Sprintf("Building token expected to succeed: %s", err))
 	return tkn
 }
 
-func signToken(issuerName string, key auth.Key, parseToken bool) (string, jwt.Token, error) {
-	tkn := newToken(issuerName, key)
+func signToken(t *testing.T, issuerName string, key auth.Key, parseToken bool) (string, jwt.Token, error) {
+	tkn := newToken(t, issuerName, key)
 	pKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		return "", nil, err

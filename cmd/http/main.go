@@ -57,7 +57,6 @@ const (
 	targetHTTPHost     = "localhost"
 	targetHTTPPort     = "81"
 	targetHTTPPath     = ""
-	jwksURL            = "http://auth:9001/keys/.well-known/jwks.json"
 )
 
 type config struct {
@@ -68,6 +67,7 @@ type config struct {
 	InstanceID    string  `env:"SMQ_HTTP_ADAPTER_INSTANCE_ID" envDefault:""`
 	TraceRatio    float64 `env:"SMQ_JAEGER_TRACE_RATIO"       envDefault:"1.0"`
 	ESURL         string  `env:"SMQ_ES_URL"                   envDefault:"nats://localhost:4222"`
+	JWKSURL       string  `env:"SMQ_AUTH_JWKS_URL"            envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 }
 
 func main() {
@@ -164,8 +164,8 @@ func main() {
 		return
 	}
 
-	authn := jwks.NewAuthentication(jwksURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + jwksURL)
+	authn := jwks.NewAuthentication(cfg.JWKSURL)
+	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
 
 	tp, err := jaegerclient.NewProvider(ctx, svcName, cfg.JaegerURL, cfg.InstanceID, cfg.TraceRatio)
 	if err != nil {

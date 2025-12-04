@@ -100,21 +100,10 @@ func (pkr *publicKeyRepo) Save(ctx context.Context, key auth.PublicKey) error {
 	return nil
 }
 
-func (pkr *publicKeyRepo) Retrieve(ctx context.Context, kid string) (auth.PublicKey, error) {
-	q := `SELECT kid, jwk_data, created_at, retired_at, status FROM public_keys WHERE kid = $1`
+func (pkr *publicKeyRepo) RetrieveAll(ctx context.Context) ([]auth.PublicKey, error) {
+	q := `SELECT kid, jwk_data, created_at, retired_at, status FROM public_keys ORDER BY created_at DESC`
 
-	var dbKey dbPublicKey
-	if err := pkr.db.QueryRowxContext(ctx, q, kid).StructScan(&dbKey); err != nil {
-		return auth.PublicKey{}, postgres.HandleError(repoerr.ErrViewEntity, err)
-	}
-
-	return toAuthPublicKey(dbKey), nil
-}
-
-func (pkr *publicKeyRepo) RetrieveActive(ctx context.Context) ([]auth.PublicKey, error) {
-	q := `SELECT kid, jwk_data, created_at, retired_at, status FROM public_keys WHERE status = $1 ORDER BY created_at DESC`
-
-	rows, err := pkr.db.QueryxContext(ctx, q, int(auth.ActiveKeyStatus))
+	rows, err := pkr.db.QueryxContext(ctx, q)
 	if err != nil {
 		return nil, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
@@ -132,11 +121,10 @@ func (pkr *publicKeyRepo) RetrieveActive(ctx context.Context) ([]auth.PublicKey,
 	return keys, nil
 }
 
-func (pkr *publicKeyRepo) Retire(ctx context.Context, kid string) error {
-	now := time.Now().UTC()
+func (pkr *publicKeyRepo) Retire(ctx context.Context, kid string, retiredAt time.Time) error {
 	q := `UPDATE public_keys SET status = $1, retired_at = $2 WHERE kid = $3`
 
-	result, err := pkr.db.ExecContext(ctx, q, int(auth.RetiredKeyStatus), now, kid)
+	result, err := pkr.db.ExecContext(ctx, q, int(auth.RetiredKeyStatus), retiredAt, kid)
 	if err != nil {
 		return postgres.HandleError(repoerr.ErrUpdateEntity, err)
 	}

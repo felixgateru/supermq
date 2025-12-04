@@ -18,32 +18,33 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-const (
-	skewDuration    = 15 * time.Second
+var (
 	cleanupInterval = 10 * time.Minute // How often to clean up expired keys
+	skewDuration    = 15*time.Second + cleanupInterval
 )
 
-type keyPair struct {
-	privateKey jwk.Key
-	publicKey  jwk.Key
-	retiredAt  time.Time
-}
-
 type manager struct {
-	mu               sync.RWMutex
 	idProvider       supermq.IDProvider
 	repo             auth.PublicKeyRepository
-	keySet           map[string]keyPair
-	activeID         string
-	nextID           string
-	retiredID        string
 	gracePeriod      time.Duration
 	rotationInterval time.Duration
+	activeKey        activeKey
 }
 
 type KeyManagerConfig struct {
 	RotationInterval time.Duration `env:"ROTATION_INTERVAL" envDefault:"24h"`
 	LoginDuration    time.Duration
+}
+
+type activeKey struct {
+	mu         sync.RWMutex
+	privateKey jwk.Key
+	keyID      string
+}
+
+type keyPair struct {
+	privateKey jwk.Key
+	publicKey  jwk.Key
 }
 
 var _ auth.KeyManager = (*manager)(nil)
@@ -52,19 +53,12 @@ func NewKeyManager(ctx context.Context, cfg KeyManagerConfig, idProvider supermq
 	km := &manager{
 		idProvider:       idProvider,
 		repo:             repo,
-		keySet:           make(map[string]keyPair),
 		gracePeriod:      cfg.LoginDuration + skewDuration,
 		rotationInterval: cfg.RotationInterval,
 	}
 
-	if err := km.loadFromDatabase(ctx); err != nil {
+	if err := km.initializeKeys(ctx); err != nil {
 		return nil, err
-	}
-
-	if km.activeID == "" || km.nextID == "" || len(km.keySet) == 0 {
-		if err := km.initializeKeys(ctx); err != nil {
-			return nil, err
-		}
 	}
 
 	if km.rotationInterval > 0 {
@@ -84,97 +78,21 @@ func NewKeyManager(ctx context.Context, cfg KeyManagerConfig, idProvider supermq
 	return km, nil
 }
 
-func (km *manager) loadFromDatabase(ctx context.Context) error {
-	activeKeys, err := km.repo.RetrieveActive(ctx)
-	if err != nil {
-		return nil
-	}
-
-	for _, key := range activeKeys {
-		km.keySet[key.Kid] = keyPair{
-			publicKey: key.JWKData,
-			retiredAt: time.Time{},
-		}
-
-		if km.activeID == "" {
-			km.activeID = key.Kid
-		} else if km.nextID == "" {
-			km.nextID = key.Kid
-		}
-	}
-
-	return nil
-}
-
-func (km *manager) initializeKeys(ctx context.Context) error {
-	activeKid, err := km.idProvider.ID()
-	if err != nil {
-		return err
-	}
-	activePair, err := generateKeyPair(activeKid)
-	if err != nil {
-		return err
-	}
-
-	nextKid, err := km.idProvider.ID()
-	if err != nil {
-		return err
-	}
-	nextPair, err := generateKeyPair(nextKid)
-	if err != nil {
-		return err
-	}
-
-	km.keySet[activeKid] = activePair
-	km.keySet[nextKid] = nextPair
-	km.activeID = activeKid
-	km.nextID = nextKid
-
-	now := time.Now().UTC()
-	activePublicKey := auth.PublicKey{
-		Kid:       activeKid,
-		JWKData:   activePair.publicKey,
-		CreatedAt: now,
-		Status:    auth.ActiveKeyStatus,
-	}
-	if err := km.repo.Save(ctx, activePublicKey); err != nil {
-		return err
-	}
-
-	nextPublicKey := auth.PublicKey{
-		Kid:       nextKid,
-		JWKData:   nextPair.publicKey,
-		CreatedAt: now,
-		Status:    auth.ActiveKeyStatus,
-	}
-	if err := km.repo.Save(ctx, nextPublicKey); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
-	km.mu.RLock()
-	jwkKey := km.keySet[km.activeID].privateKey
-	km.mu.RUnlock()
+	km.activeKey.mu.RLock()
+	privateKey := km.activeKey.privateKey
+	km.activeKey.mu.RUnlock()
 
-	return jwt.Sign(token, jwt.WithKey(jwa.RS256, jwkKey))
+	return jwt.Sign(token, jwt.WithKey(jwa.RS256, privateKey))
 }
 
-func (km *manager) ParseJWT(token string) (jwt.Token, error) {
-	km.mu.RLock()
-	defer km.mu.RUnlock()
-
+func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
+	keys := km.PublicJWKS(ctx)
 	set := jwk.NewSet()
-	if err := set.AddKey(km.keySet[km.activeID].publicKey); err != nil {
-		return nil, err
-	}
-	if km.retiredID != "" {
-		if time.Since(km.keySet[km.retiredID].retiredAt) <= km.gracePeriod {
-			if err := set.AddKey(km.keySet[km.retiredID].publicKey); err != nil {
-				return nil, err
-			}
+	for _, key := range keys {
+		err := set.AddKey(key)
+		if err != nil {
+			return nil, err
 		}
 	}
 	tkn, err := jwt.Parse(
@@ -188,34 +106,21 @@ func (km *manager) ParseJWT(token string) (jwt.Token, error) {
 	return tkn, nil
 }
 
-func (km *manager) PublicJWKS() []jwk.Key {
-	km.mu.Lock()
-	defer km.mu.Unlock()
-
-	keys := []jwk.Key{km.keySet[km.activeID].publicKey}
-	if km.retiredID != "" {
-		kp := km.keySet[km.retiredID]
-		if time.Since(kp.retiredAt) > km.gracePeriod {
-			delete(km.keySet, km.retiredID)
-			km.retiredID = ""
-			return keys
-		}
-		keys = append(keys, kp.publicKey)
+func (km *manager) PublicJWKS(ctx context.Context) []jwk.Key {
+	keys, err := km.repo.RetrieveAll(ctx)
+	if err != nil {
+		return nil
 	}
 
-	if km.nextID != "" {
-		keys = append(keys, km.keySet[km.nextID].publicKey)
+	var jwkKeys []jwk.Key
+	for _, key := range keys {
+		jwkKeys = append(jwkKeys, key.JWKData)
 	}
-	return keys
+
+	return jwkKeys
 }
 
 func (km *manager) Rotate(ctx context.Context) error {
-	km.mu.Lock()
-	defer km.mu.Unlock()
-
-	currentID := km.activeID
-	nextID := km.nextID
-
 	newID, err := km.idProvider.ID()
 	if err != nil {
 		return err
@@ -223,24 +128,6 @@ func (km *manager) Rotate(ctx context.Context) error {
 	newPair, err := generateKeyPair(newID)
 	if err != nil {
 		return err
-	}
-
-	km.keySet[newID] = newPair
-	km.activeID = nextID
-	km.nextID = newID
-
-	if currentID != "" {
-		kp, ok := km.keySet[currentID]
-		if ok {
-			t := time.Now().UTC()
-			kp.retiredAt = t
-			km.keySet[currentID] = kp
-			km.retiredID = currentID
-
-			if err := km.repo.Retire(ctx, currentID); err != nil {
-				return err
-			}
-		}
 	}
 
 	newPublicKey := auth.PublicKey{
@@ -252,6 +139,15 @@ func (km *manager) Rotate(ctx context.Context) error {
 	if err := km.repo.Save(ctx, newPublicKey); err != nil {
 		return err
 	}
+	km.activeKey.mu.RLock()
+	toRetire := km.activeKey.keyID
+	km.activeKey.mu.RUnlock()
+
+	err = km.repo.Retire(ctx, toRetire, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	km.setActiveKey(newID, newPair.privateKey)
 
 	return nil
 }
@@ -287,6 +183,39 @@ func (km *manager) cleanupHandler(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (km *manager) initializeKeys(ctx context.Context) error {
+	activeKid, err := km.idProvider.ID()
+	if err != nil {
+		return err
+	}
+	activePair, err := generateKeyPair(activeKid)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	activePublicKey := auth.PublicKey{
+		Kid:       activeKid,
+		JWKData:   activePair.publicKey,
+		CreatedAt: now,
+		Status:    auth.ActiveKeyStatus,
+	}
+	if err := km.repo.Save(ctx, activePublicKey); err != nil {
+		return err
+	}
+	km.setActiveKey(activeKid, activePair.privateKey)
+
+	return nil
+}
+
+func (km *manager) setActiveKey(kid string, privateKey jwk.Key) {
+	km.activeKey.mu.Lock()
+	defer km.activeKey.mu.Unlock()
+
+	km.activeKey.keyID = kid
+	km.activeKey.privateKey = privateKey
 }
 
 func generateKeyPair(kid string) (keyPair, error) {

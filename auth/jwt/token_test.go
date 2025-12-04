@@ -4,6 +4,7 @@
 package jwt_test
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
@@ -227,7 +228,7 @@ func TestParse(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			kmCall := keyManager.On("ParseJWT", tc.token).Return(tc.managerRes, tc.managerErr)
-			key, err := tokenizer.Parse(tc.token)
+			key, err := tokenizer.Parse(context.Background(), tc.token)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s, got %s", tc.desc, tc.err, err))
 			if err == nil {
 				assert.Equal(t, tc.key, key, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.key, key))
@@ -257,7 +258,7 @@ func TestRetrieveJWKS(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			kmCall := keyManager.On("PublicJWKS").Return(tc.keys)
-			jwks := tokenizer.RetrieveJWKS()
+			jwks := tokenizer.RetrieveJWKS(context.Background())
 			assert.Equal(t, tc.keys, jwks, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.keys, jwks))
 			kmCall.Unset()
 		})

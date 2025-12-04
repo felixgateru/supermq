@@ -7,6 +7,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	smqauth "github.com/absmach/supermq/auth"
@@ -35,6 +36,7 @@ var (
 	errValidateJWTToken = errors.New("failed to validate jwt token")
 
 	jwksCache = struct {
+		sync.RWMutex
 		jwks     jwk.Set
 		cachedAt time.Time
 	}{}
@@ -75,17 +77,23 @@ func (a authentication) Authenticate(ctx context.Context, token string) (authn.S
 }
 
 func (a authentication) fetchJWKS() (jwk.Set, error) {
+	jwksCache.RLock()
+	if time.Since(jwksCache.cachedAt) < cacheDuration && jwksCache.jwks.Len() > 0 {
+		cached := jwksCache.jwks
+		jwksCache.RUnlock()
+		return cached, nil
+	}
+	jwksCache.RUnlock()
+
 	req, err := http.NewRequest("GET", a.jwksURL, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
 
-	httpClient := &http.Client{}
-	if time.Since(jwksCache.cachedAt) < cacheDuration && jwksCache.jwks.Len() > 0 {
-		return jwksCache.jwks, nil
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
 	}
-
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -95,13 +103,18 @@ func (a authentication) fetchJWKS() (jwk.Set, error) {
 		return nil, errFetchJWKS
 	}
 
-	data, _ := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	set, err := jwk.Parse(data)
 	if err != nil {
 		return nil, err
 	}
+	jwksCache.Lock()
 	jwksCache.jwks = set
 	jwksCache.cachedAt = time.Now()
+	jwksCache.Unlock()
 
 	return set, nil
 }
