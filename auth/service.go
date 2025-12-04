@@ -19,7 +19,6 @@ import (
 
 const (
 	recoveryDuration   = 5 * time.Minute
-	defLimit           = 100
 	randStr            = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&&*|+-="
 	patPrefix          = "pat"
 	patSecretSeparator = "_"

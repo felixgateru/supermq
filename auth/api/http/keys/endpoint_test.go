@@ -31,7 +31,6 @@ const (
 	secret          = "secret"
 	contentType     = "application/json"
 	id              = "123e4567-e89b-12d3-a456-000000000001"
-	email           = "user@example.com"
 	loginDuration   = 30 * time.Minute
 	refreshDuration = 24 * time.Hour
 	invalidDuration = 7 * 24 * time.Hour
