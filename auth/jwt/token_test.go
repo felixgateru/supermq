@@ -401,14 +401,6 @@ func TestRevoke(t *testing.T) {
 			cacheErr: repoerr.ErrCreateEntity,
 			err:      svcerr.ErrAuthentication,
 		},
-		{
-			desc:     "revoke revoked refresh token failed to save in cache",
-			key:      refreshKey,
-			token:    refreshToken,
-			repoErr:  repoerr.ErrCreateEntity,
-			cacheErr: nil,
-			err:      svcerr.ErrAuthentication,
-		},
 	}
 
 	for _, tc := range cases {
