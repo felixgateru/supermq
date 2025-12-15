@@ -236,14 +236,15 @@ func TestPurgeExpired(t *testing.T) {
 	}
 }
 
-func generateKey() (jwk.Key, error) {
+func generateKey() (auth.JWK, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
-		return nil, err
+		return auth.JWK{}, err
 	}
 	privateJwk, err := jwk.FromRaw(privateKey.PublicKey)
 	if err != nil {
-		return nil, err
+		return auth.JWK{}, err
 	}
-	return privateJwk, nil
+
+	return auth.NewJWK(privateJwk), nil
 }

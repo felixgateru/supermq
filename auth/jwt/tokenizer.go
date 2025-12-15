@@ -10,7 +10,6 @@ import (
 	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
-	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
@@ -121,7 +120,7 @@ func (tok *tokenizer) validateToken(ctx context.Context, token string) (jwt.Toke
 	return tkn, nil
 }
 
-func (tok *tokenizer) RetrieveJWKS(ctx context.Context) []jwk.Key {
+func (tok *tokenizer) RetrieveJWKS(ctx context.Context) []auth.JWK {
 	return tok.keyManager.PublicJWKS(ctx)
 }
 

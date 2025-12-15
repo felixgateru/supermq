@@ -71,7 +71,7 @@ func (tr testRequest) make() (*http.Response, error) {
 
 func newServer() (*httptest.Server, *mocks.Service) {
 	svc := new(mocks.Service)
-	mux := httpapi.MakeHandler(svc, smqlog.NewMock(), "")
+	mux := httpapi.MakeHandler(svc, smqlog.NewMock(), "", 900, 60)
 
 	return httptest.NewServer(mux), svc
 }

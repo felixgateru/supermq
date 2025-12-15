@@ -12,7 +12,6 @@ import (
 	"context"
 
 	"github.com/absmach/supermq/auth"
-	"github.com/lestrrat-go/jwx/v2/jwk"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -170,19 +169,19 @@ func (_c *Tokenizer_Parse_Call) RunAndReturn(run func(ctx context.Context, token
 }
 
 // RetrieveJWKS provides a mock function for the type Tokenizer
-func (_mock *Tokenizer) RetrieveJWKS(ctx context.Context) []jwk.Key {
+func (_mock *Tokenizer) RetrieveJWKS(ctx context.Context) []auth.JWK {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveJWKS")
 	}
 
-	var r0 []jwk.Key
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []jwk.Key); ok {
+	var r0 []auth.JWK
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []auth.JWK); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]jwk.Key)
+			r0 = ret.Get(0).([]auth.JWK)
 		}
 	}
 	return r0
@@ -212,12 +211,12 @@ func (_c *Tokenizer_RetrieveJWKS_Call) Run(run func(ctx context.Context)) *Token
 	return _c
 }
 
-func (_c *Tokenizer_RetrieveJWKS_Call) Return(keys []jwk.Key) *Tokenizer_RetrieveJWKS_Call {
-	_c.Call.Return(keys)
+func (_c *Tokenizer_RetrieveJWKS_Call) Return(jWKs []auth.JWK) *Tokenizer_RetrieveJWKS_Call {
+	_c.Call.Return(jWKs)
 	return _c
 }
 
-func (_c *Tokenizer_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) []jwk.Key) *Tokenizer_RetrieveJWKS_Call {
+func (_c *Tokenizer_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) []auth.JWK) *Tokenizer_RetrieveJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

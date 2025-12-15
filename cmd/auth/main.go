@@ -23,7 +23,8 @@ import (
 	"github.com/absmach/supermq/auth/cache"
 	"github.com/absmach/supermq/auth/hasher"
 	"github.com/absmach/supermq/auth/jwt"
-	"github.com/absmach/supermq/auth/keymanager"
+	"github.com/absmach/supermq/auth/keymanager/asymmetric"
+	"github.com/absmach/supermq/auth/keymanager/symmetric"
 	"github.com/absmach/supermq/auth/middleware"
 	apostgres "github.com/absmach/supermq/auth/postgres"
 	redisclient "github.com/absmach/supermq/internal/clients/redis"
@@ -35,7 +36,6 @@ import (
 	"github.com/absmach/supermq/pkg/server"
 	grpcserver "github.com/absmach/supermq/pkg/server/grpc"
 	httpserver "github.com/absmach/supermq/pkg/server/http"
-	"github.com/absmach/supermq/pkg/ulid"
 	"github.com/absmach/supermq/pkg/uuid"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/authzed-go/v1"
@@ -62,22 +62,24 @@ const (
 )
 
 type config struct {
-	LogLevel            string        `env:"SMQ_AUTH_LOG_LEVEL"                envDefault:"info"`
-	SecretKey           string        `env:"SMQ_AUTH_SECRET_KEY"               envDefault:"secret"`
-	JaegerURL           url.URL       `env:"SMQ_JAEGER_URL"                    envDefault:"http://localhost:4318/v1/traces"`
-	SendTelemetry       bool          `env:"SMQ_SEND_TELEMETRY"                envDefault:"true"`
-	InstanceID          string        `env:"SMQ_AUTH_ADAPTER_INSTANCE_ID"      envDefault:""`
-	AccessDuration      time.Duration `env:"SMQ_AUTH_ACCESS_TOKEN_DURATION"    envDefault:"1h"`
-	RefreshDuration     time.Duration `env:"SMQ_AUTH_REFRESH_TOKEN_DURATION"   envDefault:"24h"`
-	InvitationDuration  time.Duration `env:"SMQ_AUTH_INVITATION_DURATION"      envDefault:"168h"`
-	SpicedbHost         string        `env:"SMQ_SPICEDB_HOST"                  envDefault:"localhost"`
-	SpicedbPort         string        `env:"SMQ_SPICEDB_PORT"                  envDefault:"50051"`
-	SpicedbSchemaFile   string        `env:"SMQ_SPICEDB_SCHEMA_FILE"           envDefault:"./docker/spicedb/schema.zed"`
-	SpicedbPreSharedKey string        `env:"SMQ_SPICEDB_PRE_SHARED_KEY"        envDefault:"12345678"`
-	TraceRatio          float64       `env:"SMQ_JAEGER_TRACE_RATIO"            envDefault:"1.0"`
-	ESURL               string        `env:"SMQ_ES_URL"                        envDefault:"nats://localhost:4222"`
-	CacheURL            string        `env:"SMQ_AUTH_CACHE_URL"                envDefault:"redis://localhost:6379/0"`
-	CacheKeyDuration    time.Duration `env:"SMQ_AUTH_CACHE_KEY_DURATION"       envDefault:"10m"`
+	LogLevel                      string        `env:"SMQ_AUTH_LOG_LEVEL"                         envDefault:"info"`
+	SecretKey                     string        `env:"SMQ_AUTH_SECRET_KEY"                        envDefault:"secret"`
+	JaegerURL                     url.URL       `env:"SMQ_JAEGER_URL"                             envDefault:"http://localhost:4318/v1/traces"`
+	SendTelemetry                 bool          `env:"SMQ_SEND_TELEMETRY"                         envDefault:"true"`
+	InstanceID                    string        `env:"SMQ_AUTH_ADAPTER_INSTANCE_ID"               envDefault:""`
+	AccessDuration                time.Duration `env:"SMQ_AUTH_KEYS_ACCESS_TOKEN_DURATION"        envDefault:"1h"`
+	RefreshDuration               time.Duration `env:"SMQ_AUTH_KEYS_REFRESH_TOKEN_DURATION"       envDefault:"24h"`
+	InvitationDuration            time.Duration `env:"SMQ_AUTH_INVITATION_DURATION"               envDefault:"168h"`
+	SpicedbHost                   string        `env:"SMQ_SPICEDB_HOST"                           envDefault:"localhost"`
+	SpicedbPort                   string        `env:"SMQ_SPICEDB_PORT"                           envDefault:"50051"`
+	SpicedbSchemaFile             string        `env:"SMQ_SPICEDB_SCHEMA_FILE"                    envDefault:"./docker/spicedb/schema.zed"`
+	SpicedbPreSharedKey           string        `env:"SMQ_SPICEDB_PRE_SHARED_KEY"                 envDefault:"12345678"`
+	TraceRatio                    float64       `env:"SMQ_JAEGER_TRACE_RATIO"                     envDefault:"1.0"`
+	ESURL                         string        `env:"SMQ_ES_URL"                                 envDefault:"nats://localhost:4222"`
+	CacheURL                      string        `env:"SMQ_AUTH_CACHE_URL"                         envDefault:"redis://localhost:6379/0"`
+	CacheKeyDuration              time.Duration `env:"SMQ_AUTH_CACHE_KEY_DURATION"                envDefault:"10m"`
+	JWKSCacheMaxAge               int           `env:"SMQ_AUTH_JWKS_CACHE_MAX_AGE"                envDefault:"900"`
+	JWKSCacheStaleWhileRevalidate int           `env:"SMQ_AUTH_JWKS_CACHE_STALE_WHILE_REVALIDATE" envDefault:"60"`
 }
 
 func main() {
@@ -147,21 +149,37 @@ func main() {
 		return
 	}
 
-	keyManagerCfg := keymanager.KeyManagerConfig{LoginDuration: cfg.AccessDuration}
+	keyManagerCfg := auth.KeyManagerConfig{}
 	if err := env.ParseWithOptions(&keyManagerCfg, env.Options{Prefix: envPrefixKeys}); err != nil {
 		logger.Error("failed to load key manager %s configuration : %s", svcName, err.Error())
 		exitCode = 1
 		return
 	}
 
-	// Create public key repository
-	publicKeyRepo := apostgres.NewPublicKeyRepo(db)
-
-	keyManager, err := keymanager.NewKeyManager(ctx, keyManagerCfg, ulid.New(), publicKeyRepo)
+	isSymmetric, err := auth.IsSymmetricAlgorithm(keyManagerCfg.KeyAlgorithm)
 	if err != nil {
-		logger.Error(fmt.Sprintf("failed to init key manager : %s\n", err.Error()))
+		logger.Error(fmt.Sprintf("failed to determine key algorithm type: %s", err.Error()))
 		exitCode = 1
 		return
+	}
+
+	var keyManager auth.KeyManager
+	switch {
+	case isSymmetric:
+		keyManager, err = symmetric.NewKeyManager(keyManagerCfg, []byte(cfg.SecretKey))
+		if err != nil {
+			logger.Error(fmt.Sprintf("failed to create symmetric key manager: %s", err.Error()))
+			exitCode = 1
+			return
+		}
+	default:
+		keyRepo := apostgres.NewPublicKeyRepo(db)
+		keyManager, err = asymmetric.NewKeyManager(ctx, keyManagerCfg, uuid.New(), keyRepo)
+		if err != nil {
+			logger.Error(fmt.Sprintf("failed to create asymmetric key manager: %s", err.Error()))
+			exitCode = 1
+			return
+		}
 	}
 
 	svc, err := newService(db, tracer, cfg, dbConfig, logger, spicedbclient, cacheclient, cfg.CacheKeyDuration, keyManager)
@@ -200,7 +218,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, httpapi.MakeHandler(svc, logger, cfg.InstanceID), logger)
+	hs := httpserver.NewServer(ctx, cancel, svcName, httpServerConfig, httpapi.MakeHandler(svc, logger, cfg.InstanceID, cfg.JWKSCacheMaxAge, cfg.JWKSCacheStaleWhileRevalidate), logger)
 
 	g.Go(func() error {
 		return hs.Start()

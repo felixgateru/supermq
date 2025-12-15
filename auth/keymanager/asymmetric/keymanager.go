@@ -1,7 +1,7 @@
 // Copyright (c) Abstract Machines
 // SPDX-License-Identifier: Apache-2.0
 
-package keymanager
+package asymmetric
 
 import (
 	"context"
@@ -28,12 +28,8 @@ type manager struct {
 	repo             auth.PublicKeyRepository
 	gracePeriod      time.Duration
 	rotationInterval time.Duration
+	keySize          int
 	activeKey        activeKey
-}
-
-type KeyManagerConfig struct {
-	RotationInterval time.Duration `env:"ROTATION_INTERVAL" envDefault:"24h"`
-	LoginDuration    time.Duration
 }
 
 type activeKey struct {
@@ -49,11 +45,12 @@ type keyPair struct {
 
 var _ auth.KeyManager = (*manager)(nil)
 
-func NewKeyManager(ctx context.Context, cfg KeyManagerConfig, idProvider supermq.IDProvider, repo auth.PublicKeyRepository) (auth.KeyManager, error) {
+func NewKeyManager(ctx context.Context, cfg auth.KeyManagerConfig, idProvider supermq.IDProvider, repo auth.PublicKeyRepository) (auth.KeyManager, error) {
 	km := &manager{
 		idProvider:       idProvider,
 		repo:             repo,
-		gracePeriod:      cfg.LoginDuration + skewDuration,
+		gracePeriod:      cfg.AccessTokenDuration + skewDuration,
+		keySize:          cfg.KeySize,
 		rotationInterval: cfg.RotationInterval,
 	}
 
@@ -90,7 +87,7 @@ func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error
 	keys := km.PublicJWKS(ctx)
 	set := jwk.NewSet()
 	for _, key := range keys {
-		err := set.AddKey(key)
+		err := set.AddKey(key.Key())
 		if err != nil {
 			return nil, err
 		}
@@ -106,13 +103,13 @@ func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error
 	return tkn, nil
 }
 
-func (km *manager) PublicJWKS(ctx context.Context) []jwk.Key {
+func (km *manager) PublicJWKS(ctx context.Context) []auth.JWK {
 	keys, err := km.repo.RetrieveAll(ctx)
 	if err != nil {
 		return nil
 	}
 
-	var jwkKeys []jwk.Key
+	var jwkKeys []auth.JWK
 	for _, key := range keys {
 		jwkKeys = append(jwkKeys, key.JWKData)
 	}
@@ -120,19 +117,19 @@ func (km *manager) PublicJWKS(ctx context.Context) []jwk.Key {
 	return jwkKeys
 }
 
-func (km *manager) Rotate(ctx context.Context) error {
+func (km *manager) rotate(ctx context.Context) error {
 	newID, err := km.idProvider.ID()
 	if err != nil {
 		return err
 	}
-	newPair, err := generateKeyPair(newID)
+	newPair, err := generateKeyPair(newID, km.keySize)
 	if err != nil {
 		return err
 	}
 
 	newPublicKey := auth.PublicKey{
 		Kid:       newID,
-		JWKData:   newPair.publicKey,
+		JWKData:   auth.NewJWK(newPair.publicKey),
 		CreatedAt: time.Now().UTC(),
 		Status:    auth.ActiveKeyStatus,
 	}
@@ -161,7 +158,7 @@ func (km *manager) rotateHandler(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			if err := km.Rotate(ctx); err != nil {
+			if err := km.rotate(ctx); err != nil {
 				return err
 			}
 		}
@@ -190,7 +187,7 @@ func (km *manager) initializeKeys(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	activePair, err := generateKeyPair(activeKid)
+	activePair, err := generateKeyPair(activeKid, km.keySize)
 	if err != nil {
 		return err
 	}
@@ -198,7 +195,7 @@ func (km *manager) initializeKeys(ctx context.Context) error {
 	now := time.Now().UTC()
 	activePublicKey := auth.PublicKey{
 		Kid:       activeKid,
-		JWKData:   activePair.publicKey,
+		JWKData:   auth.NewJWK(activePair.publicKey),
 		CreatedAt: now,
 		Status:    auth.ActiveKeyStatus,
 	}
@@ -218,8 +215,8 @@ func (km *manager) setActiveKey(kid string, privateKey jwk.Key) {
 	km.activeKey.privateKey = privateKey
 }
 
-func generateKeyPair(kid string) (keyPair, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+func generateKeyPair(kid string, keySize int) (keyPair, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
 		return keyPair{}, err
 	}

@@ -4,6 +4,8 @@
 package keys
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +17,8 @@ import (
 var (
 	_ supermq.Response = (*issueKeyRes)(nil)
 	_ supermq.Response = (*revokeKeyRes)(nil)
+	_ supermq.Response = (*retrieveKeyRes)(nil)
+	_ supermq.Response = (*retrieveJWKSRes)(nil)
 )
 
 type issueKeyRes struct {
@@ -72,7 +76,20 @@ func (res revokeKeyRes) Empty() bool {
 }
 
 type retrieveJWKSRes struct {
-	Keys []jwk.Key `json:"keys"`
+	Keys                      []auth.JWK `json:"-"`
+	CacheMaxAge               int        `json:"-"`
+	CacheStaleWhileRevalidate int        `json:"-"`
+}
+
+func (res retrieveJWKSRes) MarshalJSON() ([]byte, error) {
+	set := jwk.NewSet()
+	for _, k := range res.Keys {
+		if err := set.AddKey(k.Key()); err != nil {
+			return nil, err
+		}
+	}
+
+	return json.Marshal(set)
 }
 
 func (res retrieveJWKSRes) Code() int {
@@ -80,8 +97,9 @@ func (res retrieveJWKSRes) Code() int {
 }
 
 func (res retrieveJWKSRes) Headers() map[string]string {
+	cacheControl := fmt.Sprintf("public, max-age=%d, stale-while-revalidate=%d", res.CacheMaxAge, res.CacheStaleWhileRevalidate)
 	headers := map[string]string{
-		"Cache-Control": "public, max-age=900, stale-while-revalidate=60",
+		"Cache-Control": cacheControl,
 	}
 
 	return headers

@@ -5,8 +5,6 @@ package auth
 
 import (
 	"context"
-
-	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 // Tokenizer specifies API for encoding and decoding between string and Key.
@@ -18,5 +16,5 @@ type Tokenizer interface {
 	Parse(ctx context.Context, token string) (key Key, err error)
 
 	// RetrieveJWKS returns the JSON Web Key Set.
-	RetrieveJWKS(ctx context.Context) []jwk.Key
+	RetrieveJWKS(ctx context.Context) []JWK
 }

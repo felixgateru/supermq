@@ -21,7 +21,7 @@ import (
 const contentType = "application/json"
 
 // MakeHandler returns a HTTP handler for API endpoints.
-func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger) *chi.Mux {
+func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger, jwksCacheMaxAge, jwksCacheStaleWhileRevalidate int) *chi.Mux {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorEncoder(apiutil.LoggingErrorEncoder(logger, api.EncodeError)),
 	}
@@ -48,7 +48,7 @@ func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger) *chi.Mux {
 		).ServeHTTP)
 
 		r.Get("/.well-known/jwks.json", kithttp.NewServer(
-			retrieveJWKSEndpoint(svc),
+			retrieveJWKSEndpoint(svc, jwksCacheMaxAge, jwksCacheStaleWhileRevalidate),
 			decodeKeyReq,
 			api.EncodeResponse,
 			opts...,

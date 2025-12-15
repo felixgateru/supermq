@@ -40,7 +40,7 @@ type dbPublicKey struct {
 }
 
 type jwkData struct {
-	jwk.Key
+	auth.JWK
 }
 
 func (j *jwkData) Scan(value any) error {
@@ -63,16 +63,17 @@ func (j *jwkData) Scan(value any) error {
 		return err
 	}
 
-	j.Key = key
+	j.JWK = auth.NewJWK(key)
 	return nil
 }
 
 func (j jwkData) Value() (driver.Value, error) {
-	if j.Key == nil {
+	underlyingKey := j.JWK.Key()
+	if underlyingKey == nil {
 		return nil, nil
 	}
 
-	return json.Marshal(j.Key)
+	return json.Marshal(underlyingKey)
 }
 
 func (pkr *publicKeyRepo) Save(ctx context.Context, key auth.PublicKey) error {
@@ -86,7 +87,7 @@ func (pkr *publicKeyRepo) Save(ctx context.Context, key auth.PublicKey) error {
 
 	dbKey := dbPublicKey{
 		Kid:       key.Kid,
-		JWKData:   jwkData{Key: key.JWKData},
+		JWKData:   jwkData{JWK: key.JWKData},
 		CreatedAt: key.CreatedAt,
 		RetiredAt: key.RetiredAt,
 		Status:    int(key.Status),
@@ -155,7 +156,7 @@ func (pkr *publicKeyRepo) PurgeExpired(ctx context.Context, expiredBefore time.T
 func toAuthPublicKey(dbKey dbPublicKey) auth.PublicKey {
 	return auth.PublicKey{
 		Kid:       dbKey.Kid,
-		JWKData:   dbKey.JWKData.Key,
+		JWKData:   dbKey.JWKData.JWK,
 		CreatedAt: dbKey.CreatedAt,
 		RetiredAt: dbKey.RetiredAt,
 		Status:    auth.PublicKeyStatus(dbKey.Status),

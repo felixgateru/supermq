@@ -14,6 +14,7 @@ import (
 
 	chclient "github.com/absmach/callhome/pkg/client"
 	"github.com/absmach/supermq"
+	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/journal"
 	httpapi "github.com/absmach/supermq/journal/api"
 	"github.com/absmach/supermq/journal/events"
@@ -21,6 +22,7 @@ import (
 	journalpg "github.com/absmach/supermq/journal/postgres"
 	smqlog "github.com/absmach/supermq/logger"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
+	authsvcAuthn "github.com/absmach/supermq/pkg/authn/authsvc"
 	jwksAuthn "github.com/absmach/supermq/pkg/authn/jwks"
 	smqauthz "github.com/absmach/supermq/pkg/authz"
 	authsvcAuthz "github.com/absmach/supermq/pkg/authz/authsvc"
@@ -51,13 +53,14 @@ const (
 )
 
 type config struct {
-	LogLevel      string  `env:"SMQ_JOURNAL_LOG_LEVEL"   envDefault:"info"`
-	ESURL         string  `env:"SMQ_ES_URL"              envDefault:"nats://localhost:4222"`
-	JaegerURL     url.URL `env:"SMQ_JAEGER_URL"          envDefault:"http://localhost:4318/v1/traces"`
-	SendTelemetry bool    `env:"SMQ_SEND_TELEMETRY"      envDefault:"true"`
-	InstanceID    string  `env:"SMQ_JOURNAL_INSTANCE_ID" envDefault:""`
-	TraceRatio    float64 `env:"SMQ_JAEGER_TRACE_RATIO"  envDefault:"1.0"`
-	JWKSURL       string  `env:"SMQ_AUTH_JWKS_URL"       envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
+	LogLevel         string  `env:"SMQ_JOURNAL_LOG_LEVEL"   envDefault:"info"`
+	ESURL            string  `env:"SMQ_ES_URL"              envDefault:"nats://localhost:4222"`
+	JaegerURL        url.URL `env:"SMQ_JAEGER_URL"          envDefault:"http://localhost:4318/v1/traces"`
+	SendTelemetry    bool    `env:"SMQ_SEND_TELEMETRY"      envDefault:"true"`
+	InstanceID       string  `env:"SMQ_JOURNAL_INSTANCE_ID" envDefault:""`
+	TraceRatio       float64 `env:"SMQ_JAEGER_TRACE_RATIO"  envDefault:"1.0"`
+	AuthKeyAlgorithm string  `env:"SMQ_AUTH_KEYS_ALGORITHM" envDefault:"RS256"`
+	JWKSURL          string  `env:"SMQ_AUTH_JWKS_URL"       envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 }
 
 func main() {
@@ -106,8 +109,28 @@ func main() {
 		return
 	}
 
-	authn := jwksAuthn.NewAuthentication(cfg.JWKSURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
+	isSymmetric, err := auth.IsSymmetricAlgorithm(cfg.AuthKeyAlgorithm)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to parse auth key algorithm : %s", err))
+		exitCode = 1
+		return
+	}
+	var authn smqauthn.Authentication
+	switch {
+	case !isSymmetric:
+		authn = jwksAuthn.NewAuthentication(cfg.JWKSURL)
+		logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
+	default:
+		var authnClient grpcclient.Handler
+		authn, authnClient, err = authsvcAuthn.NewAuthentication(ctx, authClientCfg)
+		if err != nil {
+			logger.Error(err.Error())
+			exitCode = 1
+			return
+		}
+		defer authnClient.Close()
+		logger.Info("AuthN  successfully connected to auth gRPC server " + authnClient.Secure())
+	}
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
 
 	domsGrpcCfg := grpcclient.Config{}

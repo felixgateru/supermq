@@ -19,9 +19,11 @@ import (
 	grpcDomainsV1 "github.com/absmach/supermq/api/grpc/domains/v1"
 	grpcTokenV1 "github.com/absmach/supermq/api/grpc/token/v1"
 	grpcUsersV1 "github.com/absmach/supermq/api/grpc/users/v1"
+	"github.com/absmach/supermq/auth"
 	"github.com/absmach/supermq/internal/email"
 	smqlog "github.com/absmach/supermq/logger"
 	smqauthn "github.com/absmach/supermq/pkg/authn"
+	authsvcAuthn "github.com/absmach/supermq/pkg/authn/authsvc"
 	jwksAuthn "github.com/absmach/supermq/pkg/authn/jwks"
 	smqauthz "github.com/absmach/supermq/pkg/authz"
 	authsvcAuthz "github.com/absmach/supermq/pkg/authz/authsvc"
@@ -97,6 +99,7 @@ type config struct {
 	PasswordResetEmailTemplate string        `env:"SMQ_PASSWORD_RESET_EMAIL_TEMPLATE"     envDefault:"reset-password-email.tmpl"`
 	VerificationURLPrefix      string        `env:"SMQ_VERIFICATION_URL_PREFIX"           envDefault:"http://localhost/verify-email"`
 	VerificationEmailTemplate  string        `env:"SMQ_VERIFICATION_EMAIL_TEMPLATE"       envDefault:"verification-email.tmpl"`
+	AuthKeyAlgorithm           string        `env:"SMQ_AUTH_KEYS_ALGORITHM"               envDefault:"RS256"`
 	JWKSURL                    string        `env:"SMQ_AUTH_JWKS_URL"                     envDefault:"http://auth:9001/keys/.well-known/jwks.json"`
 	PassRegex                  *regexp.Regexp
 }
@@ -195,10 +198,29 @@ func main() {
 	defer tokenHandler.Close()
 	logger.Info("Token service client successfully connected to auth gRPC server " + tokenHandler.Secure())
 
-	authn := jwksAuthn.NewAuthentication(cfg.JWKSURL)
-	logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
+	isSymmetric, err := auth.IsSymmetricAlgorithm(cfg.AuthKeyAlgorithm)
+	if err != nil {
+		logger.Error(fmt.Sprintf("failed to parse auth key algorithm : %s", err))
+		exitCode = 1
+		return
+	}
+	var authn smqauthn.Authentication
+	switch {
+	case !isSymmetric:
+		authn = jwksAuthn.NewAuthentication(cfg.JWKSURL)
+		logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
+	default:
+		var authnClient grpcclient.Handler
+		authn, authnClient, err = authsvcAuthn.NewAuthentication(ctx, authClientConfig)
+		if err != nil {
+			logger.Error(err.Error())
+			exitCode = 1
+			return
+		}
+		defer authnClient.Close()
+		logger.Info("AuthN  successfully connected to auth gRPC server " + authnClient.Secure())
+	}
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
-
 	domsGrpcCfg := grpcclient.Config{}
 	if err := env.ParseWithOptions(&domsGrpcCfg, env.Options{Prefix: envPrefixDomains}); err != nil {
 		logger.Error(fmt.Sprintf("failed to load domains gRPC client configuration : %s", err))
