@@ -85,7 +85,7 @@ type Authn interface {
 	Identify(ctx context.Context, token string) (Key, error)
 
 	// RetrieveJWKS retrieves a JWKs to validate issued tokens.
-	RetrieveJWKS(ctx context.Context) []JWK
+	RetrieveJWKS(ctx context.Context) ([]JWK, error)
 }
 
 // Service specifies an API that must be fulfilled by the domain service
@@ -201,7 +201,7 @@ func (svc service) Identify(ctx context.Context, token string) (Key, error) {
 	}
 }
 
-func (svc service) RetrieveJWKS(ctx context.Context) []JWK {
+func (svc service) RetrieveJWKS(ctx context.Context) ([]JWK, error) {
 	return svc.tokenizer.RetrieveJWKS(ctx)
 }
 

@@ -102,7 +102,7 @@ func (pkr *publicKeyRepo) Save(ctx context.Context, key auth.PublicKey) error {
 }
 
 func (pkr *publicKeyRepo) RetrieveAll(ctx context.Context) ([]auth.PublicKey, error) {
-	q := `SELECT kid, jwk_data, created_at, retired_at, status FROM public_keys ORDER BY created_at DESC`
+	q := `SELECT kid, jwk_data, created_at, retired_at, status FROM public_keys WHERE retired_at IS NULL ORDER BY created_at DESC`
 
 	rows, err := pkr.db.QueryxContext(ctx, q)
 	if err != nil {
@@ -117,6 +117,10 @@ func (pkr *publicKeyRepo) RetrieveAll(ctx context.Context) ([]auth.PublicKey, er
 			return nil, postgres.HandleError(repoerr.ErrViewEntity, err)
 		}
 		keys = append(keys, toAuthPublicKey(dbKey))
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, postgres.HandleError(repoerr.ErrViewEntity, err)
 	}
 
 	return keys, nil

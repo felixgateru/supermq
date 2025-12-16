@@ -23,6 +23,9 @@ func NewKeyManager(cfg auth.KeyManagerConfig, secret []byte) (auth.KeyManager, e
 	if _, ok := alg.(jwa.InvalidKeyAlgorithm); ok {
 		return nil, auth.ErrUnsupportedKeyAlgorithm
 	}
+	if len(secret) == 0 {
+		return nil, auth.ErrInvalidSymmetricKey
+	}
 	return &manager{
 		secret:    secret,
 		algorithm: alg,
@@ -30,17 +33,17 @@ func NewKeyManager(cfg auth.KeyManagerConfig, secret []byte) (auth.KeyManager, e
 }
 
 func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
-	return jwt.Sign(token, jwt.WithKey(jwa.HS512, km.secret))
+	return jwt.Sign(token, jwt.WithKey(km.algorithm, km.secret))
 }
 
 func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
 	return jwt.Parse(
 		[]byte(token),
 		jwt.WithValidate(true),
-		jwt.WithKey(jwa.HS512, km.secret),
+		jwt.WithKey(km.algorithm, km.secret),
 	)
 }
 
-func (km *manager) PublicJWKS(ctx context.Context) []auth.JWK {
-	return nil
+func (km *manager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
+	return nil, nil
 }

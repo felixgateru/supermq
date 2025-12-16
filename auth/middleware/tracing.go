@@ -61,7 +61,10 @@ func (tm *tracingMiddleware) Identify(ctx context.Context, token string) (auth.K
 	return tm.svc.Identify(ctx, token)
 }
 
-func (tm *tracingMiddleware) RetrieveJWKS(ctx context.Context) []auth.JWK {
+func (tm *tracingMiddleware) RetrieveJWKS(ctx context.Context) ([]auth.JWK, error) {
+	ctx, span := tm.tracer.Start(ctx, "retrieve_jwks")
+	defer span.End()
+
 	return tm.svc.RetrieveJWKS(ctx)
 }
 

@@ -151,7 +151,7 @@ func main() {
 
 	keyManagerCfg := auth.KeyManagerConfig{}
 	if err := env.ParseWithOptions(&keyManagerCfg, env.Options{Prefix: envPrefixKeys}); err != nil {
-		logger.Error("failed to load key manager %s configuration : %s", svcName, err.Error())
+		logger.Error(fmt.Sprintf("failed to load key manager %s configuration : %s", svcName, err.Error()))
 		exitCode = 1
 		return
 	}

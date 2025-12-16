@@ -84,7 +84,10 @@ func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
 }
 
 func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
-	keys := km.PublicJWKS(ctx)
+	keys, err := km.PublicJWKS(ctx)
+	if err != nil {
+		return nil, err
+	}
 	set := jwk.NewSet()
 	for _, key := range keys {
 		err := set.AddKey(key.Key())
@@ -103,10 +106,10 @@ func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error
 	return tkn, nil
 }
 
-func (km *manager) PublicJWKS(ctx context.Context) []auth.JWK {
+func (km *manager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
 	keys, err := km.repo.RetrieveAll(ctx)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	var jwkKeys []auth.JWK
@@ -114,7 +117,7 @@ func (km *manager) PublicJWKS(ctx context.Context) []auth.JWK {
 		jwkKeys = append(jwkKeys, key.JWKData)
 	}
 
-	return jwkKeys
+	return jwkKeys, nil
 }
 
 func (km *manager) rotate(ctx context.Context) error {

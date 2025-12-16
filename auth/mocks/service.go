@@ -1029,7 +1029,7 @@ func (_c *Service_ResetPATSecret_Call) RunAndReturn(run func(ctx context.Context
 }
 
 // RetrieveJWKS provides a mock function for the type Service
-func (_mock *Service) RetrieveJWKS(ctx context.Context) []auth.JWK {
+func (_mock *Service) RetrieveJWKS(ctx context.Context) ([]auth.JWK, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
@@ -1037,6 +1037,10 @@ func (_mock *Service) RetrieveJWKS(ctx context.Context) []auth.JWK {
 	}
 
 	var r0 []auth.JWK
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]auth.JWK, error)); ok {
+		return returnFunc(ctx)
+	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context) []auth.JWK); ok {
 		r0 = returnFunc(ctx)
 	} else {
@@ -1044,7 +1048,12 @@ func (_mock *Service) RetrieveJWKS(ctx context.Context) []auth.JWK {
 			r0 = ret.Get(0).([]auth.JWK)
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // Service_RetrieveJWKS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveJWKS'
@@ -1071,12 +1080,12 @@ func (_c *Service_RetrieveJWKS_Call) Run(run func(ctx context.Context)) *Service
 	return _c
 }
 
-func (_c *Service_RetrieveJWKS_Call) Return(jWKs []auth.JWK) *Service_RetrieveJWKS_Call {
-	_c.Call.Return(jWKs)
+func (_c *Service_RetrieveJWKS_Call) Return(jWKs []auth.JWK, err error) *Service_RetrieveJWKS_Call {
+	_c.Call.Return(jWKs, err)
 	return _c
 }
 
-func (_c *Service_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) []auth.JWK) *Service_RetrieveJWKS_Call {
+func (_c *Service_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) ([]auth.JWK, error)) *Service_RetrieveJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

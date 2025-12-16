@@ -201,7 +201,7 @@ func main() {
 			return
 		}
 		defer authnClient.Close()
-		logger.Info("AuthN  successfully connected to auth gRPC server " + authnClient.Secure())
+		logger.Info("AuthN successfully connected to auth gRPC server " + authnClient.Secure())
 	}
 	authnMiddleware := smqauthn.NewAuthNMiddleware(authn)
 

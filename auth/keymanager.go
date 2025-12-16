@@ -12,7 +12,10 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 )
 
-var ErrUnsupportedKeyAlgorithm = errors.New("unsupported key algorithm")
+var (
+	ErrUnsupportedKeyAlgorithm = errors.New("unsupported key algorithm")
+	ErrInvalidSymmetricKey     = errors.New("invalid symmetric key")
+)
 
 // PublicKeyStatus represents the status of a public key.
 type PublicKeyStatus int
@@ -61,7 +64,7 @@ type KeyManager interface {
 
 	ParseJWT(ctx context.Context, token string) (jwt.Token, error)
 
-	PublicJWKS(ctx context.Context) []JWK
+	PublicJWKS(ctx context.Context) ([]JWK, error)
 }
 
 // PublicKeyRepository represents a repository for storing and retrieving public keys.

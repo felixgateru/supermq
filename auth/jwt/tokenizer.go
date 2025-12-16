@@ -120,7 +120,7 @@ func (tok *tokenizer) validateToken(ctx context.Context, token string) (jwt.Toke
 	return tkn, nil
 }
 
-func (tok *tokenizer) RetrieveJWKS(ctx context.Context) []auth.JWK {
+func (tok *tokenizer) RetrieveJWKS(ctx context.Context) ([]auth.JWK, error) {
 	return tok.keyManager.PublicJWKS(ctx)
 }
 

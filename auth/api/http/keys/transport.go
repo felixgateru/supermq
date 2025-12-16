@@ -49,7 +49,7 @@ func MakeHandler(svc auth.Service, mux *chi.Mux, logger *slog.Logger, jwksCacheM
 
 		r.Get("/.well-known/jwks.json", kithttp.NewServer(
 			retrieveJWKSEndpoint(svc, jwksCacheMaxAge, jwksCacheStaleWhileRevalidate),
-			decodeKeyReq,
+			decodeJWKSReq,
 			api.EncodeResponse,
 			opts...,
 		).ServeHTTP)
@@ -75,5 +75,10 @@ func decodeKeyReq(_ context.Context, r *http.Request) (any, error) {
 		token: apiutil.ExtractBearerToken(r),
 		id:    chi.URLParam(r, "id"),
 	}
+	return req, nil
+}
+
+func decodeJWKSReq(_ context.Context, _ *http.Request) (any, error) {
+	req := jwksReq{}
 	return req, nil
 }

@@ -112,7 +112,7 @@ func (_c *KeyManager_ParseJWT_Call) RunAndReturn(run func(ctx context.Context, t
 }
 
 // PublicJWKS provides a mock function for the type KeyManager
-func (_mock *KeyManager) PublicJWKS(ctx context.Context) []auth.JWK {
+func (_mock *KeyManager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
@@ -120,6 +120,10 @@ func (_mock *KeyManager) PublicJWKS(ctx context.Context) []auth.JWK {
 	}
 
 	var r0 []auth.JWK
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]auth.JWK, error)); ok {
+		return returnFunc(ctx)
+	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context) []auth.JWK); ok {
 		r0 = returnFunc(ctx)
 	} else {
@@ -127,7 +131,12 @@ func (_mock *KeyManager) PublicJWKS(ctx context.Context) []auth.JWK {
 			r0 = ret.Get(0).([]auth.JWK)
 		}
 	}
-	return r0
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
 }
 
 // KeyManager_PublicJWKS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PublicJWKS'
@@ -154,12 +163,12 @@ func (_c *KeyManager_PublicJWKS_Call) Run(run func(ctx context.Context)) *KeyMan
 	return _c
 }
 
-func (_c *KeyManager_PublicJWKS_Call) Return(jWKs []auth.JWK) *KeyManager_PublicJWKS_Call {
-	_c.Call.Return(jWKs)
+func (_c *KeyManager_PublicJWKS_Call) Return(jWKs []auth.JWK, err error) *KeyManager_PublicJWKS_Call {
+	_c.Call.Return(jWKs, err)
 	return _c
 }
 
-func (_c *KeyManager_PublicJWKS_Call) RunAndReturn(run func(ctx context.Context) []auth.JWK) *KeyManager_PublicJWKS_Call {
+func (_c *KeyManager_PublicJWKS_Call) RunAndReturn(run func(ctx context.Context) ([]auth.JWK, error)) *KeyManager_PublicJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

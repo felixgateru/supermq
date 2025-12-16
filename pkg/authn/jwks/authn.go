@@ -55,7 +55,7 @@ func NewAuthentication(jwksURL string) authn.Authentication {
 }
 
 func (a authentication) Authenticate(ctx context.Context, token string) (authn.Session, error) {
-	jwks, err := a.fetchJWKS()
+	jwks, err := a.fetchJWKS(ctx)
 	if err != nil {
 		return authn.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
 	}
@@ -76,7 +76,7 @@ func (a authentication) Authenticate(ctx context.Context, token string) (authn.S
 	}, nil
 }
 
-func (a authentication) fetchJWKS() (jwk.Set, error) {
+func (a authentication) fetchJWKS(ctx context.Context) (jwk.Set, error) {
 	jwksCache.RLock()
 	if time.Since(jwksCache.cachedAt) < cacheDuration && jwksCache.jwks.Len() > 0 {
 		cached := jwksCache.jwks
@@ -85,7 +85,7 @@ func (a authentication) fetchJWKS() (jwk.Set, error) {
 	}
 	jwksCache.RUnlock()
 
-	req, err := http.NewRequest("GET", a.jwksURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", a.jwksURL, nil)
 	if err != nil {
 		return nil, err
 	}

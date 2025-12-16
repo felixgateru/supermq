@@ -259,7 +259,8 @@ func TestRetrieveJWKS(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			kmCall := keyManager.On("PublicJWKS", mock.Anything).Return(tc.keys)
-			jwks := tokenizer.RetrieveJWKS(context.Background())
+			jwks, err := tokenizer.RetrieveJWKS(context.Background())
+			assert.Nil(t, err, fmt.Sprintf("%s expected no error, got %s", tc.desc, err))
 			assert.Equal(t, tc.keys, jwks, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.keys, jwks))
 			kmCall.Unset()
 		})
