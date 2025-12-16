@@ -21,6 +21,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -227,7 +228,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			kmCall := keyManager.On("ParseJWT", tc.token).Return(tc.managerRes, tc.managerErr)
+			kmCall := keyManager.On("ParseJWT", mock.Anything, tc.token).Return(tc.managerRes, tc.managerErr)
 			key, err := tokenizer.Parse(context.Background(), tc.token)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s, got %s", tc.desc, tc.err, err))
 			if err == nil {
@@ -243,21 +244,21 @@ func TestRetrieveJWKS(t *testing.T) {
 
 	cases := []struct {
 		desc string
-		keys []jwk.Key
+		keys []auth.JWK
 	}{
 		{
 			desc: "retrieve jwks with keys",
-			keys: []jwk.Key{newJWK(t), newJWK(t)},
+			keys: []auth.JWK{newJWK(t), newJWK(t)},
 		},
 		{
 			desc: "retrieve empty jwks",
-			keys: []jwk.Key{},
+			keys: []auth.JWK{},
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			kmCall := keyManager.On("PublicJWKS").Return(tc.keys)
+			kmCall := keyManager.On("PublicJWKS", mock.Anything).Return(tc.keys)
 			jwks := tokenizer.RetrieveJWKS(context.Background())
 			assert.Equal(t, tc.keys, jwks, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.keys, jwks))
 			kmCall.Unset()
@@ -322,7 +323,7 @@ func signToken(issuerName string, key auth.Key, parseToken bool) (string, jwt.To
 	return string(sTkn), pTkn, nil
 }
 
-func newJWK(t *testing.T) jwk.Key {
+func newJWK(t *testing.T) auth.JWK {
 	pKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.Nil(t, err, fmt.Sprintf("generating rsa key expected to succeed: %s", err))
 	jwkKey, err := jwk.FromRaw(&pKey.PublicKey)
@@ -331,5 +332,5 @@ func newJWK(t *testing.T) jwk.Key {
 	require.Nil(t, err, fmt.Sprintf("setting jwk key id expected to succeed: %s", err))
 	err = jwkKey.Set(jwk.AlgorithmKey, jwa.RS256.String())
 	require.Nil(t, err, fmt.Sprintf("setting jwk algorithm expected to succeed: %s", err))
-	return jwkKey
+	return auth.NewJWK(jwkKey)
 }

@@ -266,7 +266,7 @@ func TestIssue(t *testing.T) {
 	for _, tc := range cases3 {
 		t.Run(tc.desc, func(t *testing.T) {
 			tokenizerCall := tokenizer.On("Issue", mock.Anything).Return(tc.token, tc.issueErr)
-			tokenizerCall1 := tokenizer.On("Parse", mock.Anything).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall1 := tokenizer.On("Parse", mock.Anything, tc.token).Return(tc.parseRes, tc.parseErr)
 			repoCall := krepo.On("Save", mock.Anything, mock.Anything).Return(mock.Anything, tc.saveErr)
 			policyCall := pEvaluator.On("CheckPolicy", mock.Anything, policies.Policy{
 				Subject:     tc.key.Subject,
@@ -347,7 +347,7 @@ func TestIssue(t *testing.T) {
 	for _, tc := range cases4 {
 		t.Run(tc.desc, func(t *testing.T) {
 			tokenizerCall := tokenizer.On("Issue", mock.Anything).Return(tc.token, tc.issueErr)
-			tokenizerCall1 := tokenizer.On("Parse", mock.Anything).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall1 := tokenizer.On("Parse", mock.Anything, tc.token).Return(tc.parseRes, tc.parseErr)
 			policyCall := pEvaluator.On("CheckPolicy", mock.Anything, policies.Policy{
 				Subject:     tc.key.Subject,
 				SubjectType: policies.UserType,
@@ -422,7 +422,7 @@ func TestRevoke(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			tokenizerCall := tokenizer.On("Parse", mock.Anything).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall := tokenizer.On("Parse", mock.Anything, tc.token).Return(tc.parseRes, tc.parseErr)
 			repoCall := krepo.On("Remove", mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
 			err := svc.Revoke(context.Background(), tc.token, tc.id)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s got %s\n", tc.desc, tc.err, err))
@@ -498,7 +498,7 @@ func TestRetrieve(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			tokenizerCall := tokenizer.On("Parse", mock.Anything).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall := tokenizer.On("Parse", mock.Anything, tc.token).Return(tc.parseRes, tc.parseErr)
 			repoCall := krepo.On("Retrieve", mock.Anything, mock.Anything, mock.Anything).Return(auth.Key{}, tc.err)
 			_, err := svc.RetrieveKey(context.Background(), tc.token, tc.id)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s got %s\n", tc.desc, tc.err, err))
@@ -629,7 +629,7 @@ func TestIdentify(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			tokenizerCall := tokenizer.On("Parse", mock.Anything).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall := tokenizer.On("Parse", mock.Anything, tc.key).Return(tc.parseRes, tc.parseErr)
 			repoCall := krepo.On("Retrieve", mock.Anything, mock.Anything, mock.Anything).Return(auth.Key{}, tc.err)
 			repoCall1 := krepo.On("Remove", mock.Anything, mock.Anything, mock.Anything).Return(tc.err)
 			idt, err := svc.Identify(context.Background(), tc.key)
@@ -895,7 +895,7 @@ func TestAuthorize(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			tokenizerCall := tokenizer.On("Parse", tc.parseReq).Return(tc.parseRes, tc.parseErr)
+			tokenizerCall := tokenizer.On("Parse", mock.Anything, tc.parseReq).Return(tc.parseRes, tc.parseErr)
 			policyCall := pEvaluator.On("CheckPolicy", mock.Anything, tc.checkPolicyReq).Return(tc.checkPolicyErr)
 			policyCall1 := pEvaluator.On("CheckPolicy", mock.Anything, tc.checkDomainPolicyReq).Return(tc.checkDomainPolicyErr)
 			repoCall := krepo.On("Remove", mock.Anything, mock.Anything, mock.Anything).Return(nil)
