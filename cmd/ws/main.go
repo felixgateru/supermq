@@ -169,12 +169,18 @@ func main() {
 		return
 	}
 	var authn authn.Authentication
+	var authnClient grpcclient.Handler
 	switch {
 	case !isSymmetric:
-		authn = jwksAuthn.NewAuthentication(cfg.JWKSURL)
+		authn, authnClient, err = jwksAuthn.NewAuthentication(ctx, cfg.JWKSURL, authnCfg)
+		if err != nil {
+			logger.Error(err.Error())
+			exitCode = 1
+			return
+		}
+		defer authnClient.Close()
 		logger.Info("AuthN successfully set up jwks authentication on " + cfg.JWKSURL)
 	default:
-		var authnClient grpcclient.Handler
 		authn, authnClient, err = authsvcAuthn.NewAuthentication(ctx, authnCfg)
 		if err != nil {
 			logger.Error(err.Error())

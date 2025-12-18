@@ -7,17 +7,22 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	grpcAuthV1 "github.com/absmach/supermq/api/grpc/auth/v1"
 	smqauth "github.com/absmach/supermq/auth"
+	"github.com/absmach/supermq/auth/api/grpc/auth"
 	smqjwt "github.com/absmach/supermq/auth/jwt"
 	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/errors"
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
+	"github.com/absmach/supermq/pkg/grpcclient"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/lestrrat-go/jwx/v2/jwt"
+	grpchealth "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
@@ -45,16 +50,41 @@ var (
 var _ authn.Authentication = (*authentication)(nil)
 
 type authentication struct {
-	jwksURL string
+	jwksURL       string
+	authSvcClient grpcAuthV1.AuthServiceClient
 }
 
-func NewAuthentication(jwksURL string) authn.Authentication {
-	return authentication{
-		jwksURL: jwksURL,
+func NewAuthentication(ctx context.Context, jwksURL string, cfg grpcclient.Config) (authn.Authentication, grpcclient.Handler, error) {
+	client, err := grpcclient.NewHandler(cfg)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	health := grpchealth.NewHealthClient(client.Connection())
+	resp, err := health.Check(ctx, &grpchealth.HealthCheckRequest{
+		Service: "auth",
+	})
+	if err != nil || resp.GetStatus() != grpchealth.HealthCheckResponse_SERVING {
+		return nil, nil, grpcclient.ErrSvcNotServing
+	}
+	authSvcClient := auth.NewAuthClient(client.Connection(), cfg.Timeout)
+
+	return authentication{
+		jwksURL:       jwksURL,
+		authSvcClient: authSvcClient,
+	}, client, nil
 }
 
 func (a authentication) Authenticate(ctx context.Context, token string) (authn.Session, error) {
+	if strings.HasPrefix(token, authn.PatPrefix) {
+		res, err := a.authSvcClient.AuthenticatePAT(ctx, &grpcAuthV1.AuthNReq{Token: token})
+		if err != nil {
+			return authn.Session{}, errors.Wrap(errors.ErrAuthentication, err)
+		}
+
+		return authn.Session{Type: authn.PersonalAccessToken, PatID: res.GetId(), UserID: res.GetUserId(), Role: authn.Role(res.GetUserRole())}, nil
+	}
+
 	jwks, err := a.fetchJWKS(ctx)
 	if err != nil {
 		return authn.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
