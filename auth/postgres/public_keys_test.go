@@ -211,7 +211,7 @@ func TestPurgeExpired(t *testing.T) {
 		{
 			desc:           "purge keys expired before 24 hours ago",
 			expiredBefore:  time.Now().UTC().Add(-24 * time.Hour),
-			expectedRemain: 2,
+			expectedRemain: 1,
 			err:            nil,
 		},
 		{
