@@ -37,7 +37,7 @@ const (
 	tokenType     = "type"
 	RoleField     = "role"
 	VerifiedField = "verified"
-	patPrefix              = "pat"
+	patPrefix     = "pat"
 )
 
 type tokenizer struct {

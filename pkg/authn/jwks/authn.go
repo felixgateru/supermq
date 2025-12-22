@@ -77,11 +77,10 @@ func NewAuthentication(ctx context.Context, jwksURL string, cfg grpcclient.Confi
 
 func (a authentication) Authenticate(ctx context.Context, token string) (authn.Session, error) {
 	if strings.HasPrefix(token, authn.PatPrefix) {
-		res, err := a.authSvcClient.AuthenticatePAT(ctx, &grpcAuthV1.AuthNReq{Token: token})
+		res, err := a.authSvcClient.Authenticate(ctx, &grpcAuthV1.AuthNReq{Token: token})
 		if err != nil {
-			return authn.Session{}, errors.Wrap(errors.ErrAuthentication, err)
+			return authn.Session{}, errors.Wrap(svcerr.ErrAuthentication, err)
 		}
-
 		return authn.Session{Type: authn.PersonalAccessToken, PatID: res.GetId(), UserID: res.GetUserId(), Role: authn.Role(res.GetUserRole())}, nil
 	}
 

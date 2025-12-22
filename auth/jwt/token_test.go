@@ -32,8 +32,10 @@ const (
 	issuerName    = "supermq.auth"
 )
 
-var errJWTExpiryKey  = errors.New(`"exp" not satisfied`)
-	keyManager = new(mocks.KeyManager)
+var (
+	errJWTExpiryKey = errors.New(`"exp" not satisfied`)
+	keyManager      = new(mocks.KeyManager)
+)
 
 func TestIssue(t *testing.T) {
 	tokenizer := authjwt.New(keyManager)
@@ -137,7 +139,8 @@ func TestIssue(t *testing.T) {
 func TestParse(t *testing.T) {
 	tokenizer := authjwt.New(keyManager)
 
-	signedTkn, parsedTkn, err := signToken(issuerName, key(), true)
+	validKey := key()
+	signedTkn, parsedTkn, err := signToken(issuerName, validKey, true)
 	require.Nil(t, err, fmt.Sprintf("issuing key expected to succeed: %s", err))
 
 	apiKey := key()
@@ -177,7 +180,7 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			desc:       "parse valid key",
-			key:        key(),
+			key:        validKey,
 			token:      signedTkn,
 			managerRes: parsedTkn,
 			err:        nil,
@@ -208,7 +211,7 @@ func TestParse(t *testing.T) {
 			key:        auth.Key{},
 			token:      signedInValidTkn,
 			managerRes: parsedInvalidTkn,
-			err:        errInvalidIssuer,
+			err:        svcerr.ErrAuthentication,
 		},
 		{
 			desc:       "parse token with empty subject",
@@ -243,8 +246,10 @@ func TestRetrieveJWKS(t *testing.T) {
 	tokenizer := authjwt.New(keyManager)
 
 	cases := []struct {
-		desc string
-		keys []auth.JWK
+		desc        string
+		keys        []auth.JWK
+		retrieveErr error
+		err         error
 	}{
 		{
 			desc: "retrieve jwks with keys",
@@ -254,13 +259,18 @@ func TestRetrieveJWKS(t *testing.T) {
 			desc: "retrieve empty jwks",
 			keys: []auth.JWK{},
 		},
+		{
+			desc:        "retrieve jwks with error",
+			retrieveErr: svcerr.ErrViewEntity,
+			err:         svcerr.ErrViewEntity,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			kmCall := keyManager.On("PublicJWKS", mock.Anything).Return(tc.keys)
+			kmCall := keyManager.On("PublicJWKS", mock.Anything).Return(tc.keys, tc.retrieveErr)
 			jwks, err := tokenizer.RetrieveJWKS(context.Background())
-			assert.Nil(t, err, fmt.Sprintf("%s expected no error, got %s", tc.desc, err))
+			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s, got %s", tc.desc, tc.err, err))
 			assert.Equal(t, tc.keys, jwks, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.keys, jwks))
 			kmCall.Unset()
 		})
