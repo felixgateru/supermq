@@ -23,10 +23,11 @@ import (
 const maxNameSize = 254
 
 var (
-	invalidName = strings.Repeat("m", maxNameSize+10)
-	password    = "$tr0ngPassw0rd"
-	namesgen    = namegenerator.NewGenerator()
-	emailSuffix = "@example.com"
+	invalidName    = strings.Repeat("m", maxNameSize+10)
+	password       = "$tr0ngPassw0rd"
+	namesgen       = namegenerator.NewGenerator()
+	emailSuffix    = "@example.com"
+	validTimestamp = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 func TestUsersSave(t *testing.T) {
@@ -370,6 +371,7 @@ func TestRetrieveAll(t *testing.T) {
 			Status:    users.EnabledStatus,
 			Tags:      []string{"tag1"},
 			CreatedAt: baseTime.Add(time.Duration(i) * time.Millisecond),
+			UpdatedAt: baseTime.Add(time.Duration(i) * time.Millisecond),
 		}
 		if i%50 == 0 {
 			user.Metadata = map[string]any{
@@ -384,6 +386,11 @@ func TestRetrieveAll(t *testing.T) {
 		if user.Status == users.EnabledStatus {
 			enabledUsers = append(enabledUsers, user)
 		}
+	}
+
+	reversedUsers := []users.User{}
+	for i := len(items) - 1; i >= 0; i-- {
+		reversedUsers = append(reversedUsers, items[i])
 	}
 
 	cases := []struct {
@@ -761,6 +768,162 @@ func TestRetrieveAll(t *testing.T) {
 			},
 			err: nil,
 		},
+		{
+			desc: "retrieve users with order by first_name ascending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "first_name",
+				Dir:    "asc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by first_name descending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "first_name",
+				Dir:    "desc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by username ascending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "username",
+				Dir:    "asc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by username descending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "username",
+				Dir:    "desc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by created_at ascending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "created_at",
+				Dir:    "asc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+				Users: items[:10],
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by created_at descending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "created_at",
+				Dir:    "desc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+				Users: reversedUsers[:10],
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by updated_at ascending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "updated_at",
+				Dir:    "asc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+				Users: items[:10],
+			},
+			err: nil,
+		},
+		{
+			desc: "retrieve users with order by updated_at descending",
+			pageMeta: users.Page{
+				Offset: 0,
+				Limit:  10,
+				Role:   users.AllRole,
+				Status: users.AllStatus,
+				Order:  "updated_at",
+				Dir:    "desc",
+			},
+			page: users.UsersPage{
+				Page: users.Page{
+					Total:  uint64(num),
+					Offset: 0,
+					Limit:  10,
+				},
+				Users: reversedUsers[:10],
+			},
+			err: nil,
+		},
 	}
 
 	for _, tc := range cases {
@@ -770,7 +933,10 @@ func TestRetrieveAll(t *testing.T) {
 		assert.Equal(t, tc.page.Offset, page.Offset, fmt.Sprintf("%s: expected %d got %d\n", tc.desc, tc.page.Offset, page.Offset))
 		assert.Equal(t, tc.page.Limit, page.Limit, fmt.Sprintf("%s: expected %d got %d\n", tc.desc, tc.page.Limit, page.Limit))
 		assert.Equal(t, tc.page.Page, page.Page, fmt.Sprintf("%s: expected  %v, got %v", tc.desc, tc.page, page))
-		assert.ElementsMatch(t, tc.page.Users, page.Users, fmt.Sprintf("%s: expected %v, got %v", tc.desc, tc.page.Users, page.Users))
+		if len(tc.page.Users) > 0 {
+			assert.ElementsMatch(t, stripUserDetails(tc.page.Users), stripUserDetails(page.Users), fmt.Sprintf("%s: expected %v, got %v", tc.desc, tc.page.Users, page.Users))
+		}
+		verifyUsersOrdering(t, page.Users, tc.pageMeta.Order, tc.pageMeta.Dir)
 		assert.Equal(t, tc.err, err, fmt.Sprintf("%s: expected %s got %s\n", tc.desc, tc.err, err))
 	}
 }
@@ -2155,4 +2321,47 @@ func getIDs(usrs []users.User) []string {
 	}
 
 	return ids
+}
+
+func stripUserDetails(users []users.User) []users.User {
+	for i := range users {
+		users[i].CreatedAt = validTimestamp
+		users[i].UpdatedAt = validTimestamp
+	}
+	return users
+}
+
+func verifyUsersOrdering(t *testing.T, users []users.User, order, dir string) {
+	if order == "" || len(users) <= 1 {
+		return
+	}
+
+	for i := 0; i < len(users)-1; i++ {
+		switch order {
+		case "first_name":
+			if dir == "asc" {
+				assert.LessOrEqual(t, users[i].FirstName, users[i+1].FirstName, fmt.Sprintf("Users not ordered by first_name ascending at index %d: %s > %s", i, users[i].FirstName, users[i+1].FirstName))
+			} else {
+				assert.GreaterOrEqual(t, users[i].FirstName, users[i+1].FirstName, fmt.Sprintf("Users not ordered by first_name descending at index %d: %s < %s", i, users[i].FirstName, users[i+1].FirstName))
+			}
+		case "username":
+			if dir == "asc" {
+				assert.LessOrEqual(t, users[i].Credentials.Username, users[i+1].Credentials.Username, fmt.Sprintf("Users not ordered by username ascending at index %d: %s > %s", i, users[i].Credentials.Username, users[i+1].Credentials.Username))
+			} else {
+				assert.GreaterOrEqual(t, users[i].Credentials.Username, users[i+1].Credentials.Username, fmt.Sprintf("Users not ordered by username descending at index %d: %s < %s", i, users[i].Credentials.Username, users[i+1].Credentials.Username))
+			}
+		case "created_at":
+			if dir == "asc" {
+				assert.False(t, users[i].CreatedAt.After(users[i+1].CreatedAt), fmt.Sprintf("Users not ordered by created_at ascending at index %d: %v > %v", i, users[i].CreatedAt, users[i+1].CreatedAt))
+			} else {
+				assert.False(t, users[i].CreatedAt.Before(users[i+1].CreatedAt), fmt.Sprintf("Users not ordered by created_at descending at index %d: %v < %v", i, users[i].CreatedAt, users[i+1].CreatedAt))
+			}
+		case "updated_at":
+			if dir == "asc" {
+				assert.False(t, users[i].UpdatedAt.After(users[i+1].UpdatedAt), fmt.Sprintf("Users not ordered by updated_at ascending at index %d: %v > %v", i, users[i].UpdatedAt, users[i+1].UpdatedAt))
+			} else {
+				assert.False(t, users[i].UpdatedAt.Before(users[i+1].UpdatedAt), fmt.Sprintf("Users not ordered by updated_at descending at index %d: %v < %v", i, users[i].UpdatedAt, users[i+1].UpdatedAt))
+			}
+		}
+	}
 }
