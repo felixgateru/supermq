@@ -323,18 +323,24 @@ func TestRetrieveJWKS(t *testing.T) {
 
 	cases := []struct {
 		desc   string
-		svcRes []jwk.Key
+		svcRes []auth.JWK
+		svcErr error
 		status int
 	}{
 		{
 			desc:   "retrieve JWKS with keys",
-			svcRes: []jwk.Key{newJWK(t), newJWK(t)},
+			svcRes: []auth.JWK{newJWK(t), newJWK(t)},
 			status: http.StatusOK,
 		},
 		{
 			desc:   "retrieve empty JWKS",
-			svcRes: []jwk.Key{},
+			svcRes: []auth.JWK{},
 			status: http.StatusOK,
+		},
+		{
+			desc:   "retrieve JWKS with service error",
+			svcErr: svcerr.ErrViewEntity,
+			status: http.StatusUnprocessableEntity,
 		},
 	}
 
@@ -344,7 +350,7 @@ func TestRetrieveJWKS(t *testing.T) {
 			method: http.MethodGet,
 			url:    fmt.Sprintf("%s/keys/.well-known/jwks.json", ts.URL),
 		}
-		svcCall := svc.On("RetrieveJWKS", mock.Anything).Return(tc.svcRes)
+		svcCall := svc.On("RetrieveJWKS", mock.Anything).Return(tc.svcRes, tc.svcErr)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))
@@ -352,7 +358,7 @@ func TestRetrieveJWKS(t *testing.T) {
 	}
 }
 
-func newJWK(t *testing.T) jwk.Key {
+func newJWK(t *testing.T) auth.JWK {
 	pKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.Nil(t, err, fmt.Sprintf("generating rsa key expected to succeed: %s", err))
 	jwkKey, err := jwk.FromRaw(&pKey.PublicKey)
@@ -361,5 +367,5 @@ func newJWK(t *testing.T) jwk.Key {
 	require.Nil(t, err, fmt.Sprintf("setting jwk key id expected to succeed: %s", err))
 	err = jwkKey.Set(jwk.AlgorithmKey, jwa.RS256.String())
 	require.Nil(t, err, fmt.Sprintf("setting jwk algorithm expected to succeed: %s", err))
-	return jwkKey
+	return auth.NewJWK(jwkKey)
 }
