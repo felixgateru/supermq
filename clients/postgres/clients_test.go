@@ -32,7 +32,8 @@ const (
 	maxNameSize = 1024
 	emailSuffix = "@example.com"
 	defOrder    = "created_at"
-	defDir      = "asc"
+	ascDir      = "asc"
+	descDir     = "desc"
 )
 
 var (
@@ -1537,7 +1538,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1554,7 +1555,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1571,7 +1572,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "identity",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1588,7 +1589,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "identity",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1605,7 +1606,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1623,7 +1624,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "created_at",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1641,7 +1642,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "updated_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1658,7 +1659,7 @@ func TestRetrieveAll(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "updated_at",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -1833,7 +1834,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  10,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1853,7 +1854,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  10,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1873,7 +1874,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  10,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1894,7 +1895,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Channel: channelID,
 				Status:  clients.AllStatus,
 				Order:   defOrder,
-				Dir:     defDir,
+				Dir:     ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1914,7 +1915,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  50,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1935,7 +1936,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Metadata: directClients[0].Metadata,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1958,7 +1959,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				},
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -1981,7 +1982,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				},
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2003,7 +2004,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Name:   directClients[0].Name,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2024,7 +2025,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Name:   namegen.Generate(),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2045,7 +2046,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Identity: directClients[0].Credentials.Identity,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2066,7 +2067,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Identity: namegen.Generate(),
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2087,7 +2088,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Tag:    directClients[0].Tags[0],
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2108,7 +2109,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Tag:    namegen.Generate(),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2151,7 +2152,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				ID:     directClients[0].ID,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2172,7 +2173,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				ID:     testsutil.GenerateUUID(t),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2192,7 +2193,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  nClients,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2212,7 +2213,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Limit:  nClients,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2233,7 +2234,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Group:  &group.ID,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2255,7 +2256,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Group:  &emptyGroupParam,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2276,7 +2277,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				AccessType: domainAccess,
 				Status:     clients.AllStatus,
 				Order:      defOrder,
-				Dir:        defDir,
+				Dir:        ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2297,7 +2298,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				AccessType: domainAccess,
 				Status:     clients.AllStatus,
 				Order:      defOrder,
-				Dir:        defDir,
+				Dir:        ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2318,7 +2319,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				RoleID: directClients[0].RoleID,
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2339,7 +2340,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				RoleID: testsutil.GenerateUUID(t),
 				Status: clients.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2360,7 +2361,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				RoleName: directClients[0].RoleName,
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2381,7 +2382,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				RoleName: namegen.Generate(),
 				Status:   clients.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2400,7 +2401,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2419,7 +2420,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "name",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2438,7 +2439,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "identity",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2457,7 +2458,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "identity",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2476,7 +2477,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2496,7 +2497,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "created_at",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2516,7 +2517,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "updated_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2535,7 +2536,7 @@ func TestRetrieveUserClients(t *testing.T) {
 				Offset: 0,
 				Limit:  5,
 				Order:  "updated_at",
-				Dir:    "desc",
+				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
 			response: clients.ClientsPage{
@@ -2646,7 +2647,7 @@ func TestSearchClients(t *testing.T) {
 			page: clients.Page{
 				Limit: 10,
 				Order: "name",
-				Dir:   "asc",
+				Dir:   ascDir,
 			},
 			response: clients.ClientsPage{
 				Clients: expectedClients[0:10],
@@ -2679,7 +2680,7 @@ func TestSearchClients(t *testing.T) {
 				Offset: 10,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Clients: expectedClients[10:20],
@@ -2712,7 +2713,7 @@ func TestSearchClients(t *testing.T) {
 				Offset: 190,
 				Limit:  50,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Page: clients.Page{
@@ -2730,7 +2731,7 @@ func TestSearchClients(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: clients.ClientsPage{
 				Clients: findClients(expectedClients, expectedClients[0].Name[:4], 0, 10),
@@ -2783,7 +2784,7 @@ func TestSearchClients(t *testing.T) {
 				Offset:   0,
 				Limit:    10,
 				Order:    "name",
-				Dir:      "asc",
+				Dir:      ascDir,
 			},
 			response: clients.ClientsPage{
 				Clients: findClients(expectedClients, expectedClients[0].Name[:4], 0, 10),
@@ -2884,7 +2885,7 @@ func TestSearchClients(t *testing.T) {
 			desc: "with name in asc order",
 			page: clients.Page{
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Name:   expectedClients[0].Name[:1],
 				Offset: 0,
 				Limit:  10,
@@ -2896,7 +2897,7 @@ func TestSearchClients(t *testing.T) {
 			desc: "with name in desc order",
 			page: clients.Page{
 				Order:  "name",
-				Dir:    "desc",
+				Dir:    descDir,
 				Name:   expectedClients[0].Name[:1],
 				Offset: 0,
 				Limit:  10,
@@ -2908,7 +2909,7 @@ func TestSearchClients(t *testing.T) {
 			desc: "with identity in asc order",
 			page: clients.Page{
 				Order:    "identity",
-				Dir:      "asc",
+				Dir:      ascDir,
 				Identity: expectedClients[0].Name[:1],
 				Offset:   0,
 				Limit:    10,
@@ -2920,7 +2921,7 @@ func TestSearchClients(t *testing.T) {
 			desc: "with identity in desc order",
 			page: clients.Page{
 				Order:    "identity",
-				Dir:      "desc",
+				Dir:      descDir,
 				Identity: expectedClients[0].Name[:1],
 				Offset:   0,
 				Limit:    10,
@@ -3853,35 +3854,35 @@ func verifyClientsOrdering(t *testing.T, clients []clients.Client, order, dir st
 	switch order {
 	case "name":
 		for i := 1; i < len(clients); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, clients[i-1].Name, clients[i].Name)
-			} else {
-				assert.GreaterOrEqual(t, clients[i-1].Name, clients[i].Name)
+				continue
 			}
+			assert.GreaterOrEqual(t, clients[i-1].Name, clients[i].Name)
 		}
 	case "identity":
 		for i := 1; i < len(clients); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, clients[i-1].Credentials.Identity, clients[i].Credentials.Identity)
-			} else {
-				assert.GreaterOrEqual(t, clients[i-1].Credentials.Identity, clients[i].Credentials.Identity)
+				continue
 			}
+			assert.GreaterOrEqual(t, clients[i-1].Credentials.Identity, clients[i].Credentials.Identity)
 		}
 	case "created_at":
 		for i := 1; i < len(clients); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.True(t, !clients[i-1].CreatedAt.After(clients[i].CreatedAt))
-			} else {
-				assert.True(t, !clients[i-1].CreatedAt.Before(clients[i].CreatedAt))
+				continue
 			}
+			assert.True(t, !clients[i-1].CreatedAt.Before(clients[i].CreatedAt))
 		}
 	case "updated_at":
 		for i := 1; i < len(clients); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.True(t, !clients[i-1].UpdatedAt.After(clients[i].UpdatedAt))
-			} else {
-				assert.True(t, !clients[i-1].UpdatedAt.Before(clients[i].UpdatedAt))
+				continue
 			}
+			assert.True(t, !clients[i-1].UpdatedAt.Before(clients[i].UpdatedAt))
 		}
 	}
 }

@@ -28,6 +28,8 @@ var (
 	namesgen       = namegenerator.NewGenerator()
 	emailSuffix    = "@example.com"
 	validTimestamp = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+	ascDir         = "asc"
+	descDir        = "desc"
 )
 
 func TestUsersSave(t *testing.T) {
@@ -407,7 +409,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -427,7 +429,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -447,7 +449,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -484,7 +486,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -518,7 +520,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -558,7 +560,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:      users.AllRole,
 				Status:    users.AllStatus,
 				Order:     "created_at",
-				Dir:       "asc",
+				Dir:       ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -579,7 +581,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:     users.AllRole,
 				Status:   users.AllStatus,
 				Order:    "created_at",
-				Dir:      "asc",
+				Dir:      ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -599,7 +601,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  200,
 				Role:   users.AllRole,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -619,7 +621,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  200,
 				Role:   users.AllRole,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -638,7 +640,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  200,
 				Role:   users.AllRole,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -697,7 +699,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -738,7 +740,7 @@ func TestRetrieveAll(t *testing.T) {
 				Limit:  200,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -776,7 +778,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "first_name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -795,7 +797,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "first_name",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -814,7 +816,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "username",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -833,7 +835,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "username",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -852,7 +854,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -872,7 +874,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "created_at",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -892,7 +894,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "updated_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -912,7 +914,7 @@ func TestRetrieveAll(t *testing.T) {
 				Role:   users.AllRole,
 				Status: users.AllStatus,
 				Order:  "updated_at",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			page: users.UsersPage{
 				Page: users.Page{
@@ -1008,7 +1010,7 @@ func TestSearch(t *testing.T) {
 			page: users.Page{
 				Limit: 10,
 				Order: "name",
-				Dir:   "asc",
+				Dir:   ascDir,
 			},
 			response: users.UsersPage{
 				Users: expectedUsers[0:10],
@@ -1041,7 +1043,7 @@ func TestSearch(t *testing.T) {
 				Offset: 10,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Users: expectedUsers[10:20],
@@ -1074,7 +1076,7 @@ func TestSearch(t *testing.T) {
 				Offset: 190,
 				Limit:  50,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -1092,7 +1094,7 @@ func TestSearch(t *testing.T) {
 				Offset:    0,
 				Limit:     10,
 				Order:     "first_name",
-				Dir:       "asc",
+				Dir:       ascDir,
 			},
 			response: users.UsersPage{
 				Users: findUsers(expectedUsers, expectedUsers[0].FirstName[:4], 0, 10),
@@ -1145,7 +1147,7 @@ func TestSearch(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "first_name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Users: findUsers(expectedUsers, expectedUsers[0].FirstName[:4], 0, 10),
@@ -1212,7 +1214,7 @@ func TestSearch(t *testing.T) {
 			desc: "with name in asc order",
 			page: users.Page{
 				Order:     "first_name",
-				Dir:       "asc",
+				Dir:       ascDir,
 				FirstName: expectedUsers[0].FirstName[:1],
 				Offset:    0,
 				Limit:     10,
@@ -1224,7 +1226,7 @@ func TestSearch(t *testing.T) {
 			desc: "with name in desc order",
 			page: users.Page{
 				Order:     "first_name",
-				Dir:       "desc",
+				Dir:       descDir,
 				FirstName: expectedUsers[0].FirstName[:1],
 				Offset:    0,
 				Limit:     10,
@@ -1237,7 +1239,7 @@ func TestSearch(t *testing.T) {
 			page: users.Page{
 				LastName: expectedUsers[0].LastName[:1],
 				Order:    "last_name",
-				Dir:      "asc",
+				Dir:      ascDir,
 			},
 			response: users.UsersPage{
 				Users: []users.User{expectedUsers[0]},
@@ -1254,7 +1256,7 @@ func TestSearch(t *testing.T) {
 			page: users.Page{
 				Username: expectedUsers[0].Credentials.Username[:1],
 				Order:    "username",
-				Dir:      "asc",
+				Dir:      ascDir,
 			},
 			response: users.UsersPage{
 				Users: []users.User{expectedUsers[0]},
@@ -1973,7 +1975,7 @@ func TestRetrieveByIDs(t *testing.T) {
 				Limit:  10,
 				IDs:    getIDs(items[0:3]),
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -2007,7 +2009,7 @@ func TestRetrieveByIDs(t *testing.T) {
 				Offset: 10,
 				IDs:    getIDs(items[0:20]),
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -2025,7 +2027,7 @@ func TestRetrieveByIDs(t *testing.T) {
 				Limit: 10,
 				IDs:   getIDs(items[0:20]),
 				Order: "created_at",
-				Dir:   "asc",
+				Dir:   ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -2061,7 +2063,7 @@ func TestRetrieveByIDs(t *testing.T) {
 				Limit:  10,
 				IDs:    getIDs(items[0:20]),
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -2098,7 +2100,7 @@ func TestRetrieveByIDs(t *testing.T) {
 				FirstName: items[0].FirstName,
 				IDs:       getIDs(items[0:20]),
 				Order:     "created_at",
-				Dir:       "asc",
+				Dir:       ascDir,
 			},
 			response: users.UsersPage{
 				Page: users.Page{
@@ -2339,29 +2341,29 @@ func verifyUsersOrdering(t *testing.T, users []users.User, order, dir string) {
 	for i := 0; i < len(users)-1; i++ {
 		switch order {
 		case "first_name":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, users[i].FirstName, users[i+1].FirstName, fmt.Sprintf("Users not ordered by first_name ascending at index %d: %s > %s", i, users[i].FirstName, users[i+1].FirstName))
-			} else {
-				assert.GreaterOrEqual(t, users[i].FirstName, users[i+1].FirstName, fmt.Sprintf("Users not ordered by first_name descending at index %d: %s < %s", i, users[i].FirstName, users[i+1].FirstName))
+				continue
 			}
+			assert.GreaterOrEqual(t, users[i].FirstName, users[i+1].FirstName, fmt.Sprintf("Users not ordered by first_name descending at index %d: %s < %s", i, users[i].FirstName, users[i+1].FirstName))
 		case "username":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, users[i].Credentials.Username, users[i+1].Credentials.Username, fmt.Sprintf("Users not ordered by username ascending at index %d: %s > %s", i, users[i].Credentials.Username, users[i+1].Credentials.Username))
-			} else {
-				assert.GreaterOrEqual(t, users[i].Credentials.Username, users[i+1].Credentials.Username, fmt.Sprintf("Users not ordered by username descending at index %d: %s < %s", i, users[i].Credentials.Username, users[i+1].Credentials.Username))
+				continue
 			}
+			assert.GreaterOrEqual(t, users[i].Credentials.Username, users[i+1].Credentials.Username, fmt.Sprintf("Users not ordered by username descending at index %d: %s < %s", i, users[i].Credentials.Username, users[i+1].Credentials.Username))
 		case "created_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, users[i].CreatedAt.After(users[i+1].CreatedAt), fmt.Sprintf("Users not ordered by created_at ascending at index %d: %v > %v", i, users[i].CreatedAt, users[i+1].CreatedAt))
-			} else {
-				assert.False(t, users[i].CreatedAt.Before(users[i+1].CreatedAt), fmt.Sprintf("Users not ordered by created_at descending at index %d: %v < %v", i, users[i].CreatedAt, users[i+1].CreatedAt))
+				continue
 			}
+			assert.False(t, users[i].CreatedAt.Before(users[i+1].CreatedAt), fmt.Sprintf("Users not ordered by created_at descending at index %d: %v < %v", i, users[i].CreatedAt, users[i+1].CreatedAt))
 		case "updated_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, users[i].UpdatedAt.After(users[i+1].UpdatedAt), fmt.Sprintf("Users not ordered by updated_at ascending at index %d: %v > %v", i, users[i].UpdatedAt, users[i+1].UpdatedAt))
-			} else {
-				assert.False(t, users[i].UpdatedAt.Before(users[i+1].UpdatedAt), fmt.Sprintf("Users not ordered by updated_at descending at index %d: %v < %v", i, users[i].UpdatedAt, users[i+1].UpdatedAt))
+				continue
 			}
+			assert.False(t, users[i].UpdatedAt.Before(users[i+1].UpdatedAt), fmt.Sprintf("Users not ordered by updated_at descending at index %d: %v < %v", i, users[i].UpdatedAt, users[i+1].UpdatedAt))
 		}
 	}
 }

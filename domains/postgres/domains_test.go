@@ -18,7 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const invalid = "invalid"
+const (
+	invalid = "invalid"
+	ascDir  = "asc"
+	descDir = "desc"
+)
 
 var (
 	domainID        = testsutil.GenerateUUID(&testing.T{})
@@ -314,7 +318,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				Limit:  10,
 				IDs:    []string{items[1].ID, items[2].ID},
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -375,7 +379,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				IDs:    []string{items[0].ID, items[1].ID},
 				Status: 5,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -410,7 +414,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				},
 				Status: domains.EnabledStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -745,7 +749,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -762,7 +766,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.EnabledStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   8,
@@ -780,7 +784,7 @@ func TestListDomains(t *testing.T) {
 				Name:   items[0].Name,
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   1,
@@ -797,7 +801,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.DisabledStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -815,7 +819,7 @@ func TestListDomains(t *testing.T) {
 				Tag:    "admin",
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -851,7 +855,7 @@ func TestListDomains(t *testing.T) {
 				},
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -927,7 +931,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:  10,
@@ -943,7 +947,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "name",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			response: domains.DomainsPage{
 				Total:  10,
@@ -959,7 +963,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -976,7 +980,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "created_at",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -993,7 +997,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "updated_at",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -1010,7 +1014,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Status: domains.AllStatus,
 				Order:  "updated_at",
-				Dir:    "desc",
+				Dir:    descDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -1036,6 +1040,7 @@ func TestListDomains(t *testing.T) {
 		})
 	}
 }
+
 func verifyDomainsOrdering(t *testing.T, domains []domains.Domain, order, dir string) {
 	if order == "" || len(domains) <= 1 {
 		return
@@ -1044,23 +1049,23 @@ func verifyDomainsOrdering(t *testing.T, domains []domains.Domain, order, dir st
 	for i := 0; i < len(domains)-1; i++ {
 		switch order {
 		case "name":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, domains[i].Name, domains[i+1].Name, fmt.Sprintf("Domains not ordered by name ascending at index %d: %s > %s", i, domains[i].Name, domains[i+1].Name))
-			} else {
-				assert.GreaterOrEqual(t, domains[i].Name, domains[i+1].Name, fmt.Sprintf("Domains not ordered by name descending at index %d: %s < %s", i, domains[i].Name, domains[i+1].Name))
+				continue
 			}
+			assert.GreaterOrEqual(t, domains[i].Name, domains[i+1].Name, fmt.Sprintf("Domains not ordered by name descending at index %d: %s < %s", i, domains[i].Name, domains[i+1].Name))
 		case "created_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, domains[i].CreatedAt.After(domains[i+1].CreatedAt), fmt.Sprintf("Domains not ordered by created_at ascending at index %d: %v > %v", i, domains[i].CreatedAt, domains[i+1].CreatedAt))
-			} else {
-				assert.False(t, domains[i].CreatedAt.Before(domains[i+1].CreatedAt), fmt.Sprintf("Domains not ordered by created_at descending at index %d: %v < %v", i, domains[i].CreatedAt, domains[i+1].CreatedAt))
+				continue
 			}
+			assert.False(t, domains[i].CreatedAt.Before(domains[i+1].CreatedAt), fmt.Sprintf("Domains not ordered by created_at descending at index %d: %v < %v", i, domains[i].CreatedAt, domains[i+1].CreatedAt))
 		case "updated_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, domains[i].UpdatedAt.After(domains[i+1].UpdatedAt), fmt.Sprintf("Domains not ordered by updated_at ascending at index %d: %v > %v", i, domains[i].UpdatedAt, domains[i+1].UpdatedAt))
-			} else {
-				assert.False(t, domains[i].UpdatedAt.Before(domains[i+1].UpdatedAt), fmt.Sprintf("Domains not ordered by updated_at descending at index %d: %v < %v", i, domains[i].UpdatedAt, domains[i+1].UpdatedAt))
+				continue
 			}
+			assert.False(t, domains[i].UpdatedAt.Before(domains[i+1].UpdatedAt), fmt.Sprintf("Domains not ordered by updated_at descending at index %d: %v < %v", i, domains[i].UpdatedAt, domains[i+1].UpdatedAt))
 		}
 	}
 }

@@ -42,6 +42,8 @@ var (
 		Status:      groups.EnabledStatus,
 	}
 	directAccess     = "direct"
+	ascDir           = "asc"
+	descDir          = "desc"
 	availableActions = []string{
 		"update",
 		"read",
@@ -716,7 +718,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -736,7 +738,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 10,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -757,7 +759,7 @@ func TestRetrieveAll(t *testing.T) {
 					Limit:  50,
 
 					Order: "created_at",
-					Dir:   "asc",
+					Dir:   ascDir,
 				},
 			},
 			response: groups.Page{
@@ -777,7 +779,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 50,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -797,7 +799,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 1000,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -817,7 +819,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 170,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -984,7 +986,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "name",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -1003,7 +1005,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "name",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: groups.Page{
@@ -1022,7 +1024,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -1042,7 +1044,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: groups.Page{
@@ -1062,7 +1064,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "updated_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: groups.Page{
@@ -1082,7 +1084,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "updated_at",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: groups.Page{
@@ -2266,23 +2268,23 @@ func verifyGroupsOrdering(t *testing.T, groups []groups.Group, order, dir string
 	for i := 0; i < len(groups)-1; i++ {
 		switch order {
 		case "name":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, groups[i].Name, groups[i+1].Name, fmt.Sprintf("Groups not ordered by name ascending at index %d: %s > %s", i, groups[i].Name, groups[i+1].Name))
-			} else {
-				assert.GreaterOrEqual(t, groups[i].Name, groups[i+1].Name, fmt.Sprintf("Groups not ordered by name descending at index %d: %s < %s", i, groups[i].Name, groups[i+1].Name))
+				continue
 			}
+			assert.GreaterOrEqual(t, groups[i].Name, groups[i+1].Name, fmt.Sprintf("Groups not ordered by name descending at index %d: %s < %s", i, groups[i].Name, groups[i+1].Name))
 		case "created_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, groups[i].CreatedAt.After(groups[i+1].CreatedAt), fmt.Sprintf("Groups not ordered by created_at ascending at index %d: %v > %v", i, groups[i].CreatedAt, groups[i+1].CreatedAt))
-			} else {
-				assert.False(t, groups[i].CreatedAt.Before(groups[i+1].CreatedAt), fmt.Sprintf("Groups not ordered by created_at descending at index %d: %v < %v", i, groups[i].CreatedAt, groups[i+1].CreatedAt))
+				continue
 			}
+			assert.False(t, groups[i].CreatedAt.Before(groups[i+1].CreatedAt), fmt.Sprintf("Groups not ordered by created_at descending at index %d: %v < %v", i, groups[i].CreatedAt, groups[i+1].CreatedAt))
 		case "updated_at":
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.False(t, groups[i].UpdatedAt.After(groups[i+1].UpdatedAt), fmt.Sprintf("Groups not ordered by updated_at ascending at index %d: %v > %v", i, groups[i].UpdatedAt, groups[i+1].UpdatedAt))
-			} else {
-				assert.False(t, groups[i].UpdatedAt.Before(groups[i+1].UpdatedAt), fmt.Sprintf("Groups not ordered by updated_at descending at index %d: %v < %v", i, groups[i].UpdatedAt, groups[i+1].UpdatedAt))
+				continue
 			}
+			assert.False(t, groups[i].UpdatedAt.Before(groups[i+1].UpdatedAt), fmt.Sprintf("Groups not ordered by updated_at descending at index %d: %v < %v", i, groups[i].UpdatedAt, groups[i+1].UpdatedAt))
 		}
 	}
 }

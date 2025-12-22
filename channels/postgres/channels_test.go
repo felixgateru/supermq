@@ -54,7 +54,8 @@ var (
 	directGroupAccess = "direct_group"
 	domainAccess      = "domain"
 	defOrder          = "created_at"
-	defDir            = "asc"
+	ascDir            = "asc"
+	descDir           = "desc"
 	availableActions  = []string{
 		"delete",
 		"membership",
@@ -643,7 +644,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -663,7 +664,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 10,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -683,7 +684,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -703,7 +704,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 50,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -723,7 +724,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 1000,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -743,7 +744,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 170,
 					Limit:  50,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1000,7 +1001,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "name",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1019,7 +1020,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "name",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1038,7 +1039,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1058,7 +1059,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "created_at",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1078,7 +1079,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "updated_at",
-					Dir:    "asc",
+					Dir:    ascDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -1097,7 +1098,7 @@ func TestRetrieveAll(t *testing.T) {
 					Offset: 0,
 					Limit:  10,
 					Order:  "updated_at",
-					Dir:    "desc",
+					Dir:    descDir,
 				},
 			},
 			response: channels.ChannelsPage{
@@ -2175,7 +2176,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  10,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2195,7 +2196,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  10,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2215,7 +2216,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  10,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2236,7 +2237,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Client: clientID,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2256,7 +2257,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  50,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2277,7 +2278,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Metadata: directChannels[0].Metadata,
 				Status:   channels.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2300,7 +2301,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				},
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2323,7 +2324,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				},
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2345,7 +2346,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Name:   directChannels[0].Name,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2366,7 +2367,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Name:   namegen.Generate(),
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2387,7 +2388,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Tag:    directChannels[0].Tags[0],
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2408,7 +2409,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Tag:    namegen.Generate(),
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2450,7 +2451,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				ID:     directChannels[0].ID,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2471,7 +2472,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				ID:     testsutil.GenerateUUID(t),
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2491,7 +2492,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  nChannels,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2511,7 +2512,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Limit:  nChannels,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2535,7 +2536,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				},
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2560,7 +2561,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				},
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2581,7 +2582,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				AccessType: domainAccess,
 				Status:     channels.AllStatus,
 				Order:      defOrder,
-				Dir:        defDir,
+				Dir:        ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2602,7 +2603,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				AccessType: domainAccess,
 				Status:     channels.AllStatus,
 				Order:      defOrder,
-				Dir:        defDir,
+				Dir:        ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2623,7 +2624,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				RoleID: directChannels[0].RoleID,
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2644,7 +2645,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				RoleID: testsutil.GenerateUUID(t),
 				Status: channels.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2665,7 +2666,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				RoleName: directChannels[0].RoleName,
 				Status:   channels.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2686,7 +2687,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				RoleName: namegen.Generate(),
 				Status:   channels.AllStatus,
 				Order:    defOrder,
-				Dir:      defDir,
+				Dir:      ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2707,7 +2708,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Actions: availableActions,
 				Status:  channels.AllStatus,
 				Order:   defOrder,
-				Dir:     defDir,
+				Dir:     ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2728,7 +2729,7 @@ func TestRetrieveUserChannels(t *testing.T) {
 				Actions: []string{"non_existent_action"},
 				Status:  channels.AllStatus,
 				Order:   defOrder,
-				Dir:     defDir,
+				Dir:     ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2833,7 +2834,7 @@ func TestSearchChannels(t *testing.T) {
 			page: channels.Page{
 				Limit: 10,
 				Order: "name",
-				Dir:   "asc",
+				Dir:   ascDir,
 			},
 			response: channels.ChannelsPage{
 				Channels: expectedChannels[0:10],
@@ -2866,7 +2867,7 @@ func TestSearchChannels(t *testing.T) {
 				Offset: 10,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Channels: expectedChannels[10:20],
@@ -2899,7 +2900,7 @@ func TestSearchChannels(t *testing.T) {
 				Offset: 190,
 				Limit:  50,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Page: channels.Page{
@@ -2917,7 +2918,7 @@ func TestSearchChannels(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 			},
 			response: channels.ChannelsPage{
 				Channels: findChannels(expectedChannels, expectedChannels[0].Name[:4], 0, 10),
@@ -3001,7 +3002,7 @@ func TestSearchChannels(t *testing.T) {
 			desc: "with name in asc order",
 			page: channels.Page{
 				Order:  "name",
-				Dir:    "asc",
+				Dir:    ascDir,
 				Name:   expectedChannels[0].Name[:1],
 				Offset: 0,
 				Limit:  10,
@@ -3013,7 +3014,7 @@ func TestSearchChannels(t *testing.T) {
 			desc: "with name in desc order",
 			page: channels.Page{
 				Order:  "name",
-				Dir:    "desc",
+				Dir:    descDir,
 				Name:   expectedChannels[0].Name[:1],
 				Offset: 0,
 				Limit:  10,
@@ -3171,27 +3172,27 @@ func verifyChannelsOrdering(t *testing.T, chs []channels.Channel, order, dir str
 	switch order {
 	case "name":
 		for i := 1; i < len(chs); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.LessOrEqual(t, chs[i-1].Name, chs[i].Name)
-			} else {
-				assert.GreaterOrEqual(t, chs[i-1].Name, chs[i].Name)
+				continue
 			}
+			assert.GreaterOrEqual(t, chs[i-1].Name, chs[i].Name)
 		}
 	case "created_at":
 		for i := 1; i < len(chs); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.True(t, !chs[i-1].CreatedAt.After(chs[i].CreatedAt))
-			} else {
-				assert.True(t, !chs[i-1].CreatedAt.Before(chs[i].CreatedAt))
+				continue
 			}
+			assert.True(t, !chs[i-1].CreatedAt.Before(chs[i].CreatedAt))
 		}
 	case "updated_at":
 		for i := 1; i < len(chs); i++ {
-			if dir == "asc" {
+			if dir == ascDir {
 				assert.True(t, !chs[i-1].UpdatedAt.After(chs[i].UpdatedAt))
-			} else {
-				assert.True(t, !chs[i-1].UpdatedAt.Before(chs[i].UpdatedAt))
+				continue
 			}
+			assert.True(t, !chs[i-1].UpdatedAt.Before(chs[i].UpdatedAt))
 		}
 	}
 }
