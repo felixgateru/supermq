@@ -6,6 +6,7 @@ package events_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -19,11 +20,14 @@ import (
 	svcerr "github.com/absmach/supermq/pkg/errors/service"
 	"github.com/absmach/supermq/pkg/roles"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
+	storeClient  *redis.Client
+	storeURL     string
 	validSession = authn.Session{
 		DomainID: testsutil.GenerateUUID(&testing.T{}),
 		UserID:   testsutil.GenerateUUID(&testing.T{}),
@@ -45,6 +49,11 @@ func newEventStoreMiddleware(t *testing.T) (*mocks.Service, channels.Service) {
 	require.Nil(t, err, fmt.Sprintf("create events store middleware failed with unexpected error: %s", err))
 
 	return svc, nsvc
+}
+
+func TestMain(m *testing.M) {
+	code := testsutil.RunRedisTest(m, &storeClient, &storeURL)
+	os.Exit(code)
 }
 
 func TestCreateChannels(t *testing.T) {
