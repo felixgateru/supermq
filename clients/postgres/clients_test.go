@@ -1064,6 +1064,7 @@ func TestRetrieveAll(t *testing.T) {
 			},
 			Status:    clients.EnabledStatus,
 			CreatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
+			UpdatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
 		}
 		if i%50 == 0 {
 			client.Status = clients.DisabledStatus
@@ -1732,6 +1733,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			},
 			Status:    clients.EnabledStatus,
 			CreatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
+			UpdatedAt: baseTime.Add(time.Duration(i) * time.Microsecond),
 		}
 		if i == 1 {
 			client.ParentGroup = group.ID

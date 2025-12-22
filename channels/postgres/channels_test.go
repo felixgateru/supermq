@@ -615,6 +615,7 @@ func TestRetrieveAll(t *testing.T) {
 			Route:           testsutil.GenerateUUID(t),
 			Metadata:        map[string]any{"name": name},
 			CreatedAt:       baseTime.Add(time.Duration(i) * time.Millisecond),
+			UpdatedAt:       baseTime.Add(time.Duration(i) * time.Millisecond),
 			Status:          channels.EnabledStatus,
 			ConnectionTypes: []connections.ConnType{},
 		}
