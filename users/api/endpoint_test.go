@@ -44,7 +44,7 @@ var (
 		Email:           "useremail@example.com",
 		Credentials:     users.Credentials{Username: "username", Secret: secret},
 		PublicMetadata:  validCMetadata,
-		PrivateMetadata: validCMetadata,
+		Metadata: validCMetadata,
 		Status:          users.EnabledStatus,
 	}
 	validToken      = "valid"

@@ -112,20 +112,20 @@ func userFromProto(u *grpcUsersV1.User) (users.User, error) {
 	}
 
 	privateMetadata := users.Metadata(nil)
-	if u.GetPrivateMetadata() != nil {
-		privateMetadata = users.Metadata(u.GetPrivateMetadata().AsMap())
+	if u.GetMetadata() != nil {
+		privateMetadata = users.Metadata(u.GetMetadata().AsMap())
 	}
 
 	user := users.User{
-		ID:              u.GetId(),
-		FirstName:       u.GetFirstName(),
-		LastName:        u.GetLastName(),
-		Tags:            u.GetTags(),
-		PublicMetadata:  publicMetadata,
-		PrivateMetadata: privateMetadata,
-		Status:          users.Status(u.GetStatus()),
-		Role:            users.Role(u.GetRole()),
-		ProfilePicture:  u.GetProfilePicture(),
+		ID:             u.GetId(),
+		FirstName:      u.GetFirstName(),
+		LastName:       u.GetLastName(),
+		Tags:           u.GetTags(),
+		Metadata:       privateMetadata,
+		PublicMetadata: publicMetadata,
+		Status:         users.Status(u.GetStatus()),
+		Role:           users.Role(u.GetRole()),
+		ProfilePicture: u.GetProfilePicture(),
 		Credentials: users.Credentials{
 			Username: u.GetUsername(),
 		},

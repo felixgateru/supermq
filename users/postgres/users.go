@@ -36,9 +36,9 @@ func NewRepository(db postgres.Database) users.Repository {
 }
 
 func (repo *userRepo) Save(ctx context.Context, c users.User) (users.User, error) {
-	q := `INSERT INTO users (id, tags, email, secret, public_metadata, private_metadata, created_at, status, role, first_name, last_name, username, profile_picture, auth_provider)
-        VALUES (:id, :tags, :email, :secret, :public_metadata, :private_metadata, :created_at, :status, :role, :first_name, :last_name, :username, :profile_picture, :auth_provider)
-        RETURNING id, tags, email, public_metadata, private_metadata, created_at, status, role, first_name, last_name, username, profile_picture, verified_at, auth_provider`
+	q := `INSERT INTO users (id, tags, email, secret, metadata, public_metadata, created_at, status, role, first_name, last_name, username, profile_picture, auth_provider)
+        VALUES (:id, :tags, :email, :secret, :metadata, :public_metadata, :created_at, :status, :role, :first_name, :last_name, :username, :profile_picture, :auth_provider)
+        RETURNING id, tags, email, metadata, public_metadata, created_at, status, role, first_name, last_name, username, profile_picture, verified_at, auth_provider`
 
 	dbu, err := toDBUser(c)
 	if err != nil {
@@ -86,7 +86,7 @@ func (repo *userRepo) CheckSuperAdmin(ctx context.Context, adminID string) error
 }
 
 func (repo *userRepo) RetrieveByID(ctx context.Context, id string) (users.User, error) {
-	q := `SELECT id, tags, email, secret, public_metadata, private_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, profile_picture, verified_at, auth_provider
+	q := `SELECT id, tags, email, secret, metadata, public_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, profile_picture, verified_at, auth_provider
         FROM users WHERE id = :id`
 
 	dbu := DBUser{
@@ -199,9 +199,9 @@ func (repo *userRepo) Update(ctx context.Context, id string, ur users.UserReq) (
 		query = append(query, "public_metadata = :public_metadata")
 		u.PublicMetadata = *ur.PublicMetadata
 	}
-	if ur.PrivateMetadata != nil {
-		query = append(query, "private_metadata = :private_metadata")
-		u.PrivateMetadata = *ur.PrivateMetadata
+	if ur.Metadata != nil {
+		query = append(query, "metadata = :metadata")
+		u.Metadata = *ur.Metadata
 	}
 	if ur.Tags != nil {
 		query = append(query, "tags = :tags")
@@ -227,7 +227,7 @@ func (repo *userRepo) Update(ctx context.Context, id string, ur users.UserReq) (
 
 	q := fmt.Sprintf(`UPDATE users SET %s
         WHERE id = :id AND status = :status
-        RETURNING id, tags, public_metadata, private_metadata, status, created_at, updated_at, updated_by, last_name, first_name, username, profile_picture, email, role, verified_at`, upq)
+        RETURNING id, tags, metadata, public_metadata, status, created_at, updated_at, updated_by, last_name, first_name, username, profile_picture, email, role, verified_at`, upq)
 
 	u.Status = users.EnabledStatus
 	return repo.update(ctx, u, q)
@@ -425,7 +425,7 @@ func (repo *userRepo) RetrieveAllByIDs(ctx context.Context, pm users.Page) (user
 }
 
 func (repo *userRepo) RetrieveByEmail(ctx context.Context, email string) (users.User, error) {
-	q := `SELECT id, tags, email, secret, public_metadata, private_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, verified_at, auth_provider
+	q := `SELECT id, tags, email, secret, metadata, public_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, verified_at, auth_provider
         FROM users WHERE email = :email AND status = :status`
 
 	dbu := DBUser{
@@ -452,7 +452,7 @@ func (repo *userRepo) RetrieveByEmail(ctx context.Context, email string) (users.
 }
 
 func (repo *userRepo) RetrieveByUsername(ctx context.Context, username string) (users.User, error) {
-	q := `SELECT id, tags, email, secret, public_metadata, private_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, verified_at, auth_provider
+	q := `SELECT id, tags, email, secret, metadata, public_metadata, created_at, updated_at, updated_by, status, role, first_name, last_name, username, verified_at, auth_provider
 		FROM users WHERE username = :username AND status = :status`
 
 	dbu := DBUser{
@@ -479,25 +479,25 @@ func (repo *userRepo) RetrieveByUsername(ctx context.Context, username string) (
 }
 
 type DBUser struct {
-	ID              string           `db:"id"`
-	Domain          string           `db:"domain_id"`
-	Secret          string           `db:"secret"`
-	PublicMetadata  []byte           `db:"public_metadata,omitempty"`
-	PrivateMetadata []byte           `db:"private_metadata,omitempty"`
-	Tags            pgtype.TextArray `db:"tags,omitempty"` // Tags
-	CreatedAt       time.Time        `db:"created_at,omitempty"`
-	UpdatedAt       sql.NullTime     `db:"updated_at,omitempty"`
-	UpdatedBy       *string          `db:"updated_by,omitempty"`
-	Groups          []groups.Group   `db:"groups,omitempty"`
-	Status          users.Status     `db:"status,omitempty"`
-	Role            *users.Role      `db:"role,omitempty"`
-	Username        sql.NullString   `db:"username, omitempty"`
-	FirstName       sql.NullString   `db:"first_name, omitempty"`
-	LastName        sql.NullString   `db:"last_name, omitempty"`
-	ProfilePicture  sql.NullString   `db:"profile_picture, omitempty"`
-	Email           string           `db:"email,omitempty"`
-	VerifiedAt      sql.NullTime     `db:"verified_at,omitempty"`
-	AuthProvider    sql.NullString   `db:"auth_provider,omitempty"`
+	ID             string           `db:"id"`
+	Domain         string           `db:"domain_id"`
+	Secret         string           `db:"secret"`
+	Metadata       []byte           `db:"metadata,omitempty"`
+	PublicMetadata []byte           `db:"public_metadata,omitempty"`
+	Tags           pgtype.TextArray `db:"tags,omitempty"` // Tags
+	CreatedAt      time.Time        `db:"created_at,omitempty"`
+	UpdatedAt      sql.NullTime     `db:"updated_at,omitempty"`
+	UpdatedBy      *string          `db:"updated_by,omitempty"`
+	Groups         []groups.Group   `db:"groups,omitempty"`
+	Status         users.Status     `db:"status,omitempty"`
+	Role           *users.Role      `db:"role,omitempty"`
+	Username       sql.NullString   `db:"username, omitempty"`
+	FirstName      sql.NullString   `db:"first_name, omitempty"`
+	LastName       sql.NullString   `db:"last_name, omitempty"`
+	ProfilePicture sql.NullString   `db:"profile_picture, omitempty"`
+	Email          string           `db:"email,omitempty"`
+	VerifiedAt     sql.NullTime     `db:"verified_at,omitempty"`
+	AuthProvider   sql.NullString   `db:"auth_provider,omitempty"`
 }
 
 func toDBUser(u users.User) (DBUser, error) {
@@ -509,13 +509,13 @@ func toDBUser(u users.User) (DBUser, error) {
 		}
 		publicMetadata = b
 	}
-	privateMetadata := []byte("{}")
-	if len(u.PrivateMetadata) > 0 {
-		b, err := json.Marshal(u.PrivateMetadata)
+	metadata := []byte("{}")
+	if len(u.Metadata) > 0 {
+		b, err := json.Marshal(u.Metadata)
 		if err != nil {
 			return DBUser{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
 		}
-		privateMetadata = b
+		metadata = b
 	}
 	var tags pgtype.TextArray
 	if err := tags.Set(u.Tags); err != nil {
@@ -540,35 +540,35 @@ func toDBUser(u users.User) (DBUser, error) {
 	}
 
 	return DBUser{
-		ID:              u.ID,
-		Tags:            tags,
-		Secret:          u.Credentials.Secret,
-		PublicMetadata:  publicMetadata,
-		PrivateMetadata: privateMetadata,
-		CreatedAt:       u.CreatedAt,
-		UpdatedAt:       updatedAt,
-		UpdatedBy:       updatedBy,
-		Status:          u.Status,
-		Role:            &u.Role,
-		LastName:        stringToNullString(u.LastName),
-		FirstName:       stringToNullString(u.FirstName),
-		Username:        stringToNullString(u.Credentials.Username),
-		ProfilePicture:  stringToNullString(u.ProfilePicture),
-		Email:           u.Email,
-		VerifiedAt:      verifiedAt,
-		AuthProvider:    authProvider,
+		ID:             u.ID,
+		Tags:           tags,
+		Secret:         u.Credentials.Secret,
+		Metadata:       metadata,
+		PublicMetadata: publicMetadata,
+		CreatedAt:      u.CreatedAt,
+		UpdatedAt:      updatedAt,
+		UpdatedBy:      updatedBy,
+		Status:         u.Status,
+		Role:           &u.Role,
+		LastName:       stringToNullString(u.LastName),
+		FirstName:      stringToNullString(u.FirstName),
+		Username:       stringToNullString(u.Credentials.Username),
+		ProfilePicture: stringToNullString(u.ProfilePicture),
+		Email:          u.Email,
+		VerifiedAt:     verifiedAt,
+		AuthProvider:   authProvider,
 	}, nil
 }
 
 func ToUser(dbu DBUser) (users.User, error) {
-	var publicMetadata, privateMetadata users.Metadata
+	var publicMetadata, metadata users.Metadata
 	if dbu.PublicMetadata != nil {
 		if err := json.Unmarshal([]byte(dbu.PublicMetadata), &publicMetadata); err != nil {
 			return users.User{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
 		}
 	}
-	if dbu.PrivateMetadata != nil {
-		if err := json.Unmarshal([]byte(dbu.PrivateMetadata), &privateMetadata); err != nil {
+	if dbu.Metadata != nil {
+		if err := json.Unmarshal([]byte(dbu.Metadata), &metadata); err != nil {
 			return users.User{}, errors.Wrap(repoerr.ErrMalformedEntity, err)
 		}
 	}
@@ -602,17 +602,17 @@ func ToUser(dbu DBUser) (users.User, error) {
 			Username: nullStringString(dbu.Username),
 			Secret:   dbu.Secret,
 		},
-		Email:           dbu.Email,
-		PublicMetadata:  publicMetadata,
-		PrivateMetadata: privateMetadata,
-		CreatedAt:       dbu.CreatedAt.UTC(),
-		UpdatedAt:       updatedAt,
-		UpdatedBy:       updatedBy,
-		Status:          dbu.Status,
-		Tags:            tags,
-		ProfilePicture:  nullStringString(dbu.ProfilePicture),
-		VerifiedAt:      verifiedAt,
-		AuthProvider:    authProvider,
+		Email:          dbu.Email,
+		Metadata:       metadata,
+		PublicMetadata: publicMetadata,
+		CreatedAt:      dbu.CreatedAt.UTC(),
+		UpdatedAt:      updatedAt,
+		UpdatedBy:      updatedBy,
+		Status:         dbu.Status,
+		Tags:           tags,
+		ProfilePicture: nullStringString(dbu.ProfilePicture),
+		VerifiedAt:     verifiedAt,
+		AuthProvider:   authProvider,
 	}
 	if dbu.Role != nil {
 		user.Role = *dbu.Role

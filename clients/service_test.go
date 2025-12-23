@@ -38,7 +38,7 @@ var (
 		Tags:            []string{"tag1", "tag2"},
 		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
 		PublicMetadata:  validMetadata,
-		PrivateMetadata: validMetadata,
+		Metadata: validMetadata,
 		Status:          clients.EnabledStatus,
 	}
 	clientWithRoles = clients.Client{
@@ -47,7 +47,7 @@ var (
 		Tags:            []string{"tag1", "tag2"},
 		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
 		PublicMetadata:  validMetadata,
-		PrivateMetadata: validMetadata,
+		Metadata: validMetadata,
 		Status:          clients.EnabledStatus,
 		Roles: []roles.MemberRoleActions{
 			{
@@ -208,7 +208,7 @@ func TestCreateClients(t *testing.T) {
 					Identity: "newclientwithmetadata@example.com",
 					Secret:   secret,
 				},
-				PrivateMetadata: validMetadata,
+				Metadata: validMetadata,
 				Status:          clients.EnabledStatus,
 			},
 			token: validToken,
@@ -261,7 +261,7 @@ func TestCreateClients(t *testing.T) {
 				PublicMetadata: clients.Metadata{
 					"name": "newclientwithallfields",
 				},
-				PrivateMetadata: clients.Metadata{
+				Metadata: clients.Metadata{
 					"name": "newclientwithallfields",
 				},
 				Status: clients.EnabledStatus,
@@ -611,7 +611,7 @@ func TestUpdateClient(t *testing.T) {
 	client2 := client
 	client1.Name = "Updated client"
 	client2.PublicMetadata = clients.Metadata{"role": "test"}
-	client2.PrivateMetadata = clients.Metadata{"role": "test"}
+	client2.Metadata = clients.Metadata{"role": "test"}
 
 	cases := []struct {
 		desc           string

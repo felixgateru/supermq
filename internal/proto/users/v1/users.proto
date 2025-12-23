@@ -34,8 +34,8 @@ message User {
   string first_name = 2;
   string last_name = 3;
   repeated string tags = 4;
-  google.protobuf.Struct public_metadata = 5;
-  google.protobuf.Struct private_metadata = 6;
+  google.protobuf.Struct metadata = 5;
+  google.protobuf.Struct public_metadata = 6;
   uint32 status = 7;
   uint32 role = 8;
   string profile_picture = 9;

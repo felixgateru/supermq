@@ -34,15 +34,15 @@ var (
 	validCMetadata = users.Metadata{"role": "user"}
 	userID         = "d8dd12ef-aa2a-43fe-8ef2-2e4fe514360f"
 	user           = users.User{
-		ID:              userID,
-		FirstName:       "firstname",
-		LastName:        "lastname",
-		Tags:            []string{"tag1", "tag2"},
-		Credentials:     users.Credentials{Username: "username", Secret: secret},
-		Email:           "useremail@email.com",
-		PublicMetadata:  validCMetadata,
-		PrivateMetadata: validCMetadata,
-		Status:          users.EnabledStatus,
+		ID:             userID,
+		FirstName:      "firstname",
+		LastName:       "lastname",
+		Tags:           []string{"tag1", "tag2"},
+		Credentials:    users.Credentials{Username: "username", Secret: secret},
+		Email:          "useremail@email.com",
+		Metadata:       validCMetadata,
+		PublicMetadata: validCMetadata,
+		Status:         users.EnabledStatus,
 	}
 	basicUser = users.User{
 		Credentials: users.Credentials{
@@ -131,7 +131,7 @@ func TestRegister(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"name": "newuserwithallfields",
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"name": "newuserwithallfields",
 				},
 				Status: users.EnabledStatus,
@@ -523,7 +523,7 @@ func TestUpdateUser(t *testing.T) {
 	user1.FirstName = updateFirstName
 	updatedMetadata := users.Metadata{"role": "test"}
 	user2.PublicMetadata = updatedMetadata
-	user2.PrivateMetadata = updatedMetadata
+	user2.Metadata = updatedMetadata
 	adminID := testsutil.GenerateUUID(t)
 
 	cases := []struct {
@@ -566,7 +566,7 @@ func TestUpdateUser(t *testing.T) {
 			desc:   "update private metadata successfully as normal user",
 			userID: user2.ID,
 			userReq: users.UserReq{
-				PrivateMetadata: &updatedMetadata,
+				Metadata: &updatedMetadata,
 			},
 			session:          authn.Session{UserID: user2.ID},
 			updateResponse:   user2,

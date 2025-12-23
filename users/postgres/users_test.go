@@ -57,7 +57,7 @@ func TestUsersSave(t *testing.T) {
 		FirstName:       namesgen.Generate(),
 		LastName:        namesgen.Generate(),
 		PublicMetadata:  users.Metadata{},
-		PrivateMetadata: users.Metadata{},
+		Metadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -83,7 +83,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 				Status: users.EnabledStatus,
@@ -109,7 +109,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 				Status: users.EnabledStatus,
@@ -130,7 +130,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 				Status: users.EnabledStatus,
@@ -151,7 +151,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 				Status: users.EnabledStatus,
@@ -172,7 +172,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 				Status: users.EnabledStatus,
@@ -192,7 +192,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 			},
@@ -211,7 +211,7 @@ func TestUsersSave(t *testing.T) {
 				PublicMetadata: users.Metadata{
 					"organization": namesgen.Generate(),
 				},
-				PrivateMetadata: users.Metadata{
+				Metadata: users.Metadata{
 					"address": namesgen.Generate(),
 				},
 			},
@@ -277,7 +277,7 @@ func TestIsPlatformAdmin(t *testing.T) {
 					Secret:   password,
 				},
 				PublicMetadata:  users.Metadata{},
-				PrivateMetadata: users.Metadata{},
+				Metadata: users.Metadata{},
 				Status:          users.EnabledStatus,
 				Role:            users.AdminRole,
 			},
@@ -295,7 +295,7 @@ func TestIsPlatformAdmin(t *testing.T) {
 					Secret:   password,
 				},
 				PublicMetadata:  users.Metadata{},
-				PrivateMetadata: users.Metadata{},
+				Metadata: users.Metadata{},
 				Status:          users.EnabledStatus,
 				Role:            users.UserRole,
 			},
@@ -331,7 +331,7 @@ func TestRetrieveByID(t *testing.T) {
 		PublicMetadata: users.Metadata{
 			"organization": namesgen.Generate(),
 		},
-		PrivateMetadata: users.Metadata{
+		Metadata: users.Metadata{
 			"address": namesgen.Generate(),
 		},
 		Status: users.EnabledStatus,
@@ -345,7 +345,7 @@ func TestRetrieveByID(t *testing.T) {
 		FirstName:       namesgen.Generate(),
 		LastName:        namesgen.Generate(),
 		PublicMetadata:  users.Metadata{},
-		PrivateMetadata: users.Metadata{},
+		Metadata: users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -1732,7 +1732,7 @@ func TestUpdate(t *testing.T) {
 				case "public_metadata":
 					assert.Equal(t, c.userRes.PublicMetadata, expected.PublicMetadata)
 				case "private_metadata":
-					assert.Equal(t, c.userRes.PrivateMetadata, expected.PrivateMetadata)
+					assert.Equal(t, c.userRes.Metadata, expected.Metadata)
 				case "first_name":
 					assert.Equal(t, c.userRes.FirstName, expected.FirstName)
 				case "last_name":
@@ -2008,7 +2008,7 @@ func TestRetrieveByIDs(t *testing.T) {
 	baseTime := time.Now().UTC().Truncate(time.Millisecond)
 	for i := 0; i < num; i++ {
 		user := generateUserWithTime(t, users.EnabledStatus, repo, baseTime.Add(time.Duration(i)*time.Millisecond))
-		user.PrivateMetadata = nil
+		user.Metadata = nil
 		items = append(items, user)
 	}
 
@@ -2361,7 +2361,7 @@ func generateUserWithTime(t *testing.T, status users.Status, repo users.Reposito
 		PublicMetadata: users.Metadata{
 			"organization": namesgen.Generate(),
 		},
-		PrivateMetadata: users.Metadata{
+		Metadata: users.Metadata{
 			"address": namesgen.Generate(),
 		},
 		Status:    status,

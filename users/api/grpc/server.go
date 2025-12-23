@@ -90,8 +90,8 @@ func toProtoUser(u users.User) (*grpcUsersV1.User, error) {
 			return nil, errors.Wrap(svcerr.ErrViewEntity, err)
 		}
 	}
-	if u.PrivateMetadata != nil {
-		privateMetadata, err = structpb.NewStruct(u.PrivateMetadata)
+	if u.Metadata != nil {
+		privateMetadata, err = structpb.NewStruct(u.Metadata)
 		if err != nil {
 			return nil, errors.Wrap(svcerr.ErrViewEntity, err)
 		}
@@ -103,7 +103,7 @@ func toProtoUser(u users.User) (*grpcUsersV1.User, error) {
 		LastName:        u.LastName,
 		Tags:            u.Tags,
 		PublicMetadata:  publicMetadata,
-		PrivateMetadata: privateMetadata,
+		Metadata: privateMetadata,
 		Status:          uint32(u.Status),
 		Role:            uint32(u.Role),
 		ProfilePicture:  u.ProfilePicture,

@@ -41,7 +41,7 @@ var (
 		Tags:            []string{"tag1", "tag2"},
 		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
 		PublicMetadata:  validMetadata,
-		PrivateMetadata: validMetadata,
+		Metadata: validMetadata,
 		Status:          clients.EnabledStatus,
 	}
 	validToken   = "token"
@@ -262,7 +262,7 @@ func TestCreateClients(t *testing.T) {
 				Secret:   secret,
 			},
 			PublicMetadata:  clients.Metadata{},
-			PrivateMetadata: clients.Metadata{},
+			Metadata: clients.Metadata{},
 			Status:          clients.EnabledStatus,
 		}
 		items = append(items, client)
