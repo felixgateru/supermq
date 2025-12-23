@@ -22,7 +22,7 @@ func (e *customError) Embed(err error) error {
 
 	return &customError{
 		msg: e.msg,
-		err: fmt.Errorf("%w: %w", e.err, err),
+		err: fmt.Errorf("%s: %w", e.err.Error(), err),
 	}
 }
 

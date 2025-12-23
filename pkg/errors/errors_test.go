@@ -276,6 +276,54 @@ func TestWrap(t *testing.T) {
 	}
 }
 
+func TestUnwrap(t *testing.T) {
+	cases := []struct {
+		desc    string
+		err     error
+		wrapper error
+		wrapped error
+	}{
+		{
+			desc:    "err 1 wraped err 2",
+			err:     errors.Wrap(err1, err2),
+			wrapper: err2,
+			wrapped: err1,
+		},
+		{
+			desc:    "nil wraps nil",
+			err:     errors.Wrap(nil, nil),
+			wrapper: nil,
+			wrapped: nil,
+		},
+		{
+			desc:    "nil wraps err0",
+			err:     errors.Wrap(nil, err0),
+			wrapper: nil,
+			wrapped: nil,
+		},
+		{
+			desc:    "nil wraps native error",
+			err:     errors.Wrap(nil, nat),
+			wrapper: nil,
+			wrapped: nil,
+		},
+		{
+			desc:    "native error wraps nil",
+			err:     errors.Wrap(nat, nil),
+			wrapper: nil,
+			wrapped: nat,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.desc, func(t *testing.T) {
+			wrapper, wrapped := errors.Unwrap(c.err)
+			assert.Equal(t, c.wrapper, wrapper)
+			assert.Equal(t, c.wrapped, wrapped)
+		})
+	}
+}
+
 func wrap(level int) error {
 	if level == 0 {
 		return errors.New(strconv.Itoa(level))
