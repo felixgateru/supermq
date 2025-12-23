@@ -158,7 +158,6 @@ func validateToken(token string, jwks jwk.Set) (jwt.Token, error) {
 		if errors.Contains(err, errJWTExpiryKey) {
 			return nil, smqauth.ErrExpiry
 		}
-
 		return nil, err
 	}
 	validator := jwt.ValidatorFunc(func(_ context.Context, t jwt.Token) jwt.ValidationError {

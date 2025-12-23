@@ -231,7 +231,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			kmCall := keyManager.On("ParseJWT", mock.Anything, tc.token).Return(tc.managerRes, tc.managerErr)
+			kmCall := keyManager.On("ParseJWT", tc.token).Return(tc.managerRes, tc.managerErr)
 			key, err := tokenizer.Parse(context.Background(), tc.token)
 			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s, got %s", tc.desc, tc.err, err))
 			if err == nil {
@@ -259,18 +259,12 @@ func TestRetrieveJWKS(t *testing.T) {
 			desc: "retrieve empty jwks",
 			keys: []auth.JWK{},
 		},
-		{
-			desc:        "retrieve jwks with error",
-			retrieveErr: svcerr.ErrViewEntity,
-			err:         svcerr.ErrViewEntity,
-		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			kmCall := keyManager.On("PublicJWKS", mock.Anything).Return(tc.keys, tc.retrieveErr)
-			jwks, err := tokenizer.RetrieveJWKS(context.Background())
-			assert.True(t, errors.Contains(err, tc.err), fmt.Sprintf("%s expected %s, got %s", tc.desc, tc.err, err))
+			jwks := tokenizer.RetrieveJWKS()
 			assert.Equal(t, tc.keys, jwks, fmt.Sprintf("%s expected %v, got %v", tc.desc, tc.keys, jwks))
 			kmCall.Unset()
 		})

@@ -16,5 +16,5 @@ type Tokenizer interface {
 	Parse(ctx context.Context, token string) (key Key, err error)
 
 	// RetrieveJWKS returns the JSON Web Key Set.
-	RetrieveJWKS(ctx context.Context) ([]JWK, error)
+	RetrieveJWKS() []JWK
 }

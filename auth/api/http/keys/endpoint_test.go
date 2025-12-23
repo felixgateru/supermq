@@ -324,7 +324,6 @@ func TestRetrieveJWKS(t *testing.T) {
 	cases := []struct {
 		desc   string
 		svcRes []auth.JWK
-		svcErr error
 		status int
 	}{
 		{
@@ -337,11 +336,6 @@ func TestRetrieveJWKS(t *testing.T) {
 			svcRes: []auth.JWK{},
 			status: http.StatusOK,
 		},
-		{
-			desc:   "retrieve JWKS with service error",
-			svcErr: svcerr.ErrViewEntity,
-			status: http.StatusUnprocessableEntity,
-		},
 	}
 
 	for _, tc := range cases {
@@ -350,7 +344,7 @@ func TestRetrieveJWKS(t *testing.T) {
 			method: http.MethodGet,
 			url:    fmt.Sprintf("%s/keys/.well-known/jwks.json", ts.URL),
 		}
-		svcCall := svc.On("RetrieveJWKS", mock.Anything).Return(tc.svcRes, tc.svcErr)
+		svcCall := svc.On("RetrieveJWKS").Return(tc.svcRes)
 		res, err := req.make()
 		assert.Nil(t, err, fmt.Sprintf("%s: unexpected error %s", tc.desc, err))
 		assert.Equal(t, tc.status, res.StatusCode, fmt.Sprintf("%s: expected status code %d got %d", tc.desc, tc.status, res.StatusCode))

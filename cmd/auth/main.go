@@ -55,7 +55,6 @@ const (
 	envPrefixHTTP  = "SMQ_AUTH_HTTP_"
 	envPrefixGrpc  = "SMQ_AUTH_GRPC_"
 	envPrefixDB    = "SMQ_AUTH_DB_"
-	envPrefixKeys  = "SMQ_AUTH_KEYS_"
 	defDB          = "auth"
 	defSvcHTTPPort = "8189"
 	defSvcGRPCPort = "8181"
@@ -67,8 +66,10 @@ type config struct {
 	JaegerURL                     url.URL       `env:"SMQ_JAEGER_URL"                             envDefault:"http://localhost:4318/v1/traces"`
 	SendTelemetry                 bool          `env:"SMQ_SEND_TELEMETRY"                         envDefault:"true"`
 	InstanceID                    string        `env:"SMQ_AUTH_ADAPTER_INSTANCE_ID"               envDefault:""`
-	AccessDuration                time.Duration `env:"SMQ_AUTH_KEYS_ACCESS_TOKEN_DURATION"        envDefault:"1h"`
-	RefreshDuration               time.Duration `env:"SMQ_AUTH_KEYS_REFRESH_TOKEN_DURATION"       envDefault:"24h"`
+	AccessDuration                time.Duration `env:"SMQ_AUTH_ACCESS_TOKEN_DURATION"             envDefault:"1h"`
+	RefreshDuration               time.Duration `env:"SMQ_AUTH_REFRESH_TOKEN_DURATION"            envDefault:"24h"`
+	KeyAlgorithm                  string        `env:"SMQ_AUTH_KEYS_ALGORITHM"                    envDefault:"EdDSA"`
+	PrivateKeyPath                string        `env:"SMQ_AUTH_KEYS_PRIVATE_KEY_PATH"             envDefault:"./ssl/keys/private.pem"`
 	InvitationDuration            time.Duration `env:"SMQ_AUTH_INVITATION_DURATION"               envDefault:"168h"`
 	SpicedbHost                   string        `env:"SMQ_SPICEDB_HOST"                           envDefault:"localhost"`
 	SpicedbPort                   string        `env:"SMQ_SPICEDB_PORT"                           envDefault:"50051"`
@@ -149,32 +150,26 @@ func main() {
 		return
 	}
 
-	keyManagerCfg := auth.KeyManagerConfig{}
-	if err := env.ParseWithOptions(&keyManagerCfg, env.Options{Prefix: envPrefixKeys}); err != nil {
-		logger.Error(fmt.Sprintf("failed to load key manager %s configuration : %s", svcName, err.Error()))
-		exitCode = 1
-		return
-	}
-
-	isSymmetric, err := auth.IsSymmetricAlgorithm(keyManagerCfg.KeyAlgorithm)
+	isSymmetric, err := auth.IsSymmetricAlgorithm(cfg.KeyAlgorithm)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to determine key algorithm type: %s", err.Error()))
 		exitCode = 1
 		return
 	}
 
+	idProvider := uuid.New()
+
 	var keyManager auth.KeyManager
 	switch {
 	case isSymmetric:
-		keyManager, err = symmetric.NewKeyManager(keyManagerCfg, []byte(cfg.SecretKey))
+		keyManager, err = symmetric.NewKeyManager(cfg.KeyAlgorithm, []byte(cfg.SecretKey))
 		if err != nil {
 			logger.Error(fmt.Sprintf("failed to create symmetric key manager: %s", err.Error()))
 			exitCode = 1
 			return
 		}
 	default:
-		keyRepo := apostgres.NewPublicKeyRepo(db)
-		keyManager, err = asymmetric.NewKeyManager(ctx, keyManagerCfg, uuid.New(), keyRepo)
+		keyManager, err = asymmetric.NewKeyManager(cfg.PrivateKeyPath, idProvider)
 		if err != nil {
 			logger.Error(fmt.Sprintf("failed to create asymmetric key manager: %s", err.Error()))
 			exitCode = 1
@@ -182,7 +177,7 @@ func main() {
 		}
 	}
 
-	svc, err := newService(db, tracer, cfg, dbConfig, logger, spicedbclient, cacheclient, cfg.CacheKeyDuration, keyManager)
+	svc, err := newService(db, tracer, cfg, dbConfig, logger, spicedbclient, cacheclient, cfg.CacheKeyDuration, keyManager, idProvider)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create service : %s\n", err.Error()))
 		exitCode = 1
@@ -263,14 +258,13 @@ func initSchema(ctx context.Context, client *authzed.ClientWithExperimental, sch
 	return nil
 }
 
-func newService(db *sqlx.DB, tracer trace.Tracer, cfg config, dbConfig pgclient.Config, logger *slog.Logger, spicedbClient *authzed.ClientWithExperimental, cacheClient *redis.Client, keyDuration time.Duration, keyManager auth.KeyManager) (auth.Service, error) {
+func newService(db *sqlx.DB, tracer trace.Tracer, cfg config, dbConfig pgclient.Config, logger *slog.Logger, spicedbClient *authzed.ClientWithExperimental, cacheClient *redis.Client, keyDuration time.Duration, keyManager auth.KeyManager, idProvider supermq.IDProvider) (auth.Service, error) {
 	cache := cache.NewPatsCache(cacheClient, keyDuration)
 
 	database := pgclient.NewDatabase(db, dbConfig, tracer)
 	keysRepo := apostgres.New(database)
 	patsRepo := apostgres.NewPatRepo(database, cache)
 	hasher := hasher.New()
-	idProvider := uuid.New()
 
 	pEvaluator := spicedb.NewPolicyEvaluator(spicedbClient, logger)
 	pService := spicedb.NewPolicyService(spicedbClient, logger)

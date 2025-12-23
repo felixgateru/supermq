@@ -118,11 +118,10 @@ services:
       SMQ_AUTH_HTTP_SERVER_KEY: ${SMQ_AUTH_HTTP_SERVER_KEY}
       SMQ_AUTH_GRPC_HOST: ${SMQ_AUTH_GRPC_HOST}
       SMQ_AUTH_GRPC_PORT: ${SMQ_AUTH_GRPC_PORT}
-      SMQ_AUTH_KEYS_ROTATION_INTERVAL: ${SMQ_AUTH_KEYS_ROTATION_INTERVAL}
-      SMQ_AUTH_KEYS_ACCESS_TOKEN_DURATION: ${SMQ_AUTH_KEYS_ACCESS_TOKEN_DURATION}
-      SMQ_AUTH_KEYS_REFRESH_TOKEN_DURATION: ${SMQ_AUTH_KEYS_REFRESH_TOKEN_DURATION}
+      SMQ_AUTH_ACCESS_TOKEN_DURATION: ${SMQ_AUTH_ACCESS_TOKEN_DURATION}
+      SMQ_AUTH_REFRESH_TOKEN_DURATION: ${SMQ_AUTH_REFRESH_TOKEN_DURATION}
       SMQ_AUTH_KEYS_ALGORITHM: ${SMQ_AUTH_KEYS_ALGORITHM}
-      SMQ_AUTH_KEYS_SIZE: ${SMQ_AUTH_KEYS_SIZE}
+      SMQ_AUTH_KEYS_PRIVATE_KEY_PATH: ${SMQ_AUTH_KEYS_PRIVATE_KEY_PATH:+/keys/private.key}
       ## Compose supports parameter expansion in environment,
       ## Eg: ${VAR:+replacement} or ${VAR+replacement} -> replacement if VAR is set and non-empty, otherwise empty
       ## Eg :${VAR:-default} or ${VAR-default}  -> value of VAR if set and non-empty, otherwise default
@@ -154,6 +153,12 @@ services:
       - ./spicedb/schema.zed:${SMQ_SPICEDB_SCHEMA_FILE}
       - supermq-pat-db-volume:/supermq-data
       - supermq-auth-keys-volume:/keys
+      # Auth private key file
+      - type: bind
+        source: ${SMQ_AUTH_KEYS_PRIVATE_KEY_PATH:-ssl/certs/dummy/private_key}
+        target: /keys/private.key
+        bind:
+          create_host_path: true
       # Auth gRPC mTLS server certificates
       - type: bind
         source: ${SMQ_AUTH_GRPC_SERVER_CERT:-ssl/certs/dummy/server_cert}

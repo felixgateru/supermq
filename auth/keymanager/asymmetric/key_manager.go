@@ -4,11 +4,11 @@
 package asymmetric
 
 import (
-	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"sync"
-	"time"
+	"crypto/ed25519"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
+	"os"
 
 	"github.com/absmach/supermq"
 	"github.com/absmach/supermq/auth"
@@ -19,82 +19,50 @@ import (
 )
 
 var (
-	cleanupInterval = 10 * time.Minute // How often to clean up expired keys
-	skewDuration    = 15*time.Second + cleanupInterval
+	errLoadingPrivateKey = errors.New("failed to load private key")
+	errInvalidKeySize    = errors.New("invalid ED25519 key size")
+	errParsingPrivateKey = errors.New("failed to parse private key")
+	errInvalidKeyType    = errors.New("private key is not ED25519")
+	errGeneratingKID     = errors.New("failed to generate key ID")
 )
 
 type manager struct {
-	idProvider       supermq.IDProvider
-	repo             auth.PublicKeyRepository
-	gracePeriod      time.Duration
-	rotationInterval time.Duration
-	keySize          int
-	activeKey        activeKey
-}
-
-type activeKey struct {
-	mu         sync.RWMutex
-	privateKey jwk.Key
-	keyID      string
-}
-
-type keyPair struct {
 	privateKey jwk.Key
 	publicKey  jwk.Key
+	kid        string
 }
 
 var _ auth.KeyManager = (*manager)(nil)
 
-func NewKeyManager(ctx context.Context, cfg auth.KeyManagerConfig, idProvider supermq.IDProvider, repo auth.PublicKeyRepository) (auth.KeyManager, error) {
-	km := &manager{
-		idProvider:       idProvider,
-		repo:             repo,
-		gracePeriod:      cfg.AccessTokenDuration + skewDuration,
-		keySize:          cfg.KeySize,
-		rotationInterval: cfg.RotationInterval,
+// NewKeyManager creates a new asymmetric key manager that loads the private key from a file.
+func NewKeyManager(privateKeyPath string, idProvider supermq.IDProvider) (auth.KeyManager, error) {
+	kid, err := idProvider.ID()
+	if err != nil {
+		return nil, errors.Join(errGeneratingKID, err)
 	}
 
-	if err := km.initializeKeys(ctx); err != nil {
-		return nil, err
-	}
-
-	if km.rotationInterval > 0 {
-		go func() {
-			if err := km.rotateHandler(ctx); err != nil {
-				return
-			}
-		}()
-	}
-
-	go func() {
-		if err := km.cleanupHandler(ctx); err != nil {
-			return
-		}
-	}()
-
-	return km, nil
-}
-
-func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
-	km.activeKey.mu.RLock()
-	privateKey := km.activeKey.privateKey
-	km.activeKey.mu.RUnlock()
-
-	return jwt.Sign(token, jwt.WithKey(jwa.RS256, privateKey))
-}
-
-func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
-	keys, err := km.PublicJWKS(ctx)
+	privateJwk, publicJwk, err := loadKeyPair(privateKeyPath, kid)
 	if err != nil {
 		return nil, err
 	}
+
+	return &manager{
+		privateKey: privateJwk,
+		publicKey:  publicJwk,
+		kid:        kid,
+	}, nil
+}
+
+func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
+	return jwt.Sign(token, jwt.WithKey(jwa.EdDSA, km.privateKey))
+}
+
+func (km *manager) ParseJWT(token string) (jwt.Token, error) {
 	set := jwk.NewSet()
-	for _, key := range keys {
-		err := set.AddKey(key.Key())
-		if err != nil {
-			return nil, err
-		}
+	if err := set.AddKey(km.publicKey); err != nil {
+		return nil, err
 	}
+
 	tkn, err := jwt.Parse(
 		[]byte(token),
 		jwt.WithValidate(true),
@@ -106,146 +74,59 @@ func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error
 	return tkn, nil
 }
 
-func (km *manager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
-	keys, err := km.repo.RetrieveAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var jwkKeys []auth.JWK
-	for _, key := range keys {
-		jwkKeys = append(jwkKeys, key.JWKData)
-	}
-
-	return jwkKeys, nil
+func (km *manager) PublicJWKS() []auth.JWK {
+	return []auth.JWK{auth.NewJWK(km.publicKey)}
 }
 
-func (km *manager) rotate(ctx context.Context) error {
-	newID, err := km.idProvider.ID()
+func loadKeyPair(privateKeyPath string, kid string) (jwk.Key, jwk.Key, error) {
+	privateKeyBytes, err := os.ReadFile(privateKeyPath)
 	if err != nil {
-		return err
-	}
-	newPair, err := generateKeyPair(newID, km.keySize)
-	if err != nil {
-		return err
+		return nil, nil, errors.Join(errLoadingPrivateKey, err)
 	}
 
-	newPublicKey := auth.PublicKey{
-		Kid:       newID,
-		JWKData:   auth.NewJWK(newPair.publicKey),
-		CreatedAt: time.Now().UTC(),
-		Status:    auth.ActiveKeyStatus,
-	}
-	if err := km.repo.Save(ctx, newPublicKey); err != nil {
-		return err
-	}
-	km.activeKey.mu.RLock()
-	toRetire := km.activeKey.keyID
-	km.activeKey.mu.RUnlock()
-
-	err = km.repo.Retire(ctx, toRetire, time.Now().UTC())
-	if err != nil {
-		return err
-	}
-	km.setActiveKey(newID, newPair.privateKey)
-
-	return nil
-}
-
-func (km *manager) rotateHandler(ctx context.Context) error {
-	ticker := time.NewTicker(km.rotationInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-			if err := km.rotate(ctx); err != nil {
-				return err
-			}
+	var privateKey ed25519.PrivateKey
+	block, _ := pem.Decode(privateKeyBytes)
+	switch {
+	case block != nil:
+		parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, nil, errors.Join(errParsingPrivateKey, err)
 		}
-	}
-}
-
-func (km *manager) cleanupHandler(ctx context.Context) error {
-	ticker := time.NewTicker(cleanupInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-			expiredBefore := time.Now().UTC().Add(-km.gracePeriod)
-			if err := km.repo.PurgeExpired(ctx, expiredBefore); err != nil {
-				continue
-			}
+		var ok bool
+		privateKey, ok = parsedKey.(ed25519.PrivateKey)
+		if !ok {
+			return nil, nil, errInvalidKeyType
 		}
-	}
-}
-
-func (km *manager) initializeKeys(ctx context.Context) error {
-	activeKid, err := km.idProvider.ID()
-	if err != nil {
-		return err
-	}
-	activePair, err := generateKeyPair(activeKid, km.keySize)
-	if err != nil {
-		return err
+	default:
+		if len(privateKeyBytes) != ed25519.PrivateKeySize {
+			return nil, nil, errInvalidKeySize
+		}
+		privateKey = ed25519.PrivateKey(privateKeyBytes)
 	}
 
-	now := time.Now().UTC()
-	activePublicKey := auth.PublicKey{
-		Kid:       activeKid,
-		JWKData:   auth.NewJWK(activePair.publicKey),
-		CreatedAt: now,
-		Status:    auth.ActiveKeyStatus,
-	}
-	if err := km.repo.Save(ctx, activePublicKey); err != nil {
-		return err
-	}
-	km.setActiveKey(activeKid, activePair.privateKey)
-
-	return nil
-}
-
-func (km *manager) setActiveKey(kid string, privateKey jwk.Key) {
-	km.activeKey.mu.Lock()
-	defer km.activeKey.mu.Unlock()
-
-	km.activeKey.keyID = kid
-	km.activeKey.privateKey = privateKey
-}
-
-func generateKeyPair(kid string, keySize int) (keyPair, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, keySize)
-	if err != nil {
-		return keyPair{}, err
-	}
-	publicKey := &privateKey.PublicKey
+	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	privateJwk, err := jwk.FromRaw(privateKey)
 	if err != nil {
-		return keyPair{}, err
+		return nil, nil, err
+	}
+	if err := privateJwk.Set(jwk.AlgorithmKey, jwa.EdDSA); err != nil {
+		return nil, nil, err
 	}
 	if err := privateJwk.Set(jwk.KeyIDKey, kid); err != nil {
-		return keyPair{}, err
+		return nil, nil, err
 	}
 
 	publicJwk, err := jwk.FromRaw(publicKey)
 	if err != nil {
-		return keyPair{}, err
+		return nil, nil, err
+	}
+	if err := publicJwk.Set(jwk.AlgorithmKey, jwa.EdDSA); err != nil {
+		return nil, nil, err
 	}
 	if err := publicJwk.Set(jwk.KeyIDKey, kid); err != nil {
-		return keyPair{}, err
-	}
-	if err := publicJwk.Set(jwk.KeyTypeKey, "RSA"); err != nil {
-		return keyPair{}, err
+		return nil, nil, err
 	}
 
-	return keyPair{
-		privateKey: privateJwk,
-		publicKey:  publicJwk,
-	}, nil
+	return privateJwk, publicJwk, nil
 }

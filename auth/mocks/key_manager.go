@@ -9,8 +9,6 @@
 package mocks
 
 import (
-	"context"
-
 	"github.com/absmach/supermq/auth"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	mock "github.com/stretchr/testify/mock"
@@ -44,8 +42,8 @@ func (_m *KeyManager) EXPECT() *KeyManager_Expecter {
 }
 
 // ParseJWT provides a mock function for the type KeyManager
-func (_mock *KeyManager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
-	ret := _mock.Called(ctx, token)
+func (_mock *KeyManager) ParseJWT(token string) (jwt.Token, error) {
+	ret := _mock.Called(token)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ParseJWT")
@@ -53,18 +51,18 @@ func (_mock *KeyManager) ParseJWT(ctx context.Context, token string) (jwt.Token,
 
 	var r0 jwt.Token
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (jwt.Token, error)); ok {
-		return returnFunc(ctx, token)
+	if returnFunc, ok := ret.Get(0).(func(string) (jwt.Token, error)); ok {
+		return returnFunc(token)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) jwt.Token); ok {
-		r0 = returnFunc(ctx, token)
+	if returnFunc, ok := ret.Get(0).(func(string) jwt.Token); ok {
+		r0 = returnFunc(token)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(jwt.Token)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, token)
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
+		r1 = returnFunc(token)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -77,25 +75,19 @@ type KeyManager_ParseJWT_Call struct {
 }
 
 // ParseJWT is a helper method to define mock.On call
-//   - ctx context.Context
 //   - token string
-func (_e *KeyManager_Expecter) ParseJWT(ctx interface{}, token interface{}) *KeyManager_ParseJWT_Call {
-	return &KeyManager_ParseJWT_Call{Call: _e.mock.On("ParseJWT", ctx, token)}
+func (_e *KeyManager_Expecter) ParseJWT(token interface{}) *KeyManager_ParseJWT_Call {
+	return &KeyManager_ParseJWT_Call{Call: _e.mock.On("ParseJWT", token)}
 }
 
-func (_c *KeyManager_ParseJWT_Call) Run(run func(ctx context.Context, token string)) *KeyManager_ParseJWT_Call {
+func (_c *KeyManager_ParseJWT_Call) Run(run func(token string)) *KeyManager_ParseJWT_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
+		var arg0 string
 		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg0 = args[0].(string)
 		}
 		run(
 			arg0,
-			arg1,
 		)
 	})
 	return _c
@@ -106,37 +98,28 @@ func (_c *KeyManager_ParseJWT_Call) Return(token1 jwt.Token, err error) *KeyMana
 	return _c
 }
 
-func (_c *KeyManager_ParseJWT_Call) RunAndReturn(run func(ctx context.Context, token string) (jwt.Token, error)) *KeyManager_ParseJWT_Call {
+func (_c *KeyManager_ParseJWT_Call) RunAndReturn(run func(token string) (jwt.Token, error)) *KeyManager_ParseJWT_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // PublicJWKS provides a mock function for the type KeyManager
-func (_mock *KeyManager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
-	ret := _mock.Called(ctx)
+func (_mock *KeyManager) PublicJWKS() []auth.JWK {
+	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for PublicJWKS")
 	}
 
 	var r0 []auth.JWK
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]auth.JWK, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []auth.JWK); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func() []auth.JWK); ok {
+		r0 = returnFunc()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]auth.JWK)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // KeyManager_PublicJWKS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PublicJWKS'
@@ -145,30 +128,23 @@ type KeyManager_PublicJWKS_Call struct {
 }
 
 // PublicJWKS is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *KeyManager_Expecter) PublicJWKS(ctx interface{}) *KeyManager_PublicJWKS_Call {
-	return &KeyManager_PublicJWKS_Call{Call: _e.mock.On("PublicJWKS", ctx)}
+func (_e *KeyManager_Expecter) PublicJWKS() *KeyManager_PublicJWKS_Call {
+	return &KeyManager_PublicJWKS_Call{Call: _e.mock.On("PublicJWKS")}
 }
 
-func (_c *KeyManager_PublicJWKS_Call) Run(run func(ctx context.Context)) *KeyManager_PublicJWKS_Call {
+func (_c *KeyManager_PublicJWKS_Call) Run(run func()) *KeyManager_PublicJWKS_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
+		run()
 	})
 	return _c
 }
 
-func (_c *KeyManager_PublicJWKS_Call) Return(jWKs []auth.JWK, err error) *KeyManager_PublicJWKS_Call {
-	_c.Call.Return(jWKs, err)
+func (_c *KeyManager_PublicJWKS_Call) Return(jWKs []auth.JWK) *KeyManager_PublicJWKS_Call {
+	_c.Call.Return(jWKs)
 	return _c
 }
 
-func (_c *KeyManager_PublicJWKS_Call) RunAndReturn(run func(ctx context.Context) ([]auth.JWK, error)) *KeyManager_PublicJWKS_Call {
+func (_c *KeyManager_PublicJWKS_Call) RunAndReturn(run func() []auth.JWK) *KeyManager_PublicJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

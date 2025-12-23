@@ -100,19 +100,14 @@ func (lm *loggingMiddleware) Identify(ctx context.Context, token string) (id aut
 	return lm.svc.Identify(ctx, token)
 }
 
-func (lm *loggingMiddleware) RetrieveJWKS(ctx context.Context) (jwks []auth.JWK, err error) {
+func (lm *loggingMiddleware) RetrieveJWKS() (jwks []auth.JWK) {
 	defer func(begin time.Time) {
 		args := []any{
 			slog.String("duration", time.Since(begin).String()),
 		}
-		if err != nil {
-			args = append(args, slog.String("error", err.Error()))
-			lm.logger.Warn("Retrieve JWKS failed", args...)
-			return
-		}
 		lm.logger.Info("Retrieve JWKS completed successfully", args...)
 	}(time.Now())
-	return lm.svc.RetrieveJWKS(ctx)
+	return lm.svc.RetrieveJWKS()
 }
 
 func (lm *loggingMiddleware) Authorize(ctx context.Context, pr policies.Policy) (err error) {

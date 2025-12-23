@@ -1029,31 +1029,22 @@ func (_c *Service_ResetPATSecret_Call) RunAndReturn(run func(ctx context.Context
 }
 
 // RetrieveJWKS provides a mock function for the type Service
-func (_mock *Service) RetrieveJWKS(ctx context.Context) ([]auth.JWK, error) {
-	ret := _mock.Called(ctx)
+func (_mock *Service) RetrieveJWKS() []auth.JWK {
+	ret := _mock.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveJWKS")
 	}
 
 	var r0 []auth.JWK
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]auth.JWK, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []auth.JWK); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func() []auth.JWK); ok {
+		r0 = returnFunc()
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]auth.JWK)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // Service_RetrieveJWKS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveJWKS'
@@ -1062,30 +1053,23 @@ type Service_RetrieveJWKS_Call struct {
 }
 
 // RetrieveJWKS is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Service_Expecter) RetrieveJWKS(ctx interface{}) *Service_RetrieveJWKS_Call {
-	return &Service_RetrieveJWKS_Call{Call: _e.mock.On("RetrieveJWKS", ctx)}
+func (_e *Service_Expecter) RetrieveJWKS() *Service_RetrieveJWKS_Call {
+	return &Service_RetrieveJWKS_Call{Call: _e.mock.On("RetrieveJWKS")}
 }
 
-func (_c *Service_RetrieveJWKS_Call) Run(run func(ctx context.Context)) *Service_RetrieveJWKS_Call {
+func (_c *Service_RetrieveJWKS_Call) Run(run func()) *Service_RetrieveJWKS_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
+		run()
 	})
 	return _c
 }
 
-func (_c *Service_RetrieveJWKS_Call) Return(jWKs []auth.JWK, err error) *Service_RetrieveJWKS_Call {
-	_c.Call.Return(jWKs, err)
+func (_c *Service_RetrieveJWKS_Call) Return(jWKs []auth.JWK) *Service_RetrieveJWKS_Call {
+	_c.Call.Return(jWKs)
 	return _c
 }
 
-func (_c *Service_RetrieveJWKS_Call) RunAndReturn(run func(ctx context.Context) ([]auth.JWK, error)) *Service_RetrieveJWKS_Call {
+func (_c *Service_RetrieveJWKS_Call) RunAndReturn(run func() []auth.JWK) *Service_RetrieveJWKS_Call {
 	_c.Call.Return(run)
 	return _c
 }

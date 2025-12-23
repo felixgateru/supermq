@@ -4,8 +4,6 @@
 package symmetric
 
 import (
-	"context"
-
 	"github.com/absmach/supermq/auth"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -18,8 +16,8 @@ type manager struct {
 
 var _ auth.KeyManager = (*manager)(nil)
 
-func NewKeyManager(cfg auth.KeyManagerConfig, secret []byte) (auth.KeyManager, error) {
-	alg := jwa.KeyAlgorithmFrom(cfg.KeyAlgorithm)
+func NewKeyManager(algorithm string, secret []byte) (auth.KeyManager, error) {
+	alg := jwa.KeyAlgorithmFrom(algorithm)
 	if _, ok := alg.(jwa.InvalidKeyAlgorithm); ok {
 		return nil, auth.ErrUnsupportedKeyAlgorithm
 	}
@@ -36,7 +34,7 @@ func (km *manager) SignJWT(token jwt.Token) ([]byte, error) {
 	return jwt.Sign(token, jwt.WithKey(km.algorithm, km.secret))
 }
 
-func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error) {
+func (km *manager) ParseJWT(token string) (jwt.Token, error) {
 	return jwt.Parse(
 		[]byte(token),
 		jwt.WithValidate(true),
@@ -44,6 +42,6 @@ func (km *manager) ParseJWT(ctx context.Context, token string) (jwt.Token, error
 	)
 }
 
-func (km *manager) PublicJWKS(ctx context.Context) ([]auth.JWK, error) {
-	return nil, nil
+func (km *manager) PublicJWKS() []auth.JWK {
+	return nil
 }
