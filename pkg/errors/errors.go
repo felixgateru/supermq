@@ -94,21 +94,20 @@ func Wrap(wrapper, err error) error {
 	}
 	return &customError{
 		msg: wrapper.Error(),
-		err: fmt.Errorf("%s: %w", wrapper.Error(), err),
+		err: fmt.Errorf("%w: %w", wrapper, err),
 	}
 }
 
 // Unwrap returns the wrapper and the error by separating the Wrapper from the error.
 func Unwrap(err error) (error, error) {
+	if err == nil {
+		return nil, nil
+	}
 	if ce, ok := err.(Error); ok {
 		if ce.Err() == nil {
 			return nil, New(ce.Msg())
 		}
-		innerError := errors.Unwrap(ce.Err())
-		if innerError == nil {
-			return New(ce.Msg()), nil
-		}
-		return New(ce.Msg()), New(innerError.Error())
+		return New(ce.Msg()), ce.Err()
 	}
 
 	return nil, err

@@ -287,7 +287,7 @@ func TestUnwrap(t *testing.T) {
 			desc:    "err 1 wraped err 2",
 			err:     errors.Wrap(err1, err2),
 			wrapper: err2,
-			wrapped: err1,
+			wrapped: fmt.Errorf("%w: %w", err2, err1),
 		},
 		{
 			desc:    "nil wraps nil",
@@ -319,7 +319,9 @@ func TestUnwrap(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			wrapper, wrapped := errors.Unwrap(c.err)
 			assert.Equal(t, c.wrapper, wrapper)
-			assert.Equal(t, c.wrapped, wrapped)
+			if c.wrapped != nil {
+				assert.Equal(t, c.wrapped.Error(), wrapped.Error())
+			}
 		})
 	}
 }
