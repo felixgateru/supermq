@@ -117,7 +117,9 @@ jobs:
         run: make all -j $(nproc) && make dockers_dev -j $(nproc)
 
       - name: Start containers
-        run: make run up args="-d" && make run_addons up args="-d"
+        run: |
+          make run up args="-d" && make run_addons up args="-d"
+          echo "Waiting for services to be ready..."
 
       - name: Wait for services to be ready
         run: |
