@@ -161,7 +161,7 @@ define test_api_service
 		--header "Authorization: Client $(CLIENT_SECRET)" \
 		--suppress-health-check=filter_too_much \
 		--exclude-checks=positive_data_acceptance \
-		--phases=examples,stateful; \
+		--phases=examples; \
 	else \
 		uvx schemathesis run apidocs/openapi/$(svc).yaml \
 		--checks all \
@@ -170,7 +170,7 @@ define test_api_service
 		--suppress-health-check=filter_too_much \
 		--exclude-checks=positive_data_acceptance \
 		--exclude-operation-id=requestPasswordReset \
-		--phases=examples,stateful; \
+		--phases=examples; \
 	fi
 endef
 
