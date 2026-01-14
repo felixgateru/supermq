@@ -81,6 +81,8 @@ paths:
           description: Missing or invalid access token provided.
         "404":
           description: A non-existent entity request.
+        "422":
+          description: Service can't process request.
         "500":
           $ref: "#/components/responses/ServiceError"
 
@@ -100,6 +102,8 @@ paths:
           description: Missing or invalid access token provided.
         "404":
           description: A non-existent entity request.
+        "422":
+          description: Service can't process request.
         "500":
           $ref: "#/components/responses/ServiceError"
 

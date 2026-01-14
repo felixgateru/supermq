@@ -116,7 +116,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "#/components/responses/UserRes"
+          $ref: "#/components/responses/UserProfileRes"
         "400":
           description: Failed due to malformed query parameters.
         "401":
@@ -461,7 +461,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          $ref: "#/components/responses/UserRes"
+          $ref: "#/components/responses/UserProfileRes"
         "400":
           description: Failed due to malformed JSON.
         "401":
@@ -1523,6 +1523,13 @@ components:
 
     UserRes:
       description: Data retrieved.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/User"
+
+    UserProfileRes:
+      description: Data retrieved for current user profile.
       content:
         application/json:
           schema:

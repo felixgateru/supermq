@@ -362,6 +362,11 @@ paths:
       responses:
         "200":
           description: Parent group set.
+          content:
+            application/json:
+              schema:
+                type: object
+          links: {}
         "400":
           description: Failed due to malformed group's ID.
         "401":
@@ -392,6 +397,11 @@ paths:
       responses:
         "200":
           description: Parent group removed.
+          content:
+            application/json:
+              schema:
+                type: object
+          links: {}
         "400":
           description: Failed due to malformed group's ID.
         "401":
@@ -1662,10 +1672,10 @@ components:
           operationId: getGroup
           parameters:
             groupID: $response.body#/id
-        get_children:
-          operationId: listChildrenGroups
-          parameters:
-            groupID: $response.body#/id
+        # get_children:
+        #   operationId: listChildrenGroups
+        #   parameters:
+        #     groupID: $response.body#/id
         update:
           operationId: updateGroup
           parameters:
@@ -1709,6 +1719,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/GroupsPage"
+      links: {}
 
     GroupsHierarchyPageRes:
       description: Group hierarchy retrieved.
@@ -1716,6 +1727,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/GroupsHierarchyPage"
+      links: {}
 
     MembersPageRes:
       description: Group members retrieved.
@@ -1723,6 +1735,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/MembersPage"
+      links: {}
 
     HealthRes:
       description: Service Health Check.
