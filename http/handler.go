@@ -46,7 +46,6 @@ var (
 	errFailedPublishToMsgBroker = errors.New("failed to publish to supermq message broker")
 	errInvalidAuthFormat        = errors.New("invalid basic auth format")
 	errInvalidClientType        = errors.New("invalid client type")
-	errInvalidSubjectFormat     = errors.New("invalid subject format")
 )
 
 // Event implements events.Event interface.
@@ -231,11 +230,7 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 		clientType = policies.ClientType
 	}
 
-	subject, err := h.authenticate(ctx, clientType, token, domainID)
-	if err != nil {
-		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
-	}
-	id, err := parseSubject(subject)
+	id, subject, err := h.authenticate(ctx, clientType, token, domainID)
 	if err != nil {
 		return "", mgate.NewHTTPProxyError(http.StatusUnauthorized, errors.Wrap(svcerr.ErrAuthentication, err))
 	}
@@ -263,29 +258,29 @@ func (h *handler) authAccess(ctx context.Context, username, password, domainID, 
 	return id, nil
 }
 
-func (h *handler) authenticate(ctx context.Context, authType, token, domainID string) (string, error) {
+func (h *handler) authenticate(ctx context.Context, authType, token, domainID string) (string, string, error) {
 	switch authType {
 	case policies.UserType:
 		authnSession, err := h.authn.Authenticate(ctx, token)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if authnSession.Role == smqauthn.AdminRole {
-			return authnSession.UserID, nil
+			return authnSession.UserID, authnSession.UserID, nil
 		}
-		return policies.EncodeDomainUserID(domainID, authnSession.UserID), nil
+		return authnSession.UserID, policies.EncodeDomainUserID(domainID, authnSession.UserID), nil
 	case policies.ClientType:
 		authnRes, err := h.clients.Authenticate(ctx, &grpcClientsV1.AuthnReq{Token: token})
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		if !authnRes.Authenticated {
-			return "", svcerr.ErrAuthentication
+			return "", "", svcerr.ErrAuthentication
 		}
 
-		return authnRes.GetId(), nil
+		return authnRes.GetId(), authnRes.GetId(), nil
 	default:
-		return "", errInvalidClientType
+		return "", "", errInvalidClientType
 	}
 }
 
@@ -303,17 +298,4 @@ func decodeAuth(s string) (string, string, error) {
 	secret := parts[1]
 
 	return clientID, secret, nil
-}
-
-func parseSubject(subject string) (string, error) {
-	parts := strings.Split(subject, "_")
-	switch len(parts) {
-	case 1: // userID or clientID
-		return parts[0], nil
-	case 2: // domainID_userID
-		return parts[1], nil
-
-	default:
-		return "", errInvalidSubjectFormat
-	}
 }
