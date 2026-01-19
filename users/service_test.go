@@ -563,7 +563,7 @@ func TestUpdateUser(t *testing.T) {
 			err:            nil,
 		},
 		{
-			desc:   "update private metadata successfully as normal user",
+			desc:   "update metadata successfully as normal user",
 			userID: user2.ID,
 			userReq: users.UserReq{
 				Metadata: &updatedMetadata,

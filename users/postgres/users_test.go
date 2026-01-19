@@ -53,11 +53,11 @@ func TestUsersSave(t *testing.T) {
 	email := first_name + "@example.com"
 
 	externalUser := users.User{
-		ID:              testsutil.GenerateUUID(t),
-		FirstName:       namesgen.Generate(),
-		LastName:        namesgen.Generate(),
-		PublicMetadata:  users.Metadata{},
-		Metadata: users.Metadata{},
+		ID:             testsutil.GenerateUUID(t),
+		FirstName:      namesgen.Generate(),
+		LastName:       namesgen.Generate(),
+		PublicMetadata: users.Metadata{},
+		Metadata:       users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -276,10 +276,10 @@ func TestIsPlatformAdmin(t *testing.T) {
 					Username: username,
 					Secret:   password,
 				},
-				PublicMetadata:  users.Metadata{},
-				Metadata: users.Metadata{},
-				Status:          users.EnabledStatus,
-				Role:            users.AdminRole,
+				PublicMetadata: users.Metadata{},
+				Metadata:       users.Metadata{},
+				Status:         users.EnabledStatus,
+				Role:           users.AdminRole,
 			},
 			err: nil,
 		},
@@ -294,10 +294,10 @@ func TestIsPlatformAdmin(t *testing.T) {
 					Username: namesgen.Generate(),
 					Secret:   password,
 				},
-				PublicMetadata:  users.Metadata{},
-				Metadata: users.Metadata{},
-				Status:          users.EnabledStatus,
-				Role:            users.UserRole,
+				PublicMetadata: users.Metadata{},
+				Metadata:       users.Metadata{},
+				Status:         users.EnabledStatus,
+				Role:           users.UserRole,
 			},
 			err: repoerr.ErrNotFound,
 		},
@@ -341,11 +341,11 @@ func TestRetrieveByID(t *testing.T) {
 	require.Nil(t, err, fmt.Sprintf("failed to save users %s", user.ID))
 
 	externalUser := users.User{
-		ID:              testsutil.GenerateUUID(t),
-		FirstName:       namesgen.Generate(),
-		LastName:        namesgen.Generate(),
-		PublicMetadata:  users.Metadata{},
-		Metadata: users.Metadata{},
+		ID:             testsutil.GenerateUUID(t),
+		FirstName:      namesgen.Generate(),
+		LastName:       namesgen.Generate(),
+		PublicMetadata: users.Metadata{},
+		Metadata:       users.Metadata{},
 		Credentials: users.Credentials{
 			Username: namesgen.Generate(),
 		},
@@ -421,7 +421,7 @@ func TestRetrieveAll(t *testing.T) {
 			Status:         users.EnabledStatus,
 			Tags:           []string{"tag1"},
 			CreatedAt:      baseTime.Add(time.Duration(i) * time.Millisecond),
-			UpdatedAt: baseTime.Add(time.Duration(i) * time.Millisecond),
+			UpdatedAt:      baseTime.Add(time.Duration(i) * time.Millisecond),
 		}
 		if i%50 == 0 {
 			user.PublicMetadata = map[string]any{
@@ -1509,6 +1509,18 @@ func TestUpdate(t *testing.T) {
 		err     error
 	}{
 		{
+			desc:   "update metadata for enabled user",
+			update: "metadata",
+			userID: user1.ID,
+			userReq: users.UserReq{
+				Metadata: &updatedMetadata,
+			},
+			userRes: users.User{
+				Metadata: updatedMetadata,
+			},
+			err: nil,
+		},
+		{
 			desc:   "update public metadata for enabled user",
 			update: "public_metadata",
 			userID: user1.ID,
@@ -1534,10 +1546,10 @@ func TestUpdate(t *testing.T) {
 			update: "metadata",
 			userID: user3.ID,
 			userReq: users.UserReq{
-				PublicMetadata: &users.Metadata{},
+				Metadata: &users.Metadata{},
 			},
 			userRes: users.User{
-				PublicMetadata: users.Metadata{},
+				Metadata: users.Metadata{},
 			},
 			err: nil,
 		},
@@ -1731,7 +1743,7 @@ func TestUpdate(t *testing.T) {
 				switch c.update {
 				case "public_metadata":
 					assert.Equal(t, c.userRes.PublicMetadata, expected.PublicMetadata)
-				case "private_metadata":
+				case "metadata":
 					assert.Equal(t, c.userRes.Metadata, expected.Metadata)
 				case "first_name":
 					assert.Equal(t, c.userRes.FirstName, expected.FirstName)

@@ -947,7 +947,7 @@ components:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data.
-        private_metadata:
+        metadata:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data, private to the client.
@@ -1009,7 +1009,7 @@ components:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data.
-        private_metadata:
+        metadata:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data, private to the client.
@@ -1070,7 +1070,7 @@ components:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data.
-        private_metadata:
+        metadata:
           type: object
           example: { "model": "example" }
           description: Arbitrary, object-encoded client's data, private to the client.
@@ -1122,18 +1122,18 @@ components:
           type: string
           example: clientName
           description: Client name.
-        public_metadata:
-          type: object
-          example: { "role": "general" }
-          description: Arbitrary, object-encoded client's data.
-        private_metadata:
+        metadata:
           type: object
           example: { "role": "general" }
           description: Arbitrary, object-encoded client's data, private to the client.
+        public_metadata:
+          type: object
+          example: { "role": "general" }
+          description: Arbitrary, object-encoded client's data.        
       required:
         - name
         - public_metadata
-        - private_metadata
+        - metadata
 
     ClientTags:
       type: object

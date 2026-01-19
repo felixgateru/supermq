@@ -202,7 +202,7 @@ func TestCreateClients(t *testing.T) {
 			err:   nil,
 		},
 		{
-			desc: "create a new enabled client with private metadata",
+			desc: "create a new enabled client with metadata",
 			client: clients.Client{
 				Credentials: clients.Credentials{
 					Identity: "newclientwithmetadata@example.com",
