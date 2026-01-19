@@ -37,15 +37,15 @@ var (
 	secret         = "strongsecret"
 	validCMetadata = users.Metadata{"role": "user"}
 	user           = users.User{
-		ID:              testsutil.GenerateUUID(&testing.T{}),
-		LastName:        "doe",
-		FirstName:       "jane",
-		Tags:            []string{"foo", "bar"},
-		Email:           "useremail@example.com",
-		Credentials:     users.Credentials{Username: "username", Secret: secret},
-		PublicMetadata:  validCMetadata,
-		Metadata: validCMetadata,
-		Status:          users.EnabledStatus,
+		ID:             testsutil.GenerateUUID(&testing.T{}),
+		LastName:       "doe",
+		FirstName:      "jane",
+		Tags:           []string{"foo", "bar"},
+		Email:          "useremail@example.com",
+		Credentials:    users.Credentials{Username: "username", Secret: secret},
+		PublicMetadata: validCMetadata,
+		Metadata:       validCMetadata,
+		Status:         users.EnabledStatus,
 	}
 	validToken      = "valid"
 	inValidToken    = "invalid"

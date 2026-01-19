@@ -36,13 +36,13 @@ var (
 	validMetadata = clients.Metadata{"role": "client"}
 	ID            = testsutil.GenerateUUID(&testing.T{})
 	client        = clients.Client{
-		ID:              ID,
-		Name:            "clientname",
-		Tags:            []string{"tag1", "tag2"},
-		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
-		PublicMetadata:  validMetadata,
-		Metadata: validMetadata,
-		Status:          clients.EnabledStatus,
+		ID:             ID,
+		Name:           "clientname",
+		Tags:           []string{"tag1", "tag2"},
+		Credentials:    clients.Credentials{Identity: "clientidentity", Secret: secret},
+		PublicMetadata: validMetadata,
+		Metadata:       validMetadata,
+		Status:         clients.EnabledStatus,
 	}
 	validToken   = "token"
 	inValidToken = "invalid"
@@ -261,9 +261,9 @@ func TestCreateClients(t *testing.T) {
 				Identity: fmt.Sprintf("%s@example.com", namesgen.Generate()),
 				Secret:   secret,
 			},
-			PublicMetadata:  clients.Metadata{},
-			Metadata: clients.Metadata{},
-			Status:          clients.EnabledStatus,
+			PublicMetadata: clients.Metadata{},
+			Metadata:       clients.Metadata{},
+			Status:         clients.EnabledStatus,
 		}
 		items = append(items, client)
 	}

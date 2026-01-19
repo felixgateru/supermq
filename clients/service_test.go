@@ -33,22 +33,22 @@ var (
 	validMetadata = clients.Metadata{"role": "client"}
 	ID            = "6e5e10b3-d4df-4758-b426-4929d55ad740"
 	client        = clients.Client{
-		ID:              ID,
-		Name:            "clientname",
-		Tags:            []string{"tag1", "tag2"},
-		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
-		PublicMetadata:  validMetadata,
-		Metadata: validMetadata,
-		Status:          clients.EnabledStatus,
+		ID:             ID,
+		Name:           "clientname",
+		Tags:           []string{"tag1", "tag2"},
+		Credentials:    clients.Credentials{Identity: "clientidentity", Secret: secret},
+		PublicMetadata: validMetadata,
+		Metadata:       validMetadata,
+		Status:         clients.EnabledStatus,
 	}
 	clientWithRoles = clients.Client{
-		ID:              ID,
-		Name:            "clientname",
-		Tags:            []string{"tag1", "tag2"},
-		Credentials:     clients.Credentials{Identity: "clientidentity", Secret: secret},
-		PublicMetadata:  validMetadata,
-		Metadata: validMetadata,
-		Status:          clients.EnabledStatus,
+		ID:             ID,
+		Name:           "clientname",
+		Tags:           []string{"tag1", "tag2"},
+		Credentials:    clients.Credentials{Identity: "clientidentity", Secret: secret},
+		PublicMetadata: validMetadata,
+		Metadata:       validMetadata,
+		Status:         clients.EnabledStatus,
 		Roles: []roles.MemberRoleActions{
 			{
 				RoleID:   "test_role_id",
@@ -209,7 +209,7 @@ func TestCreateClients(t *testing.T) {
 					Secret:   secret,
 				},
 				Metadata: validMetadata,
-				Status:          clients.EnabledStatus,
+				Status:   clients.EnabledStatus,
 			},
 			token: validToken,
 			err:   nil,
