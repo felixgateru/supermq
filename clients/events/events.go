@@ -67,6 +67,9 @@ func (cce createClientEvent) Encode() (map[string]any, error) {
 	if len(cce.Tags) > 0 {
 		val["tags"] = cce.Tags
 	}
+	if cce.Metadata != nil {
+		val["metadata"] = cce.Metadata
+	}
 	if cce.PublicMetadata != nil {
 		val["public_metadata"] = cce.PublicMetadata
 	}
@@ -106,6 +109,9 @@ func (uce updateClientEvent) Encode() (map[string]any, error) {
 	}
 	if uce.Credentials.Identity != "" {
 		val["identity"] = uce.Credentials.Identity
+	}
+	if uce.Metadata != nil {
+		val["metadata"] = uce.Metadata
 	}
 	if uce.PublicMetadata != nil {
 		val["public_metadata"] = uce.PublicMetadata
@@ -170,6 +176,9 @@ func (vce viewClientEvent) Encode() (map[string]any, error) {
 	}
 	if vce.Credentials.Identity != "" {
 		val["identity"] = vce.Credentials.Identity
+	}
+	if vce.Metadata != nil {
+		val["metadata"] = vce.Metadata
 	}
 	if vce.PublicMetadata != nil {
 		val["public_metadata"] = vce.PublicMetadata

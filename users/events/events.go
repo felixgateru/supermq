@@ -89,6 +89,9 @@ func (uce createUserEvent) Encode() (map[string]any, error) {
 	if len(uce.Tags) > 0 {
 		val["tags"] = uce.Tags
 	}
+	if uce.Metadata != nil {
+		val["metadata"] = uce.Metadata
+	}
 	if uce.PublicMetadata != nil {
 		val["public_metadata"] = uce.PublicMetadata
 	}
@@ -167,6 +170,9 @@ func (uce updateUserEvent) Encode() (map[string]any, error) {
 	}
 	if uce.Email != "" {
 		val["email"] = uce.Email
+	}
+	if uce.Metadata != nil {
+		val["metadata"] = uce.Metadata
 	}
 	if uce.PublicMetadata != nil {
 		val["public_metadata"] = uce.PublicMetadata
@@ -292,6 +298,9 @@ func (vue viewUserEvent) Encode() (map[string]any, error) {
 	if vue.Credentials.Username != "" {
 		val["username"] = vue.Credentials.Username
 	}
+	if vue.Metadata != nil {
+		val["metadata"] = vue.Metadata
+	}
 	if vue.PublicMetadata != nil {
 		val["public_metadata"] = vue.PublicMetadata
 	}
@@ -334,6 +343,9 @@ func (vpe viewProfileEvent) Encode() (map[string]any, error) {
 	}
 	if vpe.Credentials.Username != "" {
 		val["username"] = vpe.Credentials.Username
+	}
+	if vpe.Metadata != nil {
+		val["metadata"] = vpe.Metadata
 	}
 	if vpe.PublicMetadata != nil {
 		val["public_metadata"] = vpe.PublicMetadata
