@@ -522,6 +522,7 @@ func TestUpdateUser(t *testing.T) {
 	updateFirstName := "Updated user"
 	user1.FirstName = updateFirstName
 	updatedMetadata := users.Metadata{"role": "test"}
+	invalidMetadata := users.Metadata{"role": make(chan int)}
 	user2.PublicMetadata = updatedMetadata
 	user2.Metadata = updatedMetadata
 	adminID := testsutil.GenerateUUID(t)
@@ -540,7 +541,7 @@ func TestUpdateUser(t *testing.T) {
 		err                error
 	}{
 		{
-			desc:   "update user name  successfully as normal user",
+			desc:   "update user name successfully as normal user",
 			userID: user1.ID,
 			userReq: users.UserReq{
 				FirstName: &updateFirstName,
@@ -563,6 +564,18 @@ func TestUpdateUser(t *testing.T) {
 			err:            nil,
 		},
 		{
+			desc:   "update public metadata with repo error",
+			userID: user2.ID,
+			userReq: users.UserReq{
+				PublicMetadata: &invalidMetadata,
+			},
+			session:        authn.Session{UserID: user2.ID},
+			updateResponse: users.User{},
+			token:          validToken,
+			updateErr:      errors.ErrMalformedEntity,
+			err:            svcerr.ErrUpdateEntity,
+		},
+		{
 			desc:   "update metadata successfully as normal user",
 			userID: user2.ID,
 			userReq: users.UserReq{
@@ -573,6 +586,19 @@ func TestUpdateUser(t *testing.T) {
 			retrieveByIDResp: user2,
 			token:            validToken,
 			err:              nil,
+		},
+		{
+			desc:   "update  metadata with repo error",
+			userID: user2.ID,
+			userReq: users.UserReq{
+				Metadata: &invalidMetadata,
+			},
+			session:          authn.Session{UserID: user2.ID},
+			updateResponse:   users.User{},
+			retrieveByIDResp: user2,
+			token:            validToken,
+			updateErr:        errors.ErrMalformedEntity,
+			err:              svcerr.ErrUpdateEntity,
 		},
 		{
 			desc:   "update user name as normal user with repo error on update",

@@ -151,7 +151,7 @@ func (repo *clientRepo) Update(ctx context.Context, client clients.Client) (clie
 
 	q := fmt.Sprintf(`UPDATE clients SET %s updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, name, tags, identity, secret,  metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`,
+        RETURNING id, name, tags, identity, secret, metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`,
 		upq)
 	client.Status = clients.EnabledStatus
 	return repo.update(ctx, client, q)
@@ -160,7 +160,7 @@ func (repo *clientRepo) Update(ctx context.Context, client clients.Client) (clie
 func (repo *clientRepo) UpdateTags(ctx context.Context, client clients.Client) (clients.Client, error) {
 	q := `UPDATE clients SET tags = :tags, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, name, tags, identity, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
+        RETURNING id, name, tags, identity, metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
 	client.Status = clients.EnabledStatus
 	return repo.update(ctx, client, q)
 }
@@ -168,7 +168,7 @@ func (repo *clientRepo) UpdateTags(ctx context.Context, client clients.Client) (
 func (repo *clientRepo) UpdateIdentity(ctx context.Context, client clients.Client) (clients.Client, error) {
 	q := `UPDATE clients SET identity = :identity, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, name, tags, identity, public_metadata, COALESCE(domain_id, '') AS domain_id, status, COALESCE(parent_group_id, '') AS parent_group_id, created_at, updated_at, updated_by`
+        RETURNING id, name, tags, identity, metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, status, COALESCE(parent_group_id, '') AS parent_group_id, created_at, updated_at, updated_by`
 	client.Status = clients.EnabledStatus
 	return repo.update(ctx, client, q)
 }
@@ -176,7 +176,7 @@ func (repo *clientRepo) UpdateIdentity(ctx context.Context, client clients.Clien
 func (repo *clientRepo) UpdateSecret(ctx context.Context, client clients.Client) (clients.Client, error) {
 	q := `UPDATE clients SET secret = :secret, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, name, tags, identity, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
+        RETURNING id, name, tags, identity, metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
 	client.Status = clients.EnabledStatus
 	return repo.update(ctx, client, q)
 }
@@ -184,7 +184,7 @@ func (repo *clientRepo) UpdateSecret(ctx context.Context, client clients.Client)
 func (repo *clientRepo) ChangeStatus(ctx context.Context, client clients.Client) (clients.Client, error) {
 	q := `UPDATE clients SET status = :status, updated_at = :updated_at, updated_by = :updated_by
 		WHERE id = :id
-        RETURNING id, name, tags, identity, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
+        RETURNING id, name, tags, identity, metadata, public_metadata, COALESCE(domain_id, '') AS domain_id, COALESCE(parent_group_id, '') AS parent_group_id, status, created_at, updated_at, updated_by`
 
 	return repo.update(ctx, client, q)
 }

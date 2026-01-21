@@ -178,7 +178,7 @@ func (repo *userRepo) RetrieveAll(ctx context.Context, pm users.Page) (users.Use
 func (repo *userRepo) UpdateUsername(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET username = :username, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-		RETURNING id, tags, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, email, role, verified_at`
+		RETURNING id, tags, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, email, role, verified_at`
 
 	return repo.update(ctx, user, q)
 }
@@ -260,7 +260,7 @@ func (repo *userRepo) update(ctx context.Context, user users.User, query string)
 func (repo *userRepo) UpdateEmail(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET email = :email, verified_at = NULL, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, tags, email, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
+        RETURNING id, tags, email, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
 	user.Status = users.EnabledStatus
 	return repo.update(ctx, user, q)
 }
@@ -268,7 +268,7 @@ func (repo *userRepo) UpdateEmail(ctx context.Context, user users.User) (users.U
 func (repo *userRepo) UpdateRole(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET role = :role, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, tags, email, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
+        RETURNING id, tags, email, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
 	user.Status = users.EnabledStatus
 	return repo.update(ctx, user, q)
 }
@@ -276,7 +276,7 @@ func (repo *userRepo) UpdateRole(ctx context.Context, user users.User) (users.Us
 func (repo *userRepo) UpdateSecret(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET secret = :secret, updated_at = :updated_at, updated_by = :updated_by
         WHERE id = :id AND status = :status
-        RETURNING id, tags, email, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
+        RETURNING id, tags, email, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
 	user.Status = users.EnabledStatus
 	return repo.update(ctx, user, q)
 }
@@ -284,7 +284,7 @@ func (repo *userRepo) UpdateSecret(ctx context.Context, user users.User) (users.
 func (repo *userRepo) ChangeStatus(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET status = :status, updated_at = :updated_at, updated_by = :updated_by
 		WHERE id = :id
-        RETURNING id, tags, email, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
+        RETURNING id, tags, email, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
 
 	return repo.update(ctx, user, q)
 }
@@ -292,7 +292,7 @@ func (repo *userRepo) ChangeStatus(ctx context.Context, user users.User) (users.
 func (repo *userRepo) UpdateVerifiedAt(ctx context.Context, user users.User) (users.User, error) {
 	q := `UPDATE users SET verified_at = :verified_at
 			WHERE id = :id and email = :email
-        RETURNING id, tags, email, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
+        RETURNING id, tags, email, metadata, public_metadata, status, created_at, updated_at, updated_by, first_name, last_name, username, role, verified_at`
 
 	return repo.update(ctx, user, q)
 }
