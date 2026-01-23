@@ -154,10 +154,10 @@ paths:
 
     patch:
       operationId: updateUser
-      summary: Updates first, last name and metadata of the user.
+      summary: Updates first, last name, metadata, and private metadata of the user.
       description: |
-        Updates name and metadata of the user with provided ID. Name and metadata
-        is updated using authorization token and the new received info.
+        Updates name, metadata and private metadata of the user with provided ID. Name, metadata
+        and private metadata are updated using authorization token and the new received info.
       tags:
         - Users
       parameters:
@@ -843,7 +843,7 @@ components:
         metadata:
           type: object
           example: { "role": "general" }
-          description: Arbitrary, object-encoded user's data private to the user.
+          description: Arbitrary, object-encoded user's data visible to other users.
         status:
           type: string
           description: User Status
@@ -900,6 +900,10 @@ components:
           example: lastName
           description: User's last name.
         metadata:
+          type: object
+          example: { "role": "general" }
+          description: Arbitrary, object-encoded user's data visible to other users.
+        private_metadata:
           type: object
           example: { "role": "general" }
           description: Arbitrary, object-encoded user's data private to the user.
@@ -1260,7 +1264,7 @@ components:
 
     Metadata:
       name: metadata
-      description: Metadata filter. Filtering is performed matching the parameter with public metadata on top level. Parameter is json.
+      description: Metadata filter. Filtering is performed matching the parameter with metadata on top level. Parameter is json.
       in: query
       schema:
         type: object
