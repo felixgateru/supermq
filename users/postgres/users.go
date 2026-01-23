@@ -137,7 +137,7 @@ func (repo *userRepo) RetrieveAll(ctx context.Context, pm users.Page) (users.Use
 	if !pm.OnlyTotal {
 		rows, err := repo.Repository.DB.NamedQueryContext(ctx, q, dbPage)
 		if err != nil {
-			return users.UsersPage{}, repo.eh.HandleError(repoerr.ErrFailedToRetrieveAllUsers, err)
+			return users.UsersPage{}, repo.eh.HandleError(repoerr.ErrRetrieveAllUsers, err)
 		}
 		defer rows.Close()
 
