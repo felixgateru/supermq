@@ -269,8 +269,8 @@ fetch_certs:
 	@./scripts/certs.sh
 
 run_latest: check_certs
-# 	git checkout main
-# 	sed -i 's/^SMQ_RELEASE_TAG=.*/SMQ_RELEASE_TAG=latest/' docker/.env
+	git checkout main
+	sed -i 's/^SMQ_RELEASE_TAG=.*/SMQ_RELEASE_TAG=latest/' docker/.env
 	docker compose -f docker/docker-compose.yaml --env-file docker/.env -p $(DOCKER_PROJECT) $(DOCKER_COMPOSE_COMMAND) $(args)
 
 run_stable: check_certs
