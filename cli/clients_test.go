@@ -298,7 +298,7 @@ func TestUpdateClientCmd(t *testing.T) {
 	newTagString := []string{"tag1", "tag2"}
 	newNameandMeta := "{\"name\": \"clientName\", \"metadata\": {\"role\": \"general\"}}"
 	newMetadata := "{\"metadata\": {\"role\": \"general\"}}"
-	newPublicMeta := "{\"public_metadata\": {\"role\": \"general\"}}"
+	newPublicMeta := "{\"private_metadata\": {\"role\": \"general\"}}"
 	newSecret := "secret"
 
 	cases := []struct {
@@ -320,7 +320,7 @@ func TestUpdateClientCmd(t *testing.T) {
 			},
 			client: smqsdk.Client{
 				Name: "clientName",
-				PublicMetadata: map[string]any{
+				PrivateMetadata: map[string]any{
 					"role": "general",
 				},
 				ID:       client.ID,
@@ -359,7 +359,7 @@ func TestUpdateClientCmd(t *testing.T) {
 				token,
 			},
 			client: smqsdk.Client{
-				PublicMetadata: map[string]any{
+				PrivateMetadata: map[string]any{
 					"role": "general",
 				},
 				ID:       client.ID,
@@ -392,7 +392,7 @@ func TestUpdateClientCmd(t *testing.T) {
 			args: []string{
 				client.ID,
 				updateCmd,
-				"{\"public_metadata\": {\"role\": \"general\"}",
+				"{\"private_metadata\": {\"role\": \"general\"}",
 				domainID,
 				token,
 			},

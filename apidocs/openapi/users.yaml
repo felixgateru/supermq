@@ -714,11 +714,11 @@ components:
         metadata:
           type: object
           example: { "domain": "example.com" }
-          description: Arbitrary, object-encoded user's data private to the user.
-        public_metadata:
+          description: Arbitrary, object-encoded user's data visible to other users.
+        private_metadata:
           type: object
           example: { "domain": "example.com" }
-          description: Arbitrary, object-encoded user's data.
+          description: Arbitrary, object-encoded user's data private to the user.
         profile_picture:
           type: string
           example: "https://example.com/profile.jpg"
@@ -774,11 +774,11 @@ components:
         metadata:
           type: object
           example: { "address": "example" }
-          description: Arbitrary, object-encoded user's data private to the user.
-        public_metadata:
+          description: Arbitrary, object-encoded user's data visible to other users.
+        private_metadata:
           type: object
           example: { "address": "example" }
-          description: Arbitrary, object-encoded user's data.
+          description: Arbitrary, object-encoded user's data private to the user.
         profile_picture:
           type: string
           example: "https://example.com/profile.jpg"
@@ -843,7 +843,7 @@ components:
         metadata:
           type: object
           example: { "role": "general" }
-          description: Arbitrary, object-encoded user's data.
+          description: Arbitrary, object-encoded user's data private to the user.
         status:
           type: string
           description: User Status
@@ -902,7 +902,7 @@ components:
         metadata:
           type: object
           example: { "role": "general" }
-          description: Arbitrary, object-encoded user's data.
+          description: Arbitrary, object-encoded user's data private to the user.
 
     UserTags:
       type: object
@@ -1342,7 +1342,7 @@ components:
             $ref: "#/components/schemas/UserReqObj"
 
     UserUpdateReq:
-      description: JSON-formated document describing the name, metadata and public_metadata of user to be update
+      description: JSON-formated document describing the name, metadata and private_metadata of user to be update
       required: true
       content:
         application/json:
