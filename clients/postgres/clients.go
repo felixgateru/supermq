@@ -1247,10 +1247,6 @@ func PageQuery(pm clients.Page) (string, error) {
 			query = append(query, "tags && :tags")
 		}
 	}
-	if mq != "" {
-		query = append(query, mq)
-	}
-
 	if len(pm.IDs) != 0 {
 		query = append(query, fmt.Sprintf("c.id IN ('%s')", strings.Join(pm.IDs, "','")))
 	}

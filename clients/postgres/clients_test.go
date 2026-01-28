@@ -1744,7 +1744,7 @@ func TestRetrieveAll(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  10,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
@@ -1762,7 +1762,7 @@ func TestRetrieveAll(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  10,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
@@ -2616,7 +2616,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  5,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 				Status: clients.AllStatus,
 			},
@@ -2636,7 +2636,7 @@ func TestRetrieveUserClients(t *testing.T) {
 			pm: clients.Page{
 				Offset: 0,
 				Limit:  5,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    descDir,
 				Status: clients.AllStatus,
 			},
