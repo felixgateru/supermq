@@ -21,11 +21,7 @@ import (
 )
 
 const (
-	(
 	maxNameSize = 254
-	defOrder    = "created_at"
-	defDir      = "asc"
-)
 	defOrder    = "created_at"
 	defDir      = "asc"
 )

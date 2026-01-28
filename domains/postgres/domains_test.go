@@ -19,13 +19,10 @@ import (
 )
 
 const (
-	(
 	invalid  = "invalid"
-	ascDir  = "asc"
-	descDir = "desc"
-)
+	ascDir   = "asc"
+	descDir  = "desc"
 	defOrder = "created_at"
-	defDir   = "asc"
 )
 
 var (
@@ -321,7 +318,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				IDs:    []string{items[1].ID, items[2].ID},
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -382,7 +379,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 				Limit:  10,
 				IDs:    []string{items[0].ID, items[1].ID},
 				Status: 5,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -417,7 +414,7 @@ func TestRetrieveAllByIDs(t *testing.T) {
 					"test": "test",
 				},
 				Status: domains.EnabledStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -754,7 +751,7 @@ func TestListDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -771,7 +768,7 @@ func TestListDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: domains.EnabledStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -789,7 +786,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Name:   items[0].Name,
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -806,7 +803,7 @@ func TestListDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: domains.DisabledStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -824,7 +821,7 @@ func TestListDomains(t *testing.T) {
 				Limit:  10,
 				Tags:   domains.TagsQuery{Elements: []string{"tag1"}, Operator: domains.OrOp},
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -843,7 +840,7 @@ func TestListDomains(t *testing.T) {
 				Tags:   domains.TagsQuery{Elements: []string{"tag2", "tag3"}, Operator: domains.OrOp},
 				Status: domains.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   10,
@@ -861,7 +858,7 @@ func TestListDomains(t *testing.T) {
 				Tags:   domains.TagsQuery{Elements: []string{"tag1", "tag3"}, Operator: domains.AndOp},
 				Status: domains.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   2,
@@ -878,7 +875,7 @@ func TestListDomains(t *testing.T) {
 				Tags:   domains.TagsQuery{Elements: []string{"invalid-tag"}, Operator: domains.OrOp},
 				Status: domains.AllStatus,
 				Order:  defOrder,
-				Dir:    defDir,
+				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
 				Total:   0,
@@ -896,7 +893,7 @@ func TestListDomains(t *testing.T) {
 					"test1": "test1",
 				},
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -1004,7 +1001,7 @@ func TestListDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    ascDir,
 			},
 			response: domains.DomainsPage{
@@ -1021,7 +1018,7 @@ func TestListDomains(t *testing.T) {
 				Offset: 0,
 				Limit:  10,
 				Status: domains.AllStatus,
-				Order:  "created_at",
+				Order:  defOrder,
 				Dir:    descDir,
 			},
 			response: domains.DomainsPage{
