@@ -19,7 +19,6 @@ var (
 	errRemoveOptionalDeletePolicies       = errors.New("failed to delete the additional requested policies")
 	errRemoveOptionalFilterDeletePolicies = errors.New("failed to filter delete the additional requested policies")
 	errRollbackRoles                      = errors.New("failed to rollback roles")
-	errInvalidOperation                   = errors.New("invalid operation")
 )
 
 type roleProvisionerManger interface {
@@ -225,31 +224,6 @@ func (r ProvisionManageService) AddNewEntitiesRoles(ctx context.Context, domainI
 	}
 
 	return rp, nil
-}
-
-func (r ProvisionManageService) RemoveMemberFromDomain(ctx context.Context, domainID, memberID string) error {
-	if r.entityType == policies.DomainType {
-		return errInvalidOperation
-	}
-	role, err := r.repo.RetrieveRoleByDomainMember(ctx, domainID, memberID)
-	if err != nil {
-		return errors.Wrap(svcerr.ErrRemoveEntity, err)
-	}
-
-	pr := policies.Policy{
-		ObjectType:  policies.RoleType,
-		Object:      role,
-		SubjectType: policies.UserType,
-	}
-
-	if err := r.policy.DeletePolicyFilter(ctx, pr); err != nil {
-		return errors.Wrap(svcerr.ErrDeletePolicies, err)
-	}
-
-	if err := r.repo.RemoveMemberFromDomain(ctx, domainID, memberID); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (r ProvisionManageService) AddRole(ctx context.Context, session authn.Session, entityID string, roleName string, optionalActions []string, optionalMembers []string) (retRoleProvision RoleProvision, retErr error) {
@@ -672,7 +646,7 @@ func (r ProvisionManageService) RemoveEntityMembers(ctx context.Context, session
 	if err := r.policy.DeletePolicies(ctx, deletePolicies); err != nil {
 		return errors.Wrap(svcerr.ErrDeletePolicies, err)
 	}
-	if err := r.repo.RemoveEntityMembers(ctx, entityID, memberIDs); err != nil {
+	if err := r.repo.RemoveEntityMembers(ctx, session.UserID, entityID, memberIDs); err != nil {
 		return err
 	}
 	return nil

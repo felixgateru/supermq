@@ -347,23 +347,6 @@ func (rmes *RoleManagerEventStore) ListEntityMembers(ctx context.Context, sessio
 	return mems, nil
 }
 
-func (rmes *RoleManagerEventStore) RemoveMemberFromDomain(ctx context.Context, domainID, memberID string) error {
-	if err := rmes.svc.RemoveMemberFromDomain(ctx, domainID, memberID); err != nil {
-		return err
-	}
-
-	e := removeMemberFromDomainEvent{
-		operationPrefix: rmes.operationPrefix,
-		domainID:        domainID,
-		memberID:        memberID,
-		requestID:       middleware.GetReqID(ctx),
-	}
-	if err := rmes.Publish(ctx, rmes.streamID, e); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (rmes *RoleManagerEventStore) RemoveEntityMembers(ctx context.Context, session authn.Session, entityID string, members []string) error {
 	if err := rmes.svc.RemoveEntityMembers(ctx, session, entityID, members); err != nil {
 		return err
@@ -372,6 +355,8 @@ func (rmes *RoleManagerEventStore) RemoveEntityMembers(ctx context.Context, sess
 	e := removeEntityMembersEvent{
 		operationPrefix: rmes.operationPrefix,
 		entityID:        entityID,
+		domainID:        session.DomainID,
+		userID:          session.UserID,
 		members:         members,
 		requestID:       middleware.GetReqID(ctx),
 	}

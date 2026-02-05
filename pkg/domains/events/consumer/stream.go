@@ -25,7 +25,7 @@ const (
 	disable             = "domain.disable"
 	freeze              = "domain.freeze"
 	delete              = "domain.delete"
-	removeDomainMembers = "domain.members.remove"
+	removeDomainMembers = "domain.role.members.remove"
 )
 
 var (
@@ -35,7 +35,7 @@ var (
 	errEnableDomainEvent        = errors.New("failed to consume domain enable event")
 	errDisableDomainEvent       = errors.New("failed to consume domain disable event")
 	errFreezeDomainEvent        = errors.New("failed to consume domain freeze event")
-	errRemoveDomainMembersEvent = errors.New("failed to consume domain remove members event")
+	errRemoveDomainMembersEvent = errors.New("failed to consume domain remove role members event")
 	errDeleteDomainEvent        = errors.New("failed to consume domain delete event")
 )
 
@@ -93,10 +93,10 @@ func (es *eventHandler) Handle(ctx context.Context, event events.Event) error {
 		return es.disableDomainHandler(ctx, msg)
 	case freeze:
 		return es.freezeDomainHandler(ctx, msg)
-	case removeDomainMembers:
-		return es.removeDomainMembersHandler(ctx, msg)
 	case delete:
 		return es.deleteDomainHandler(ctx, msg)
+	case removeDomainMembers:
+		return es.removeDomainMembersHandler(ctx, msg)
 	}
 
 	return es.rolesEventHandler.Handle(ctx, op, msg)
@@ -183,25 +183,6 @@ func (es *eventHandler) freezeDomainHandler(ctx context.Context, data map[string
 	return nil
 }
 
-func (es *eventHandler) removeDomainMembersHandler(ctx context.Context, data map[string]any) error {
-	domainID, memberIDs, err := decodeRemoveDomainMembersEvent(data)
-	if err != nil {
-		return errors.Wrap(errRemoveDomainMembersEvent, err)
-	}
-
-	if err := es.repo.RemoveEntityMembers(ctx, domainID, memberIDs); err != nil {
-		return errors.Wrap(errRemoveDomainMembersEvent, err)
-	}
-
-	for _, memberID := range memberIDs {
-		if err := es.entityRoleManager.RemoveMemberFromDomain(ctx, domainID, memberID); err != nil {
-			return errors.Wrap(errRemoveDomainMembersEvent, err)
-		}
-	}
-
-	return nil
-}
-
 func (es *eventHandler) deleteDomainHandler(ctx context.Context, data map[string]any) error {
 	d, err := decodeDeleteDomainEvent(data)
 	if err != nil {
@@ -210,6 +191,19 @@ func (es *eventHandler) deleteDomainHandler(ctx context.Context, data map[string
 
 	if err := es.repo.DeleteDomain(ctx, d.ID); err != nil {
 		return errors.Wrap(errDeleteDomainEvent, err)
+	}
+
+	return nil
+}
+
+func (es *eventHandler) removeDomainMembersHandler(ctx context.Context, data map[string]any) error {
+	session, entityID, members, err := decodeRemoveDomainMembersEvent(data)
+	if err != nil {
+		return errors.Wrap(errRemoveDomainMembersEvent, err)
+	}
+
+	if err := es.entityRoleManager.RemoveEntityMembers(ctx, session, entityID, members); err != nil {
+		return errors.Wrap(errRemoveDomainMembersEvent, err)
 	}
 
 	return nil

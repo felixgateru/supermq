@@ -244,10 +244,6 @@ func (rcm *RoleManagerCalloutMiddleware) RoleRemoveMembers(ctx context.Context, 
 	return rcm.svc.RoleRemoveMembers(ctx, session, entityID, roleID, members)
 }
 
-func (rcm *RoleManagerCalloutMiddleware) RemoveMemberFromDomain(ctx context.Context, domainID, memberID string) error {
-	return rcm.svc.RemoveMemberFromDomain(ctx, domainID, memberID)
-}
-
 func (rcm *RoleManagerCalloutMiddleware) RemoveMemberFromAllRoles(ctx context.Context, session authn.Session, memberID string) error {
 	return rcm.svc.RemoveMemberFromAllRoles(ctx, session, memberID)
 }

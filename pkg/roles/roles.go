@@ -159,8 +159,6 @@ type RoleManager interface {
 
 	RemoveEntityMembers(ctx context.Context, session authn.Session, entityID string, members []string) (err error)
 
-	RemoveMemberFromDomain(ctx context.Context, domainID, memberID string) error
-
 	RemoveMemberFromAllRoles(ctx context.Context, session authn.Session, memberID string) (err error)
 }
 
@@ -184,9 +182,8 @@ type Repository interface {
 	RetrieveEntitiesRolesActionsMembers(ctx context.Context, entityIDs []string) ([]EntityActionRole, []EntityMemberRole, error)
 	ListEntityMembers(ctx context.Context, entityID string, pageQuery MembersRolePageQuery) (MembersRolePage, error)
 	RetrieveRoleByEntityMember(ctx context.Context, entityID, memberID string) (string, error)
-	RemoveEntityMembers(ctx context.Context, entityID string, members []string) error
+	RemoveEntityMembers(ctx context.Context, userID, entityID string, members []string) error
 	RetrieveRoleByDomainMember(ctx context.Context, domainID, memberID string) (string, error)
-	RemoveMemberFromDomain(ctx context.Context, domainID string, memberID string) error
 	RemoveMemberFromAllRoles(ctx context.Context, memberID string) (err error)
 }
 

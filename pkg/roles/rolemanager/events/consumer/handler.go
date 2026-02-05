@@ -243,6 +243,10 @@ func (es *EventHandler) RemoveEntityMembersHandler(ctx context.Context, data map
 	if !ok {
 		return fmt.Errorf(errRemoveEntityRoleAllMembersEvent, es.entityType, errEntityID)
 	}
+	userID, ok := data["user_id"].(string)
+	if !ok {
+		return fmt.Errorf(errRemoveEntityRoleMembersEvent, es.entityType, errUserID)
+	}
 	imems, ok := data["members"].([]any)
 	if !ok {
 		return fmt.Errorf(errRemoveEntityRoleMembersEvent, es.entityType, errMembers)
@@ -251,7 +255,7 @@ func (es *EventHandler) RemoveEntityMembersHandler(ctx context.Context, data map
 	if err != nil {
 		return fmt.Errorf(errRemoveEntityRoleMembersEvent, es.entityType, err)
 	}
-	if err := es.repo.RemoveEntityMembers(ctx, entityID, mems); err != nil {
+	if err := es.repo.RemoveEntityMembers(ctx, userID, entityID, mems); err != nil {
 		return fmt.Errorf(errRemoveEntityRoleMembersEvent, es.entityType, err)
 	}
 	return nil

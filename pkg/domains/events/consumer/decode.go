@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/absmach/supermq/domains"
+	"github.com/absmach/supermq/pkg/authn"
 	"github.com/absmach/supermq/pkg/errors"
 	"github.com/absmach/supermq/pkg/roles"
 	rconsumer "github.com/absmach/supermq/pkg/roles/rolemanager/events/consumer"
@@ -34,6 +35,8 @@ var (
 	errCreatedAt     = errors.New("failed to parse 'created_at' time")
 	errUpdatedAt     = errors.New("failed to parse 'updated_at' time")
 	errEntityID      = errors.New("missing or invalid 'entity_id'")
+	errUserID        = errors.New("missing or invalid 'user_id'")
+	errDomainID      = errors.New("missing or invalid 'domain_id'")
 	errMembers       = errors.New("missing or invalid 'members'")
 	errNotString     = errors.New("not string type")
 )
@@ -258,21 +261,33 @@ func decodeFreezeDomainEvent(data map[string]any) (domains.Domain, error) {
 	return d, nil
 }
 
-func decodeRemoveDomainMembersEvent(data map[string]any) (string, []string, error) {
+func decodeRemoveDomainMembersEvent(data map[string]any) (authn.Session, string, []string, error) {
 	entityID, ok := data["entity_id"].(string)
 	if !ok {
-		return "", nil, errors.Wrap(errRemoveDomainMembersEvent, errEntityID)
+		return authn.Session{}, "", nil, errors.Wrap(errRemoveDomainMembersEvent, errEntityID)
+	}
+	userID, ok := data["user_id"].(string)
+	if !ok {
+		return authn.Session{}, "", nil, errors.Wrap(errRemoveDomainMembersEvent, errUserID)
+	}
+	domainID, ok := data["domain_id"].(string)
+	if !ok {
+		return authn.Session{}, "", nil, errors.Wrap(errRemoveDomainMembersEvent, errDomainID)
+	}
+	session := authn.Session{
+		UserID:   userID,
+		DomainID: domainID,
 	}
 	imems, ok := data["members"].([]any)
 	if !ok {
-		return "", nil, errors.Wrap(errRemoveDomainMembersEvent, errMembers)
+		return authn.Session{}, "", nil, errors.Wrap(errRemoveDomainMembersEvent, errMembers)
 	}
 	mems, err := toStrings(imems)
 	if err != nil {
-		return "", nil, errors.Wrap(errRemoveDomainMembersEvent, err)
+		return authn.Session{}, "", nil, errors.Wrap(errRemoveDomainMembersEvent, err)
 	}
 
-	return entityID, mems, nil
+	return session, entityID, mems, nil
 }
 
 func decodeDeleteDomainEvent(data map[string]any) (domains.Domain, error) {
